@@ -55,16 +55,18 @@ WEAPONS = [
 # 技を撃つあいだ「構え」の姿勢が出るよう、右クリックを保持できる武器にする。
 # use_duration があるとアタッチャブル側の q.is_using_item が立ち、技モーション
 # へ遷移する。技そのものは押した瞬間の itemUse で発動するので発生は遅れない。
+# 技のモーション本体が 0.86〜1.02 秒あるので、押しっぱなしで最後まで見られるよう
+# use_duration はそれより長く取る。指を離せばそこで止まるので、連打の邪魔にはならない。
 BRACE = {
-    "combat_knife":    (0.55, 0.95),
-    "df_pistol":       (0.60, 0.90),
-    "df_bazooka":      (1.00, 0.55),
-    "blade_sw1023":    (0.80, 0.85),
-    "df_rifle":        (0.70, 0.80),
-    "twin_sw2033":     (0.70, 0.88),
-    "axe_03ax":        (1.10, 0.60),
-    "cannon_t25":      (1.20, 0.45),
-    "gunblade_gs3305": (1.00, 0.65),
+    "combat_knife":    (1.10, 0.95),
+    "df_pistol":       (1.10, 0.90),
+    "df_bazooka":      (1.30, 0.55),
+    "blade_sw1023":    (1.20, 0.85),
+    "df_rifle":        (1.10, 0.80),
+    "twin_sw2033":     (1.20, 0.88),
+    "axe_03ax":        (1.40, 0.60),
+    "cannon_t25":      (1.40, 0.45),
+    "gunblade_gs3305": (1.30, 0.65),
 }
 
 ARMOR = [
@@ -140,7 +142,7 @@ def gen_items():
         "minecraft:max_stack_size": 1,
         "minecraft:glint": True,
         "minecraft:hand_equipped": True,
-        "minecraft:use_modifiers": {"use_duration": 0.9, "movement_modifier": 0.8},
+        "minecraft:use_modifiers": {"use_duration": 1.2, "movement_modifier": 0.8},
         "minecraft:should_despawn": False,
     }, "items", "itemGroup.name.miscFood"))
 

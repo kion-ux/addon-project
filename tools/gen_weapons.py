@@ -318,7 +318,9 @@ def attachable(name: str) -> dict:
                     "first": f"animation.kaiju8.wield.{name}_fp",
                     "swing": f"animation.kaiju8.swing.{name}",
                     "swing2": f"animation.kaiju8.swing2.{name}",
+                    "swing3": f"animation.kaiju8.swing3.{name}",
                     "tech": f"animation.kaiju8.tech.{name}",
+                    "tech2": f"animation.kaiju8.tech2.{name}",
                     "ready": f"animation.kaiju8.ready.{name}",
                     "ctrl": "controller.animation.kaiju8.wield",
                 },
@@ -362,9 +364,25 @@ PARTS = {
 }
 
 
-def _slash(sx, sy, sz, reverse=False):
-    """袈裟斬り（reverse なら逆袈裟）。溜め → 斬り抜け → 残心。"""
-    d = -1.0 if reverse else 1.0
+def _slash(sx, sy, sz, v=0):
+    """刀の三振り。0=袈裟斬り 1=逆袈裟 2=横薙ぎ。連撃すると順に出る。"""
+    if v == 2:                                   # 横薙ぎ: 水平に払う
+        return 0.40, {
+            "rotation": {
+                "0.0":  [0, 0, 0],
+                "0.06": [sx * 0.10, -sy * 1.35, sz * 0.20],
+                "0.15": [sx * 0.34, sy * 1.55, sz * 0.30],
+                "0.24": [sx * 0.22, sy * 0.95, sz * 0.20],
+                "0.40": [0, 0, 0],
+            },
+            "position": {
+                "0.0":  [0, 0, 0],
+                "0.06": [0, 0.4, 1.4],
+                "0.15": [0, 0.2, -2.2],
+                "0.40": [0, 0, 0],
+            },
+        }
+    d = -1.0 if v == 1 else 1.0                  # 1 = 逆袈裟
     return 0.44, {
         "rotation": {
             "0.0":  [0, 0, 0],
@@ -383,9 +401,25 @@ def _slash(sx, sy, sz, reverse=False):
     }
 
 
-def _heavy(sx, sy, sz, reverse=False):
-    """斧と銃剣。担ぎ上げてから体ごと落とす、戻りの遅い大振り。"""
-    d = -1.0 if reverse else 1.0
+def _heavy(sx, sy, sz, v=0):
+    """斧と銃剣。0=振り下ろし 1=切り返し 2=下段からの掬い上げ。"""
+    if v == 2:                                   # 掬い上げ: 低く構えて跳ね上げる
+        return 0.58, {
+            "rotation": {
+                "0.0":  [0, 0, 0],
+                "0.14": [sx * 0.42, -sy * 0.7, -sz * 0.4],
+                "0.30": [sx * -0.95, sy * 1.25, sz * 0.9],
+                "0.40": [sx * -0.70, sy * 0.85, sz * 0.6],
+                "0.58": [0, 0, 0],
+            },
+            "position": {
+                "0.0":  [0, 0, 0],
+                "0.14": [0, -2.4, 2.0],
+                "0.30": [0, 2.8, -3.0],
+                "0.58": [0, 0, 0],
+            },
+        }
+    d = -1.0 if v == 1 else 1.0
     return 0.62, {
         "rotation": {
             "0.0":  [0, 0, 0],
@@ -405,9 +439,27 @@ def _heavy(sx, sy, sz, reverse=False):
     }
 
 
-def _gun(sx, sy, sz, reverse=False):
-    """反動。銃口が跳ね上がり、二拍で戻る。reverse は二射目の軽い跳ね。"""
-    k = 0.62 if reverse else 1.0
+def _gun(sx, sy, sz, v=0):
+    """反動。0=単発 1=軽い二射目 2=二点射（跳ねが二度来る）。"""
+    if v == 2:
+        return 0.42, {
+            "rotation": {
+                "0.0":  [0, 0, 0],
+                "0.03": [sx, sy * 0.5, sz],
+                "0.10": [sx * 0.30, sy * 0.15, sz * 0.3],
+                "0.15": [sx * 0.86, sy * 0.42, sz],
+                "0.24": [sx * 0.22, sy * 0.10, sz * 0.2],
+                "0.42": [0, 0, 0],
+            },
+            "position": {
+                "0.0":  [0, 0, 0],
+                "0.03": [0, 0.5, 2.1],
+                "0.10": [0, 0.1, 0.5],
+                "0.15": [0, 0.4, 1.8],
+                "0.42": [0, 0, 0],
+            },
+        }
+    k = 0.62 if v == 1 else 1.0
     return 0.32, {
         "rotation": {
             "0.0":  [0, 0, 0],
@@ -424,9 +476,25 @@ def _gun(sx, sy, sz, reverse=False):
     }
 
 
-def _fist(sx, sy, sz, reverse=False):
-    """怪獣の腕。引き絞ってから真っ直ぐ抜く。"""
-    d = -1.0 if reverse else 1.0
+def _fist(sx, sy, sz, v=0):
+    """怪獣の腕。0=右の直突き 1=返しの裏拳 2=振り下ろし。"""
+    if v == 2:
+        return 0.50, {
+            "rotation": {
+                "0.0":  [0, 0, 0],
+                "0.12": [sx * -0.70, sy * 0.3, 0],
+                "0.24": [sx * 1.35, sy * 0.6, sz],
+                "0.34": [sx * 0.80, sy * 0.3, sz * 0.5],
+                "0.50": [0, 0, 0],
+            },
+            "position": {
+                "0.0":  [0, 0, 0],
+                "0.12": [0, 3.4, 1.6],
+                "0.24": [0, -3.0, -2.6],
+                "0.50": [0, 0, 0],
+            },
+        }
+    d = -1.0 if v == 1 else 1.0
     return 0.46, {
         "rotation": {
             "0.0":  [0, 0, 0],
@@ -444,10 +512,11 @@ def _fist(sx, sy, sz, reverse=False):
     }
 
 
-def _tool(sx, sy, sz, reverse=False):
-    d = -1.0 if reverse else 1.0
+def _tool(sx, sy, sz, v=0):
+    d = [1.0, -1.0, 0.4][v % 3]
     return 0.30, {
-        "rotation": {"0.0": [0, 0, 0], "0.12": [sx, sy * d, sz], "0.30": [0, 0, 0]},
+        "rotation": {"0.0": [0, 0, 0], "0.12": [sx * abs(d), sy * d, sz],
+                     "0.30": [0, 0, 0]},
         "position": {"0.0": [0, 0, 0], "0.12": [0, -0.5, -0.8], "0.30": [0, 0, 0]},
     }
 
@@ -456,7 +525,7 @@ PROFILE = {"slash": _slash, "heavy": _heavy, "gun": _gun, "fist": _fist,
            "tool": _tool}
 
 
-def _tech(style, sx, sy, sz):
+def _tech(style, sx, sy, sz, v=0):
     """技のモーション。深い溜め → 静止（撓め）→ 解放 → 残心。"""
     if style == "gun":
         return 0.86, {
@@ -477,6 +546,28 @@ def _tech(style, sx, sy, sz):
                 "0.48": [0, 0.2, 0.6],
                 "0.56": [0, 0.8, 2.6],
                 "0.86": [0, 0, 0],
+            },
+        }
+    if v == 1:
+        # 二の型。溜めを反対側に取り、抜けたあとに返しを一度入れる
+        return 0.94, {
+            "rotation": {
+                "0.0":  [0, 0, 0],
+                "0.18": [sx * 0.46, sy * 1.30, sz * 0.5],
+                "0.36": [sx * 0.52, sy * 1.42, sz * 0.55],
+                "0.46": [sx * -1.10, -sy * 1.20, -sz * 1.0],
+                "0.58": [sx * 0.85, sy * 1.05, sz * 0.8],
+                "0.70": [sx * 0.30, sy * 0.35, sz * 0.3],
+                "0.94": [0, 0, 0],
+            },
+            "position": {
+                "0.0":  [0, 0, 0],
+                "0.18": [0, 2.0, 3.4],
+                "0.36": [0, 2.2, 3.6],
+                "0.46": [0, -2.6, -4.2],
+                "0.58": [0, 1.0, 1.6],
+                "0.70": [0, -1.4, -2.2],
+                "0.94": [0, 0, 0],
             },
         }
     if style in ("heavy", "fist"):
@@ -551,9 +642,9 @@ def wield_animations() -> dict:
                                "scale": fs}},
         }
 
-        # 表・裏の二振り。連撃すると交互に出る。
-        for suffix, reverse in (("swing", False), ("swing2", True)):
-            length, root = PROFILE[style](sx, sy, sz, reverse)
+        # 三振り。連撃すると順に出るので、同じ斬りが続かない。
+        for suffix, variant in (("swing", 0), ("swing2", 1), ("swing3", 2)):
+            length, root = PROFILE[style](sx, sy, sz, variant)
             bones = {"root": _round(root)}
             if part:
                 bones[part[0]] = part[1]
@@ -561,14 +652,16 @@ def wield_animations() -> dict:
                 "loop": False, "animation_length": length, "bones": bones,
             }
 
-        # 技。右クリックを保持しているあいだ再生される。
-        length, root = _tech(style, sx, sy, sz)
-        bones = {"root": _round(root)}
-        if part:
-            bones[part[0]] = part[1]
-        anims[f"animation.kaiju8.tech.{name}"] = {
-            "loop": "hold_on_last_frame", "animation_length": length, "bones": bones,
-        }
+        # 技。右クリックを保持しているあいだ再生され、撃つたび一の型と二の型が入れ替わる。
+        for suffix, variant in (("tech", 0), ("tech2", 1)):
+            length, root = _tech(style, sx, sy, sz, variant)
+            bones = {"root": _round(root)}
+            if part:
+                bones[part[0]] = part[1]
+            anims[f"animation.kaiju8.{suffix}.{name}"] = {
+                "loop": "hold_on_last_frame", "animation_length": length,
+                "bones": bones,
+            }
 
         # 構え。呼吸ぶんだけ揺れる。
         anims[f"animation.kaiju8.ready.{name}"] = {
@@ -591,21 +684,42 @@ def wield_animations() -> dict:
     return anims
 
 
-# v.alt は振るたびに 0/1 を往復する。同じ斬りが二度続かない。
+# v.alt は振るたび 0→1→2→0 と進み、v.talt は技を撃つたび 0/1 を往復する。
+# どちらも「押した瞬間」だけ動かしたいので、直前の値と比べて立ち上がりを取る。
 WIELD_SCRIPTS = [
     "v.main_hand = c.item_slot == 'main_hand';",
     "v.sw = math.max(v.attack_time ?? 0.0, 0.0);",
-    "v.alt = (v.sw > 0.0 && (v.prev_sw ?? 0.0) <= 0.0) ? (1.0 - (v.alt ?? 0.0)) "
-    ": (v.alt ?? 0.0);",
+    "v.alt = (v.sw > 0.0 && (v.prev_sw ?? 0.0) <= 0.0) "
+    "? math.mod((v.alt ?? 2.0) + 1.0, 3.0) : (v.alt ?? 2.0);",
     "v.prev_sw = v.sw;",
     "v.swing = v.sw;",
     "v.tech = q.is_using_item ? 1.0 : 0.0;",
+    "v.talt = (v.tech > 0.5 && (v.prev_tech ?? 0.0) <= 0.0) "
+    "? (1.0 - (v.talt ?? 1.0)) : (v.talt ?? 1.0);",
+    "v.prev_tech = v.tech;",
 ]
 
-_TP = [{"tech": "v.tech > 0.5"}, {"swing_a": "v.swing > 0.0 && v.alt < 0.5"},
-       {"swing_b": "v.swing > 0.0 && v.alt >= 0.5"}]
-_FP = [{"fp_tech": "v.tech > 0.5"}, {"fp_swing_a": "v.swing > 0.0 && v.alt < 0.5"},
-       {"fp_swing_b": "v.swing > 0.0 && v.alt >= 0.5"}]
+_SW_A = "v.swing > 0.0 && v.alt < 0.5"
+_SW_B = "v.swing > 0.0 && v.alt >= 0.5 && v.alt < 1.5"
+_SW_C = "v.swing > 0.0 && v.alt >= 1.5"
+
+_TP = [{"tech": "v.tech > 0.5 && v.talt < 0.5"},
+       {"tech_b": "v.tech > 0.5"},
+       {"swing_a": _SW_A}, {"swing_b": _SW_B}, {"swing_c": _SW_C}]
+_FP = [{"fp_tech": "v.tech > 0.5 && v.talt < 0.5"},
+       {"fp_tech_b": "v.tech > 0.5"},
+       {"fp_swing_a": _SW_A}, {"fp_swing_b": _SW_B}, {"fp_swing_c": _SW_C}]
+
+def _swing_state(clip, base):
+    return {
+        "animations": [base, clip],
+        "blend_transition": 0.04,
+        "transitions": ([{"fp": "c.is_first_person"}] if base == "third"
+                        else [{"hold": "!c.is_first_person"}])
+                       + [{"fp" if base == "first" else "hold":
+                           "q.all_animations_finished"}],
+    }
+
 
 WIELD_CONTROLLER = {
     "controller.animation.kaiju8.wield": {
@@ -622,20 +736,17 @@ WIELD_CONTROLLER = {
                 "transitions": [{"fp": "c.is_first_person"}] + _TP
                                + [{"hold": "!q.is_sneaking"}],
             },
-            "swing_a": {
-                "animations": ["third", "swing"],
-                "blend_transition": 0.04,
-                "transitions": [{"fp": "c.is_first_person"},
-                                {"hold": "q.all_animations_finished"}],
-            },
-            "swing_b": {
-                "animations": ["third", "swing2"],
-                "blend_transition": 0.04,
-                "transitions": [{"fp": "c.is_first_person"},
-                                {"hold": "q.all_animations_finished"}],
-            },
+            "swing_a": _swing_state("swing", "third"),
+            "swing_b": _swing_state("swing2", "third"),
+            "swing_c": _swing_state("swing3", "third"),
             "tech": {
                 "animations": ["third", "tech"],
+                "blend_transition": 0.08,
+                "transitions": [{"fp": "c.is_first_person"},
+                                {"hold": "v.tech <= 0.5"}],
+            },
+            "tech_b": {
+                "animations": ["third", "tech2"],
                 "blend_transition": 0.08,
                 "transitions": [{"fp": "c.is_first_person"},
                                 {"hold": "v.tech <= 0.5"}],
@@ -644,20 +755,17 @@ WIELD_CONTROLLER = {
                 "animations": ["first"],
                 "transitions": [{"hold": "!c.is_first_person"}] + _FP,
             },
-            "fp_swing_a": {
-                "animations": ["first", "swing"],
-                "blend_transition": 0.04,
-                "transitions": [{"hold": "!c.is_first_person"},
-                                {"fp": "q.all_animations_finished"}],
-            },
-            "fp_swing_b": {
-                "animations": ["first", "swing2"],
-                "blend_transition": 0.04,
-                "transitions": [{"hold": "!c.is_first_person"},
-                                {"fp": "q.all_animations_finished"}],
-            },
+            "fp_swing_a": _swing_state("swing", "first"),
+            "fp_swing_b": _swing_state("swing2", "first"),
+            "fp_swing_c": _swing_state("swing3", "first"),
             "fp_tech": {
                 "animations": ["first", "tech"],
+                "blend_transition": 0.08,
+                "transitions": [{"hold": "!c.is_first_person"},
+                                {"fp": "v.tech <= 0.5"}],
+            },
+            "fp_tech_b": {
+                "animations": ["first", "tech2"],
                 "blend_transition": 0.08,
                 "transitions": [{"hold": "!c.is_first_person"},
                                 {"fp": "v.tech <= 0.5"}],

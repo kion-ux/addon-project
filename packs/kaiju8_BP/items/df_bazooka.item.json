@@ -35,7 +35,7 @@
         "value": 14
       },
       "minecraft:use_modifiers": {
-        "use_duration": 1.0,
+        "use_duration": 1.3,
         "movement_modifier": 0.55
       },
       "minecraft:can_destroy_in_creative": false,

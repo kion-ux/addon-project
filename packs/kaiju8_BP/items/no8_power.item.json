@@ -16,7 +16,7 @@
       "minecraft:glint": true,
       "minecraft:hand_equipped": true,
       "minecraft:use_modifiers": {
-        "use_duration": 0.9,
+        "use_duration": 1.2,
         "movement_modifier": 0.8
       },
       "minecraft:should_despawn": false,

@@ -19,7 +19,9 @@
         "first": "animation.kaiju8.wield.df_pistol_fp",
         "swing": "animation.kaiju8.swing.df_pistol",
         "swing2": "animation.kaiju8.swing2.df_pistol",
+        "swing3": "animation.kaiju8.swing3.df_pistol",
         "tech": "animation.kaiju8.tech.df_pistol",
+        "tech2": "animation.kaiju8.tech2.df_pistol",
         "ready": "animation.kaiju8.ready.df_pistol",
         "ctrl": "controller.animation.kaiju8.wield"
       },
@@ -27,10 +29,12 @@
         "pre_animation": [
           "v.main_hand = c.item_slot == 'main_hand';",
           "v.sw = math.max(v.attack_time ?? 0.0, 0.0);",
-          "v.alt = (v.sw > 0.0 && (v.prev_sw ?? 0.0) <= 0.0) ? (1.0 - (v.alt ?? 0.0)) : (v.alt ?? 0.0);",
+          "v.alt = (v.sw > 0.0 && (v.prev_sw ?? 0.0) <= 0.0) ? math.mod((v.alt ?? 2.0) + 1.0, 3.0) : (v.alt ?? 2.0);",
           "v.prev_sw = v.sw;",
           "v.swing = v.sw;",
-          "v.tech = q.is_using_item ? 1.0 : 0.0;"
+          "v.tech = q.is_using_item ? 1.0 : 0.0;",
+          "v.talt = (v.tech > 0.5 && (v.prev_tech ?? 0.0) <= 0.0) ? (1.0 - (v.talt ?? 1.0)) : (v.talt ?? 1.0);",
+          "v.prev_tech = v.tech;"
         ],
         "animate": [
           "ctrl"

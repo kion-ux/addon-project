@@ -13,13 +13,19 @@
               "fp": "c.is_first_person"
             },
             {
-              "tech": "v.tech > 0.5"
+              "tech": "v.tech > 0.5 && v.talt < 0.5"
+            },
+            {
+              "tech_b": "v.tech > 0.5"
             },
             {
               "swing_a": "v.swing > 0.0 && v.alt < 0.5"
             },
             {
-              "swing_b": "v.swing > 0.0 && v.alt >= 0.5"
+              "swing_b": "v.swing > 0.0 && v.alt >= 0.5 && v.alt < 1.5"
+            },
+            {
+              "swing_c": "v.swing > 0.0 && v.alt >= 1.5"
             },
             {
               "ready": "q.is_sneaking"
@@ -37,13 +43,19 @@
               "fp": "c.is_first_person"
             },
             {
-              "tech": "v.tech > 0.5"
+              "tech": "v.tech > 0.5 && v.talt < 0.5"
+            },
+            {
+              "tech_b": "v.tech > 0.5"
             },
             {
               "swing_a": "v.swing > 0.0 && v.alt < 0.5"
             },
             {
-              "swing_b": "v.swing > 0.0 && v.alt >= 0.5"
+              "swing_b": "v.swing > 0.0 && v.alt >= 0.5 && v.alt < 1.5"
+            },
+            {
+              "swing_c": "v.swing > 0.0 && v.alt >= 1.5"
             },
             {
               "hold": "!q.is_sneaking"
@@ -80,10 +92,40 @@
             }
           ]
         },
+        "swing_c": {
+          "animations": [
+            "third",
+            "swing3"
+          ],
+          "blend_transition": 0.04,
+          "transitions": [
+            {
+              "fp": "c.is_first_person"
+            },
+            {
+              "hold": "q.all_animations_finished"
+            }
+          ]
+        },
         "tech": {
           "animations": [
             "third",
             "tech"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "fp": "c.is_first_person"
+            },
+            {
+              "hold": "v.tech <= 0.5"
+            }
+          ]
+        },
+        "tech_b": {
+          "animations": [
+            "third",
+            "tech2"
           ],
           "blend_transition": 0.08,
           "transitions": [
@@ -104,13 +146,19 @@
               "hold": "!c.is_first_person"
             },
             {
-              "fp_tech": "v.tech > 0.5"
+              "fp_tech": "v.tech > 0.5 && v.talt < 0.5"
+            },
+            {
+              "fp_tech_b": "v.tech > 0.5"
             },
             {
               "fp_swing_a": "v.swing > 0.0 && v.alt < 0.5"
             },
             {
-              "fp_swing_b": "v.swing > 0.0 && v.alt >= 0.5"
+              "fp_swing_b": "v.swing > 0.0 && v.alt >= 0.5 && v.alt < 1.5"
+            },
+            {
+              "fp_swing_c": "v.swing > 0.0 && v.alt >= 1.5"
             }
           ]
         },
@@ -144,10 +192,40 @@
             }
           ]
         },
+        "fp_swing_c": {
+          "animations": [
+            "first",
+            "swing3"
+          ],
+          "blend_transition": 0.04,
+          "transitions": [
+            {
+              "hold": "!c.is_first_person"
+            },
+            {
+              "fp": "q.all_animations_finished"
+            }
+          ]
+        },
         "fp_tech": {
           "animations": [
             "first",
             "tech"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "hold": "!c.is_first_person"
+            },
+            {
+              "fp": "v.tech <= 0.5"
+            }
+          ]
+        },
+        "fp_tech_b": {
+          "animations": [
+            "first",
+            "tech2"
           ],
           "blend_transition": 0.08,
           "transitions": [
