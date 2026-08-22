@@ -557,21 +557,12 @@ EFFECTS = {
     "kaiju8:burst_slash": effect("kaiju8:burst_slash", "flash", count=4, life=0.5,
                                  speed=4.0, size=(1.6, 1.6), colour=CAUTER,
                                  radius=0.8, drag=3.0),
-    "kaiju8:branch_blast": effect("kaiju8:branch_blast", "streak", count=7, life=0.6,
-                                  speed=11, size=(1.3, 0.18), colour=MUZZLE,
-                                  radius=0.3, drag=3.5, facing="direction_x"),
-    # ---- ユニソケット -----------------------------------------------
     "kaiju8:socket_burst": effect("kaiju8:socket_burst", "dot", count=12, life=0.3,
                                   speed=8, size=(0.5, 0.5), colour=EMBER,
                                   radius=0.2, drag=5),
     "kaiju8:socket_freeze": effect("kaiju8:socket_freeze", "spark", count=16,
                                    life=0.9, speed=5, size=(0.42, 0.42),
                                    colour=FROST, radius=0.4, drag=4.5),
-    "kaiju8:socket_thunder": effect("kaiju8:socket_thunder", "crack", count=7,
-                                    life=0.25, speed=5, size=(0.8, 0.8),
-                                    colour=THUNDER, radius=0.3, drag=4,
-                                    spin=("v.particle_random_1 * 360", "0")),
-    # ---- 怪獣 -------------------------------------------------------
     "kaiju8:kaiju_blood": effect("kaiju8:kaiju_blood", "drop", count=14, life=0.6,
                                  speed=5, size=(0.30, 0.38), colour=VIOLET,
                                  radius=0.5, drag=1.2, gravity=8),
@@ -686,9 +677,6 @@ add("kaiju8:cut_line", "beam", count=1, life=0.30, speed=0, size=(2.4, 0.09),
 add("kaiju8:cut_line_heavy", "beam", count=1, life=0.85, speed=0, size=(3.4, 0.20),
     colour=CUT_HEAVY, shape="point", drag=0,
     spin=("v.particle_random_1 * 360", "0"))
-add("kaiju8:cut_line_faint", "beam", count=1, life=0.22, speed=0, size=(2.0, 0.06),
-    colour=A("#E0E6EC", 0.30), shape="point", drag=0,
-    spin=("v.particle_random_1 * 360", "0"))
 add("kaiju8:cut_slat", "beam", count=1, life=0.75, speed=0, size=(4.2, 0.05),
     colour=CUT, shape="point", drag=0)
 # 囮の線。本物より細く暗い。「弱く見える」ことが役目なので薄さは仕様。
@@ -769,7 +757,7 @@ add("kaiju8:junihitoe_bloom", "shock", count=1, life=0.45, speed=0, colour=NUM10
     shape="point", drag=0, size_expr=grow(26.0))
 
 # ---- 放電と落雷 -------------------------------------------------------
-family("charge_arc", "crack", {"ice": ICE, "gold": THUNDER},
+family("charge_arc", "crack", {"ice": ICE},
        count=5, life=0.22, speed=-2.6, size=(0.45, 0.45), radius=1.1, drag=1.6,
        direction="inwards", spin=("v.particle_random_1 * 360", "0"))
 add("kaiju8:bolt_strike", "bolt", count=1, life=0.16, speed=0, size=(1.2, 4.6),
@@ -881,14 +869,26 @@ add("kaiju8:updraft", "plume", count=6, life=0.70, speed=2, size=(0.65, 1.8),
 
 # ---- 炸裂 -------------------------------------------------------------
 family("detonation", "burst",
-       {"gold": MUZZLE, "ember": EMBER, "hot": CAUTER, "teal": TEAL_CORE},
+       {"gold": MUZZLE, "ember": EMBER, "teal": TEAL_CORE},
        count=1, life=0.26, speed=0, size=(4.2, 4.2), shape="point", drag=0)
 
 # ---- 輪 ---------------------------------------------------------------
 family("halo", "halo",
-       {"gold": THUNDER, "ice": ICE, "sky": C("#7EA8FF"), "pale": C("#EAF2FF"),
-        "green": C("#C8FFD2"), "teal": TEAL, "red": C("#FF3B30")},
+       {"gold": THUNDER, "ice": ICE, "sky": C("#7EA8FF"), "teal": TEAL},
        count=1, life=0.32, speed=0, shape="point", drag=0, size_expr=grow(11.0))
+
+# 縮む輪。他の輪はすべて広がるので、閉じ込める・食いつく動きが際立つ。
+def shrink(start, rate):
+    return (f"math.max(0.0, {start} - v.particle_age * {rate})",
+            f"math.max(0.0, {start} - v.particle_age * {rate})")
+
+
+add("kaiju8:eye_open", "halo", count=6, life=0.50, speed=1.2, size=(0.55, 0.55),
+    colour=C("#FF3B30"), radius=0.4, drag=2.0)
+add("kaiju8:repulsor_iris", "halo", count=1, life=0.16, speed=0,
+    colour=C("#EAF2FF"), shape="point", drag=0, size_expr=shrink(1.6, 7.0))
+add("kaiju8:freeze_shell", "halo", count=1, life=0.90, speed=0, colour=ICE,
+    shape="point", drag=0, size_expr=shrink(2.4, 1.8))
 
 # ---- 衝撃波 -----------------------------------------------------------
 family("quake", "shock",
