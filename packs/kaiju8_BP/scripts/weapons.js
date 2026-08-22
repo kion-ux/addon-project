@@ -7,7 +7,7 @@ import {
 import { container, selectedSlot, isTransformed, spendEnergy } from "./transform.js";
 import { TECH, listFor, selected, showWheel } from "./techniques.js";
 import { liftsReleaseCap, wornNumbers, fullReleaseActive } from "./numbers.js";
-import { fx, sound, shake } from "./effects.js";
+import { fx, fxArc, fxScatter, sound, shake } from "./effects.js";
 
 export function wearsFullSuit(player) {
   try {
@@ -158,6 +158,68 @@ export function cycleTechnique(player, typeId, tech) {
   showWheel(player, typeId, releaseRate(player));
 }
 
+// 通常攻撃の当たり演出。武器ごとに斬り口を変え、三振りに合わせて弧の形も回す。
+// クライアント側の v.alt と厳密に同期はしないが、連撃すれば同じように回る。
+const SWING_FX = {
+  "kaiju8:combat_knife":    { arcs: ["kaiju8:slash_air", "kaiju8:slash_air",
+                                     "kaiju8:slash_cross"],
+                              r: 1.5, sweep: 110, hit: "kaiju8:slash_scatter",
+                              snd: "mob.ravager.bite", pitch: 1.45, n: 3 },
+  "kaiju8:twin_sw2033":     { arcs: ["kaiju8:slash_air", "kaiju8:slash_cross",
+                                     "kaiju8:slash_scatter"],
+                              r: 2.1, sweep: 150, hit: "kaiju8:slash_scatter",
+                              snd: "mob.ravager.bite", pitch: 1.6, n: 4 },
+  "kaiju8:blade_sw1023":    { arcs: ["kaiju8:slash_heavy", "kaiju8:slash_air",
+                                     "kaiju8:slash_cross"],
+                              r: 2.6, sweep: 165, hit: "kaiju8:slash_scatter",
+                              snd: "mob.ravager.bite", pitch: 1.15, n: 4 },
+  "kaiju8:axe_03ax":        { arcs: ["kaiju8:axe_arc", "kaiju8:axe_crescent",
+                                     "kaiju8:axe_arc"],
+                              r: 2.8, sweep: 120, hit: "kaiju8:crack_burst",
+                              snd: "random.anvil_land", pitch: 1.3, n: 3 },
+  "kaiju8:gunblade_gs3305": { arcs: ["kaiju8:slash_heavy", "kaiju8:burst_slash",
+                                     "kaiju8:slash_heavy"],
+                              r: 2.9, sweep: 130, hit: "kaiju8:cauterize",
+                              snd: "random.anvil_land", pitch: 1.5, n: 4 },
+  "kaiju8:no8_power":       { arcs: ["kaiju8:fist_shock", "kaiju8:fist_shock",
+                                     "kaiju8:shock_ring"],
+                              r: 1.2, sweep: 90, hit: "kaiju8:energy_boost",
+                              snd: "mob.ravager.stun", pitch: 0.85, n: 3 },
+  "kaiju8:df_rifle":        { arcs: ["kaiju8:muzzle_sparks"], r: 1.1, sweep: 60,
+                              hit: "kaiju8:impact_dust", snd: "random.anvil_land",
+                              pitch: 1.8, n: 2 },
+  "kaiju8:df_bazooka":      { arcs: ["kaiju8:muzzle_smoke"], r: 1.3, sweep: 70,
+                              hit: "kaiju8:impact_dust", snd: "random.anvil_land",
+                              pitch: 0.9, n: 3 },
+  "kaiju8:df_pistol":       { arcs: ["kaiju8:muzzle_sparks"], r: 0.9, sweep: 60,
+                              hit: "kaiju8:impact_dust", snd: "random.anvil_land",
+                              pitch: 2.0, n: 2 },
+  "kaiju8:cannon_t25":      { arcs: ["kaiju8:muzzle_smoke"], r: 1.4, sweep: 70,
+                              hit: "kaiju8:impact_dust", snd: "random.anvil_land",
+                              pitch: 0.8, n: 3 },
+};
+
+const swingTurn = new Map();     // playerId -> 何振り目か
+
+function swingSignature(player, typeId, target, rate) {
+  const sig = SWING_FX[typeId];
+  if (!sig) return;
+  const turn = ((swingTurn.get(player.id) ?? -1) + 1) % 3;
+  swingTurn.set(player.id, turn);
+  const head = player.getHeadLocation();
+  const dir = player.getViewDirection();
+  const origin = { x: head.x, y: head.y - 0.25, z: head.z };
+  const arc = sig.arcs[turn % sig.arcs.length];
+  // 三振り目だけ弧を反対に傾けて、同じ形が続かないようにする
+  fxArc(player.dimension, arc, origin, dir, sig.r, sig.sweep, sig.n,
+        turn === 2 ? -0.35 : 0.25);
+  fxScatter(player.dimension, sig.hit,
+            { x: target.location.x, y: target.location.y + 1.0, z: target.location.z },
+            rate >= 60 ? 5 : 3, 0.6);
+  sound(player.dimension, sig.snd, player.location,
+        { pitch: sig.pitch + (turn - 1) * 0.08, volume: 0.7 });
+}
+
 /** Ordinary melee swings also scale with 解放戦力. */
 world.afterEvents.entityHitEntity.subscribe((ev) => {
   const player = ev.damagingEntity;
@@ -168,6 +230,9 @@ world.afterEvents.entityHitEntity.subscribe((ev) => {
   try { held = container(player)?.getItem(selectedSlot(player)); } catch (_) { return; }
   if (!held || !(held.typeId in TECH)) return;
   const rate = releaseRate(player);
+  system.run(() => {
+    try { swingSignature(player, held.typeId, target, rate); } catch (_) { }
+  });
   if (rate <= 10) return;
   const bonus = Math.round((releaseMultiplier(player) - 1) * 6);
   if (bonus <= 0) return;
