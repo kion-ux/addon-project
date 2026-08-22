@@ -13,22 +13,42 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RP = os.path.join(ROOT, "packs", "kaiju8_RP")
 PART_DIR = os.path.join(RP, "particles")
 TEX = os.path.join(RP, "textures", "particle")
-ATLAS = 128
+ATLAS_W = 256
+ATLAS_H = 128
 CELL = 32
 TEXTURE = "textures/particle/kaiju8_particles"
 
 # ---------------------------------------------------------------- atlas
+# 16セルでは技ごとの描き分けができなくなったので 8x8 に広げた。上4行は従来の
+# 並びをそのまま維持している（uv は自動計算なので既存エフェクトはそのまま動く）。
 CELLS = {
     "dot": (0, 0), "spark": (1, 0), "streak": (2, 0), "ring": (3, 0),
     "smoke": (0, 1), "debris": (1, 1), "arc": (2, 1), "crescent": (3, 1),
     "beam": (0, 2), "shock": (1, 2), "drop": (2, 2), "ember": (3, 2),
     "hex": (0, 3), "crack": (1, 3), "dust": (2, 3), "flash": (3, 3),
+    # --- 追加分 ---------------------------------------------------------
+    "bolt": (4, 0),        # 稲妻。折れ線の落雷
+    "thin_arc": (5, 0),    # 細く速い斬撃線
+    "burst": (6, 0),       # 放射状の閃光
+    "shard": (7, 0),       # 鋭い破片・氷片
+    "swirl": (4, 1),       # 渦。回転系の技に
+    "splash": (5, 1),      # 飛沫。体液・水切
+    "halo": (6, 1),        # 二重の細いリング
+    "plume": (7, 1),       # 縦に伸びる噴煙
+    "chevron": (4, 2),     # 山形。突き・射線の指向マーク
+    "petal": (5, 2),       # 花弁状。炎雨・十二単
+    "grid": (6, 2),        # 走査線の入った矩形。ユニソケット表示
+    "star4": (7, 2),       # 十字の鋭い輝き
+    "wedge": (4, 3),       # くさび。斧の食い込み
+    "coil": (5, 3),        # 螺旋。帯電
+    "mote": (6, 3),        # ごく小さな粒
+    "slashx": (7, 3),      # 交差する二本の斬線
 }
 
 
 def build_atlas() -> None:
     os.makedirs(TEX, exist_ok=True)
-    img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    img = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
     px = img.load()
     rng = random.Random(8)
 
@@ -157,8 +177,169 @@ def build_atlas() -> None:
             v = max(0.0, 1 - dx * 6) + max(0.0, 1 - dy * 6) + max(0.0, 1 - math.hypot(dx, dy) * 2.2)
             put(ox, oy, x, y, min(255, v * 210))
 
+    # ---- 追加スプライト -------------------------------------------------
+    ox, oy = cell("bolt")                                  # 折れ線の稲妻
+    for i in range(2):
+        x, y = CELL // 2 + (i * 6 - 3), 1
+        while y < CELL - 1:
+            step = rng.choice((3, 4, 5))
+            dx = rng.choice((-5, -4, 4, 5))
+            for k in range(step):
+                if y + k >= CELL - 1:
+                    break
+                xx = int(x + dx * k / step)
+                for w in (-1, 0, 1):
+                    put(ox, oy, xx + w, y + k, 255 if w == 0 else 110)
+            x += dx
+            y += step
+            x = max(2, min(CELL - 3, x))
+
+    ox, oy = cell("thin_arc")                              # 細く長い斬撃線
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / h
+            d = math.hypot(u, v)
+            ang = math.atan2(v, u)
+            if abs(ang) > math.pi * 0.92:
+                continue
+            a = pw(1 - abs(d - 0.80) / 0.055, 1.1)
+            a *= max(0.0, 1 - (abs(ang) / (math.pi * 0.92)) ** 3)
+            put(ox, oy, x, y, a * 255)
+
+    ox, oy = cell("burst")                                 # 放射状の閃光
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / h
+            d = math.hypot(u, v)
+            if d > 1:
+                continue
+            ang = math.atan2(v, u)
+            spokes = abs(math.cos(ang * 6)) ** 6
+            a = pw(1 - d, 1.1) * (0.22 + 0.78 * spokes)
+            put(ox, oy, x, y, a * 255)
+
+    ox, oy = cell("shard")                                 # 鋭い破片
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / h
+            if abs(u) < 0.30 * pw(1 - abs(v), 0.7) + 0.02 and abs(v) < 0.95:
+                put(ox, oy, x, y, 255 if abs(u) > 0.10 * (1 - abs(v)) else 190)
+
+    ox, oy = cell("swirl")                                 # 渦
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / h
+            d = math.hypot(u, v)
+            if d > 0.98 or d < 0.08:
+                continue
+            ang = math.atan2(v, u)
+            band = abs(((ang / math.pi * 1.5 + d * 2.4) % 2.0) - 1.0)
+            put(ox, oy, x, y, pw(1 - band, 2.6) * pw(1 - d, 0.5) * 255)
+
+    ox, oy = cell("splash")                                # 飛沫
+    for _ in range(26):
+        ang = rng.random() * math.tau
+        r = 0.25 + rng.random() * 0.72
+        cx = h + math.cos(ang) * r * h
+        cy = h + math.sin(ang) * r * h
+        rad = rng.choice((1, 1, 2, 2, 3))
+        for dy in range(-rad, rad + 1):
+            for dx in range(-rad, rad + 1):
+                if dx * dx + dy * dy <= rad * rad:
+                    put(ox, oy, int(cx) + dx, int(cy) + dy, 255)
+
+    ox, oy = cell("halo")                                  # 二重の細いリング
+    for y in range(CELL):
+        for x in range(CELL):
+            d = math.hypot(x - h + .5, y - h + .5) / h
+            a = max(pw(1 - abs(d - 0.92) / 0.07, 1.4),
+                    pw(1 - abs(d - 0.62) / 0.05, 1.4) * 0.7)
+            put(ox, oy, x, y, a * 255)
+
+    ox, oy = cell("plume")                                 # 縦に伸びる噴煙
+    for y in range(CELL):
+        for x in range(CELL):
+            v = (y - h + .5) / h
+            width = 0.30 + 0.55 * max(0.0, (v + 1) / 2) ** 1.4
+            u = abs(x - h + .5) / h
+            n = 0.92 + 0.20 * math.sin(x * 0.8 + y * 0.5)
+            put(ox, oy, x, y, pw(1 - u / (width * n), 1.3) * 215
+                if abs(v) < 0.98 else 0)
+
+    ox, oy = cell("chevron")                               # 山形の指向マーク
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / h
+            d = abs(abs(u) * 0.95 + v)
+            if abs(u) < 0.92 and abs(v) < 0.92:
+                put(ox, oy, x, y, pw(1 - abs(d - 0.30) / 0.16, 1.3) * 255)
+
+    ox, oy = cell("petal")                                 # 花弁
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / (h * 0.98)
+            vv = (v + 1) / 2
+            width = math.sin(min(1.0, max(0.0, vv)) * math.pi) ** 0.75 * 0.52
+            if abs(u) < width:
+                edge = 1 - abs(u) / max(width, 1e-6)
+                put(ox, oy, x, y, (0.55 + 0.45 * pw(edge, 0.6)) * 255)
+
+    ox, oy = cell("grid")                                  # 走査線の入った矩形
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = abs(x - h + .5) / h, abs(y - h + .5) / h
+            if u > 0.86 or v > 0.86:
+                continue
+            frame = 1.0 if (u > 0.78 or v > 0.78) else 0.0
+            scan = 0.55 if y % 4 == 0 else 0.0
+            put(ox, oy, x, y, max(frame, scan) * 255)
+
+    ox, oy = cell("star4")                                 # 十字の鋭い輝き
+    for y in range(CELL):
+        for x in range(CELL):
+            dx, dy = abs(x - h + .5) / h, abs(y - h + .5) / h
+            v = max(0.0, 1 - dx * 11) * max(0.0, 1 - dy * 1.05) \
+                + max(0.0, 1 - dy * 11) * max(0.0, 1 - dx * 1.05) \
+                + max(0.0, 1 - math.hypot(dx, dy) * 5)
+            put(ox, oy, x, y, min(255, v * 255))
+
+    ox, oy = cell("wedge")                                 # くさび
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / h
+            if v < -0.9 or v > 0.9:
+                continue
+            width = 0.08 + 0.52 * (v + 0.9) / 1.8
+            if abs(u) < width:
+                put(ox, oy, x, y, 255 if abs(u) > width - 0.16 else 175)
+
+    ox, oy = cell("coil")                                  # 螺旋の帯電
+    for y in range(CELL):
+        v = (y - h + .5) / h
+        if abs(v) > 0.94:
+            continue
+        cx = h + math.sin(v * math.pi * 2.6) * h * 0.62
+        for k in (-1, 0, 1):
+            put(ox, oy, int(cx) + k, y, 255 if k == 0 else 120)
+
+    ox, oy = cell("mote")                                  # ごく小さな粒
+    for y in range(CELL):
+        for x in range(CELL):
+            d = math.hypot(x - h + .5, y - h + .5) / (h * 0.34)
+            put(ox, oy, x, y, pw(1 - d, 1.6) * 255)
+
+    ox, oy = cell("slashx")                                # 交差する二本の斬線
+    for y in range(CELL):
+        for x in range(CELL):
+            u, v = (x - h + .5) / h, (y - h + .5) / h
+            if math.hypot(u, v) > 0.98:
+                continue
+            a = max(pw(1 - abs(u - v) / 0.14, 1.2),
+                    pw(1 - abs(u + v) / 0.11, 1.2) * 0.85)
+            put(ox, oy, x, y, a * 255)
+
     img.save(os.path.join(TEX, "kaiju8_particles.png"))
-    print("  particle atlas 128x128")
+    print(f"  particle atlas {ATLAS_W}x{ATLAS_H} ({len(CELLS)} sprites)")
 
 
 # ------------------------------------------------------------- effects
@@ -183,7 +364,7 @@ def effect(identifier, cell, *, count=12, life=0.5, speed=4.0, size=(0.25, 0.25)
         "minecraft:particle_appearance_billboard": {
             "size": list(size_expr or size),
             "facing_camera_mode": facing,
-            "uv": {"texture_width": ATLAS, "texture_height": ATLAS,
+            "uv": {"texture_width": ATLAS_W, "texture_height": ATLAS_H,
                    "uv": uv_of(cell), "uv_size": [CELL, CELL]},
         },
         "minecraft:particle_appearance_tinting": {"color": list(colour)},
