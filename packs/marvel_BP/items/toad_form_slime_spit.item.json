@@ -1,0 +1,18 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:toad_form_slime_spit"
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "toad_form_slime_spit"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:toad_form_slime_spit"
+      }
+    }
+  }
+}

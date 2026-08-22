@@ -1,0 +1,48 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:prime_sentinel",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/prime_sentinel"
+      },
+      "geometry": {
+        "default": "geometry.marvel.prime_sentinel"
+      },
+      "animations": {
+        "look": "animation.marvel.look_at_target",
+        "idle": "animation.marvel.sentinel.idle",
+        "walk": "animation.marvel.sentinel.walk",
+        "beam": "animation.marvel.sentinel.beam",
+        "stomp": "animation.marvel.sentinel.stomp",
+        "scan": "animation.marvel.sentinel.scan",
+        "hurt": "animation.marvel.sentinel.hurt",
+        "death": "animation.marvel.sentinel.death",
+        "general": "controller.animation.marvel.sentinel.general",
+        "action": "controller.animation.marvel.sentinel.action"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "spark": "marvel:sentinel_spark",
+        "smoke": "marvel:sentinel_smoke",
+        "core": "marvel:core_break"
+      },
+      "spawn_egg": {
+        "base_color": "#3A2A5E",
+        "overlay_color": "#E85A1E"
+      }
+    }
+  }
+}

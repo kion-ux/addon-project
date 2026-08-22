@@ -1,0 +1,87 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "marvel:steel_platform",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "marvel:gone": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "marvel_prop",
+          "inanimate"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 2.2,
+        "height": 0.6
+      },
+      "minecraft:health": {
+        "value": 400,
+        "max": 400
+      },
+      "minecraft:physics": {
+        "has_gravity": false,
+        "has_collision": true
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "deals_damage": false,
+            "on_damage": {}
+          }
+        ]
+      },
+      "minecraft:fire_immune": {},
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:rideable": {
+        "seat_count": 1,
+        "family_types": [
+          "player",
+          "mutant"
+        ],
+        "interact_text": "action.interact.ride",
+        "seats": [
+          {
+            "position": [
+              0,
+              0.4,
+              0
+            ]
+          }
+        ]
+      },
+      "minecraft:input_ground_controlled": {},
+      "minecraft:timer": {
+        "looping": false,
+        "time": 14.0,
+        "time_down_event": {
+          "event": "marvel:expire"
+        }
+      }
+    },
+    "events": {
+      "marvel:expire": {
+        "add": {
+          "component_groups": [
+            "marvel:gone"
+          ]
+        }
+      }
+    }
+  }
+}

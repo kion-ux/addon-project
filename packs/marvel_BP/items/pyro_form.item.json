@@ -1,0 +1,18 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:pyro_form"
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "pyro_form"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:pyro_form"
+      }
+    }
+  }
+}

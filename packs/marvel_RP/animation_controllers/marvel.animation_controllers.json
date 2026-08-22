@@ -1,0 +1,5921 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.marvel.humanoid.general": {
+      "initial_state": "stand",
+      "states": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "look",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "run": "query.modified_move_speed > 0.26"
+            },
+            {
+              "stand": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "look",
+            "run"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.26"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "look",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "stand": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.humanoid.action": {
+      "initial_state": "none",
+      "states": {
+        "none": {
+          "animations": [],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "hurt": "query.is_delayed_attacking || variable.hurt"
+            },
+            {
+              "attack": "query.mark_variant == 1"
+            },
+            {
+              "tech": "query.mark_variant == 2"
+            },
+            {
+              "death": "query.is_alive == 0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 1"
+            }
+          ]
+        },
+        "tech": {
+          "animations": [
+            "tech"
+          ],
+          "blend_transition": 0.12,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 2"
+            }
+          ]
+        },
+        "hurt": {
+          "animations": [
+            "hurt"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 3"
+            }
+          ]
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    },
+    "controller.animation.marvel.magneto.general": {
+      "initial_state": "stand",
+      "states": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle",
+            "cape"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "hover": "query.mark_variant == 5"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "look",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "hover": "query.mark_variant == 5"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
+              "stand": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "look",
+            "run"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "hover": "query.mark_variant == 5"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "look",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "hover": "query.mark_variant == 5"
+            },
+            {
+              "stand": "query.is_on_ground"
+            }
+          ]
+        },
+        "hover": {
+          "animations": [
+            "look",
+            "hover"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "stand": "query.mark_variant != 5"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.magneto.action": {
+      "initial_state": "none",
+      "states": {
+        "none": {
+          "animations": [],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "attack": "query.mark_variant == 1"
+            },
+            {
+              "tech": "query.mark_variant == 2"
+            },
+            {
+              "hurt": "query.mark_variant == 3"
+            },
+            {
+              "ult": "query.mark_variant == 4"
+            },
+            {
+              "death": "query.is_alive == 0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 1"
+            }
+          ]
+        },
+        "tech": {
+          "animations": [
+            "tech"
+          ],
+          "blend_transition": 0.12,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 2"
+            }
+          ]
+        },
+        "hurt": {
+          "animations": [
+            "hurt"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 3"
+            }
+          ]
+        },
+        "ult": {
+          "animations": [
+            "ult"
+          ],
+          "blend_transition": 0.25,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 4"
+            }
+          ]
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    },
+    "controller.animation.marvel.sentinel.general": {
+      "initial_state": "stand",
+      "states": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "look",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "stand": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.sentinel.action": {
+      "initial_state": "none",
+      "states": {
+        "none": {
+          "animations": [],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "beam": "query.mark_variant == 2"
+            },
+            {
+              "stomp": "query.mark_variant == 1"
+            },
+            {
+              "scan": "query.mark_variant == 5"
+            },
+            {
+              "hurt": "query.mark_variant == 3"
+            },
+            {
+              "death": "query.is_alive == 0"
+            }
+          ]
+        },
+        "beam": {
+          "animations": [
+            "beam"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 2"
+            }
+          ]
+        },
+        "stomp": {
+          "animations": [
+            "stomp"
+          ],
+          "blend_transition": 0.14,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 1"
+            }
+          ]
+        },
+        "scan": {
+          "animations": [
+            "scan"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 5"
+            }
+          ]
+        },
+        "hurt": {
+          "animations": [
+            "hurt"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "none": "query.mark_variant != 3"
+            }
+          ]
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_repulse": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_attract": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_disarm": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_lance": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_flight": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_sight": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_barrier": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_shard_storm": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_iron_bind": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_crush": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_uprising": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_emp": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_polarity": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_throne": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.magneto_form_sphere": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.mystique_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.mystique_form_shapeshift": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.mystique_form_venom_strike": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.mystique_form_vanish": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.sabretooth_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.sabretooth_form_rend": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.sabretooth_form_feral_roar": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.sabretooth_form_regenerate": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.toad_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.toad_form_tongue_lash": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.toad_form_leap": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.toad_form_slime_spit": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.juggernaut_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.juggernaut_form_unstoppable": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.juggernaut_form_quake_stomp": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.juggernaut_form_hurl": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.quicksilver_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.quicksilver_form_blitz": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.quicksilver_form_afterimage": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.quicksilver_form_sonic_dash": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.pyro_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.pyro_form_flame_wave": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.pyro_form_fire_serpent": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.pyro_form_ignite": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.avalanche_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.avalanche_form_tremor": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.avalanche_form_rockfall": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.avalanche_form_fissure": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.blob_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.blob_form_immovable": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.blob_form_belly_bounce": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.blob_form_body_slam": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.scarlet_witch_form": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air"
+          ],
+          "blend_transition": 0.16,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.scarlet_witch_form_hex_bolt": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.scarlet_witch_form_chaos_field": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.form.scarlet_witch_form_telekinesis": {
+      "initial_state": "base",
+      "states": {
+        "base": {
+          "animations": [
+            "idle",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "idle",
+            "walk",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "sprint": {
+          "animations": [
+            "idle",
+            "sprint",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "walk": "!query.is_sprinting"
+            }
+          ]
+        },
+        "crouch": {
+          "animations": [
+            "idle",
+            "crouch",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "!query.is_sneaking"
+            }
+          ]
+        },
+        "air": {
+          "animations": [
+            "idle",
+            "air",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "swim": "query.is_in_water"
+            },
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        },
+        "swim": {
+          "animations": [
+            "idle",
+            "swim",
+            "pose"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "base": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.fp.tech": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.14,
+          "transitions": [
+            {
+              "act": "query.is_using_item"
+            }
+          ]
+        },
+        "act": {
+          "animations": [
+            "idle",
+            "act"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "idle": "!query.is_using_item"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.cape": {
+      "initial_state": "still",
+      "states": {
+        "still": {
+          "animations": [
+            "cape_idle"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "moving": "query.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "moving": {
+          "animations": [
+            "cape_move"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "still": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.marvel.prop.spin": {
+      "initial_state": "spin",
+      "states": {
+        "spin": {
+          "animations": [
+            "spin"
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    }
+  }
+}

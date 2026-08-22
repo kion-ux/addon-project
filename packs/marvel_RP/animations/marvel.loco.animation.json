@@ -1,0 +1,3903 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.marvel.look_at_target": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": [
+            "math.clamp(query.target_x_rotation, -40, 40)",
+            "math.clamp(query.target_y_rotation, -64, 64)",
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            "math.clamp(query.target_x_rotation, -40, 40) * 0.30",
+            "math.clamp(query.target_y_rotation, -64, 64) * 0.32",
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.humanoid.idle": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "math.cos(query.anim_time * 62) * 0.7",
+            0,
+            "math.cos(query.anim_time * 31) * 0.5"
+          ],
+          "position": [
+            0,
+            "math.cos(query.anim_time * 62 + 90) * 0.1",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            "(math.cos(query.anim_time * 62 + 40) * 0.9 + math.sin(query.anim_time * 23 + 40) * 0.36000000000000004)",
+            0,
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            "math.cos(query.anim_time * 62 + 80) * 0.6",
+            "math.cos(query.anim_time * 21) * 1.6",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 58) * 2.0",
+            0,
+            "-3 - math.cos(query.anim_time * 58) * 1.2"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 58 + 180) * 2.0",
+            0,
+            "3 + math.cos(query.anim_time * 58 + 180) * 1.2"
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "math.cos(query.anim_time * 58 + 40) * 1.6",
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            "math.cos(query.anim_time * 58 + 220) * 1.6",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.humanoid.walk": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            2,
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 1.6 * query.modified_move_speed"
+          ],
+          "position": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 2.0) * 0.3 * query.modified_move_speed",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 3.2 * query.modified_move_speed",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 42 * query.modified_move_speed",
+            0,
+            -3
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 42 * query.modified_move_speed",
+            0,
+            3
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 90) * 26 * query.modified_move_speed, -6, 44)",
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 270) * 26 * query.modified_move_speed, -6, 44)",
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 46 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 46 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 250) * 40 * query.modified_move_speed, 0, 62)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 70) * 40 * query.modified_move_speed, 0, 62)",
+            0,
+            0
+          ]
+        },
+        "rightFoot": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 190) * 16 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftFoot": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 10) * 16 * query.modified_move_speed",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.humanoid.run": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            12,
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 2.4 * query.modified_move_speed"
+          ],
+          "position": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 2.0) * 0.5 * query.modified_move_speed",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            4,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 6.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            -10,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 64 * query.modified_move_speed",
+            0,
+            -8
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 64 * query.modified_move_speed",
+            0,
+            8
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "-52 + math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 90) * 30 * query.modified_move_speed, -8, 40)",
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            "-52 + math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 270) * 30 * query.modified_move_speed, -8, 40)",
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 62 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 62 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 250) * 66 * query.modified_move_speed, 0, 92)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 70) * 66 * query.modified_move_speed, 0, 92)",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.humanoid.air": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            -6,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -38,
+            0,
+            -22
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -38,
+            0,
+            22
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            16,
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -12,
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            28,
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            12,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.humanoid.sneak": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            24,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            -2.2,
+            2.0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            -6,
+            0,
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            -14,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -14,
+            0,
+            -6
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -14,
+            0,
+            6
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            -8,
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -8,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.humanoid.attack": {
+      "loop": false,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                -3
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.10": {
+              "post": [
+                -138,
+                -22,
+                -10
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.26": {
+              "post": [
+                48,
+                16,
+                4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                0,
+                0,
+                -3
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightForearm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.10": {
+              "post": [
+                -52,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.26": {
+              "post": [
+                26,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "body": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.10": {
+              "post": [
+                -4,
+                24,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.26": {
+              "post": [
+                6,
+                -20,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.10": {
+              "post": [
+                -8,
+                -18,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.26": {
+              "post": [
+                6,
+                14,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 0.5
+    },
+    "animation.marvel.humanoid.hurt": {
+      "loop": false,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.08": {
+              "post": [
+                -15,
+                0,
+                7
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.3": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.08": {
+              "post": [
+                17,
+                0,
+                -9
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.3": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 0.3
+    },
+    "animation.marvel.humanoid.death": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.35": {
+              "post": [
+                -26,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.2": {
+              "post": [
+                0,
+                0,
+                88
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.2": {
+              "post": [
+                0,
+                -7,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.2": {
+              "post": [
+                28,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.2": {
+              "post": [
+                -30,
+                0,
+                -42
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.2": {
+              "post": [
+                -30,
+                0,
+                42
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 1.2
+    },
+    "animation.marvel.magneto.idle": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "math.cos(query.anim_time * 34) * 0.5",
+            0,
+            "math.cos(query.anim_time * 27) * 0.4"
+          ],
+          "position": [
+            0,
+            "(math.cos(query.anim_time * 34 + 0) * 0.5 + math.sin(query.anim_time * 23 + 0) * 0.2)",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            "math.cos(query.anim_time * 34 + 40) * 0.7",
+            0,
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            "math.cos(query.anim_time * 34 + 80) * 0.5",
+            "math.sin(query.anim_time * 9 + 0) * 1.4",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 34) * 1.4",
+            0,
+            "-4 - math.cos(query.anim_time * 34) * 1.0"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 34 + 180) * 1.4",
+            0,
+            "4 + math.cos(query.anim_time * 34 + 180) * 1.0"
+          ]
+        },
+        "rightHand": {
+          "rotation": [
+            "math.cos(query.anim_time * 46 + 20) * 3.0",
+            0,
+            0
+          ]
+        },
+        "leftHand": {
+          "rotation": [
+            "math.cos(query.anim_time * 46 + 200) * 3.0",
+            0,
+            0
+          ]
+        },
+        "cape0": {
+          "rotation": [
+            "4 + math.sin(query.anim_time * 15 + 0) * 3.0",
+            "math.sin(query.anim_time * 11 + 0) * 2.2",
+            "math.sin(query.anim_time * 13 + 0) * 1.6"
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "7 + math.sin(query.anim_time * 15 + 40) * 4.6",
+            "math.sin(query.anim_time * 11 + 55) * 3.2",
+            "math.sin(query.anim_time * 13 + 70) * 2.4000000000000004"
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "10 + math.sin(query.anim_time * 15 + 80) * 6.2",
+            "math.sin(query.anim_time * 11 + 110) * 4.2",
+            "math.sin(query.anim_time * 13 + 140) * 3.2"
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "13 + math.sin(query.anim_time * 15 + 120) * 7.800000000000001",
+            "math.sin(query.anim_time * 11 + 165) * 5.2",
+            "math.sin(query.anim_time * 13 + 210) * 4.0"
+          ]
+        }
+      }
+    },
+    "animation.marvel.magneto.walk": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            1,
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 1.0 * query.modified_move_speed"
+          ],
+          "position": [
+            0,
+            "1.2 + math.cos(query.modified_distance_moved * 38.17 * 2.0) * 0.24 * query.modified_move_speed",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 2.2 * query.modified_move_speed",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 26 * query.modified_move_speed",
+            0,
+            -5
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 26 * query.modified_move_speed",
+            0,
+            5
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 30 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 30 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 250) * 26 * query.modified_move_speed, 0, 48)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 70) * 26 * query.modified_move_speed, 0, 48)",
+            0,
+            0
+          ]
+        },
+        "cape0": {
+          "rotation": [
+            "6 + math.cos(query.modified_distance_moved * 38.17 * 1.0) * 5.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "10 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 30) * 7.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 220) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "14 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 60) * 9.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 260) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "18 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 90) * 11.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 300) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.magneto.run": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            8,
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 1.6 * query.modified_move_speed"
+          ],
+          "position": [
+            0,
+            "1.8 + math.cos(query.modified_distance_moved * 38.17 * 2.0) * 0.4 * query.modified_move_speed",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            3,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 4.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 44 * query.modified_move_speed",
+            0,
+            -8
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 44 * query.modified_move_speed",
+            0,
+            8
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 48 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 48 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "cape0": {
+          "rotation": [
+            "16 + math.cos(query.modified_distance_moved * 38.17 * 1.0) * 9.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "24 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 26) * 12.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 214) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "32 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 52) * 15.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 248) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "40 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 78) * 18.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 282) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.magneto.air": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            -8,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -30,
+            0,
+            -26
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -30,
+            0,
+            26
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            12,
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -10,
+            0,
+            0
+          ]
+        },
+        "cape0": {
+          "rotation": [
+            "26 + math.sin(query.anim_time * 21 + 0) * 5.0",
+            "math.sin(query.anim_time * 17 + 0) * 4.0",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "38 + math.sin(query.anim_time * 21 + 50) * 5.0",
+            "math.sin(query.anim_time * 17 + 60) * 4.0",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "50 + math.sin(query.anim_time * 21 + 100) * 5.0",
+            "math.sin(query.anim_time * 17 + 120) * 4.0",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "62 + math.sin(query.anim_time * 21 + 150) * 5.0",
+            "math.sin(query.anim_time * 17 + 180) * 4.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.magneto.hover": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "-4 + math.cos(query.anim_time * 21) * 1.6",
+            0,
+            "math.cos(query.anim_time * 17) * 1.2"
+          ],
+          "position": [
+            0,
+            "3.0 + (math.cos(query.anim_time * 21 + 0) * 1.4 + math.sin(query.anim_time * 23 + 0) * 0.5599999999999999)",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            "math.cos(query.anim_time * 21 + 60) * 1.2",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "-14 + math.cos(query.anim_time * 21) * 2.4",
+            0,
+            -18
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-14 + math.cos(query.anim_time * 21 + 180) * 2.4",
+            0,
+            18
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            -16,
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            -16,
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "6 + math.cos(query.anim_time * 19) * 1.6",
+            0,
+            -2
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "6 + math.cos(query.anim_time * 19 + 180) * 1.6",
+            0,
+            2
+          ]
+        },
+        "rightFoot": {
+          "rotation": [
+            28,
+            0,
+            0
+          ]
+        },
+        "leftFoot": {
+          "rotation": [
+            28,
+            0,
+            0
+          ]
+        },
+        "cape0": {
+          "rotation": [
+            "10 + math.sin(query.anim_time * 13 + 0) * 4.0",
+            "math.sin(query.anim_time * 11 + 0) * 3.4",
+            "math.sin(query.anim_time * 9 + 0) * 2.4"
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "16 + math.sin(query.anim_time * 13 + 45) * 4.0",
+            "math.sin(query.anim_time * 11 + 60) * 3.4",
+            "math.sin(query.anim_time * 9 + 30) * 2.4"
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "22 + math.sin(query.anim_time * 13 + 90) * 4.0",
+            "math.sin(query.anim_time * 11 + 120) * 3.4",
+            "math.sin(query.anim_time * 9 + 60) * 2.4"
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "28 + math.sin(query.anim_time * 13 + 135) * 4.0",
+            "math.sin(query.anim_time * 11 + 180) * 3.4",
+            "math.sin(query.anim_time * 9 + 90) * 2.4"
+          ]
+        }
+      }
+    },
+    "animation.marvel.magneto.levitate": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            -18,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            4.0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -58,
+            0,
+            -30
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -58,
+            0,
+            30
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            14,
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            14,
+            0,
+            0
+          ]
+        },
+        "rightFoot": {
+          "rotation": [
+            34,
+            0,
+            0
+          ]
+        },
+        "leftFoot": {
+          "rotation": [
+            34,
+            0,
+            0
+          ]
+        },
+        "cape0": {
+          "rotation": [
+            "34 + math.sin(query.anim_time * 27 + 0) * 7.0",
+            0,
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "48 + math.sin(query.anim_time * 27 + 40) * 7.0",
+            0,
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "62 + math.sin(query.anim_time * 27 + 80) * 7.0",
+            0,
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "76 + math.sin(query.anim_time * 27 + 120) * 7.0",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.magneto.enthrone": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            -2,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            -3.0,
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            -4,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -8,
+            0,
+            -14
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -8,
+            0,
+            14
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            -46,
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            -46,
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            -72,
+            0,
+            -4
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -72,
+            0,
+            4
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            74,
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            74,
+            0,
+            0
+          ]
+        },
+        "cape0": {
+          "rotation": [
+            "2 + math.sin(query.anim_time * 11 + 0) * 2.0",
+            0,
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "4 + math.sin(query.anim_time * 11 + 50) * 2.0",
+            0,
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "6 + math.sin(query.anim_time * 11 + 100) * 2.0",
+            0,
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "8 + math.sin(query.anim_time * 11 + 150) * 2.0",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.magneto.cape_idle": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "4 + math.sin(query.anim_time * 15 + 0) * 3.0",
+            "math.sin(query.anim_time * 11 + 0) * 2.2",
+            "math.sin(query.anim_time * 13 + 0) * 1.6"
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "7 + math.sin(query.anim_time * 15 + 40) * 4.6",
+            "math.sin(query.anim_time * 11 + 55) * 3.2",
+            "math.sin(query.anim_time * 13 + 70) * 2.4000000000000004"
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "10 + math.sin(query.anim_time * 15 + 80) * 6.2",
+            "math.sin(query.anim_time * 11 + 110) * 4.2",
+            "math.sin(query.anim_time * 13 + 140) * 3.2"
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "13 + math.sin(query.anim_time * 15 + 120) * 7.800000000000001",
+            "math.sin(query.anim_time * 11 + 165) * 5.2",
+            "math.sin(query.anim_time * 13 + 210) * 4.0"
+          ]
+        }
+      },
+      "blend_weight": 0.9
+    },
+    "animation.marvel.magneto.cape_move": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "10 + math.cos(query.modified_distance_moved * 38.17 * 1.0) * 8.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 4.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 2.0 * query.modified_move_speed"
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "16 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 30) * 11.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 220) * 4.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 20) * 2.0 * query.modified_move_speed"
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "22 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 60) * 14.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 260) * 4.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 40) * 2.0 * query.modified_move_speed"
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "28 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 90) * 17.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 300) * 4.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 60) * 2.0 * query.modified_move_speed"
+          ]
+        }
+      },
+      "blend_weight": 0.9
+    },
+    "animation.marvel.form.idle": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "5 + math.sin(query.anim_time * 14 + 0) * 3.4",
+            "math.sin(query.anim_time * 10 + 0) * 2.4",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "9 + math.sin(query.anim_time * 14 + 42) * 4.8",
+            "math.sin(query.anim_time * 10 + 58) * 3.4",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "13 + math.sin(query.anim_time * 14 + 84) * 6.199999999999999",
+            "math.sin(query.anim_time * 10 + 116) * 4.4",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "17 + math.sin(query.anim_time * 14 + 126) * 7.6",
+            "math.sin(query.anim_time * 10 + 174) * 5.4",
+            0
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            "(math.cos(query.anim_time * 30 + 0) * 0.35 + math.sin(query.anim_time * 23 + 0) * 0.13999999999999999)",
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            "math.cos(query.anim_time * 30 + 60) * 0.6",
+            0,
+            0
+          ]
+        }
+      },
+      "blend_weight": 0.85
+    },
+    "animation.marvel.form.walk": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "8 + math.cos(query.modified_distance_moved * 38.17 * 1.0) * 6.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "13 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 28) * 8.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 216) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "18 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 56) * 10.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 252) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "23 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 84) * 12.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 288) * 3.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 2.0) * 0.2 * query.modified_move_speed",
+            0
+          ]
+        }
+      },
+      "blend_weight": 0.85
+    },
+    "animation.marvel.form.run": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "18 + math.cos(query.modified_distance_moved * 38.17 * 1.0) * 10.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "27 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 24) * 13.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 212) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "36 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 48) * 16.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 244) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "45 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 72) * 19.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 276) * 5.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "body": {
+          "rotation": [
+            4,
+            0,
+            0
+          ]
+        }
+      },
+      "blend_weight": 0.85
+    },
+    "animation.marvel.form.sprint": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "28 + math.cos(query.modified_distance_moved * 38.17 * 1.0) * 13.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 6.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "40 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 20) * 17.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 208) * 6.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "52 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 40) * 21.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 236) * 6.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "64 + math.cos(query.modified_distance_moved * 38.17 * 1.0 + 60) * 25.0 * query.modified_move_speed",
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 264) * 6.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "body": {
+          "rotation": [
+            8,
+            0,
+            0
+          ]
+        }
+      },
+      "blend_weight": 0.85
+    },
+    "animation.marvel.form.crouch": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "-4 + math.sin(query.anim_time * 12 + 0) * 2.0",
+            0,
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "-7 + math.sin(query.anim_time * 12 + 40) * 2.0",
+            0,
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "-10 + math.sin(query.anim_time * 12 + 80) * 2.0",
+            0,
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "-13 + math.sin(query.anim_time * 12 + 120) * 2.0",
+            0,
+            0
+          ]
+        }
+      },
+      "blend_weight": 0.85
+    },
+    "animation.marvel.form.air": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "30 + math.sin(query.anim_time * 23 + 0) * 6.0",
+            "math.sin(query.anim_time * 19 + 0) * 4.0",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "43 + math.sin(query.anim_time * 23 + 44) * 6.0",
+            "math.sin(query.anim_time * 19 + 52) * 4.0",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "56 + math.sin(query.anim_time * 23 + 88) * 6.0",
+            "math.sin(query.anim_time * 19 + 104) * 4.0",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "69 + math.sin(query.anim_time * 23 + 132) * 6.0",
+            "math.sin(query.anim_time * 19 + 156) * 4.0",
+            0
+          ]
+        }
+      },
+      "blend_weight": 0.85
+    },
+    "animation.marvel.form.swim": {
+      "loop": true,
+      "bones": {
+        "cape0": {
+          "rotation": [
+            "40 + math.sin(query.anim_time * 9 + 0) * 8.0",
+            "math.sin(query.anim_time * 7 + 0) * 6.0",
+            0
+          ]
+        },
+        "cape1": {
+          "rotation": [
+            "50 + math.sin(query.anim_time * 9 + 50) * 8.0",
+            "math.sin(query.anim_time * 7 + 60) * 6.0",
+            0
+          ]
+        },
+        "cape2": {
+          "rotation": [
+            "60 + math.sin(query.anim_time * 9 + 100) * 8.0",
+            "math.sin(query.anim_time * 7 + 120) * 6.0",
+            0
+          ]
+        },
+        "cape3": {
+          "rotation": [
+            "70 + math.sin(query.anim_time * 9 + 150) * 8.0",
+            "math.sin(query.anim_time * 7 + 180) * 6.0",
+            0
+          ]
+        }
+      },
+      "blend_weight": 0.85
+    },
+    "animation.marvel.fp.idle": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": [
+            "math.cos(query.anim_time * 26) * 1.6",
+            "math.cos(query.anim_time * 21 + 40) * 1.2",
+            0
+          ],
+          "position": [
+            0,
+            "(math.cos(query.anim_time * 26 + 0) * 0.3 + math.sin(query.anim_time * 23 + 0) * 0.12)",
+            0
+          ]
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 55"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 46) * 0.08",
+            "1 + math.cos(query.anim_time * 46) * 0.08",
+            "1 + math.cos(query.anim_time * 46) * 0.08"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 140"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 140"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 140"
+          ]
+        }
+      }
+    },
+    "animation.marvel.fp.third": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-8 + math.cos(query.anim_time * 24) * 2.0",
+            0,
+            0
+          ],
+          "position": [
+            0,
+            "math.cos(query.anim_time * 24 + 40) * 0.24",
+            -1.0
+          ]
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 90"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 150"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 150"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 150"
+          ]
+        }
+      }
+    },
+    "animation.marvel.fp.thrust": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.08": {
+              "post": [
+                24,
+                -8,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.2": {
+              "post": [
+                -34,
+                6,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.42": {
+              "post": [
+                -8,
+                2,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.62": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.08": {
+              "post": [
+                0,
+                -1.0,
+                3.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.2": {
+              "post": [
+                0,
+                1.6,
+                -7.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.42": {
+              "post": [
+                0,
+                0.4,
+                -1.5
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.62": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 420"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 672.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 672.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 672.0"
+          ]
+        }
+      },
+      "animation_length": 0.62
+    },
+    "animation.marvel.fp.pull": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                -18,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
+              "post": [
+                -30,
+                -6,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.34": {
+              "post": [
+                22,
+                8,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                -3.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
+              "post": [
+                0,
+                0.8,
+                -5.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.34": {
+              "post": [
+                0,
+                -0.6,
+                4.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * -380"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * -608.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * -608.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * -608.0"
+          ]
+        }
+      },
+      "animation_length": 0.6
+    },
+    "animation.marvel.fp.grip": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                4,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.1": {
+              "post": [
+                -16,
+                -10,
+                8
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.3": {
+              "post": [
+                -24,
+                -4,
+                -6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.58": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.1": {
+              "post": [
+                0,
+                0.6,
+                -2.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.3": {
+              "post": [
+                0,
+                0.2,
+                -3.4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.58": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 260"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 416.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 416.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 416.0"
+          ]
+        }
+      },
+      "animation_length": 0.58
+    },
+    "animation.marvel.fp.lance": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                8,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.1": {
+              "post": [
+                34,
+                -14,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.18": {
+              "post": [
+                -46,
+                8,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.4": {
+              "post": [
+                -6,
+                2,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.1": {
+              "post": [
+                0,
+                -1.2,
+                4.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.18": {
+              "post": [
+                0,
+                2.0,
+                -9.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.4": {
+              "post": [
+                0,
+                0.3,
+                -1.2
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 520"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 832.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 832.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 832.0"
+          ]
+        }
+      },
+      "animation_length": 0.6
+    },
+    "animation.marvel.fp.storm": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.16": {
+              "post": [
+                -48,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.44": {
+              "post": [
+                -56,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.72": {
+              "post": [
+                -20,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.95": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.16": {
+              "post": [
+                0,
+                3.0,
+                1.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.44": {
+              "post": [
+                0,
+                3.6,
+                0.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.72": {
+              "post": [
+                0,
+                1.2,
+                0.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.95": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 680"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 1088.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 1088.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 1088.0"
+          ]
+        }
+      },
+      "animation_length": 0.95
+    },
+    "animation.marvel.fp.guard": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
+              "post": [
+                -22,
+                26,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.4": {
+              "post": [
+                -16,
+                20,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.7": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
+              "post": [
+                -1.4,
+                0.8,
+                -2.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.4": {
+              "post": [
+                -1.0,
+                0.6,
+                -1.4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.7": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 200"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 320.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 320.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 320.0"
+          ]
+        }
+      },
+      "animation_length": 0.7
+    },
+    "animation.marvel.fp.crush": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                4,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
+              "post": [
+                -30,
+                -12,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.28": {
+              "post": [
+                -38,
+                -6,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.4": {
+              "post": [
+                -10,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.66": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
+              "post": [
+                0,
+                1.2,
+                -3.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.28": {
+              "post": [
+                0,
+                1.6,
+                -4.4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.4": {
+              "post": [
+                0,
+                0.2,
+                -0.6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.66": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * -300"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * -480.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * -480.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * -480.0"
+          ]
+        }
+      },
+      "animation_length": 0.66
+    },
+    "animation.marvel.fp.raise": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.14": {
+              "post": [
+                -62,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.46": {
+              "post": [
+                -70,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.8": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.14": {
+              "post": [
+                0,
+                3.4,
+                1.2
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.46": {
+              "post": [
+                0,
+                4.0,
+                0.6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.8": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 340"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 544.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 544.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 544.0"
+          ]
+        }
+      },
+      "animation_length": 0.8
+    },
+    "animation.marvel.fp.pulse": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.1": {
+              "post": [
+                -14,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.18": {
+              "post": [
+                -4,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.46": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.1": {
+              "post": [
+                0,
+                0.6,
+                -1.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.18": {
+              "post": [
+                0,
+                0.2,
+                -4.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.46": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 900"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 1440.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 1440.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 1440.0"
+          ]
+        }
+      },
+      "animation_length": 0.46
+    },
+    "animation.marvel.fp.fly": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                -14,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                -18,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.0": {
+              "post": [
+                -14,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                -0.6,
+                -1.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                0,
+                0.2,
+                -1.4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.0": {
+              "post": [
+                0,
+                -0.6,
+                -1.0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 240"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 384.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 384.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 384.0"
+          ]
+        }
+      },
+      "animation_length": 1.0
+    },
+    "animation.marvel.fp.focus": {
+      "loop": false,
+      "bones": {
+        "root": {
+          "rotation": {
+            "0": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.2": {
+              "post": [
+                -28,
+                14,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                -30,
+                14,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.9": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.2": {
+              "post": [
+                -1.6,
+                1.4,
+                1.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                -1.6,
+                1.5,
+                1.0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.9": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "field": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 160"
+          ]
+        },
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16",
+            "1 + math.cos(query.anim_time * 90) * 0.16"
+          ]
+        },
+        "shard0": {
+          "rotation": [
+            0,
+            0,
+            "query.anim_time * 256.0"
+          ]
+        },
+        "shard1": {
+          "rotation": [
+            0,
+            0,
+            "120 + query.anim_time * 256.0"
+          ]
+        },
+        "shard2": {
+          "rotation": [
+            0,
+            0,
+            "240 + query.anim_time * 256.0"
+          ]
+        }
+      },
+      "animation_length": 0.9
+    },
+    "animation.marvel.sentinel.idle": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "math.cos(query.anim_time * 18) * 0.4",
+            0,
+            "math.cos(query.anim_time * 13) * 0.3"
+          ],
+          "position": [
+            0,
+            "math.cos(query.anim_time * 18 + 90) * 0.16",
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            "math.cos(query.anim_time * 14 + 40) * 0.5",
+            "math.sin(query.anim_time * 7 + 0) * 6.0",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 18) * 0.8",
+            0,
+            -4
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 18 + 180) * 0.8",
+            0,
+            4
+          ]
+        }
+      }
+    },
+    "animation.marvel.sentinel.walk": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            3,
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 2.6 * query.modified_move_speed"
+          ],
+          "position": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 2.0) * 0.6 * query.modified_move_speed",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 2.0 * query.modified_move_speed",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 26 * query.modified_move_speed",
+            0,
+            -5
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 26 * query.modified_move_speed",
+            0,
+            5
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 180) * 34 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0) * 34 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 250) * 30 * query.modified_move_speed, 0, 46)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos(query.modified_distance_moved * 38.17 * 1.0 + 70) * 30 * query.modified_move_speed, 0, 46)",
+            0,
+            0
+          ]
+        },
+        "rightFoot": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 190) * 12 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftFoot": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 * 1.0 + 10) * 12 * query.modified_move_speed",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.sentinel.beam": {
+      "loop": false,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                -4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.35": {
+              "post": [
+                -96,
+                -12,
+                -6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.1": {
+              "post": [
+                -98,
+                -12,
+                -6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.6": {
+              "post": [
+                0,
+                0,
+                -4
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightForearm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.35": {
+              "post": [
+                -12,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.1": {
+              "post": [
+                -8,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.6": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.45": {
+              "post": [
+                -92,
+                14,
+                6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.1": {
+              "post": [
+                -94,
+                14,
+                6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.6": {
+              "post": [
+                0,
+                0,
+                4
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.35": {
+              "post": [
+                -10,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.6": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "chest": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.35": {
+              "post": [
+                -6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.6": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 1.6
+    },
+    "animation.marvel.sentinel.stomp": {
+      "loop": false,
+      "bones": {
+        "body": {
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.30": {
+              "post": [
+                0,
+                6,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.50": {
+              "post": [
+                0,
+                -3,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.9": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightLeg": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.30": {
+              "post": [
+                -52,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.50": {
+              "post": [
+                16,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.9": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightShin": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.30": {
+              "post": [
+                64,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.50": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.9": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                -4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.30": {
+              "post": [
+                -34,
+                0,
+                -18
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.50": {
+              "post": [
+                22,
+                0,
+                -4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.9": {
+              "post": [
+                0,
+                0,
+                -4
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.30": {
+              "post": [
+                -34,
+                0,
+                18
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.50": {
+              "post": [
+                22,
+                0,
+                4
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.9": {
+              "post": [
+                0,
+                0,
+                4
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 0.9
+    },
+    "animation.marvel.sentinel.scan": {
+      "loop": false,
+      "bones": {
+        "head": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                0,
+                -52,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.2": {
+              "post": [
+                0,
+                52,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.8": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "chest": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                0,
+                -14,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.2": {
+              "post": [
+                0,
+                14,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.8": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 1.8
+    },
+    "animation.marvel.sentinel.hurt": {
+      "loop": false,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.10": {
+              "post": [
+                -8,
+                0,
+                5
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.36": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.10": {
+              "post": [
+                10,
+                0,
+                -6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.36": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 0.36
+    },
+    "animation.marvel.sentinel.death": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                -18,
+                0,
+                6
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.1": {
+              "post": [
+                10,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "2.2": {
+              "post": [
+                0,
+                0,
+                84
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          },
+          "position": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "2.2": {
+              "post": [
+                0,
+                -12,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.5": {
+              "post": [
+                -24,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "2.2": {
+              "post": [
+                36,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.1": {
+              "post": [
+                -52,
+                0,
+                -30
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "2.2": {
+              "post": [
+                -18,
+                0,
+                -46
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "1.1": {
+              "post": [
+                -52,
+                0,
+                30
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "2.2": {
+              "post": [
+                -18,
+                0,
+                46
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "rightLeg": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "2.2": {
+              "post": [
+                -26,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "leftLeg": {
+          "rotation": {
+            "0": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "2.2": {
+              "post": [
+                -14,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        }
+      },
+      "animation_length": 2.2
+    },
+    "animation.marvel.prop.spin": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "query.anim_time * 210",
+            "query.anim_time * 340",
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.prop.orbit": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            0,
+            "query.anim_time * 260",
+            0
+          ],
+          "position": [
+            0,
+            "math.cos(query.anim_time * 42) * 1.4",
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.prop.pulse": {
+      "loop": true,
+      "bones": {
+        "core": {
+          "scale": [
+            "1 + math.cos(query.anim_time * 78) * 0.22",
+            "1 + math.cos(query.anim_time * 78) * 0.22",
+            "1 + math.cos(query.anim_time * 78) * 0.22"
+          ]
+        },
+        "ring": {
+          "rotation": [
+            0,
+            "query.anim_time * 190",
+            0
+          ]
+        }
+      }
+    },
+    "animation.marvel.prop.drift": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "math.sin(query.anim_time * 11 + 0) * 6.0",
+            "query.anim_time * 40",
+            "math.sin(query.anim_time * 13 + 50) * 5.0"
+          ],
+          "position": [
+            "math.sin(query.anim_time * 9 + 0) * 0.6",
+            "math.sin(query.anim_time * 7 + 30) * 1.0",
+            "math.sin(query.anim_time * 8 + 60) * 0.6"
+          ]
+        }
+      }
+    }
+  }
+}

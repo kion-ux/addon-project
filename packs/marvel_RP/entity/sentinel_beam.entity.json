@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:sentinel_beam",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/sentinel_beam"
+      },
+      "geometry": {
+        "default": "geometry.marvel.sentinel_beam"
+      },
+      "animations": {
+        "spin": "animation.marvel.prop.spin",
+        "controller": "controller.animation.marvel.prop.spin"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "trail": "marvel:sentinel_beam_trail"
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:metal_scrap",
+      "menu_category": {
+        "category": "items",
+        "group": "itemGroup.name.miscFood"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "metal_scrap"
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:metal_scrap"
+      },
+      "minecraft:hand_equipped": true
+    }
+  }
+}

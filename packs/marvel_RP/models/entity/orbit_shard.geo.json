@@ -1,0 +1,180 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.marvel.orbit_shard",
+        "texture_width": 128,
+        "texture_height": 128,
+        "visible_bounds_width": 1.0,
+        "visible_bounds_height": 1.0,
+        "visible_bounds_offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "body",
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -1.0,
+                -1.0,
+                -2.6
+              ],
+              "size": [
+                2.0,
+                2.0,
+                5.2
+              ],
+              "uv": {
+                "up": {
+                  "uv": [
+                    31,
+                    0
+                  ],
+                  "uv_size": [
+                    12,
+                    31
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    43,
+                    0
+                  ],
+                  "uv_size": [
+                    12,
+                    31
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    0,
+                    31
+                  ],
+                  "uv_size": [
+                    31,
+                    12
+                  ]
+                },
+                "north": {
+                  "uv": [
+                    31,
+                    31
+                  ],
+                  "uv_size": [
+                    12,
+                    12
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    43,
+                    31
+                  ],
+                  "uv_size": [
+                    31,
+                    12
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    74,
+                    31
+                  ],
+                  "uv_size": [
+                    12,
+                    12
+                  ]
+                }
+              }
+            },
+            {
+              "origin": [
+                -0.5,
+                -2.2,
+                -1.2
+              ],
+              "size": [
+                1.0,
+                4.4,
+                2.4
+              ],
+              "uv": {
+                "up": {
+                  "uv": [
+                    101,
+                    0
+                  ],
+                  "uv_size": [
+                    6,
+                    14
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    107,
+                    0
+                  ],
+                  "uv_size": [
+                    6,
+                    14
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    87,
+                    14
+                  ],
+                  "uv_size": [
+                    14,
+                    26
+                  ]
+                },
+                "north": {
+                  "uv": [
+                    101,
+                    14
+                  ],
+                  "uv_size": [
+                    6,
+                    26
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    107,
+                    14
+                  ],
+                  "uv_size": [
+                    14,
+                    26
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    121,
+                    14
+                  ],
+                  "uv_size": [
+                    6,
+                    26
+                  ]
+                }
+              },
+              "inflate": -0.3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

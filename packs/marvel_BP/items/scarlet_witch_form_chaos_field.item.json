@@ -1,0 +1,18 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:scarlet_witch_form_chaos_field"
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "scarlet_witch_form_chaos_field"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:scarlet_witch_form_chaos_field"
+      }
+    }
+  }
+}

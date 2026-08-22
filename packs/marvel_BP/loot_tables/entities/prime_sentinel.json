@@ -1,0 +1,43 @@
+{
+  "pools": [
+    {
+      "rolls": {
+        "min": 2,
+        "max": 4
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "marvel:sentinel_core",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "min": 1,
+        "max": 1
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "marvel:adamantium_ingot",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "min": 6,
+        "max": 14
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "marvel:metal_scrap",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

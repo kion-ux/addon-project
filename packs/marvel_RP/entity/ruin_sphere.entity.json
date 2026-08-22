@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:ruin_sphere",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/ruin_sphere"
+      },
+      "geometry": {
+        "default": "geometry.marvel.ruin_sphere"
+      },
+      "animations": {
+        "spin": "animation.marvel.prop.pulse",
+        "controller": "controller.animation.marvel.prop.spin"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.hologram"
+      ],
+      "particle_effects": {
+        "orbit": "marvel:sphere_orbit"
+      }
+    }
+  }
+}

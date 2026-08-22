@@ -1,0 +1,18 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:quicksilver_form"
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "quicksilver_form"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:quicksilver_form"
+      }
+    }
+  }
+}
