@@ -33,6 +33,120 @@ export function fxScatter(dimension, id, centre, count, spread = 1.0) {
   }
 }
 
+// ---------------------------------------------------------------------------
+//  形のある演出
+//  技ごとの見た目を変えるには、同じ粒でも「どう並べるか」を変えるのが一番効く。
+//  以下は視線から右手系の基底を作って、その上に弧・螺旋・柱・扇・幕を描く。
+// ---------------------------------------------------------------------------
+function basis(dir) {
+  const len = Math.hypot(dir.x, dir.y, dir.z) || 1;
+  const f = { x: dir.x / len, y: dir.y / len, z: dir.z / len };
+  // 視線がほぼ真上・真下でも破綻しないよう、参照軸を選び直す
+  const up = Math.abs(f.y) > 0.94 ? { x: 0, y: 0, z: 1 } : { x: 0, y: 1, z: 0 };
+  let r = {
+    x: f.y * up.z - f.z * up.y,
+    y: f.z * up.x - f.x * up.z,
+    z: f.x * up.y - f.y * up.x,
+  };
+  const rl = Math.hypot(r.x, r.y, r.z) || 1;
+  r = { x: r.x / rl, y: r.y / rl, z: r.z / rl };
+  const u = {
+    x: r.y * f.z - r.z * f.y,
+    y: r.z * f.x - r.x * f.z,
+    z: r.x * f.y - r.y * f.x,
+  };
+  return { f, r, u };
+}
+
+function at(origin, b, a, bb, c) {
+  return {
+    x: origin.x + b.f.x * a + b.r.x * bb + b.u.x * c,
+    y: origin.y + b.f.y * a + b.r.y * bb + b.u.y * c,
+    z: origin.z + b.f.z * a + b.r.z * bb + b.u.z * c,
+  };
+}
+
+/** 薙ぎ払いの弧。視線を中心に sweep 度ぶん、半径 radius で並べる。 */
+export function fxArc(dimension, id, origin, dir, radius, sweepDeg = 150,
+                      steps = 9, tilt = 0) {
+  const b = basis(dir);
+  const half = (sweepDeg * Math.PI) / 360;
+  for (let i = 0; i < steps; i++) {
+    const a = -half + (i / Math.max(1, steps - 1)) * half * 2;
+    fx(dimension, id, at(origin, b, Math.cos(a) * radius,
+                         Math.sin(a) * radius, tilt));
+  }
+}
+
+/** 螺旋。回天のような回転系に。 */
+export function fxSpiral(dimension, id, origin, dir, length, turns = 2,
+                         steps = 16, radius = 1.1) {
+  const b = basis(dir);
+  for (let i = 0; i < steps; i++) {
+    const t = i / Math.max(1, steps - 1);
+    const a = t * Math.PI * 2 * turns;
+    fx(dimension, id, at(origin, b, t * length,
+                         Math.cos(a) * radius, Math.sin(a) * radius));
+  }
+}
+
+/** 垂直の柱。落雷や噴出に。 */
+export function fxColumn(dimension, id, base, height, steps = 8, jitter = 0.25) {
+  for (let i = 0; i < steps; i++) {
+    const t = i / Math.max(1, steps - 1);
+    fx(dimension, id, {
+      x: base.x + (Math.random() - 0.5) * jitter * 2,
+      y: base.y + t * height,
+      z: base.z + (Math.random() - 0.5) * jitter * 2,
+    });
+  }
+}
+
+/** 前方に広がる扇。散弾・炎雨のばら撒きに。 */
+export function fxCone(dimension, id, origin, dir, length, spread = 0.5,
+                       count = 12) {
+  const b = basis(dir);
+  for (let i = 0; i < count; i++) {
+    const d = (0.25 + Math.random() * 0.75) * length;
+    const w = (Math.random() - 0.5) * 2 * spread * d;
+    const h = (Math.random() - 0.5) * 2 * spread * d;
+    fx(dimension, id, at(origin, b, d, w, h));
+  }
+}
+
+/** 正面に立てる幕。斬幕砲火のような面の攻撃に。 */
+export function fxWall(dimension, id, origin, dir, distance, width, height,
+                       cols = 5, rows = 3) {
+  const b = basis(dir);
+  for (let c = 0; c < cols; c++) {
+    const w = (c / Math.max(1, cols - 1) - 0.5) * width;
+    for (let r = 0; r < rows; r++) {
+      const hgt = (r / Math.max(1, rows - 1) - 0.5) * height;
+      fx(dimension, id, at(origin, b, distance, w, hgt));
+    }
+  }
+}
+
+/** 何段かに分けて演出を出す。[[tick, fn], ...] */
+export function sequence(steps) {
+  for (const [ticks, fn] of steps) {
+    if (!ticks) { try { fn(); } catch (_) { } continue; }
+    later(ticks, () => { try { fn(); } catch (_) { } });
+  }
+}
+
+/** 動いている相手／自分に貼りつく尾。 */
+export function trail(entity, id, ticks = 8, every = 2, yOff = 1.0) {
+  for (let i = 0; i < ticks; i += every) {
+    later(i, () => {
+      try {
+        fx(entity.dimension, id,
+           { x: entity.location.x, y: entity.location.y + yOff, z: entity.location.z });
+      } catch (_) { }
+    });
+  }
+}
+
 export function sound(dimension, id, location, opts) {
   try { dimension.playSound(id, location, opts); } catch (_) { }
 }

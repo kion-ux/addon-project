@@ -246,7 +246,55 @@ for (let i = 0; i < 3; i++) {
   } }
 }
 
-// ------------------------------------------------- 9. release-rate ceilings
+// -------------------------------------- 9. the geometric effect helpers
+import { fxArc, fxSpiral, fxColumn, fxCone, fxWall, sequence, trail }
+  from "./effects.js";
+
+const dirs = [
+  { x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 },
+  { x: 0, y: -1, z: 0 }, { x: 0.577, y: 0.577, z: 0.577 },
+  { x: 0, y: 0, z: 0 },                     // 退化した視線でも落ちないこと
+];
+let emitted = 0;
+const spy = {
+  spawnParticle(id, loc) {
+    emitted++;
+    check("effect helpers never emit NaN",
+          Number.isFinite(loc.x) && Number.isFinite(loc.y) && Number.isFinite(loc.z),
+          `${id} at ${loc.x},${loc.y},${loc.z}`);
+  },
+  playSound() { }, getEntities() { return []; },
+};
+const origin = { x: 10, y: 70, z: -4 };
+for (const d of dirs) {
+  fxArc(spy, "kaiju8:slash_air", origin, d, 3.2, 170, 9);
+  fxSpiral(spy, "kaiju8:seam_glow", origin, d, 8, 2.5, 14, 1.1);
+  fxColumn(spy, "kaiju8:seam_glow", origin, 6, 8);
+  fxCone(spy, "kaiju8:muzzle_flash", origin, d, 9, 0.35, 10);
+  fxWall(spy, "kaiju8:slash_air", origin, d, 4, 5, 3, 5, 3);
+}
+check("the shape helpers emitted particles", emitted > 200, String(emitted));
+
+// 弧は原点から等距離に並ぶこと（半径が崩れていない）
+const radii = [];
+fxArc({ spawnParticle(_id, loc) {
+  radii.push(Math.hypot(loc.x - origin.x, loc.y - origin.y, loc.z - origin.z));
+} }, "x", origin, { x: 0, y: 0, z: 1 }, 3.2, 170, 9);
+check("every point on the arc sits on its radius",
+      radii.every((r) => Math.abs(r - 3.2) < 1e-6), radii.join(","));
+
+let staged = 0;
+sequence([[0, () => staged++], [2, () => staged++], [5, () => staged++]]);
+check("sequence runs its first stage immediately", staged === 1);
+globalThis.__pending.splice(0).forEach((f) => f());
+check("sequence queues the later stages", staged === 3, String(staged));
+
+trail({ dimension: spy, location: origin }, "kaiju8:afterimage", 8, 2);
+check("trail queues one emission per step",
+      globalThis.__pending.length === 4, String(globalThis.__pending.length));
+globalThis.__pending.splice(0).forEach((f) => f());
+
+// ------------------------------------------------ 10. release-rate ceilings
 check("release rate is capped without the suit", releaseRate(bare) <= 100);
 check("release rate is a number", Number.isFinite(releaseRate(worn)));
 
