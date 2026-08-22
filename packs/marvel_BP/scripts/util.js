@@ -139,3 +139,55 @@ export class Cooldowns {
 export function safe(fn) {
   try { return fn(); } catch (_) { return undefined; }
 }
+
+export function clamp(v, lo, hi) {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
+export function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+/** ブロック座標の鍵。磁化ペイントと剥がしたブロックの台帳が同じ書式を使う。 */
+export function posKey(dimensionId, pos) {
+  return `${dimensionId}|${Math.floor(pos.x)},${Math.floor(pos.y)},${Math.floor(pos.z)}`;
+}
+
+export function parsePosKey(key) {
+  const bar = key.indexOf("|");
+  if (bar < 0) return undefined;
+  const [x, y, z] = key.slice(bar + 1).split(",").map(Number);
+  if ([x, y, z].some((n) => !Number.isFinite(n))) return undefined;
+  return { dimensionId: key.slice(0, bar), x, y, z };
+}
+
+/**
+ * 動的プロパティに JSON を出し入れする。
+ *
+ * 文字列の動的プロパティは 32,767 バイトが上限で、超えると **例外ではなく
+ * 保存の失敗**として黙って消えることがある。書く側で必ず長さを見て、
+ * 入らないなら捨てる（呼び元は false を見て件数を減らせる）。
+ * 余裕を見て 30,000 で止める。
+ */
+export const JSON_PROP_LIMIT = 30000;
+
+export function readJson(holder, key, fallback) {
+  const text = safe(() => holder.getDynamicProperty(key));
+  if (typeof text !== "string" || !text) return fallback;
+  try {
+    const value = JSON.parse(text);
+    return value ?? fallback;
+  } catch (_) { return fallback; }
+}
+
+export function writeJson(holder, key, value) {
+  let text;
+  try { text = JSON.stringify(value); } catch (_) { return false; }
+  if (text.length > JSON_PROP_LIMIT) return false;
+  return safe(() => { holder.setDynamicProperty(key, text); return true; }) === true;
+}
+
+/** 段階を画面に出すときの見出し。言語に依らないのでどの翻訳でも読める。 */
+export function roman(n) {
+  return ["", "I", "II", "III", "IV", "V"][n] ?? String(n);
+}

@@ -9,17 +9,29 @@
 import { world, system, ItemStack, EquipmentSlot } from "@minecraft/server";
 import {
   PROP, TAG, ITEM, HERO, TECH, MAG_MAX, MAG_REGEN, MAG_REGEN_STAGE3,
-  MAG_DRAIN, STAGE_THRESHOLDS, FORM_ITEMS, FX, SOUND,
+  MAG_DRAIN, STAGE_THRESHOLDS, FORM_ITEMS, FX, SOUND, ENTITY,
 } from "./config.js";
 import {
-  actionbar, allPlayers, bar, bool, num, safe, setProp, str, tell, title, tr,
+  actionbar, allPlayers, bar, bool, num, readJson, roman, safe, setProp, str,
+  tell, title, tr, writeJson,
 } from "./util.js";
-import { chord, fade, fx, fxRing, fxScatter, shake, shakeNearby, sound } from "./effects.js";
+import {
+  chord, fade, fogPopAll, forgetFog, fx, fxRing, fxScatter, shake, shakeNearby,
+  sound,
+} from "./effects.js";
+import { scanMetal } from "./magnetism.js";
 
 const ARMOR_SLOTS = ["Head", "Chest", "Legs", "Feet"];
 
 //: いま技の姿勢を保持しているプレイヤー -> 解除予定 tick
 const posing = new Map();
+
+//: 段階 3 の周回する鉄片。プレイヤー -> { shards, born }
+const orbits = new Map();
+const ORBIT_COUNT = 3;
+// 実体側 (orbit_shard.entity.json) が 14 秒で自滅するので、その手前で張り直す。
+// 万一スクリプトが止まっても鉄片が世界に残らない、という保険でもある。
+const ORBIT_REFRESH = 200;
 
 export function container(player) {
   return safe(() => player.getComponent("minecraft:inventory")?.container);
@@ -73,14 +85,56 @@ export function stageFor(kills) {
   return stage;
 }
 
+/**
+ * 段階ごとの磁力回復量。
+ * 1 と 3 は contract の値をそのまま使い、2 はその中点（= 4.5）を採る。
+ * 中点なら contract 側が数値を動かしても段階 2 だけ取り残されない。
+ */
+export function regenFor(stage) {
+  if (stage >= 3) return MAG_REGEN_STAGE3;
+  if (stage >= 2) return (MAG_REGEN + MAG_REGEN_STAGE3) / 2;
+  return MAG_REGEN;
+}
+
+/** 段階 3 は同じ角度でも速く見せる（構えの保持を短くする）。 */
+export function poseHoldScale(player) {
+  return stageOf(player) >= 3 ? 0.85 : 1.0;
+}
+
+/**
+ * 昇格の 3 秒（DIRECTION §7-4）。
+ * 白の暗転 → 揺れ → 見出し → 周囲 20 ブロックの金属が一斉に光る。
+ * 最後の「世界の金属が反応する」が、段階が上がった実感そのものになる。
+ */
+function stageCeremony(player, stage) {
+  fade(player, { red: 1.0, green: 0.98, blue: 1.0 }, 0.06, 0.05, 0.70);
+  shake(player, 0.5, 1.0, "rotational");
+  chord(player.dimension, player.location, [
+    [SOUND.transform_2, 0, { volume: 1.4, pitch: 0.9 }],
+    [SOUND.mag_charge, 8, { volume: 1.0, pitch: 1.5 }],
+    [SOUND.mag_release, 18, { volume: 0.8, pitch: 0.8 }],
+  ]);
+  fxRing(player.dimension, FX.transform_ring, player.location, 2.0, 14, 0.3);
+  // 見出しは段階の数字だけにしてある。翻訳の有無に関係なく必ず読める。
+  title(player, { rawtext: [{ text: `§6${roman(stage)}` }] }, tr("msg.stage_up"), 6, 40, 18);
+
+  const metal = scanMetal(player.dimension, player.location, 20, 40);
+  for (let t = 0; t <= 20; t += 5) {
+    safe(() => system.runTimeout(() => {
+      for (const m of metal) {
+        fx(player.dimension, FX.metal_glint, { x: m.x + 0.5, y: m.y + 0.5, z: m.z + 0.5 });
+      }
+    }, t));
+  }
+}
+
 export function refreshStage(player) {
   const before = stageOf(player);
   const after = stageFor(num(player, PROP.mastery, 0));
   if (after > before) {
     setProp(player, PROP.stage, after);
     tell(player, tr("msg.stage_up"));
-    sound(player.dimension, SOUND.transform_2, player.location, { pitch: 1.2 });
-    fx(player.dimension, FX.transform_ring, player.location);
+    stageCeremony(player, after);
   }
   return after;
 }
@@ -171,40 +225,155 @@ function clearForm(player) {
   }
 }
 
+/** その人の「素の体」。英雄名が壊れていてもマグニートーに落として必ず戻す。 */
+function baseForm(player) {
+  return (HERO[heroOf(player)] ?? HERO.magneto).form;
+}
+
 /**
  * 技の姿勢に切り替える。`hold` tick 後に通常の体へ戻す。
  * これがそのまま三人称のアニメーション再生になる。
+ *
+ * 連打しても取りこぼさないよう、**期限は必ず上書き**する。
+ * 短い技を撃った直後に長い技を撃つと、先に来た短い方の期限で
+ * 素の体へ戻ってしまい、構えが一瞬で消える。
  */
 export function pose(player, formItemId, hold) {
   if (!isTransformed(player)) return;
   if (!hold || hold <= 0) return;
   wearForm(player, formItemId);
   setProp(player, PROP.casting, formItemId);
-  posing.set(player.id, system.currentTick + hold);
+  const now = system.currentTick;
+  const until = posing.get(player.id) ?? 0;
+  posing.set(player.id, Math.max(until, now + hold));
 }
 
-function tickPoses() {
-  if (!posing.size) return;
-  const now = system.currentTick;
-  for (const player of allPlayers()) {
-    const until = posing.get(player.id);
-    if (until === undefined || now < until) continue;
-    posing.delete(player.id);
-    setProp(player, PROP.casting, "");
-    if (isTransformed(player)) wearForm(player, HERO[heroOf(player)].form);
+/** 姿勢を今すぐ解いて素の体へ戻す。変身解除・死亡から必ず通る道。 */
+function endPose(player) {
+  posing.delete(player.id);
+  setProp(player, PROP.casting, "");
+}
+
+function tickPoses(player, now) {
+  const until = posing.get(player.id);
+  if (until === undefined || now < until) return;
+  posing.delete(player.id);
+  setProp(player, PROP.casting, "");
+  // 変身が解けていれば素の体も着せない。ここで着せると
+  // 「変身していないのに体アイテムだけ被っている」状態が生まれる。
+  if (isTransformed(player)) wearForm(player, baseForm(player));
+}
+
+// ---------------------------------------------------------------- 段階3の周回
+function dropOrbit(playerId) {
+  const state = orbits.get(playerId);
+  orbits.delete(playerId);
+  if (!state) return;
+  for (const shard of state.shards) safe(() => shard.remove());
+}
+
+function spawnOrbit(player) {
+  dropOrbit(player.id);
+  const shards = [];
+  for (let i = 0; i < ORBIT_COUNT; i++) {
+    const shard = safe(() => player.dimension.spawnEntity(ENTITY.orbit_shard, {
+      x: player.location.x, y: player.location.y + 1.2, z: player.location.z,
+    }));
+    if (shard) shards.push(shard);
+  }
+  if (shards.length) orbits.set(player.id, { shards, born: system.currentTick });
+}
+
+/** 段階 3 だけ、鉄片が三つ周りを回る。遠目にも「帝王」だと分かる印。 */
+function tickOrbit(player, now) {
+  const want = isTransformed(player) && stageOf(player) >= 3;
+  const state = orbits.get(player.id);
+  if (!want) { if (state) dropOrbit(player.id); return; }
+  if (!state || now - state.born > ORBIT_REFRESH) { spawnOrbit(player); return; }
+  if (now % 2) return;                       // 2 tick に一度動かせば充分に滑らか
+  const a0 = now * 0.075;
+  let lost = false;
+  for (let i = 0; i < state.shards.length; i++) {
+    const shard = state.shards[i];
+    // 消えた／ネザーへ渡ったなどで付いて来られなくなったら作り直す。
+    if (!safe(() => shard.isValid?.() !== false)
+        || safe(() => shard.dimension.id) !== player.dimension.id) { lost = true; continue; }
+    const a = a0 + (i / state.shards.length) * Math.PI * 2;
+    const ok = safe(() => {
+      shard.teleport({
+        x: player.location.x + Math.cos(a) * 1.45,
+        y: player.location.y + 1.15 + Math.sin(a * 2) * 0.18,
+        z: player.location.z + Math.sin(a) * 1.45,
+      }, { facingLocation: { x: player.location.x, y: player.location.y + 1.2, z: player.location.z } });
+      return true;
+    });
+    if (!ok) lost = true;
+  }
+  // 作り直しは 1 秒に一度まで。失敗が続く場所で毎 tick 湧かせない。
+  if (lost && now - state.born > 20) spawnOrbit(player);
+  if (now % 8 === 0) {
+    fx(player.dimension, FX.levitate_dust,
+       { x: player.location.x, y: player.location.y + 0.1, z: player.location.z });
   }
 }
 
 // ---------------------------------------------------------------- buffs
+// 変身中に配るバフの一覧。解除のときに **これだけ** を消すために、
+// 名前を一箇所に集めておく。
+const OUR_EFFECTS = ["strength", "resistance", "speed", "jump_boost", "haste",
+                     "regeneration", "fire_resistance", "night_vision",
+                     "slow_falling", "slowness", "invisibility"];
+
+// 変身前に本人が持っていた効果の控え。contract に無い名前なので
+// ここで持つ（担当 10 が PROP に足したら、そちらへ移すこと）。
+const PROP_EFFECTS = "marvel:stored_effects";
+
+/**
+ * 変身前の効果を控える。
+ * `clearBuffs` はバフ名で一括削除するので、控えておかないと
+ * **プレイヤーが自分で飲んだ暗視や耐性まで変身解除で消える**。
+ */
+function stashEffects(player) {
+  const rows = [];
+  for (const e of safe(() => player.getEffects()) ?? []) {
+    const id = (safe(() => e.typeId) ?? "").replace("minecraft:", "");
+    if (!id) continue;
+    rows.push([id, safe(() => e.duration) ?? 0, safe(() => e.amplifier) ?? 0]);
+  }
+  writeJson(player, PROP_EFFECTS, { t: system.currentTick, e: rows });
+}
+
+/** 控えた効果を、経過した分だけ短くして戻す。 */
+function restoreEffects(player) {
+  const saved = readJson(player, PROP_EFFECTS, undefined);
+  setProp(player, PROP_EFFECTS, "");
+  if (!Array.isArray(saved?.e)) return;
+  // ワールドを開き直すと currentTick は 0 に戻る。負の経過は 0 と見なす。
+  const elapsed = Math.max(0, system.currentTick - (saved.t ?? 0));
+  for (const row of saved.e) {
+    if (!Array.isArray(row)) continue;
+    const [id, duration, amp] = row;
+    const left = (duration ?? 0) - elapsed;
+    if (!Number.isFinite(left) || left < 20) continue;   // 残り 1 秒未満は戻さない
+    safe(() => player.addEffect(id, Math.min(left, 20000000), { amplifier: amp ?? 0 }));
+  }
+}
+
+/**
+ * 段階でバフの強さを変える。
+ * 段階 1 は「目覚めたばかりのエリック」なので敢えて素に近く、
+ * 3 で一気に硬く強くなる。ここに差が無いと昇格が数字だけの話になる。
+ */
 function buffsFor(hero, stage) {
   const list = [
-    ["resistance", stage >= 3 ? 2 : 1],
+    ["resistance", stage >= 3 ? 2 : stage >= 2 ? 1 : 0],
     ["fire_resistance", 0],
     ["night_vision", 0],
   ];
   if (hero === "magneto") {
-    list.push(["strength", stage >= 3 ? 2 : 1]);
+    list.push(["strength", stage >= 3 ? 2 : stage >= 2 ? 1 : 0]);
     list.push(["slow_falling", 0]);
+    if (stage >= 3) list.push(["speed", 1]);
   } else if (hero === "quicksilver") {
     list.push(["speed", 4]);
     list.push(["jump_boost", 2]);
@@ -241,11 +410,7 @@ function applyBuffs(player) {
 }
 
 function clearBuffs(player) {
-  for (const id of ["strength", "resistance", "speed", "jump_boost", "haste",
-                    "regeneration", "fire_resistance", "night_vision",
-                    "slow_falling", "slowness", "invisibility"]) {
-    safe(() => player.removeEffect(id));
-  }
+  for (const id of OUR_EFFECTS) safe(() => player.removeEffect(id));
 }
 
 // ---------------------------------------------------------------- transform
@@ -257,6 +422,7 @@ export function transform(player) {
   }
   const hero = HERO[heroOf(player)] ?? HERO.magneto;
   stashArmor(player);
+  stashEffects(player);
   wearForm(player, hero.form);
   setProp(player, PROP.form, true);
   player.addTag(TAG.form);
@@ -281,13 +447,17 @@ export function transform(player) {
 export function revert(player, exhausted = false) {
   if (!isTransformed(player)) return;
   clearForm(player);
-  posing.delete(player.id);
-  setProp(player, PROP.casting, "");
+  endPose(player);
+  dropOrbit(player.id);
   setProp(player, PROP.form, false);
   setProp(player, PROP.flying, false);
+  setProp(player, PROP.sight, 0);
   player.removeTag(TAG.form);
   restoreArmor(player);
   clearBuffs(player);
+  restoreEffects(player);
+  // 霧を押したまま変身を解くと、そのまま視界が濁り続ける。必ず剥がす。
+  fogPopAll(player);
   fxScatter(player.dimension, FX.revert_smoke, player.location, 12, 1.2);
   sound(player.dimension, SOUND.revert, player.location, { pitch: 0.8 });
   shake(player, 0.2, 0.4);
@@ -324,15 +494,25 @@ export function tickTransform() {
       mag -= MAG_DRAIN;
       if (mag <= 0) { setProp(player, PROP.mag, 0); revert(player, true); continue; }
     } else {
-      mag = Math.min(MAG_MAX, mag + (stage >= 3 ? MAG_REGEN_STAGE3 : MAG_REGEN));
+      mag = Math.min(MAG_MAX, mag + regenFor(stage));
     }
     setProp(player, PROP.mag, mag);
   }
 }
 
-/** 毎 tick: 姿勢の戻し。 */
+/** 毎 tick: 姿勢の戻しと、段階 3 の周回鉄片。 */
 export function tickForm() {
-  tickPoses();
+  const now = system.currentTick;
+  for (const player of allPlayers()) {
+    tickPoses(player, now);
+    tickOrbit(player, now);
+  }
+  // 退出・死亡で置き去りになった記録を捨てる。放っておくと Map が太り続ける。
+  if (now % 200 === 0 && (posing.size || orbits.size)) {
+    const live = new Set(allPlayers().map((p) => p.id));
+    for (const id of [...posing.keys()]) if (!live.has(id)) posing.delete(id);
+    for (const id of [...orbits.keys()]) if (!live.has(id)) dropOrbit(id);
+  }
 }
 
 export function hud(player, extra) {
@@ -341,7 +521,10 @@ export function hud(player, extra) {
   const colour = ratio > 0.5 ? "§d" : ratio > 0.2 ? "§e" : "§c";
   const techKey = str(player, PROP.tech, "repulse");
   const tech = TECH[techKey];
+  // 段階はローマ数字で常に出す。いま自分がどこまで来たのかが
+  // 画面のどこにも無いと、昇格しても実感が残らない。
   const parts = [
+    { text: `§6${roman(stageOf(player))}§r ` },
     { translate: "marvel.hud.mag" },
     { text: ` ${colour}${bar(ratio, 12)}§r ${Math.ceil(mag)}` },
   ];
@@ -353,8 +536,15 @@ export function hud(player, extra) {
   actionbar(player, { rawtext: parts });
 }
 
-/** ログイン時の復帰処理。 */
+/**
+ * ログイン時の復帰処理。
+ * 落ちた瞬間に技を撃っていた場合、頭には技の変身体が残り、
+ * `casting` も立ったままになる。素の体に戻してから再開する。
+ */
 export function restore(player) {
+  endPose(player);
+  dropOrbit(player.id);
+  fogPopAll(player);
   if (!isTransformed(player)) {
     player.removeTag(TAG.form);
     clearForm(player);
@@ -362,7 +552,7 @@ export function restore(player) {
   }
   player.addTag(TAG.form);
   applyBuffs(player);
-  wearForm(player, (HERO[heroOf(player)] ?? HERO.magneto).form);
+  wearForm(player, baseForm(player));
 }
 
 /** 変身していないのに残っている体アイテムを掃除する。 */
@@ -378,15 +568,51 @@ export function sweepFormItems() {
   }
 }
 
+/**
+ * 死んだ場所に落ちた体アイテムを消す。
+ *
+ * 体アイテムは頭スロットに装備しているので、死ぬと **普通の落し物として
+ * 世界に転がる**。拾えてしまうし、変身していない誰かが被れてしまう。
+ * 死亡直後のその場だけを見て回収する（世界中を舐めるのは高い）。
+ */
+function sweepDroppedForms(dimension, location) {
+  const items = safe(() => dimension.getEntities({
+    location, maxDistance: 6, type: "minecraft:item",
+  })) ?? [];
+  for (const entity of items) {
+    const stack = safe(() => entity.getComponent("minecraft:item")?.itemStack);
+    if (stack && FORM_ITEMS.includes(stack.typeId)) safe(() => entity.remove());
+  }
+}
+
 world.afterEvents.entityDie.subscribe((ev) => {
   const e = ev.deadEntity;
   if (e?.typeId !== "minecraft:player") return;
+  const dimension = safe(() => e.dimension);
+  const at = safe(() => e.location);
   system.run(() => {
     setProp(e, PROP.form, false);
     setProp(e, PROP.flying, false);
     setProp(e, PROP.casting, "");
+    setProp(e, PROP.sight, 0);
     e.removeTag(TAG.form);
     setProp(e, PROP.mag, MAG_MAX * 0.4);
     posing.delete(e.id);
+    dropOrbit(e.id);
+    safe(() => fogPopAll(e));
+    // 変身前の効果は戻す（死んで消えているので実質は控えの後始末）。
+    setProp(e, PROP_EFFECTS, "");
   });
+  // 落し物が出るのは死亡処理の後なので、少し置いてから拾いに行く。
+  if (dimension && at) safe(() => system.runTimeout(() => sweepDroppedForms(dimension, at), 10));
+});
+
+// 退出したプレイヤーの後始末。周回鉄片を消し、Map から名前を落とす。
+// ここを忘れると、無人の座標を鉄片が回り続ける。
+world.afterEvents.playerLeave?.subscribe?.((ev) => {
+  const id = ev.playerId;
+  if (!id) return;
+  posing.delete(id);
+  dropOrbit(id);
+  forgetFog(id);
 });
