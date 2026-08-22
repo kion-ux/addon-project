@@ -5,6 +5,25 @@
       "entries": [
         {
           "type": "item",
+          "name": "kaiju8:identified_core",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
           "name": "kaiju8:kaiju_core",
           "weight": 1,
           "functions": [

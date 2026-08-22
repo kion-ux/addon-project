@@ -1,0 +1,45 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "kaiju8:numbers_4",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.helmet"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "numbers_4"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:wearable": {
+        "slot": "slot.armor.head",
+        "protection": 7
+      },
+      "minecraft:durability": {
+        "max_durability": 1600
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "kaiju8:identified_core"
+            ],
+            "repair_amount": 533
+          }
+        ]
+      },
+      "minecraft:enchantable": {
+        "slot": "armor_head",
+        "value": 16
+      },
+      "minecraft:allow_off_hand": false,
+      "minecraft:should_despawn": false,
+      "minecraft:glint": true,
+      "minecraft:display_name": {
+        "value": "item.kaiju8:numbers_4"
+      }
+    }
+  }
+}

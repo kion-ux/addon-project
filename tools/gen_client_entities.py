@@ -167,32 +167,43 @@ def main() -> None:
         write(f"{ident}.entity.json", client(
             f"kaiju8:{ident}", tex, geo, {}, [], particles=particles))
 
-    # ---- attachables ----------------------------------------------------
-    write("no8_form.attachable.json", {
-        "format_version": "1.10.0",
-        "minecraft:attachable": {
-            "description": {
-                "identifier": "kaiju8:no8_form",
-                "materials": {"default": "entity_emissive_alpha",
-                              "enchanted": "entity_alphatest_glint"},
-                "textures": {"default": "textures/entity/kaiju8/kaiju_no8",
-                             "enchanted": "textures/misc/enchanted_item_glint"},
-                "geometry": {"default": "geometry.kaiju8.no8"},
-                "animations": {
-                    "form_idle": A + "no8.form_idle",
-                    "crouch": A + "no8.crouch",
-                    "air": A + "no8.air",
-                    "charge": A + "no8.charge",
-                    "controller": C + "no8_form",
-                },
-                "scripts": {
-                    "parent_setup": "variable.helmet_layer_visible = 0.0;",
-                    "animate": ["controller"],
-                },
-                "render_controllers": ["controller.render.kaiju8.default"],
+    # ---- 全身を差し替えるアタッチャブル（変身形態・ナンバーズ） -------------
+    def form_attachable(identifier, geometry, texture):
+        return {
+            "format_version": "1.10.0",
+            "minecraft:attachable": {
+                "description": {
+                    "identifier": identifier,
+                    "materials": {"default": "entity_emissive_alpha",
+                                  "enchanted": "entity_alphatest_glint"},
+                    "textures": {"default": f"textures/entity/kaiju8/{texture}",
+                                 "enchanted": "textures/misc/enchanted_item_glint"},
+                    "geometry": {"default": geometry},
+                    "animations": {
+                        "form_idle": A + "no8.form_idle",
+                        "crouch": A + "no8.crouch",
+                        "air": A + "no8.air",
+                        "charge": A + "no8.charge",
+                        "swing": A + "no8.swing",
+                        "controller": C + "no8_form",
+                    },
+                    "scripts": {
+                        "parent_setup": "variable.helmet_layer_visible = 0.0;",
+                        "pre_animation": [
+                            "v.swing = math.max(v.attack_time ?? 0.0, 0.0);"],
+                        "animate": ["controller"],
+                    },
+                    "render_controllers": ["controller.render.kaiju8.default"],
+                }
             }
         }
-    }, ATT)
+
+    write("no8_form.attachable.json",
+          form_attachable("kaiju8:no8_form", "geometry.kaiju8.no8", "kaiju_no8"), ATT)
+    for n in ("1", "2", "4", "6", "10"):
+        write(f"numbers_{n}.attachable.json",
+              form_attachable(f"kaiju8:numbers_{n}",
+                              f"geometry.kaiju8.numbers_{n}", f"numbers_{n}"), ATT)
 
     for piece, geo in (("helmet", "geometry.humanoid.armor.helmet"),
                        ("chestplate", "geometry.humanoid.armor.chestplate"),

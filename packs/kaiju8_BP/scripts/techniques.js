@@ -220,6 +220,7 @@ export const TECH = {
         });
       } },
     { id: "junihitoe", name: "kaiju8.tech.junihitoe", cd: 150, wear: 6, canon: true,
+      requires: "kaiju8:numbers_10",
       // 刀伐術7式「十二単」— 一点集中の12連撃。解放戦力が高いほど本領を発揮
       run(player, ctx) {
         sound(player.dimension, "mob.ravager.roar", player.location,

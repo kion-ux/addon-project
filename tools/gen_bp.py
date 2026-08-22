@@ -26,6 +26,17 @@ MATERIALS = [
     ("kaiju_shell", "kaiju_shell", 64, "items", "itemGroup.name.miscFood"),
     ("kaiju_alloy", "kaiju_alloy", 64, "items", "itemGroup.name.miscFood"),
     ("kaiju_remains", "kaiju_remains", 64, "items", "itemGroup.name.miscFood"),
+    ("identified_core", "identified_core", 8, "items", "itemGroup.name.miscFood"),
+]
+
+# 識別怪獣兵器（ナンバーズ）— 着る武器。頭スロットに装備し全身モデルを差し替える
+NUMBERS = [
+    # id, protection, durability
+    ("numbers_1", 7, 1600),
+    ("numbers_2", 8, 1700),
+    ("numbers_4", 7, 1600),
+    ("numbers_6", 7, 1500),
+    ("numbers_10", 8, 1800),
 ]
 
 WEAPONS = [
@@ -116,6 +127,22 @@ def gen_items():
         "minecraft:hand_equipped": True,
         "minecraft:durability": {"max_durability": 320},
     }, "items", "itemGroup.name.miscFood"))
+
+    for ident, prot, dur in NUMBERS:
+        dump(os.path.join(out, ident + ".item.json"), item(ident, {
+            "minecraft:icon": {"texture": ident},
+            "minecraft:max_stack_size": 1,
+            "minecraft:wearable": {"slot": "slot.armor.head", "protection": prot},
+            "minecraft:durability": {"max_durability": dur},
+            "minecraft:repairable": {
+                "repair_items": [{"items": ["kaiju8:identified_core"],
+                                  "repair_amount": dur // 3}]
+            },
+            "minecraft:enchantable": {"slot": "armor_head", "value": 16},
+            "minecraft:allow_off_hand": False,
+            "minecraft:should_despawn": False,
+            "minecraft:glint": True,
+        }, "equipment", "itemGroup.name.helmet"))
 
     # invisible "body" item worn in the helmet slot while transformed
     dump(os.path.join(out, "no8_form.item.json"), item("no8_form", {
@@ -400,7 +427,7 @@ def gen_entities():
         ranged=("kaiju8:kaiju_acid", 1, 5.0)))
 
     dump(os.path.join(out, "kaiju_no8.entity.json"), kaiju_entity(
-        "kaiju_no8", 420, 26, 0.46, 1.15, 2.05, 170, "kaiju_no8", reach=2.0,
+        "kaiju_no8", 420, 26, 0.46, 1.10, 1.95, 170, "kaiju_no8", reach=2.0,
         families=("kaiju", "identified_kaiju", "no8"), knockback=0.95,
         boss=("entity.kaiju8:kaiju_no8.name", True), fire_immune=True,
         targets=("kaiju", "monster")))
@@ -550,6 +577,7 @@ def gen_loot():
                                ("kaiju_no9", (3, 5), (3, 6)),
                                ("kaiju_no10", (3, 5), (3, 6))):
         dump(os.path.join(out, name + ".json"), loot([
+            roll([entry("kaiju8:identified_core", 1, (1, 2))]),
             roll([entry("kaiju8:kaiju_core", 1, cores)]),
             roll([entry("kaiju8:kaiju_alloy", 1, alloy)]),
             roll([entry("kaiju8:kaiju_shell", 1, (6, 12))]),
@@ -626,6 +654,14 @@ def gen_recipes():
     dump(os.path.join(out, "kaiju_detector.json"), shaped(
         [" A ", "ACA", " A "], {"A": "kaiju8:kaiju_alloy", "C": "minecraft:compass"},
         "kaiju8:kaiju_detector"))
+    for ident, _prot, _dur in [(n[0], n[1], n[2]) for n in
+                               [("numbers_1", 0, 0), ("numbers_2", 0, 0),
+                                ("numbers_4", 0, 0), ("numbers_6", 0, 0),
+                                ("numbers_10", 0, 0)]]:
+        dump(os.path.join(out, ident + ".json"), shaped(
+            ["ACA", "AIA", "AAA"],
+            {"A": "kaiju8:kaiju_alloy", "C": "kaiju8:identified_core",
+             "I": "minecraft:netherite_ingot"}, f"kaiju8:{ident}"))
     for ident, pattern in (
         ("combat_suit_helmet", ["AAA", "A A"]),
         ("combat_suit_chestplate", ["A A", "AAA", "AAA"]),
@@ -639,7 +675,8 @@ def gen_recipes():
 
 def gen_item_texture():
     names = [m[0] for m in MATERIALS] + [w[0] for w in WEAPONS] + \
-            [a[0] for a in ARMOR] + ["no8_power", "parasite_kaiju", "kaiju_detector"]
+            [a[0] for a in ARMOR] + [n[0] for n in NUMBERS] + \
+            ["no8_power", "parasite_kaiju", "kaiju_detector"]
     dump(os.path.join(RP, "textures", "item_texture.json"), {
         "resource_pack_name": "kaiju8",
         "texture_name": "atlas.items",

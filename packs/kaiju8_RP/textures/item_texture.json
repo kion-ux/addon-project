@@ -29,6 +29,9 @@
     "gunblade_gs3305": {
       "textures": "textures/items/gunblade_gs3305"
     },
+    "identified_core": {
+      "textures": "textures/items/identified_core"
+    },
     "kaiju_alloy": {
       "textures": "textures/items/kaiju_alloy"
     },
@@ -46,6 +49,21 @@
     },
     "no8_power": {
       "textures": "textures/items/no8_power"
+    },
+    "numbers_1": {
+      "textures": "textures/items/numbers_1"
+    },
+    "numbers_10": {
+      "textures": "textures/items/numbers_10"
+    },
+    "numbers_2": {
+      "textures": "textures/items/numbers_2"
+    },
+    "numbers_4": {
+      "textures": "textures/items/numbers_4"
+    },
+    "numbers_6": {
+      "textures": "textures/items/numbers_6"
     },
     "parasite_kaiju": {
       "textures": "textures/items/parasite_kaiju"

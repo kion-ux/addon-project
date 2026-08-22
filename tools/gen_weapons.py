@@ -193,16 +193,25 @@ BUILDERS = {
     "no8_power": no8_core,
 }
 
-# how the item sits in the hand: (third pos, third rot, first pos, first rot, fp scale)
+# 手のボーンに対する見え方: (三人称 pos, 三人称 rot, 一人称 pos, 一人称 rot, 一人称 scale,
+#                          振りの角度, 構えの角度)
 WIELD = {
-    "combat_knife": ((0, 1, -1), (0, 0, 0), (2, 6, -4), (8, -46, 4), 1.0),
-    "df_rifle": ((0, 1, -1), (0, 0, 0), (3, 5, -6), (6, -40, 2), 0.85),
-    "twin_sw2033": ((0, 1, -1), (0, 0, 0), (2, 6, -5), (8, -48, 4), 0.95),
-    "axe_03ax": ((0, 2, -2), (0, 0, 0), (3, 5, -7), (6, -42, 2), 0.68),
-    "cannon_t25": ((0, 2, -3), (0, 0, 0), (4, 4, -9), (4, -34, 0), 0.58),
-    "gunblade_gs3305": ((0, 2, -2), (0, 0, 0), (3, 5, -8), (6, -40, 2), 0.62),
-    "kaiju_detector": ((0, 1, -2), (0, 0, 0), (2, 5, -4), (12, -40, 0), 1.0),
-    "no8_power": ((0, 3, -2), (0, 0, 0), (2, 6, -4), (0, -30, 0), 1.0),
+    "combat_knife":    ((0, 0, 0), (0, 0, 0), (0, 3, -3), (0, -18, 0), 0.85,
+                        (-92, 24, 0), (-26, 12, 0)),
+    "df_rifle":        ((0, 1, -2), (-6, 0, 0), (1, 3, -5), (0, -12, 0), 0.70,
+                        (-24, 10, 0), (-46, 16, 0)),
+    "twin_sw2033":     ((0, 0, 0), (0, 0, 0), (0, 3, -3), (0, -20, 0), 0.85,
+                        (-104, 30, 0), (-34, 18, 0)),
+    "axe_03ax":        ((0, 1, -1), (0, 0, 0), (1, 3, -5), (0, -16, 0), 0.55,
+                        (-118, 18, 0), (-52, 10, 0)),
+    "cannon_t25":      ((0, 2, -3), (-4, 0, 0), (2, 3, -7), (0, -10, 0), 0.45,
+                        (-16, 6, 0), (-30, 12, 0)),
+    "gunblade_gs3305": ((0, 1, -2), (0, 0, 0), (1, 3, -6), (0, -14, 0), 0.50,
+                        (-110, 22, 0), (-44, 14, 0)),
+    "kaiju_detector":  ((0, 0, -1), (0, 0, 0), (0, 3, -2), (0, -24, 0), 0.9,
+                        (-30, 12, 0), (-16, 8, 0)),
+    "no8_power":       ((0, 2, -2), (0, 0, 0), (0, 4, -3), (0, -20, 0), 0.9,
+                        (-70, 16, 0), (-20, 10, 0)),
 }
 
 
@@ -210,7 +219,11 @@ def build_model(name: str) -> Model:
     m = Model(f"geometry.kaiju8.weapon.{name}", uv_scale=4,
               visible_bounds=(3.5, 3.5), vb_offset=(0, 0, -1),
               max_atlas=(512, 512))
-    root = m.bone("root", (0, 0, 0))
+    # WITHOUT this binding the geometry is drawn at the holder's origin — i.e.
+    # at their feet.  The binding attaches it to whichever hand bone holds the
+    # item (rightitem / leftitem).
+    root = m.bone("root", (0, 0, 0),
+                  binding="q.item_slot_to_bone_name(c.item_slot)")
     BUILDERS[name](root)
     m.pack()
     return m
@@ -232,12 +245,16 @@ def attachable(name: str) -> dict:
                 "animations": {
                     "third": f"animation.kaiju8.wield.{name}",
                     "first": f"animation.kaiju8.wield.{name}_fp",
+                    "swing": f"animation.kaiju8.swing.{name}",
+                    "ready": f"animation.kaiju8.ready.{name}",
+                    "ctrl": "controller.animation.kaiju8.wield",
                 },
                 "scripts": {
-                    "animate": [
-                        {"first": "c.is_first_person"},
-                        {"third": "!c.is_first_person"},
-                    ]
+                    "pre_animation": [
+                        "v.main_hand = c.item_slot == 'main_hand';",
+                        "v.swing = math.max(v.attack_time ?? 0.0, 0.0);",
+                    ],
+                    "animate": ["ctrl"],
                 },
                 "render_controllers": ["controller.render.item_default"],
             }
@@ -246,8 +263,9 @@ def attachable(name: str) -> dict:
 
 
 def wield_animations() -> dict:
+    """持ち位置・振り・構えの3種を武器ごとに書き出す。"""
     anims = {}
-    for name, (tp, tr, fp, fr, fs) in WIELD.items():
+    for name, (tp, tr, fp, fr, fs, swing, ready) in WIELD.items():
         anims[f"animation.kaiju8.wield.{name}"] = {
             "loop": True,
             "bones": {"root": {"position": list(tp), "rotation": list(tr)}},
@@ -257,7 +275,79 @@ def wield_animations() -> dict:
             "bones": {"root": {"position": list(fp), "rotation": list(fr),
                                "scale": fs}},
         }
+        sx, sy, sz = swing
+        anims[f"animation.kaiju8.swing.{name}"] = {
+            "loop": False,
+            "animation_length": 0.42,
+            "bones": {"root": {
+                "rotation": {
+                    "0.0": [0, 0, 0],
+                    "0.10": [sx * 0.55, -sy * 0.7, sz],
+                    "0.22": [sx, sy, sz],
+                    "0.42": [0, 0, 0],
+                },
+                "position": {
+                    "0.0": [0, 0, 0],
+                    "0.22": [0, -1.0, -2.0],
+                    "0.42": [0, 0, 0],
+                },
+            }},
+        }
+        rx, ry, rz = ready
+        anims[f"animation.kaiju8.ready.{name}"] = {
+            "loop": True,
+            "bones": {"root": {"rotation": [rx, ry, rz], "position": [0, 1, -1]}},
+        }
     return anims
+
+
+WIELD_CONTROLLER = {
+    "controller.animation.kaiju8.wield": {
+        "initial_state": "hold",
+        "states": {
+            "hold": {
+                "animations": ["third"],
+                "transitions": [
+                    {"fp": "c.is_first_person"},
+                    {"swing": "v.swing > 0.0"},
+                    {"ready": "q.is_sneaking"},
+                ],
+            },
+            "ready": {
+                "animations": ["third", "ready"],
+                "blend_transition": 0.12,
+                "transitions": [
+                    {"fp": "c.is_first_person"},
+                    {"swing": "v.swing > 0.0"},
+                    {"hold": "!q.is_sneaking"},
+                ],
+            },
+            "swing": {
+                "animations": ["third", "swing"],
+                "blend_transition": 0.05,
+                "transitions": [
+                    {"fp": "c.is_first_person"},
+                    {"hold": "q.all_animations_finished"},
+                ],
+            },
+            "fp": {
+                "animations": ["first"],
+                "transitions": [
+                    {"hold": "!c.is_first_person"},
+                    {"fp_swing": "v.swing > 0.0"},
+                ],
+            },
+            "fp_swing": {
+                "animations": ["first", "swing"],
+                "blend_transition": 0.05,
+                "transitions": [
+                    {"hold": "!c.is_first_person"},
+                    {"fp": "q.all_animations_finished"},
+                ],
+            },
+        },
+    }
+}
 
 
 def main() -> None:

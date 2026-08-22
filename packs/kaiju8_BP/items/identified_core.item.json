@@ -1,0 +1,21 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "kaiju8:identified_core",
+      "menu_category": {
+        "category": "items",
+        "group": "itemGroup.name.miscFood"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "identified_core"
+      },
+      "minecraft:max_stack_size": 8,
+      "minecraft:display_name": {
+        "value": "item.kaiju8:identified_core"
+      }
+    }
+  }
+}

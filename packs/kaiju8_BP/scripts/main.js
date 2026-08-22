@@ -14,6 +14,7 @@ import { useTechnique } from "./weapons.js";
 import { TECH, tickSlams } from "./techniques.js";
 import { tickMobility, tickSuitBuffs } from "./mobility.js";
 import { tickKaiju, tickAllies } from "./kaiju.js";
+import { tickNumbers } from "./numbers.js";
 import { tickAlerts } from "./alert.js";
 import { openTerminal, quickScan } from "./ui.js";
 
@@ -120,6 +121,7 @@ system.runInterval(() => {
   second++;
   try { tickTransform(); } catch (_) { }
   try { tickSuitBuffs(); } catch (_) { }
+  try { tickNumbers(); } catch (_) { }
   try { tickKaiju(); } catch (_) { }
   try { tickAllies(); } catch (_) { }
   try { tickAlerts(); } catch (_) { }

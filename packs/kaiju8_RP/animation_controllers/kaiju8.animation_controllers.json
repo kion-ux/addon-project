@@ -1,6 +1,88 @@
 {
   "format_version": "1.10.0",
   "animation_controllers": {
+    "controller.animation.kaiju8.wield": {
+      "initial_state": "hold",
+      "states": {
+        "hold": {
+          "animations": [
+            "third"
+          ],
+          "transitions": [
+            {
+              "fp": "c.is_first_person"
+            },
+            {
+              "swing": "v.swing > 0.0"
+            },
+            {
+              "ready": "q.is_sneaking"
+            }
+          ]
+        },
+        "ready": {
+          "animations": [
+            "third",
+            "ready"
+          ],
+          "blend_transition": 0.12,
+          "transitions": [
+            {
+              "fp": "c.is_first_person"
+            },
+            {
+              "swing": "v.swing > 0.0"
+            },
+            {
+              "hold": "!q.is_sneaking"
+            }
+          ]
+        },
+        "swing": {
+          "animations": [
+            "third",
+            "swing"
+          ],
+          "blend_transition": 0.05,
+          "transitions": [
+            {
+              "fp": "c.is_first_person"
+            },
+            {
+              "hold": "q.all_animations_finished"
+            }
+          ]
+        },
+        "fp": {
+          "animations": [
+            "first"
+          ],
+          "transitions": [
+            {
+              "hold": "!c.is_first_person"
+            },
+            {
+              "fp_swing": "v.swing > 0.0"
+            }
+          ]
+        },
+        "fp_swing": {
+          "animations": [
+            "first",
+            "swing"
+          ],
+          "blend_transition": 0.05,
+          "transitions": [
+            {
+              "hold": "!c.is_first_person"
+            },
+            {
+              "fp": "q.all_animations_finished"
+            }
+          ]
+        }
+      }
+    },
     "controller.animation.kaiju8.humanoid.general": {
       "initial_state": "stand",
       "states": {
@@ -329,6 +411,9 @@
           ],
           "transitions": [
             {
+              "swing": "v.swing > 0.0"
+            },
+            {
               "crouch": "query.is_sneaking"
             },
             {
@@ -340,12 +425,27 @@
           ],
           "blend_transition": 0.18
         },
+        "swing": {
+          "animations": [
+            "form_idle",
+            "swing"
+          ],
+          "transitions": [
+            {
+              "stand": "query.all_animations_finished"
+            }
+          ],
+          "blend_transition": 0.05
+        },
         "crouch": {
           "animations": [
             "form_idle",
             "crouch"
           ],
           "transitions": [
+            {
+              "swing": "v.swing > 0.0"
+            },
             {
               "charge": "query.is_using_item"
             },

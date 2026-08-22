@@ -248,10 +248,53 @@ WEAPON = {
     "no8": S("#12161C", "#0B0E12", "carapace", 7, glow="#25E5D8"),
 }
 
+# --- 識別怪獣兵器（ナンバーズ）— 「持つ」のではなく「着る」武器 -------------
+def numbers(body, trim, glow, accent2=None, cloth="#0d0f14"):
+    return {
+        "base": S(body, cloth, "panel", 5, glow=glow),
+        "suit": S(body, cloth, "panel", 5, glow=glow),
+        "underlay": S(cloth, "#05060a", "weave", 4, glow=glow),
+        "armor": S(trim, body, "plate", 4, glow=glow, light="#ffffff", dark="#15171c"),
+        "plate": S(trim, body, "plate", 4, glow=glow, light="#ffffff", dark="#15171c"),
+        "green": S(accent2 or trim, body, "cloth", 5, glow=glow),
+        "cloth": S(cloth, "#05060a", "leather", 5, glow=glow),
+        "accent": S(glow, body, "metal", 4, glow=glow),
+        "visor": S(trim, body, "glass", 3, glow=glow, light="#ffffff"),
+        "skin": S("#eec9a8", "#c9967a", "skin", 3, skin="#eec9a8",
+                  iris="#2B2320", light="#fbfbfb", dark="#241f28"),
+        "hair": S("#1E1A19", "#000000", "hair", 6),
+        "steel": S(trim, body, "brushed", 5, glow=glow),
+        "red": S("#C4142A", "#6d0a17", "panel", 4, glow="#C4142A"),
+        "gold": S(accent2 or "#d8b45c", "#7a5f22", "metal", 5, glow=glow),
+        "decal": S("#7E868F", "#4c5259", "panel", 3, glow=glow),
+        "wing": S(accent2 or trim, body, "muscle", 6, glow=glow),
+        "horn": S(trim, body, "flat", 4, glow=glow),
+        "claw": S(trim, body, "flat", 4, glow=glow),
+        "crack": S(body, glow, "crack", 4, glow=glow),
+        "mask": S(trim, body, "flat", 4, glow=glow, light="#ffffff", dark="#15171c"),
+        "sinew": S("#5A2A6E", "#2c1236", "sinew", 6, glow=glow),
+        "bone": S(trim, body, "plate", 4, glow=glow, light="#ffffff"),
+        "eye": S("#15171c", glow, "flat", 3, glow=glow),
+    }
+
+
+# 1号(鳴海): 標準型スーツ、全身のねじ穴から眼球が突出する
+NUMBERS_1 = numbers("#12141A", "#EFEAE0", "#E0324A")
+# 2号(四ノ宮功→怪獣9号): 巨大ガントレットの近接特化
+NUMBERS_2 = numbers("#5A6068", "#E4E7EA", "#FFF3C8")
+# 4号(四ノ宮ヒカリ→キコル): ワルキューレ意匠の全身鎧、背に虫のような翼
+NUMBERS_4 = numbers("#E8E4D8", "#D8B45E", "#FFD98A", accent2="#BFD9E8")
+# 6号(市川レノ): 全身密着型、配管とピストン、凍結
+NUMBERS_6 = numbers("#1E2A4A", "#3A4560", "#7FD8F0", accent2="#EDEFF2")
+# 10号(保科宗四郎): 淡紫の鱗鎧と長い機械の尾、胸に十字の単眼
+NUMBERS_10 = numbers("#B49BD6", "#6BE07A", "#6BE07A", accent2="#E03A2E")
+
 ALL = {
     "no8": NO8, "no9": NO9, "no10": NO10, "yoju": YOJU, "honju": HONJU,
     "kafka": KAFKA, "reno": RENO, "mina": MINA, "hoshina": HOSHINA,
     "kikoru": KIKORU, "narumi": NARUMI, "isao": ISAO, "officer": OFFICER,
     "beam": BEAM, "acid": ACID, "bullet": BULLET, "parasite": PARASITE,
     "weapon": WEAPON,
+    "numbers_1": NUMBERS_1, "numbers_2": NUMBERS_2, "numbers_4": NUMBERS_4,
+    "numbers_6": NUMBERS_6, "numbers_10": NUMBERS_10,
 }

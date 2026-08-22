@@ -16,16 +16,18 @@
       },
       "animations": {
         "third": "animation.kaiju8.wield.kaiju_detector",
-        "first": "animation.kaiju8.wield.kaiju_detector_fp"
+        "first": "animation.kaiju8.wield.kaiju_detector_fp",
+        "swing": "animation.kaiju8.swing.kaiju_detector",
+        "ready": "animation.kaiju8.ready.kaiju_detector",
+        "ctrl": "controller.animation.kaiju8.wield"
       },
       "scripts": {
+        "pre_animation": [
+          "v.main_hand = c.item_slot == 'main_hand';",
+          "v.swing = math.max(v.attack_time ?? 0.0, 0.0);"
+        ],
         "animate": [
-          {
-            "first": "c.is_first_person"
-          },
-          {
-            "third": "!c.is_first_person"
-          }
+          "ctrl"
         ]
       },
       "render_controllers": [

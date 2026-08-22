@@ -35,6 +35,10 @@ class Build:
     digitigrade: bool = False     # raised heel, beast stance
     hunch: float = 0.0            # forward lean of the whole torso, degrees
     arm_len: float = 1.0          # 怪獣は腕が長い
+    # プレイヤーのアタッチャブルとして着るモデルは、関節の枢軸をバニラの
+    # プレイヤー骨格 (頭24 / 肩22 / 腰12 / 腕±5 / 脚±1.9) に合わせないと
+    # 各ボーンがプレイヤー側のボーン位置へ引き寄せられて崩壊する。
+    player_anchor: bool = False
 
     @property
     def px(self) -> float:
@@ -75,7 +79,58 @@ class Landmarks:
     stance: float                 # half distance between the leg centres
 
 
+# バニラのプレイヤー骨格の枢軸
+PLAYER_PIVOTS = {
+    "body": (0, 24, 0),
+    "head": (0, 24, 0),
+    "rightArm": (-5, 22, 0),
+    "leftArm": (5, 22, 0),
+    "rightLeg": (-1.9, 12, 0),
+    "leftLeg": (1.9, 12, 0),
+}
+
+
+def player_landmarks(build: Build) -> Landmarks:
+    """プレイヤー骨格に固定した寸法。
+
+    関節の高さ (顎24 / 肩22 / 腰12 / 足0) は動かせないので、等身は頭の大きさで
+    決まる: total = 24 + head_h、head_h = 24 / (等身 - 1)。
+    バニラの8px頭は4等身に相当するので、頭を小さくするほど痩身に見える。
+    足りない背丈は鶏冠・角・マントルで稼ぐ。"""
+    limb = build.limb
+    bulk = build.bulk
+    arm_t = 4.0 * limb
+    head_h = 24.0 / max(2.0, build.heads - 1.0)
+    return Landmarks(
+        total=24.0 + head_h,
+        head_h=head_h, head_w=head_h * 1.06, head_d=head_h * 1.20,
+        chin=24.0, neck_h=2.0,
+        shoulder_y=22.0,
+        chest_top=22.0, chest_bot=17.0, abdomen_bot=14.0, pelvis_bot=10.4,
+        hip_y=12.0,
+        knee_y=6.0, ankle_y=0.0,
+        elbow_y=22.0 - 6.4 * build.arm_len,
+        wrist_y=22.0 - 11.0 * build.arm_len,
+        shoulder_w=10.0 + arm_t,
+        chest_w=9.0 * bulk,
+        waist_w=7.6 * bulk,
+        hip_w=8.4 * bulk,
+        chest_d=6.0 * bulk,
+        waist_d=5.0 * bulk,
+        arm_t=arm_t,
+        forearm_t=3.6 * limb,
+        hand_l=3.0,
+        thigh_t=4.6 * limb,
+        shin_t=4.0 * limb,
+        foot_l=6.0,
+        foot_h=2.0,
+        stance=1.9,
+    )
+
+
 def landmarks(build: Build) -> Landmarks:
+    if build.player_anchor:
+        return player_landmarks(build)
     t = build.px
     h = t / build.heads
     neck_h = 0.036 * t
@@ -152,24 +207,32 @@ class HumanRig:
         self.bones[name] = bone
         return bone
 
+    def _pivot(self, name, fallback):
+        if self.build.player_anchor and name in PLAYER_PIVOTS:
+            return PLAYER_PIVOTS[name]
+        return fallback
+
     def _skeleton(self) -> None:
         L = self.L
-        self._bone("body", (0, L.hip_y, 0),
+        self._bone("body", self._pivot("body", (0, L.hip_y, 0)),
                    rotation=(self.build.hunch, 0, 0) if self.build.hunch else None)
         self._bone("chest", (0, L.chest_bot, 0), "body")
         self._bone("neck", (0, L.shoulder_y, 0), "chest")
-        self._bone("head", (0, L.chin, 0), None if self.player_rig else "neck")
+        self._bone("head", self._pivot("head", (0, L.chin, 0)),
+                   None if self.player_rig else "neck")
         self._bone("hair", (0, L.chin, 0), "head")
         self._bone("face", (0, L.chin, 0), "head")
         for side, sgn in (("right", -1), ("left", 1)):
             sx = sgn * (L.shoulder_w / 2 - L.arm_t / 2)
-            self._bone(f"{side}Arm", (sx, L.shoulder_y - L.arm_t * 0.35, 0),
+            self._bone(f"{side}Arm",
+                       self._pivot(f"{side}Arm", (sx, L.shoulder_y - L.arm_t * 0.35, 0)),
                        None if self.player_rig else "chest")
             self._bone(f"{side}Forearm", (sx, L.elbow_y, 0), f"{side}Arm")
             self._bone(f"{side}Hand", (sx, L.wrist_y, 0), f"{side}Forearm")
             self._bone(f"{side}Shoulder", (sx, L.shoulder_y, 0), f"{side}Arm")
             lx = sgn * L.stance
-            self._bone(f"{side}Leg", (lx, L.hip_y, 0),
+            self._bone(f"{side}Leg",
+                       self._pivot(f"{side}Leg", (lx, L.hip_y, 0)),
                        None if self.player_rig else "body")
             self._bone(f"{side}Shin", (lx, L.knee_y, 0), f"{side}Leg")
             self._bone(f"{side}Foot", (lx, L.ankle_y, 0), f"{side}Shin")
@@ -177,7 +240,7 @@ class HumanRig:
 
     # ------------------------------------------------------------------
     def flesh(self, skin: Optional[str] = None, suit: Optional[str] = None,
-              hands_bare: bool = True) -> None:
+              hands_bare: bool = True, face: Optional[dict] = None) -> None:
         """Body volumes: torso in three sections, segmented limbs, neck, head."""
         L = self.L
         skin = skin or self.s["skin"]
@@ -193,8 +256,9 @@ class HumanRig:
         chest.add(Cube((-L.chest_w / 2, L.chest_bot, -L.chest_d / 2),
                        (L.chest_w, L.chest_top - L.chest_bot, L.chest_d), suit))
         # trapezius wedge so the shoulders do not read as a flat slab
-        chest.add(Cube((-L.shoulder_w / 2, L.chest_top - L.arm_t * 0.9, -L.chest_d * 0.42),
-                       (L.shoulder_w, L.arm_t * 0.9, L.chest_d * 0.84), suit))
+        chest.add(Cube((-L.chest_w * 0.60, L.chest_top - L.arm_t * 0.85,
+                        -L.chest_d * 0.42),
+                       (L.chest_w * 1.20, L.arm_t * 0.85, L.chest_d * 0.84), suit))
         neck = self.b("neck")
         neck.add(Cube((-L.head_w * 0.30, L.shoulder_y - L.neck_h * 0.3, -L.head_d * 0.24),
                       (L.head_w * 0.60, L.neck_h * 1.35, L.head_d * 0.48), skin))
@@ -205,9 +269,11 @@ class HumanRig:
 
         # --- head -------------------------------------------------------
         head = self.b("head")
+        face_decal = dict(face or {})
+        face_decal["name"] = "face"
         head.add(Cube((-L.head_w / 2, L.chin, -L.head_d * 0.52),
                       (L.head_w, L.head_h, L.head_d), skin, uv_scale=6,
-                      decals={"north": "face"}))
+                      decals={"north": face_decal}))
         # ears
         for sgn in (-1, 1):
             head.add(Cube((sgn * L.head_w * 0.5 - (L.head_w * 0.06 if sgn > 0 else 0),
@@ -279,7 +345,8 @@ class HumanRig:
         # --- 胸のリグ (olive) — wraps the front only
         chest.add(Cube((-L.chest_w * 0.50, L.chest_bot + ch * 0.08, -L.chest_d * 0.62),
                        (L.chest_w * 1.00, ch * 0.74, L.chest_d * 0.42), green,
-                       uv_scale=3, decals={"north": emblem}))
+                       uv_scale=4, decals={"north": emblem, "east": "panel_line",
+                                           "west": "panel_line"}))
         chest.add(Cube((-L.chest_w * 0.30, L.chest_bot + ch * 0.30, -L.chest_d * 0.66),
                        (L.chest_w * 0.60, ch * 0.16, L.chest_d * 0.10), "decal",
                        uv_scale=5, decals={"north": "logo"}))
@@ -322,9 +389,9 @@ class HumanRig:
             sh.add(Cube((cx - L.arm_t * 0.80, L.shoulder_y - L.arm_t * 1.10,
                          -L.arm_t * 0.80),
                         (L.arm_t * 1.60, L.arm_t * 1.26, L.arm_t * 1.60), armor,
-                        uv_scale=4,
+                        uv_scale=5,
                         decals={"east" if sgn < 0 else "west": "emblem",
-                                "up": "logo"}))
+                                "up": "logo", "north": "rivets"}))
             sh.add(Cube((cx - L.arm_t * 0.66, L.shoulder_y - L.arm_t * 1.52,
                          -L.arm_t * 0.66),
                         (L.arm_t * 1.32, L.arm_t * 0.44, L.arm_t * 1.32), armor,
@@ -335,7 +402,8 @@ class HumanRig:
                            L.wrist_y + (L.elbow_y - L.wrist_y) * 0.06,
                            -L.forearm_t * 0.70),
                           (L.forearm_t * 1.40, (L.elbow_y - L.wrist_y) * 0.74,
-                           L.forearm_t * 1.40), armor, uv_scale=3))
+                           L.forearm_t * 1.40), armor, uv_scale=4,
+                          decals={"north": "panel_line", "east": "rivets"}))
             # --- 黒い手袋
             hand = self.b(f"{side}Hand")
             hand.add(Cube((cx - L.forearm_t * 0.58, L.wrist_y - L.hand_l * 1.04,
@@ -353,7 +421,8 @@ class HumanRig:
             shin.add(Cube((lx - L.shin_t * 0.66, L.ankle_y + (L.knee_y - L.ankle_y) * 0.06,
                            -L.shin_t * 0.74),
                           (L.shin_t * 1.32, (L.knee_y - L.ankle_y) * 0.46,
-                           L.shin_t * 1.20), armor, uv_scale=3))
+                           L.shin_t * 1.20), armor, uv_scale=4,
+                          decals={"north": "panel_line", "east": "rivets"}))
             foot = self.b(f"{side}Foot")
             foot.add(Cube((lx - L.shin_t * 0.66, 0, -L.foot_l * 0.66),
                           (L.shin_t * 1.32, L.foot_h * 1.12, L.foot_l * 0.62), armor,
@@ -644,21 +713,19 @@ class KaijuParts:
         L = self.L
         chest = self.r.b("chest")
         ch = L.chest_top - L.chest_bot
-        chest.add(Cube((-L.shoulder_w * 0.52, L.chest_top - ch * 0.40,
-                        L.chest_d * 0.24),
-                       (L.shoulder_w * 1.04, ch * 0.46, L.chest_d * 0.46), plate,
+        chest.add(Cube((-L.chest_w * 0.62, L.chest_top - ch * 0.40, L.chest_d * 0.26),
+                       (L.chest_w * 1.24, ch * 0.46, L.chest_d * 0.42), plate,
                        uv_scale=3))
         # the bone-white top segment rises *behind* the skull, framing it
-        chest.add(Cube((-L.shoulder_w * 0.26, L.chest_top - ch * 0.06,
-                        L.chest_d * 0.46),
-                       (L.shoulder_w * 0.52, L.head_h * 0.62, L.chest_d * 0.26), top,
-                       uv_scale=3, rotation=(-16, 0, 0)))
+        chest.add(Cube((-L.chest_w * 0.32, L.chest_top - ch * 0.06, L.chest_d * 0.48),
+                       (L.chest_w * 0.64, L.head_h * 0.70, L.chest_d * 0.24), top,
+                       uv_scale=4, rotation=(-16, 0, 0)))
         for i in range(spines):
             u = (i - (spines - 1) / 2) / max(1, spines - 1)
-            chest.add(Cube((u * L.shoulder_w * 0.40 - L.total * 0.015,
-                            L.chest_top - ch * 0.10, L.chest_d * 0.52),
-                           (L.total * 0.030, L.total * 0.062 * (1 - abs(u) * 0.40),
-                            L.total * 0.032), top, uv_scale=4,
+            chest.add(Cube((u * L.chest_w * 0.46 - L.total * 0.014,
+                            L.chest_top - ch * 0.10, L.chest_d * 0.50),
+                           (L.total * 0.028, L.total * 0.060 * (1 - abs(u) * 0.40),
+                            L.total * 0.030), top, uv_scale=4,
                            rotation=(-42, 0, u * 26)))
 
     def plates(self, style="plate", crack_style="crack", seams=True,
@@ -668,11 +735,11 @@ class KaijuParts:
         chest = self.r.b("chest")
         body = self.r.b("body")
         ch = L.chest_top - L.chest_bot
-        chest.add(Cube((-L.chest_w * 0.56, L.chest_bot + ch * 0.14, -L.chest_d * 0.68),
-                       (L.chest_w * 1.12, ch * 0.72, L.chest_d * 0.34), style,
-                       uv_scale=3))
-        chest.add(Cube((-L.chest_w * 0.58, L.chest_top - ch * 0.26, -L.chest_d * 0.64),
-                       (L.chest_w * 1.16, ch * 0.28, L.chest_d * 1.24), style,
+        chest.add(Cube((-L.chest_w * 0.54, L.chest_bot + ch * 0.14, -L.chest_d * 0.66),
+                       (L.chest_w * 1.08, ch * 0.72, L.chest_d * 0.30), style,
+                       uv_scale=4, decals={"north": "scale_row"}))
+        chest.add(Cube((-L.chest_w * 0.56, L.chest_top - ch * 0.26, -L.chest_d * 0.60),
+                       (L.chest_w * 1.12, ch * 0.28, L.chest_d * 1.18), style,
                        uv_scale=3))
         if seams:
             body.add(Cube((-L.waist_w * 0.50, L.abdomen_bot, -L.waist_d * 0.64),
@@ -687,22 +754,22 @@ class KaijuParts:
         for side, sgn in (("right", -1), ("left", 1)):
             cx = sgn * (L.shoulder_w / 2 - L.arm_t / 2)
             sh = self.r.b(f"{side}Shoulder")
-            sh.add(Cube((cx - L.arm_t * 0.88, L.shoulder_y - L.arm_t * 1.22,
-                         -L.arm_t * 0.88),
-                        (L.arm_t * 1.76, L.arm_t * 1.32, L.arm_t * 1.76), limb,
-                        uv_scale=3))
+            sh.add(Cube((cx - L.arm_t * 0.68, L.shoulder_y - L.arm_t * 1.05,
+                         -L.arm_t * 0.68),
+                        (L.arm_t * 1.36, L.arm_t * 1.15, L.arm_t * 1.36), limb,
+                        uv_scale=4))
             for i in range(3):
-                sh.add(Cube((cx - L.arm_t * (0.55 - i * 0.06),
-                             L.shoulder_y + L.arm_t * (0.04 + i * 0.20),
-                             -L.arm_t * (0.42 - i * 0.20)),
-                            (L.arm_t * (1.10 - i * 0.12), L.arm_t * 0.32,
-                             L.arm_t * 0.28), "horn", uv_scale=4,
+                sh.add(Cube((cx - L.arm_t * (0.44 - i * 0.05),
+                             L.shoulder_y + L.arm_t * (0.02 + i * 0.16),
+                             -L.arm_t * (0.34 - i * 0.16)),
+                            (L.arm_t * (0.88 - i * 0.10), L.arm_t * 0.26,
+                             L.arm_t * 0.22), "horn", uv_scale=5,
                             rotation=(-24 - i * 10, 0, 0)))
             fore = self.r.b(f"{side}Forearm")
-            fore.add(Cube((cx - L.forearm_t * 0.82, L.wrist_y,
-                           -L.forearm_t * 0.82),
-                          (L.forearm_t * 1.64, (L.elbow_y - L.wrist_y) * 0.78,
-                           L.forearm_t * 1.64), limb, uv_scale=3))
+            fore.add(Cube((cx - L.forearm_t * 0.68, L.wrist_y,
+                           -L.forearm_t * 0.68),
+                          (L.forearm_t * 1.36, (L.elbow_y - L.wrist_y) * 0.76,
+                           L.forearm_t * 1.36), limb, uv_scale=4))
             if seams:
                 fore.add(Cube((cx - L.forearm_t * 0.30,
                                L.wrist_y + (L.elbow_y - L.wrist_y) * 0.12,
@@ -711,10 +778,10 @@ class KaijuParts:
                                L.forearm_t * 0.10), crack_style, uv_scale=5))
             shin = self.r.b(f"{side}Shin")
             lx = sgn * L.stance
-            shin.add(Cube((lx - L.shin_t * 0.80, L.knee_y - (L.knee_y - L.ankle_y) * 0.28,
-                           -L.shin_t * 0.84),
-                          (L.shin_t * 1.60, (L.knee_y - L.ankle_y) * 0.40,
-                           L.shin_t * 1.60), limb, uv_scale=3))
+            shin.add(Cube((lx - L.shin_t * 0.70, L.knee_y - (L.knee_y - L.ankle_y) * 0.26,
+                           -L.shin_t * 0.74),
+                          (L.shin_t * 1.40, (L.knee_y - L.ankle_y) * 0.38,
+                           L.shin_t * 1.40), limb, uv_scale=4))
             if seams:
                 shin.add(Cube((lx - L.shin_t * 0.30, L.ankle_y + (L.knee_y - L.ankle_y) * 0.06,
                                -L.shin_t * 0.88),

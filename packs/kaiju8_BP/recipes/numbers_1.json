@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:numbers_1"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "ACA",
+      "AIA",
+      "AAA"
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      },
+      "C": {
+        "item": "kaiju8:identified_core"
+      },
+      "I": {
+        "item": "minecraft:netherite_ingot"
+      }
+    },
+    "result": {
+      "item": "kaiju8:numbers_1",
+      "count": 1
+    }
+  }
+}

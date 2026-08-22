@@ -278,6 +278,37 @@ class Painter:
             ellipse(0.5, 0.5, 0.16, 0.18, light)
             ellipse(0.5, 0.5, 0.085, 0.10, (198, 42, 54))
             line(0.5, 0.30, 0.5, 0.70, dark)
+        elif name == "rivets":
+            n = max(2, int(w / max(4, 6 * scale)))
+            for i in range(n):
+                for v in (0.12, 0.88):
+                    u = (i + 0.5) / n
+                    ellipse(u, v, 0.035, 0.035, shade(dark, 1.5))
+                    self.put(*P(u, v - 0.02), shade(light, 0.9))
+        elif name == "panel_line":
+            line(0.0, 0.32, 1.0, 0.32, shade(dark, 1.4))
+            line(0.0, 0.34, 1.0, 0.34, shade(light, 0.85))
+            line(0.0, 0.70, 1.0, 0.70, shade(dark, 1.4))
+        elif name == "scale_row":
+            rows = max(2, int(h / max(3, 4 * scale)))
+            for r in range(rows):
+                v = (r + 0.5) / rows
+                cols = max(2, int(w / max(3, 4 * scale)))
+                for c in range(cols):
+                    u = (c + (0.5 if r % 2 else 0.0)) / cols
+                    ellipse(u, v, 0.5 / cols, 0.45 / rows, shade(dark, 1.25))
+                    ellipse(u, v - 0.1 / rows, 0.34 / cols, 0.28 / rows,
+                            shade(light, 0.55))
+        elif name == "stubble":
+            rng = random.Random(w * 31 + h)
+            for _ in range(max(8, w * h // 10)):
+                u = 0.18 + rng.random() * 0.64
+                v = 0.66 + rng.random() * 0.30
+                self.put(*P(u, v), shade(hexc(style.get("hair_col", "#2a2630")), 1.0))
+        elif name == "ribbon":
+            box(0.0, 0.30, 1.0, 0.56, hexc(decal.get("colour", "#1a1a20")))
+            line(0.0, 0.30, 1.0, 0.30, shade(light, 0.5))
+            line(0.0, 0.56, 1.0, 0.56, shade(dark, 1.2))
         elif name == "cross_slit":
             # 怪獣10号: 目鼻のない装甲面に走る十字の切れ込み
             box(0.0, 0.0, 1.0, 1.0, hexc(style.get("base", "#C4202A")))
@@ -366,6 +397,11 @@ class Painter:
         ey = int(round(h * decal.get("eye_v", 0.50)))
         gap = max(1, int(round(w * decal.get("eye_gap", 0.10))))
         detail = ew >= 4 and eh >= 3
+        expr = decal.get("expr", "normal")
+        if expr == "narrow":          # 保科: 常に細めた目
+            eh = max(1, int(eh * 0.55))
+        elif expr == "stern":         # ミナ / 功: 目つきが鋭い
+            eh = max(2, int(eh * 0.82))
 
         def rect(px, py, rw, rh, c, a=255):
             for yy in range(rh):
@@ -408,6 +444,20 @@ class Painter:
         if detail:
             nose = ey + eh + 1
             rect(w // 2, nose, 1, max(1, h // 12), shade(skin, 0.78))
+        if expr == "grin" and detail:      # 八重歯の見える口元
+            gy = ey + eh + max(2, h // 7)
+            gw = max(3, int(round(w * 0.26)))
+            rect((w - gw) // 2, gy, gw, 1, dark)
+            rect((w - gw) // 2, gy - 1, 1, 1, (250, 250, 250))
+            rect((w + gw) // 2 - 1, gy - 1, 1, 1, (250, 250, 250))
+        if decal.get("stubble") and detail:
+            rng2 = random.Random(w * 17 + h * 5)
+            beard = shade(hexc(style.get("hair_col", "#2a2630")), 1.3)
+            for _ in range(max(6, w * h // 22)):
+                u = 0.18 + rng2.random() * 0.64
+                v = 0.80 + rng2.random() * 0.18
+                px_, py_ = P(u, v)
+                self.blend(px_, py_, beard, 0.30)
         if decal.get("moles"):
             for ex in centres:
                 rect(ex + ew // 2, ey + eh // 2 + 2, 1, 1, shade(skin, 0.52))

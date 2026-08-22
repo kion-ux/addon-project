@@ -510,6 +510,23 @@ A["animation.kaiju8.no8.air"] = clip({
     "jaw": rot(16, 0, 0),
     **{f"{s}Finger{i}": rot(-14, 0, 0) for s in ("right", "left") for i in range(3)},
 })
+A["animation.kaiju8.no8.swing"] = clip({
+    # プレイヤー本体の腕振りに重ねる、怪獣の体そのものの攻撃モーション
+    "chest": {"rotation": keys(t0=[0, 0, 0], t0_08=[-8, 22, 0], t0_2=[10, -18, 0],
+                               t0_42=[0, 0, 0])},
+    "neck": {"rotation": keys(t0=[0, 0, 0], t0_08=[-6, -14, 0], t0_2=[6, 10, 0],
+                              t0_42=[0, 0, 0])},
+    "jaw": {"rotation": keys(t0=[2, 0, 0], t0_08=[30, 0, 0], t0_2=[8, 0, 0],
+                             t0_42=[2, 0, 0])},
+    "spine": {"rotation": keys(t0=[0, 0, 0], t0_08=[-10, 0, 0], t0_42=[0, 0, 0])},
+    **{f"{s}Finger{i}": {"rotation": keys(t0=[10, 0, 0], t0_1=[44, 0, 0],
+                                          t0_42=[10, 0, 0])}
+       for s in ("right", "left") for i in range(3)},
+    **{f"{s}Wing": {"rotation": keys(t0=[0, 0, 0], t0_1=[0, -20, -24],
+                                     t0_42=[0, 0, 0])}
+       for s in ("right", "left")},
+}, length=0.42, loop=False)
+
 A["animation.kaiju8.no8.charge"] = clip({
     "chest": rot(-14, 0, 0),
     "jaw": rot(30, 0, 0),
@@ -541,7 +558,8 @@ def state(animations=None, transitions=None, blend=None, sounds=None,
     return d
 
 
-CONTROLLERS = {
+CONTROLLERS = dict(gen_weapons.WIELD_CONTROLLER)
+CONTROLLERS.update({
     # -------- humanoid ------------------------------------------------
     "controller.animation.kaiju8.humanoid.general": {
         "initial_state": "stand",
@@ -661,11 +679,16 @@ CONTROLLERS = {
         "initial_state": "stand",
         "states": {
             "stand": state(["form_idle"], [
+                {"swing": "v.swing > 0.0"},
                 {"crouch": "query.is_sneaking"},
                 {"air": "!query.is_on_ground"},
                 {"charge": "query.is_using_item"},
             ], 0.18),
+            "swing": state(["form_idle", "swing"], [
+                {"stand": "query.all_animations_finished"},
+            ], 0.05),
             "crouch": state(["form_idle", "crouch"], [
+                {"swing": "v.swing > 0.0"},
                 {"charge": "query.is_using_item"},
                 {"stand": "!query.is_sneaking"},
             ], 0.18),
@@ -677,8 +700,7 @@ CONTROLLERS = {
             ], 0.12),
         },
     },
-}
-
+})
 
 def main() -> None:
     os.makedirs(os.path.join(RP, "animations"), exist_ok=True)

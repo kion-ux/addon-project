@@ -6,6 +6,7 @@ import {
 } from "./util.js";
 import { container, selectedSlot, isTransformed, spendEnergy } from "./transform.js";
 import { TECH, selected, showWheel } from "./techniques.js";
+import { liftsReleaseCap, wornNumbers } from "./numbers.js";
 import { fx, sound, shake } from "./effects.js";
 
 export function wearsFullSuit(player) {
@@ -20,7 +21,8 @@ export function wearsFullSuit(player) {
 
 export function releaseRate(player) {
   const raw = Math.max(1, Math.min(100, num(player, PROP.release, 10)));
-  if (isTransformed(player)) return raw;          // 怪獣の身体は上限を持たない
+  // 怪獣の身体と適合者専用装備(ナンバーズ)は上限を持たない
+  if (isTransformed(player) || liftsReleaseCap(player)) return raw;
   return wearsFullSuit(player) ? raw : Math.min(raw, RELEASE_CAP_NO_SUIT);
 }
 
@@ -77,6 +79,16 @@ export function useTechnique(player, typeId) {
 
   if (tech.form && !isTransformed(player)) {
     tell(player, tr("kaiju8.msg.form_only"));
+    return true;
+  }
+  // 7式「十二単」はナンバーズ10の全開放状態でのみ解禁される
+  if (tech.requires && wornNumbers(player) !== tech.requires) {
+    tell(player, {
+      rawtext: [{
+        translate: "kaiju8.msg.requires_numbers",
+        with: { rawtext: [{ translate: `item.${tech.requires}` }] },
+      }],
+    });
     return true;
   }
   if (onCooldown(player.id, typeId)) {
