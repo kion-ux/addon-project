@@ -8,7 +8,8 @@
 import { system } from "@minecraft/server";
 import { actionbar, knockback, forward } from "./util.js";
 import {
-  fx, fxRing, fxLine, fxScatter, sound, shake, shakeNearby, cone, ray, hit,
+  fx, fxRing, fxLine, fxScatter, fxArc, fxSpiral, fxColumn, fxCone, fxWall,
+  sequence, trail, sound, shake, shakeNearby, cone, ray, hit,
   bleed, later, targetsNear,
 } from "./effects.js";
 import { NUMBERS, wornNumbers, setAbilityById } from "./numbers.js";
@@ -58,11 +59,27 @@ function afterimages(player, ticks = 8) {
   }
 }
 
+/** 斬った跡。怪獣は紫の体液を噴く。 */
+function wound(player, target, jets = 3, spread = 0.4) {
+  const at = { x: target.location.x, y: target.location.y + 1.1, z: target.location.z };
+  fx(player.dimension, "kaiju8:blood_mist", at);
+  fxScatter(player.dimension, "kaiju8:sever_spurt",
+            { x: at.x, y: at.y - 0.1, z: at.z }, jets, spread);
+}
+
+/** ray() は距離順に並んでいるので、奥の敵ほど遅れて斬れる。 */
+function inDepth(hits, per, fn) {
+  hits.forEach((h) => later(Math.floor(h.along / per), () => {
+    try { fn(h); } catch (_) { }
+  }));
+}
+
 function ground(player) {
   return { x: player.location.x, y: player.location.y + 0.1, z: player.location.z };
 }
 
-function shoot(player, typeId, speed, spread = 0) {
+/** `muzzle` に null を渡すと共通の銃口炎を出さない（武器ごとに火を変えたいとき）。 */
+function shoot(player, typeId, speed, spread = 0, muzzle = "kaiju8:muzzle_flash") {
   const dir = player.getViewDirection();
   const origin = forward(player.getHeadLocation(), dir, 0.9);
   let proj;
@@ -78,10 +95,15 @@ function shoot(player, typeId, speed, spread = 0) {
       });
     }
   } catch (_) { }
-  fx(player.dimension, "kaiju8:muzzle_flash", origin);
-  fxScatter(player.dimension, "kaiju8:muzzle_sparks", origin, 5, 0.25);
+  if (muzzle) {
+    fx(player.dimension, muzzle, origin);
+    fxScatter(player.dimension, "kaiju8:muzzle_sparks", origin, 5, 0.25);
+  }
   return proj;
 }
+
+// 拳銃の連射リズム。何発目かで薬莢・曳光・反動の向きが変わる
+const pistolBeat = new Map();
 
 // 跳躍系は着地で炸裂する
 const pendingSlams = new Map();
@@ -172,241 +194,670 @@ export const TECH = {
   // ---- SW-2033 保科流 --------------------------------------------------
   "kaiju8:twin_sw2033": [
     { id: "karauchi", name: "kaiju8.tech.karauchi", cd: 20, wear: 1, canon: true,
-      // 刀伐術1式「空討ち」— 刃が届いていない位置に斬撃が飛ぶ
+      // 刀伐術1式「空討ち」— 刃が届いていない位置に斬撃が飛ぶ。
+      // 斬撃が地面を渡っていくのが見えるよう、7tick かけて前へ伝播させる。
       run(player, ctx) {
-        arcFx(player, 3.4, "kaiju8:slash_air");
-        fxLine(player.dimension, "kaiju8:slash_air",
-               player.getHeadLocation(), player.getViewDirection(), 7, 2.2);
-        let n = 0;
-        for (const t of ray(player, 8, 2.0)) {
-          if (hit(player, t.entity, 10 * ctx.mult)) { bleed(t.entity); n++; }
-        }
-        sound(player.dimension, "mob.ravager.bite", player.location, { pitch: 1.6 });
-        if (n) shake(player, 0.10, 0.18);
-      } },
-    { id: "kousa", name: "kaiju8.tech.kousa", cd: 34, wear: 2, canon: true,
-      // 刀伐術2式「交差討ち」— X字に交差した斬撃
-      run(player, ctx) {
-        for (const d of [0, 3]) {
-          later(d, () => {
-            arcFx(player, 2.8, "kaiju8:slash_cross");
-            swing(player, ctx, { radius: 6.0, dot: 0.05, damage: 9, kb: 0.5 });
-            sound(player.dimension, "mob.ravager.bite", player.location, { pitch: 1.45 });
+        const eye0 = player.getHeadLocation();
+        const dir0 = player.getViewDirection();
+        const shots = ray(player, 8, 2.0);
+        fx(player.dimension, "kaiju8:vacuum_edge", ahead(player, 1.6));
+        fx(player.dimension, "kaiju8:twin_arc", ahead(player, 1.4));
+        fxScatter(player.dimension, "kaiju8:blade_dust", ahead(player, 1.4), 3, 0.4);
+        // 手首の振りなので、当たりの音と揺れは自分ではなく着弾側に置く
+        sound(player.dimension, "item.trident.throw", player.location,
+              { pitch: 1.9, volume: 0.7 });
+        shake(player, 0.06, 0.10);
+        for (let step = 1; step <= 6; step++) {
+          later(step, () => {
+            const at = forward(eye0, dir0, 1.6 + step * 1.6);
+            fx(player.dimension, "kaiju8:vacuum_edge", at);
+            fx(player.dimension, "kaiju8:cut_line", at);
+            if (step % 2) fx(player.dimension, "kaiju8:vacuum_wake", at);
+            for (const h of shots) {
+              if (Math.floor(h.along / 1.6) + 1 !== step) continue;
+              if (!hit(player, h.entity, 10 * ctx.mult)) continue;
+              bleed(h.entity);
+              wound(player, h.entity, 2, 0.3);
+              sound(player.dimension, "item.trident.hit", h.entity.location,
+                    { pitch: 1.25, volume: 1.1 });
+              shakeNearby(player.dimension, h.entity.location, 8, 0.18, 0.20);
+            }
           });
         }
-        shake(player, 0.14, 0.26);
-      } },
-    { id: "kaeshi", name: "kaiju8.tech.kaeshi", cd: 46, wear: 2, canon: true,
-      // 刀伐術3式「返し討ち」— 攻撃をすり抜けて背後から斬る
-      run(player, ctx) {
-        try { player.addEffect("resistance", 16, { amplifier: 3, showParticles: false }); }
-        catch (_) { }
-        afterimages(player, 5);
-        sound(player.dimension, "mob.endermen.portal", player.location, { pitch: 1.6 });
-        later(5, () => {
-          let best, bd = 99;
-          for (const t of targetsNear(player, 6.5)) {
-            const dx = t.location.x - player.location.x;
-            const dz = t.location.z - player.location.z;
-            const d = Math.hypot(dx, dz);
-            if (d < bd) { bd = d; best = t; }
-          }
-          if (!best) return;
-          const dx = best.location.x - player.location.x;
-          const dz = best.location.z - player.location.z;
-          const len = Math.hypot(dx, dz) || 1;
-          try {
-            player.teleport({ x: best.location.x + dx / len * 1.6,
-                              y: best.location.y, z: best.location.z + dz / len * 1.6 },
-                            { dimension: player.dimension });
-          } catch (_) { }
-          fx(player.dimension, "kaiju8:slash_cross",
-             { x: best.location.x, y: best.location.y + 1.1, z: best.location.z });
-          if (hit(player, best, 22 * ctx.mult)) bleed(best);
-          sound(player.dimension, "mob.ravager.bite", player.location, { pitch: 1.2 });
-          shake(player, 0.2, 0.24);
+        later(7, () => {
+          fx(player.dimension, "kaiju8:vacuum_edge", forward(eye0, dir0, 11));
+          fxScatter(player.dimension, "kaiju8:blade_dust",
+                    forward(eye0, dir0, 10), 4, 0.9);
         });
       } },
-    { id: "midare", name: "kaiju8.tech.midare", cd: 60, wear: 3, canon: true,
-      // 刀伐術4式「乱討ち」— 無数の斬撃を散弾状にばら撒く
+    { id: "kousa", name: "kaiju8.tech.kousa", cd: 30, wear: 1, canon: true,
+      // 刀伐術2式「交差討ち」— 二刀を交差させて斬る。
+      // 二度斬られた相手だけが交点でもう一度斬れる。
       run(player, ctx) {
-        for (let i = 0; i < 5; i++) {
-          later(i * 2, () => {
-            fxScatter(player.dimension, "kaiju8:slash_scatter", ahead(player, 3), 1, 2.2);
-            swing(player, ctx, { radius: 7.0, dot: -0.1, damage: 5, kb: 0.15 });
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        const doubled = new Set();
+        fxLine(player.dimension, "kaiju8:cut_line_ko", eye, dir, 5.0, 1.25);
+        fx(player.dimension, "kaiju8:twin_arc", ahead(player, 2.6));
+        for (const h of cone(player, 6.0, 0.05)) {
+          if (!hit(player, h.entity, 5.4 * ctx.mult)) continue;
+          bleed(h.entity);
+          doubled.add(h.entity.id);
+          knockback(h.entity, h.dx, h.dz, 0.25, 0.2);
+        }
+        sound(player.dimension, "mob.ravager.bite", player.location,
+              { pitch: 1.55, volume: 0.9 });
+        shake(player, 0.08, 0.12);
+        later(2, () => {
+          fxLine(player.dimension, "kaiju8:cut_line_gyaku", eye, dir, 5.0, 1.25);
+          fx(player.dimension, "kaiju8:twin_arc", ahead(player, 2.6));
+          for (const h of cone(player, 6.0, 0.05)) {
+            if (hit(player, h.entity, 5.4 * ctx.mult)) bleed(h.entity);
+          }
+          sound(player.dimension, "mob.ravager.bite", player.location,
+                { pitch: 1.30, volume: 0.9 });
+        });
+        later(3, () => {
+          fx(player.dimension, "kaiju8:cross_flash", ahead(player, 2.5));
+          fxScatter(player.dimension, "kaiju8:blade_dust", ahead(player, 2.5), 5, 0.9);
+          sound(player.dimension, "random.anvil_use", player.location,
+                { pitch: 1.9, volume: 0.55 });
+          let caught = 0;
+          for (const h of cone(player, 6.0, 0.05)) {
+            if (!doubled.has(h.entity.id)) continue;
+            if (!hit(player, h.entity, 7.2 * ctx.mult)) continue;
+            bleed(h.entity);
+            caught++;
+            knockback(h.entity, h.dx, h.dz, 0.9, 0.35);
+            wound(player, h.entity, 3, 0.5);
+            sound(player.dimension, "item.trident.hit", h.entity.location,
+                  { pitch: 1.0, volume: 1.3 });
+          }
+          shake(player, 0.16, 0.22);
+          if (caught) shakeNearby(player.dimension, player.location, 9, 0.24, 0.22);
+        });
+        later(5, () => {
+          fx(player.dimension, "kaiju8:cut_line_ko", ahead(player, 1.8));
+          fx(player.dimension, "kaiju8:cut_line_gyaku", ahead(player, 1.8));
+        });
+      } },
+    { id: "kaeshi", name: "kaiju8.tech.kaeshi", cd: 44, wear: 2, canon: true,
+      // 刀伐術3式「返し討ち」— 受けてから背後へ回り込んで斬り返す。
+      // 受けの一瞬・無音のすり抜け・音源が場所ごと移る、の三段構え。
+      run(player, ctx) {
+        const from = { x: player.location.x, y: player.location.y, z: player.location.z };
+        fxRing(player.dimension, "kaiju8:cut_line", player.location, 1.1, 6, 1.2);
+        sound(player.dimension, "item.shield.block", player.location,
+              { pitch: 1.4, volume: 0.8 });
+        sound(player.dimension, "armor.equip_chain", player.location,
+              { pitch: 1.2, volume: 0.6 });
+        try { player.addEffect("resistance", 14, { amplifier: 4, showParticles: false }); }
+        catch (_) { }
+        shake(player, 0.05, 0.12);
+        // すり抜けの4tickは意図的に無音
+        for (let i = 1; i <= 4; i++) {
+          later(i, () => {
+            fx(player.dimension, "kaiju8:oboro_ghost",
+               { x: player.location.x, y: player.location.y + 0.9, z: player.location.z });
+            fxScatter(player.dimension, "kaiju8:blade_dust", player.location, 2, 0.5);
           });
         }
-        sound(player.dimension, "mob.ravager.roar", player.location, { pitch: 1.7 });
-        shake(player, 0.16, 0.5);
+        later(5, () => {
+          const best = cone(player, 6.5, -0.2)[0];
+          if (!best) return;
+          const b = best.entity.location;
+          const dir = player.getViewDirection();
+          try {
+            player.teleport({ x: b.x - dir.x * 1.4, y: b.y, z: b.z - dir.z * 1.4 },
+                            { facingLocation: { x: b.x, y: b.y + 1.0, z: b.z } });
+          } catch (_) { }
+          fx(player.dimension, "kaiju8:oboro_ghost",
+             { x: from.x, y: from.y + 0.9, z: from.z });
+          // 音源が置いていった位置と新しい位置に分かれる
+          sound(player.dimension, "item.trident.return", from,
+                { pitch: 1.5, volume: 0.7 });
+          sound(player.dimension, "armor.equip_netherite", player.location,
+                { pitch: 1.7, volume: 0.5 });
+          later(1, () => {
+            fxLine(player.dimension, "kaiju8:cut_line_gyaku",
+                   player.getHeadLocation(), player.getViewDirection(), 3.5, 1.1);
+            fx(player.dimension, "kaiju8:twin_arc", ahead(player, 1.8));
+            if (hit(player, best.entity, 22 * ctx.mult)) {
+              bleed(best.entity);
+              wound(player, best.entity, 4, 0.5);
+              sound(player.dimension, "item.trident.hit", best.entity.location,
+                    { pitch: 0.8, volume: 1.5 });
+              shakeNearby(player.dimension, best.entity.location, 10, 0.28, 0.26);
+            }
+          });
+        });
+        later(9, () => {
+          fxScatter(player.dimension, "kaiju8:blade_dust", ahead(player, 1.4), 4, 0.7);
+          sound(player.dimension, "note.hat", player.location,
+                { pitch: 0.9, volume: 0.3 });
+        });
       } },
-    { id: "oboro", name: "kaiju8.tech.oboro", cd: 56, wear: 2, canon: true,
-      // 抜討術1式「朧抜き」— 対象を突き抜けながらの居合抜き
+    { id: "midare", name: "kaiju8.tech.midare", cd: 46, wear: 2, canon: true,
+      // 刀伐術4式「乱討ち」— 手数で押し切る。
+      // 半径・粒の数・広がり・輪の高さ・音程が波ごとに上がっていく。
       run(player, ctx) {
-        sound(player.dimension, "item.trident.riptide_2", player.location, { pitch: 1.6 });
-        dash(player, 3.2, 0.10, false);
-        afterimages(player, 8);
-        later(4, () => {
-          arcFx(player, 1.8, "kaiju8:slash_air");
-          const n = swing(player, ctx, { radius: 6.0, dot: -0.2, damage: 16, kb: 0.2 });
-          if (n) shakeNearby(player.dimension, player.location, 10, 0.24, 0.3);
+        fx(player.dimension, "kaiju8:twin_arc", ahead(player, 1.8));
+        sound(player.dimension, "item.trident.throw", player.location,
+              { pitch: 2.0, volume: 0.45 });
+        shake(player, 0.10, 0.16);
+        for (let i = 0; i < 5; i++) {
+          later(i * 2, () => {
+            fxScatter(player.dimension, "kaiju8:midare_shard",
+                      ahead(player, 2.2 + i * 0.45), 3 + i, 1.0 + i * 0.45);
+            fxRing(player.dimension, "kaiju8:cut_line", player.location,
+                   1.6 + i * 0.5, 4 + i, 0.8 + (i % 2) * 0.7);
+            for (const h of cone(player, 5.0 + i * 0.5, -0.1)) {
+              if (!hit(player, h.entity, 5 * ctx.mult)) continue;
+              bleed(h.entity);
+              knockback(h.entity, h.dx, h.dz, 0.15, 0.15);
+              fxScatter(player.dimension, "kaiju8:blood_mist",
+                        { x: h.entity.location.x, y: h.entity.location.y + 1.1,
+                          z: h.entity.location.z }, 1, 0.4);
+            }
+            sound(player.dimension, "note.hat", player.location,
+                  { pitch: 2.0 - i * 0.12, volume: 0.35 });
+            if (i % 2 === 0) {
+              sound(player.dimension, "mob.ravager.bite", player.location,
+                    { pitch: 1.75 - i * 0.06, volume: 0.5 });
+            }
+            shake(player, 0.06 + i * 0.02, 0.10);
+          });
+        }
+        later(10, () => {
+          fx(player.dimension, "kaiju8:cross_flash", ahead(player, 2.4));
+          fxScatter(player.dimension, "kaiju8:midare_shard", ahead(player, 2.4), 8, 2.6);
+          sound(player.dimension, "mob.ravager.roar", player.location,
+                { pitch: 1.15, volume: 1.1 });
+          shakeNearby(player.dimension, player.location, 11, 0.24, 0.35);
+        });
+      } },
+    { id: "oboro", name: "kaiju8.tech.oboro", cd: 52, wear: 2, canon: true,
+      // 抜討術1式「朧抜き」— 抜いた瞬間には、もう通り過ぎている。
+      // 中盤5tickは完全に無音、斬撃線は通り過ぎた「後ろ」に出る。
+      run(player, ctx) {
+        const eye0 = player.getHeadLocation();
+        const dir0 = player.getViewDirection();
+        fx(player.dimension, "kaiju8:draw_gleam", ahead(player, 0.9));
+        sound(player.dimension, "armor.equip_netherite", player.location,
+              { pitch: 1.65, volume: 0.8 });
+        sound(player.dimension, "item.trident.throw", player.location,
+              { pitch: 1.8, volume: 0.5 });
+        shake(player, 0.08, 0.12, "rotational");
+        later(1, () => dash(player, 3.2, 0.10, false));
+        for (let i = 1; i <= 5; i++) {
+          later(i, () => {
+            fx(player.dimension, "kaiju8:oboro_ghost",
+               { x: player.location.x, y: player.location.y + 0.9, z: player.location.z });
+            fxScatter(player.dimension, "kaiju8:blade_dust", player.location, 1, 0.35);
+          });
+        }
+        later(5, () => {
+          // 斬撃線は自分が通ってきた道に置く
+          fxLine(player.dimension, "kaiju8:cut_line", eye0, dir0, 6.0, 1.0);
+          fx(player.dimension, "kaiju8:twin_arc", ahead(player, 1.6));
+          let n = 0;
+          for (const h of cone(player, 6.0, -0.2)) {
+            if (!hit(player, h.entity, 16 * ctx.mult)) continue;
+            bleed(h.entity);
+            n++;
+            knockback(h.entity, h.dx, h.dz, 0.2, 0.2);
+            wound(player, h.entity, 3, 0.4);
+            const where = h.entity.location;
+            // 斬られたことに気づくのが3tick遅れる
+            later(3, () => {
+              sound(player.dimension, "item.trident.hit", where,
+                    { pitch: 0.70, volume: 1.4 });
+              sound(player.dimension, "random.fizz", where,
+                    { pitch: 0.6, volume: 0.5 });
+            });
+          }
+          later(3, () => {
+            fx(player.dimension, "kaiju8:draw_gleam", ahead(player, 0.8));
+            sound(player.dimension, "armor.equip_chain", player.location,
+                  { pitch: 1.4, volume: 0.5 });
+            if (n) shakeNearby(player.dimension, player.location, 10, 0.24, 0.30);
+          });
         });
       } },
     { id: "junihitoe", name: "kaiju8.tech.junihitoe", cd: 150, wear: 6, canon: true,
       requires: "kaiju8:numbers_10",
-      // 刀伐術7式「十二単」— 一点集中の12連撃。解放戦力が高いほど本領を発揮
+      // 刀伐術7式「十二単」— 十二の斬撃を一息に重ねる。
+      // 輪が一枚ずつ閉じ、鐘が一音ずつ上がるので、十二枚を数えられる。
       run(player, ctx) {
-        sound(player.dimension, "mob.ravager.roar", player.location,
-              { pitch: 1.8, volume: 1.4 });
-        for (let i = 0; i < 12; i++) {
+        fx(player.dimension, "kaiju8:junihitoe_ring", ahead(player, 2.6));
+        fxScatter(player.dimension, "kaiju8:blade_dust", player.location, 4, 0.8);
+        sound(player.dimension, "beacon.power_select", player.location,
+              { pitch: 0.70, volume: 0.8 });
+        shake(player, 0.10, 0.20);
+        for (let i = 1; i <= 12; i++) {
           later(i, () => {
-            fx(player.dimension, "kaiju8:slash_12", ahead(player, 2.6));
-            for (const t of ray(player, 6.5, 1.6)) {
-              if (hit(player, t.entity, 4.5 * ctx.mult)) bleed(t.entity);
+            const at = ahead(player, 2.6);
+            fx(player.dimension, "kaiju8:junihitoe_ring", at);
+            fx(player.dimension,
+               i % 2 ? "kaiju8:cut_line_ko" : "kaiju8:cut_line_gyaku", at);
+            if (i % 3 === 0) fx(player.dimension, "kaiju8:slash_12", at);
+            sound(player.dimension, "note.bell", player.location,
+                  { pitch: 0.62 + i * 0.11, volume: 0.55 });
+            for (const h of ray(player, 6.5, 1.6)) {
+              if (!hit(player, h.entity, 4.5 * ctx.mult)) continue;
+              bleed(h.entity);
+              if (i % 4 === 0) wound(player, h.entity, 2, 0.4);
             }
+            shake(player, 0.05 + i * 0.012, 0.08);
           });
         }
         later(13, () => {
-          fx(player.dimension, "kaiju8:fist_shock", ahead(player, 2.6));
-          shakeNearby(player.dimension, player.location, 16, 0.38, 0.5);
+          const at = ahead(player, 2.6);
+          fx(player.dimension, "kaiju8:junihitoe_bloom", at);
+          fx(player.dimension, "kaiju8:cross_flash", at);
+          fxScatter(player.dimension, "kaiju8:sever_spurt", at, 6, 1.2);
+          sound(player.dimension, "random.explode", player.location,
+                { pitch: 0.62, volume: 1.7 });
+          sound(player.dimension, "mob.ravager.roar", player.location,
+                { pitch: 0.90, volume: 1.3 });
+          shakeNearby(player.dimension, player.location, 16, 0.42, 0.55);
         });
-        shake(player, 0.22, 0.8);
+        later(16, () => {
+          fxScatter(player.dimension, "kaiju8:blade_dust", ahead(player, 2.2), 6, 1.0);
+          sound(player.dimension, "note.bell", player.location,
+                { pitch: 1.95, volume: 0.40 });
+        });
       } },
   ],
 
-  // ---- SW-1023 一刀（保科の予備・兄の流儀） ------------------------------
+  // ---- SW-1023 一刀（保科の予備） --------------------------------------
   "kaiju8:blade_sw1023": [
-    { id: "kasumi", name: "kaiju8.tech.kasumi", cd: 48, wear: 2, canon: true,
-      // 刀伐術5式「霞討ち」— 交差2撃を囮に、遅れて本命の第3撃が入る
+    { id: "kasumi", name: "kaiju8.tech.kasumi", cd: 40, wear: 2, canon: true,
+      // 刀伐術5式「霞討ち」— 囮を二つ振ってから本命を通す。
+      // 囮は薄く・軽く・揺れなし。空いた間を霞で満たし、本命がそれを斬り払う。
       run(player, ctx) {
-        for (const d of [0, 3]) {
-          later(d, () => {
-            arcFx(player, 2.6, "kaiju8:slash_cross");
-            swing(player, ctx, { radius: 5.4, dot: 0.1, damage: 5, kb: 0.2 });
-            sound(player.dimension, "mob.ravager.bite", player.location, { pitch: 1.6 });
-          });
-        }
-        later(11, () => {
-          arcFx(player, 2.2, "kaiju8:slash_air");
-          const n = swing(player, ctx, { radius: 5.8, dot: 0.0, damage: 20, kb: 0.9 });
-          sound(player.dimension, "mob.ravager.bite", player.location, { pitch: 0.85 });
-          if (n) shakeNearby(player.dimension, player.location, 10, 0.26, 0.3);
-        });
-      } },
-    { id: "yae", name: "kaiju8.tech.yae", cd: 80, wear: 4, canon: true,
-      // 刀伐術6式「八重討ち」— 層状に重なる八分割の多重斬
-      run(player, ctx) {
-        for (let i = 0; i < 8; i++) {
-          later(i * 2, () => {
-            fx(player.dimension, "kaiju8:slash_air",
-               forward(player.getHeadLocation(), player.getViewDirection(),
-                       1.6 + i * 0.22));
-            swing(player, ctx, { radius: 5.2, dot: 0.15, damage: 5.5, kb: 0.1 });
-          });
-        }
-        sound(player.dimension, "mob.ravager.roar", player.location, { pitch: 1.5 });
-        shake(player, 0.18, 0.7);
-      } },
-    { id: "kazaana", name: "kaiju8.tech.kazaana", cd: 62, wear: 3, canon: true,
-      // 抜討術2式「風穴」— 抜刀と刺突の複合。対象を貫通して穴を開ける
-      run(player, ctx) {
-        sound(player.dimension, "item.trident.riptide_3", player.location, { pitch: 1.3 });
-        dash(player, 2.2, 0.06, false);
-        afterimages(player, 6);
-        later(4, () => {
-          const dir = player.getViewDirection();
-          const eye = player.getHeadLocation();
-          fxLine(player.dimension, "kaiju8:slash_air", eye, dir, 9, 1.5);
-          let n = 0;
-          for (const t of ray(player, 9, 1.4)) {
-            if (hit(player, t.entity, 26 * ctx.mult)) {
-              bleed(t.entity);
-              fxScatter(player.dimension, "kaiju8:kaiju_blood", t.entity.location, 6, 0.7);
-              n++;
-            }
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        const feint = (pitch, reach) => {
+          fx(player.dimension, "kaiju8:feint_line", ahead(player, reach));
+          fxLine(player.dimension, "kaiju8:feint_line", eye, dir, 3.0, 1.5);
+          for (const h of cone(player, 5.4, 0.1)) {
+            if (hit(player, h.entity, 5 * ctx.mult)) bleed(h.entity);
           }
-          if (n) shakeNearby(player.dimension, player.location, 12, 0.3, 0.3);
+          sound(player.dimension, "note.hat", player.location,
+                { pitch, volume: 0.30 });
+        };
+        feint(1.45, 2.4);
+        later(3, () => feint(1.30, 2.2));
+        for (const t of [4, 6, 8]) {
+          later(t, () => fxScatter(player.dimension, "kaiju8:kasumi_haze",
+                                   ahead(player, 2.6), 3, 1.4));
+        }
+        later(6, () => {
+          sound(player.dimension, "random.fizz", player.location,
+                { pitch: 1.7, volume: 0.35 });
+          for (const h of cone(player, 6.0, 0.0)) {
+            try { h.entity.addEffect("slowness", 30, { amplifier: 0, showParticles: false }); }
+            catch (_) { }
+          }
+        });
+        // 本命の一拍前に必ず出る予兆。ダメージは無い
+        later(10, () => {
+          fx(player.dimension, "kaiju8:cut_line_heavy", ahead(player, 2.6));
+          sound(player.dimension, "random.click", player.location,
+                { pitch: 0.5, volume: 0.6 });
+        });
+        later(11, () => {
+          fxLine(player.dimension, "kaiju8:cut_line_heavy", eye, dir, 5.5, 1.1);
+          fx(player.dimension, "kaiju8:haze_burst", ahead(player, 2.6));
+          let n = 0;
+          for (const h of cone(player, 5.8, 0.0)) {
+            if (!hit(player, h.entity, 20 * ctx.mult)) continue;
+            bleed(h.entity);
+            n++;
+            knockback(h.entity, h.dx, h.dz, 0.9, 0.3);
+            wound(player, h.entity, 4, 0.6);
+          }
+          sound(player.dimension, "item.trident.hit", player.location,
+                { pitch: 0.60, volume: 1.6 });
+          sound(player.dimension, "mob.ravager.bite", player.location,
+                { pitch: 0.62, volume: 1.0 });
+          if (n) shakeNearby(player.dimension, player.location, 11, 0.30, 0.32);
+        });
+        later(14, () => {
+          fxScatter(player.dimension, "kaiju8:kasumi_haze", ahead(player, 2.0), 2, 1.0);
+          fxScatter(player.dimension, "kaiju8:blade_dust", ahead(player, 1.8), 3, 0.6);
         });
       } },
-    { id: "sakabyoshi", name: "kaiju8.tech.sakabyoshi", cd: 44, wear: 2, canon: true,
-      // 抜討術3式「逆拍子」— 振りの途中で方向を反転させ拍子を崩す
+    { id: "yae", name: "kaiju8.tech.yae", cd: 80, wear: 3, canon: true,
+      // 刀伐術6式「八重討ち」— 八層を積む。
+      // 一枚が0.75秒残るので、最後の一枚が落ちるとき八枚とも画面に在る。
       run(player, ctx) {
-        arcFx(player, 2.2, "kaiju8:slash_air");
-        swing(player, ctx, { radius: 5.0, dot: 0.2, damage: 9, kb: 0.5 });
-        sound(player.dimension, "mob.ravager.bite", player.location, { pitch: 1.4 });
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        fx(player.dimension, "kaiju8:cut_line_heavy", ahead(player, 2.0));
+        sound(player.dimension, "item.trident.throw", player.location,
+              { pitch: 1.5, volume: 0.7 });
+        shake(player, 0.08, 0.12);
+        for (let i = 0; i < 8; i++) {
+          later(1 + i * 2, () => {
+            const base = ahead(player, 2.2);
+            fx(player.dimension, "kaiju8:cut_slat",
+               { x: base.x, y: base.y - 0.7 + i * 0.20, z: base.z });
+            fx(player.dimension,
+               i % 2 ? "kaiju8:cut_line_gyaku" : "kaiju8:cut_line_ko",
+               ahead(player, 2.4));
+            for (const h of cone(player, 5.2, 0.15)) {
+              if (!hit(player, h.entity, 5.5 * ctx.mult)) continue;
+              bleed(h.entity);
+              const at = h.entity.location;
+              fxScatter(player.dimension, "kaiju8:blade_dust",
+                        { x: at.x, y: at.y + 1.0, z: at.z }, 2, 0.4);
+              if (i % 2) {
+                fx(player.dimension, "kaiju8:blood_mist",
+                   { x: at.x, y: at.y + 1.1, z: at.z });
+              }
+            }
+            // 十二単の上がる鐘に対して、こちらは下がる金物
+            sound(player.dimension, "random.anvil_use", player.location,
+                  { pitch: 1.95 - i * 0.09, volume: 0.45 });
+            shake(player, 0.07, 0.10);
+          });
+        }
+        later(17, () => {
+          fxLine(player.dimension, "kaiju8:cut_line_heavy", eye, dir, 5.0, 1.0);
+          fxScatter(player.dimension, "kaiju8:sever_spurt", ahead(player, 2.4), 5, 1.0);
+          sound(player.dimension, "random.anvil_land", player.location,
+                { pitch: 0.95, volume: 1.2 });
+          sound(player.dimension, "mob.ravager.roar", player.location,
+                { pitch: 0.85, volume: 0.9 });
+          shakeNearby(player.dimension, player.location, 12, 0.30, 0.40);
+        });
+      } },
+    { id: "kazaana", name: "kaiju8.tech.kazaana", cd: 56, wear: 3, canon: true,
+      // 抜討術2式「風穴」— 一直線に貫く。
+      // 突きが伸びるにつれ射程が 3→6→9m と育ち、奥の敵ほど遅れて貫かれる。
+      run(player, ctx) {
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        fx(player.dimension, "kaiju8:draw_gleam", ahead(player, 0.9));
+        sound(player.dimension, "armor.equip_netherite", player.location,
+              { pitch: 1.25, volume: 0.9 });
+        sound(player.dimension, "item.trident.riptide_3", player.location,
+              { pitch: 1.05, volume: 0.8 });
+        shake(player, 0.10, 0.14);
+        later(1, () => dash(player, 2.2, 0.06, false));
+        [3.0, 6.0, 9.0].forEach((reach, i) => {
+          later(1 + i, () => {
+            fxLine(player.dimension, "kaiju8:cut_line", eye, dir, reach, 1.5);
+            fxScatter(player.dimension, "kaiju8:blade_dust", player.location, 2, 0.3);
+          });
+        });
         later(4, () => {
-          arcFx(player, 2.0, "kaiju8:slash_cross");
-          const n = swing(player, ctx, { radius: 5.0, dot: 0.2, damage: 15 * 1.0,
-                                         kb: 1.0, up: 0.3 });
-          sound(player.dimension, "mob.ravager.bite", player.location, { pitch: 0.95 });
-          if (n) shake(player, 0.2, 0.24);
+          const hits = ray(player, 9, 1.4);
+          inDepth(hits, 3, (h) => {
+            if (!hit(player, h.entity, 26 * ctx.mult)) return;
+            bleed(h.entity);
+            const at = h.entity.location;
+            fx(player.dimension, "kaiju8:wound_hole",
+               { x: at.x, y: at.y + 1.0, z: at.z });
+            // 噴出は貫いた向こう側から出る
+            fxScatter(player.dimension, "kaiju8:sever_spurt",
+                      forward(at, dir, 0.6), 4, 0.4);
+            fx(player.dimension, "kaiju8:blood_mist",
+               { x: at.x, y: at.y + 1.2, z: at.z });
+            sound(player.dimension, "item.trident.hit_ground", at,
+                  { pitch: 0.70, volume: 1.5 });
+            sound(player.dimension, "random.fizz", at, { pitch: 0.50, volume: 0.7 });
+            if (h === hits[0]) {
+              shakeNearby(player.dimension, at, 12, 0.32, 0.30);
+            }
+          });
+        });
+        later(7, () => fxLine(player.dimension, "kaiju8:vacuum_wake", eye, dir, 9, 2.2));
+      } },
+    { id: "sakabyoshi", name: "kaiju8.tech.sakabyoshi", cd: 46, wear: 2, canon: true,
+      // 抜討術3式「逆拍子」— 拍子を作ってから外す。
+      // t4 は何も出さない。その「無い一拍」が技の本体。
+      run(player, ctx) {
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        fx(player.dimension, "kaiju8:draw_gleam", ahead(player, 0.9));
+        fxLine(player.dimension, "kaiju8:cut_line_ko", eye, dir, 4.0, 1.3);
+        for (const h of cone(player, 5.0, 0.2)) {
+          if (!hit(player, h.entity, 9 * ctx.mult)) continue;
+          bleed(h.entity);
+          knockback(h.entity, h.dx, h.dz, 0.5, 0.2);
+        }
+        sound(player.dimension, "armor.equip_iron", player.location,
+              { pitch: 1.5, volume: 0.6 });
+        sound(player.dimension, "mob.ravager.bite", player.location,
+              { pitch: 1.55, volume: 0.9 });
+        shake(player, 0.12, 0.16);
+        later(2, () => {
+          fxScatter(player.dimension, "kaiju8:blade_dust", ahead(player, 2.0), 2, 0.5);
+          sound(player.dimension, "note.hat", player.location,
+                { pitch: 1.7, volume: 0.25 });
+        });
+        // t4 — 相手も自分も次が来ると思っている拍。ここは空ける。
+        later(7, () => {
+          fxLine(player.dimension, "kaiju8:cut_line_gyaku", eye, dir, 4.0, 1.3);
+          fx(player.dimension, "kaiju8:cross_flash", ahead(player, 2.0));
+          for (const h of cone(player, 5.0, 0.2)) {
+            if (!hit(player, h.entity, 15 * ctx.mult)) continue;
+            bleed(h.entity);
+            knockback(h.entity, h.dx, h.dz, 1.0, 0.3);
+            wound(player, h.entity, 3, 0.5);
+            sound(player.dimension, "item.trident.hit", h.entity.location,
+                  { pitch: 0.90, volume: 1.3 });
+          }
+          sound(player.dimension, "random.anvil_use", player.location,
+                { pitch: 0.80, volume: 0.9 });
+          // 画面が「揺れる」のではなく「回る」のはこの技だけ
+          shake(player, 0.26, 0.26, "rotational");
+        });
+        later(9, () => {
+          fx(player.dimension, "kaiju8:cut_line_gyaku", ahead(player, 1.6));
+          sound(player.dimension, "armor.equip_chain", player.location,
+                { pitch: 1.3, volume: 0.4 });
         });
       } },
   ],
 
-  // ---- DF-STD バズーカ / 自動拳銃 ---------------------------------------
+  // ---- DF-STD バズーカ ------------------------------------------------
   "kaiju8:df_bazooka": [
     { id: "he_shell", name: "kaiju8.tech.he_shell", cd: 70, wear: 3, canon: false,
+      // 榴弾。後方爆風 → 弾が飛ぶのが見える → 白熱 → 破片 → 土柱 →
+      // 遅れて土煙が二度広がる。射手の後ろへ噴くのはこの武器だけ。
       run(player, ctx) {
-        shoot(player, "kaiju8:rifle_beam", 2.4);
-        fx(player.dimension, "kaiju8:cannon_muzzle", ahead(player, 1.4));
-        fxScatter(player.dimension, "kaiju8:muzzle_smoke", ahead(player, -1.4), 8, 1.0);
-        later(4, () => {
-          const t0 = ray(player, 30, 2.6)[0];
-          const at = t0 ? t0.entity.location : ahead(player, 16);
-          fxScatter(player.dimension, "kaiju8:socket_burst", at, 12, 1.4);
-          fx(player.dimension, "kaiju8:shock_ring", at);
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        fxCone(player.dimension, "kaiju8:backblast", eye,
+               { x: -dir.x, y: -dir.y, z: -dir.z }, 3.4, 0.45, 10);
+        fx(player.dimension, "kaiju8:tube_flash", ahead(player, 1.5));
+        const proj = shoot(player, "kaiju8:rifle_beam", 2.2, 0, null);
+        if (proj) trail(proj, "kaiju8:shell_smoke", 10, 1, 0.15);
+        sound(player.dimension, "mob.ghast.fireball", player.location,
+              { pitch: 0.55, volume: 1.4 });
+        sound(player.dimension, "random.explode", player.location,
+              { pitch: 0.85, volume: 0.7 });
+        shake(player, 0.26, 0.22);
+        later(5, () => {
+          const first = ray(player, 34, 2.8)[0];
+          const at = first ? first.entity.location : forward(eye, dir, 20);
+          fx(player.dimension, "kaiju8:detonation_gold",
+             { x: at.x, y: at.y + 0.8, z: at.z });
+          fx(player.dimension, "kaiju8:quake_dust",
+             { x: at.x, y: at.y + 0.1, z: at.z });
+          fxScatter(player.dimension, "kaiju8:steel_shard", at, 14, 1.6);
+          fxColumn(player.dimension, "kaiju8:dirt_column", at, 4.5, 8, 0.5);
           for (const t of targetsNear(player, 40)) {
-            const d = Math.hypot(t.location.x - at.x, t.location.z - at.z);
+            const dx = t.location.x - at.x;
+            const dz = t.location.z - at.z;
+            const d = Math.hypot(dx, dz);
             if (d > 5) continue;
-            if (hit(player, t, (26 - d * 3) * ctx.mult)) bleed(t);
+            if (!hit(player, t, (26 - d * 3) * ctx.mult)) continue;
+            bleed(t);
+            const len = d || 1;
+            knockback(t, dx / len, dz / len, 2.2, 0.55);
           }
           sound(player.dimension, "random.explode", player.location,
-                { pitch: 0.7, volume: 1.6 });
-          shakeNearby(player.dimension, at, 14, 0.38, 0.45);
+                { pitch: 0.42, volume: 2.0 });
+          sound(player.dimension, "random.explode", player.location,
+                { pitch: 1.5, volume: 0.5 });
+          shakeNearby(player.dimension, at, 18, 0.5, 0.55);
+          later(2, () => sound(player.dimension, "random.explode", player.location,
+                               { pitch: 0.28, volume: 0.9 }));
+          // 土煙は二波に分けて残す
+          later(4, () => {
+            fxScatter(player.dimension, "kaiju8:blast_smoke", at, 10, 2.6);
+            fxRing(player.dimension, "kaiju8:dust_wave", at, 4.0, 14, 0.15);
+          });
+          later(11, () => {
+            fxRing(player.dimension, "kaiju8:dust_wave", at, 6.5, 18, 0.15);
+            fxScatter(player.dimension, "kaiju8:blast_smoke", at, 6, 3.0);
+          });
         });
       } },
     { id: "incendiary", name: "kaiju8.tech.incendiary", cd: 90, wear: 4, canon: false,
+      // 焼夷弾。3発が別々の場所に落ち、炎の花弁が開き、ゲルが飛び散り、
+      // そのあと4秒かけて火が這って広がる。
       run(player, ctx) {
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
         for (let i = 0; i < 3; i++) {
           later(i * 5, () => {
-            shoot(player, "kaiju8:kaiju_acid", 2.0, 0.12);
-            fx(player.dimension, "kaiju8:cannon_muzzle", ahead(player, 1.4));
+            fxCone(player.dimension, "kaiju8:backblast", eye,
+                   { x: -dir.x, y: -dir.y, z: -dir.z }, 2.4, 0.4, 6);
+            fx(player.dimension, "kaiju8:tube_flash_hot", ahead(player, 1.5));
+            const proj = shoot(player, "kaiju8:rifle_beam", 1.9, 0.11, null);
+            if (proj) trail(proj, "kaiju8:fire_gel", 10, 2, 0.15);
+            sound(player.dimension, "mob.ghast.fireball", player.location,
+                  { pitch: 0.75 + i * 0.08, volume: 1.0 });
+            shake(player, 0.16, 0.18);
+            later(5, () => {
+              const mark = cone(player, 14, 0.4)[i];
+              const at = mark ? mark.entity.location
+                              : forward(eye, dir, 8 + i * 2.5);
+              for (let k = 0; k < 3; k++) {
+                fx(player.dimension, "kaiju8:wound_fire", {
+                  x: at.x + (Math.random() - 0.5) * 1.2,
+                  y: at.y + 0.4,
+                  z: at.z + (Math.random() - 0.5) * 1.2,
+                });
+              }
+              fxScatter(player.dimension, "kaiju8:fire_gel", at, 12, 1.8);
+              fxRing(player.dimension, "kaiju8:scorch_ring",
+                     { x: at.x, y: at.y + 0.06, z: at.z }, 2.4, 12, 0);
+              for (const t of targetsNear(player, 20)) {
+                const d = Math.hypot(t.location.x - at.x, t.location.z - at.z);
+                if (d > 3.2) continue;
+                if (!hit(player, t, 9 * ctx.mult)) continue;
+                bleed(t);
+                try { t.setOnFire(8, true); } catch (_) { }
+                fxScatter(player.dimension, "kaiju8:cauterize", t.location, 4, 0.7);
+              }
+              sound(player.dimension, "mob.ghast.fireball", player.location,
+                    { pitch: 1.5, volume: 0.6 });
+              sound(player.dimension, "random.explode", player.location,
+                    { pitch: 1.1, volume: 0.55 });
+              // 這って広がる火。この技の本体はここ
+              for (let k = 1; k <= 6; k++) {
+                later(k * 8, () => {
+                  fxRing(player.dimension, "kaiju8:scorch_ring", at,
+                         2.4 + k * 0.15, 10, 0.06);
+                  fxScatter(player.dimension, "kaiju8:ember_rain", at, 5, 2.0);
+                  fxScatter(player.dimension, "kaiju8:heat_smoke", at, 3, 1.6);
+                  for (const t of targetsNear(player, 20)) {
+                    const d = Math.hypot(t.location.x - at.x, t.location.z - at.z);
+                    if (d <= 3.0) { try { t.setOnFire(4, true); } catch (_) { } }
+                  }
+                });
+              }
+            });
           });
         }
-        later(10, () => {
-          for (const t of cone(player, 14, 0.4)) {
-            if (hit(player, t.entity, 10 * ctx.mult)) {
-              bleed(t.entity);
-              try { t.entity.setOnFire(6, true); } catch (_) { }
-              fxScatter(player.dimension, "kaiju8:cauterize", t.entity.location, 5, 0.9);
-            }
-          }
-        });
-        sound(player.dimension, "random.explode", player.location, { pitch: 0.9 });
-        shake(player, 0.2, 0.7);
+        later(18, () => shakeNearby(player.dimension, player.location, 12, 0.14, 0.9));
       } },
   ],
+
+  // ---- DF-STD 自動拳銃 -------------------------------------------------
   "kaiju8:df_pistol": [
     { id: "rapid", name: "kaiju8.tech.rapid", cd: 5, wear: 1, canon: false,
+      // 速射。毎発 薬莢が落ち、2発に1本だけ曳光が入り、銃口が左右に振れる。
       run(player) {
-        shoot(player, "kaiju8:df_bullet", 3.2, 0.06);
+        const beat = ((pistolBeat.get(player.id) ?? 0) + 1) % 4;
+        pistolBeat.set(player.id, beat);
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        const origin = forward(eye, dir, 0.9);
+        fx(player.dimension, "kaiju8:pistol_flash", origin);
+        fxScatter(player.dimension, "kaiju8:brass_case",
+                  forward({ x: eye.x, y: eye.y - 0.35, z: eye.z }, dir, 0.4), 1, 0.25);
+        const proj = shoot(player, "kaiju8:df_bullet", 3.35, 0.05, null);
+        if (proj && beat % 2 === 0) trail(proj, "kaiju8:tracer_round", 6, 2, 0.05);
         sound(player.dimension, "random.explode", player.location,
-              { pitch: 2.1, volume: 0.3 });
-        shake(player, 0.04, 0.08);
+              { pitch: 2.35, volume: 0.20 });
+        shake(player, beat % 2 === 0 ? 0.048 : 0.032, 0.06, "rotational");
+        later(1, () => fx(player.dimension, "kaiju8:slide_puff",
+                          forward({ x: eye.x, y: eye.y - 0.2, z: eye.z }, dir, 0.55)));
+        later(2, () => sound(player.dimension, "random.click", player.location,
+                             { pitch: 1.2, volume: 0.45 }));
+        if (beat === 3) {
+          // 4発ごとに銃が温まる
+          fxScatter(player.dimension, "kaiju8:slide_puff", origin, 3, 0.3);
+          sound(player.dimension, "random.click", player.location,
+                { pitch: 0.9, volume: 0.6 });
+        }
       } },
     { id: "aimed", name: "kaiju8.tech.aimed", cd: 30, wear: 1, canon: false,
+      // 精密射撃。構える → 線が通る → 一発で抜ける、の三拍。
       run(player, ctx) {
-        const t0 = ray(player, 26, 1.1)[0];
-        fxLine(player.dimension, "kaiju8:slash_scatter",
-               player.getHeadLocation(), player.getViewDirection(), 12, 2.0);
-        fx(player.dimension, "kaiju8:muzzle_flash", ahead(player, 1.0));
-        if (t0 && hit(player, t0.entity, 18 * ctx.mult)) {
-          bleed(t0.entity);
-          fxScatter(player.dimension, "kaiju8:socket_burst", t0.entity.location, 5, 0.6);
-        }
-        sound(player.dimension, "random.explode", player.location,
-              { pitch: 1.7, volume: 0.6 });
-        shake(player, 0.10, 0.16);
+        const eye = player.getHeadLocation();
+        const dir = player.getViewDirection();
+        const target = ray(player, 26, 1.1)[0];
+        const mark = target
+          ? { x: target.entity.location.x, y: target.entity.location.y + 1.0,
+              z: target.entity.location.z }
+          : ahead(player, 10);
+        fx(player.dimension, "kaiju8:aim_lock", mark);
+        fxLine(player.dimension, "kaiju8:aim_dot", eye, dir, 18, 1.5);
+        sound(player.dimension, "beacon.power_select", player.location,
+              { pitch: 2.0, volume: 0.35 });
+        shake(player, 0.02, 0.20, "rotational");
+        later(4, () => {
+          const origin = forward(eye, dir, 0.9);
+          fx(player.dimension, "kaiju8:muzzle_star", origin);
+          fxScatter(player.dimension, "kaiju8:brass_case",
+                    forward({ x: eye.x, y: eye.y - 0.35, z: eye.z }, dir, 0.4), 1, 0.2);
+          shoot(player, "kaiju8:df_bullet", 4.0, 0, null);
+          fxLine(player.dimension, "kaiju8:bullet_line", eye, dir, 24, 1.0);
+          sound(player.dimension, "random.explode", player.location,
+                { pitch: 1.45, volume: 0.75 });
+          sound(player.dimension, "mob.wither.shoot", player.location,
+                { pitch: 1.95, volume: 0.25 });
+          shake(player, 0.13, 0.12, "rotational");
+          if (target && hit(player, target.entity, 20 * ctx.mult)) {
+            bleed(target.entity);
+            const at = target.entity.location;
+            fx(player.dimension, "kaiju8:round_impact",
+               { x: at.x, y: at.y + 1.0, z: at.z });
+            fx(player.dimension, "kaiju8:pierce_hole",
+               { x: at.x, y: at.y + 1.0, z: at.z });
+            // 体液は弾道の向こう側へ抜ける
+            fxScatter(player.dimension, "kaiju8:blood_splash",
+                      forward(at, dir, 0.9), 8, 0.5);
+            shakeNearby(player.dimension, at, 6, 0.14, 0.14);
+          } else {
+            fxScatter(player.dimension, "kaiju8:impact_dust",
+                      forward(eye, dir, 24), 4, 0.5);
+          }
+          later(2, () => {
+            fxScatter(player.dimension, "kaiju8:slide_puff", origin, 2, 0.25);
+            sound(player.dimension, "random.click", player.location,
+                  { pitch: 1.05, volume: 0.5 });
+          });
+        });
       } },
   ],
 
