@@ -9,6 +9,24 @@ import { TECH, listFor, selected, showWheel } from "./techniques.js";
 import { liftsReleaseCap, wornNumbers, fullReleaseActive } from "./numbers.js";
 import { fx, fxArc, fxScatter, sound, shake } from "./effects.js";
 
+// use_duration を付けたので、右クリックを押しっぱなしにすると itemUse が
+// 繰り返し飛んでくる。クールダウン中の「まだ撃てない」音がそのまま連打されると
+// うるさいので、鳴らすのは 8tick に一度までにする。
+const lastDeny = new Map();
+
+function denyBlocked(player) {
+  const now = system.currentTick;
+  const at = lastDeny.get(player.id) ?? -99;
+  if (now - at < 8) return true;
+  lastDeny.set(player.id, now);
+  return false;
+}
+
+function denySound(player) {
+  if (denyBlocked(player)) return;
+  sound(player.dimension, "note.bass", player.location, { pitch: 0.7, volume: 0.4 });
+}
+
 export function wearsFullSuit(player) {
   try {
     const eq = player.getComponent("minecraft:equippable");
@@ -84,11 +102,12 @@ export function useTechnique(player, typeId) {
   if (tech.numbers) return useNumbersAbility(player, tech);
 
   if (tech.form && !isTransformed(player)) {
-    tell(player, tr("kaiju8.msg.form_only"));
+    if (!denyBlocked(player)) tell(player, tr("kaiju8.msg.form_only"));
     return true;
   }
   // 7式「十二単」はナンバーズ10の全開放状態でのみ解禁される
   if (tech.requires && wornNumbers(player) !== tech.requires) {
+    if (denyBlocked(player)) return true;
     tell(player, {
       rawtext: [{
         translate: "kaiju8.msg.requires_numbers",
@@ -98,7 +117,7 @@ export function useTechnique(player, typeId) {
     return true;
   }
   if (onCooldown(player.id, typeId)) {
-    sound(player.dimension, "note.bass", player.location, { pitch: 0.7, volume: 0.4 });
+    denySound(player);
     return true;
   }
   const rate = releaseRate(player);
@@ -126,6 +145,7 @@ export function useTechnique(player, typeId) {
 
 function useNumbersAbility(player, tech) {
   if (wornNumbers(player) !== tech.numbers) {
+    if (denyBlocked(player)) return true;
     tell(player, {
       rawtext: [{
         translate: "kaiju8.msg.requires_numbers",
@@ -135,7 +155,7 @@ function useNumbersAbility(player, tech) {
     return true;
   }
   if (onCooldown(player.id, "numbers")) {
-    sound(player.dimension, "note.bass", player.location, { pitch: 0.6, volume: 0.4 });
+    denySound(player);
     return true;
   }
   setCooldown(player.id, "numbers", tech.cd);
