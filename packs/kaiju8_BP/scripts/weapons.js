@@ -5,7 +5,7 @@ import {
   tr, tell, actionbar, num, onCooldown, setCooldown,
 } from "./util.js";
 import { container, selectedSlot, isTransformed, spendEnergy } from "./transform.js";
-import { TECH, selected, showWheel } from "./techniques.js";
+import { TECH, listFor, selected, showWheel } from "./techniques.js";
 import { liftsReleaseCap, wornNumbers, fullReleaseActive } from "./numbers.js";
 import { fx, sound, shake } from "./effects.js";
 
@@ -74,10 +74,14 @@ export function damageHeldItem(player, amount) {
 
 /** Right-click: run whichever 技 is currently selected for the held weapon. */
 export function useTechnique(player, typeId) {
-  const list = TECH[typeId];
-  if (!list) return false;
+  const list = listFor(player, typeId);
+  if (!list || !list.length) return false;
   const tech = selected(player, typeId);
   if (!tech) return false;
+
+  // ホイールがナンバーズの固有能力に乗っている場合。武器の耐久は減らず、
+  // クールダウンは機体側で共有する（武器を持ち替えて連打できないように）
+  if (tech.numbers) return useNumbersAbility(player, tech);
 
   if (tech.form && !isTransformed(player)) {
     tell(player, tr("kaiju8.msg.form_only"));
@@ -115,6 +119,32 @@ export function useTechnique(player, typeId) {
     rawtext: [
       { text: "§b" }, { translate: tech.name },
       { text: `§r  §7解放戦力 §b${rate}%` },
+    ],
+  });
+  return true;
+}
+
+function useNumbersAbility(player, tech) {
+  if (wornNumbers(player) !== tech.numbers) {
+    tell(player, {
+      rawtext: [{
+        translate: "kaiju8.msg.requires_numbers",
+        with: { rawtext: [{ translate: `item.${tech.numbers}` }] },
+      }],
+    });
+    return true;
+  }
+  if (onCooldown(player.id, "numbers")) {
+    sound(player.dimension, "note.bass", player.location, { pitch: 0.6, volume: 0.4 });
+    return true;
+  }
+  setCooldown(player.id, "numbers", tech.cd);
+  try { tech.run(player, { mult: releaseMultiplier(player), rate: releaseRate(player) }); }
+  catch (_) { }
+  actionbar(player, {
+    rawtext: [
+      { text: "§d" }, { translate: tech.name },
+      { text: "§r  §7" }, { translate: `item.${tech.numbers}` },
     ],
   });
   return true;

@@ -43,6 +43,11 @@ def main():
                       cwd=ROOT).returncode:
         sys.exit(1)
 
+    print("\n=== behaviour tests ===")
+    if subprocess.run([sys.executable, os.path.join(TOOLS, "test_logic.py")],
+                      cwd=ROOT).returncode:
+        sys.exit(1)
+
     print("\n=== validate ===")
     if subprocess.run([sys.executable, os.path.join(TOOLS, "validate.py")], cwd=ROOT).returncode:
         sys.exit(1)

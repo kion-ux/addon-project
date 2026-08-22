@@ -11,6 +11,7 @@ import {
   fx, fxRing, fxLine, fxScatter, sound, shake, shakeNearby, cone, ray, hit,
   bleed, later, targetsNear,
 } from "./effects.js";
+import { NUMBERS, wornNumbers, setAbilityById } from "./numbers.js";
 
 const SEL = "kaiju8:tech_select";
 
@@ -715,6 +716,10 @@ export function tickSlams() {
 
 // ===========================================================================
 //  切り返し (technique selection)
+//
+//  識別怪獣兵器（ナンバーズ）を着ていると、その機体の固有能力が持っている武器の
+//  技の後ろに並ぶ。つまり能力も同じスニークの切り返しで選び、同じ右クリックで
+//  撃てる。技を持たない道具（怪獣探知機など）には割り込まない。
 // ===========================================================================
 function readSelection(player) {
   try {
@@ -724,26 +729,48 @@ function readSelection(player) {
   return {};
 }
 
+/** ナンバーズの固有能力を技と同じ形にして返す。 */
+function numbersEntries(player) {
+  const id = wornNumbers(player);
+  if (!id) return [];
+  return (NUMBERS[id]?.abilities ?? []).map((a) => ({
+    id: a.id, name: a.name, cd: a.cd, wear: 0, canon: true,
+    numbers: id, ability: a.id, run: a.run,
+  }));
+}
+
+/** その武器で今切り返せる一覧。技を持たない道具には undefined を返す。 */
+export function listFor(player, typeId) {
+  const base = TECH[typeId];
+  if (!base) return undefined;
+  const extra = numbersEntries(player);
+  return extra.length ? base.concat(extra) : base;
+}
+
 export function selectedIndex(player, typeId) {
-  const list = TECH[typeId];
-  if (!list) return 0;
+  const list = listFor(player, typeId);
+  if (!list || !list.length) return 0;
   const map = readSelection(player);
   return ((map[typeId] ?? 0) % list.length + list.length) % list.length;
 }
 
 export function selected(player, typeId) {
-  const list = TECH[typeId];
+  const list = listFor(player, typeId);
   return list ? list[selectedIndex(player, typeId)] : undefined;
 }
 
 export function cycle(player, typeId, step = 1) {
-  const list = TECH[typeId];
+  const list = listFor(player, typeId);
   if (!list || list.length < 2) return undefined;
   const map = readSelection(player);
   const next = (((map[typeId] ?? 0) + step) % list.length + list.length) % list.length;
   map[typeId] = next;
   try { player.setDynamicProperty(SEL, JSON.stringify(map)); } catch (_) { }
-  return list[next];
+  const picked = list[next];
+  // ホイールが能力に乗ったら端末側の選択も合わせる。スニーク＋ジャンプの
+  // 即時発動と食い違わないように。
+  if (picked?.numbers) setAbilityById(player, picked.numbers, picked.ability);
+  return picked;
 }
 
 /** 解放戦力の帯別カラー (仕様書 §2 の HUD カラーバンド)。 */
@@ -757,8 +784,8 @@ export function releaseColour(rate) {
 
 /** 技ホイールをアクションバーに描く。 */
 export function showWheel(player, typeId, rate) {
-  const list = TECH[typeId];
-  if (!list) return;
+  const list = listFor(player, typeId);
+  if (!list || !list.length) return;
   const current = selectedIndex(player, typeId);
   const n = list.length;
   const parts = [{ translate: `item.${typeId}` },
@@ -766,8 +793,12 @@ export function showWheel(player, typeId, rate) {
   // 技が増えたので、現在地とその前後だけを出す
   for (const off of (n <= 3 ? [...Array(n).keys()].map((i) => i - current) : [-1, 0, 1])) {
     const i = ((current + off) % n + n) % n;
-    parts.push({ text: off === 0 ? "§b§l▸ " : "§8  " });
-    parts.push({ translate: list[i].name });
+    const entry = list[i];
+    // ナンバーズの能力は紫、武器の技は水色で区別する
+    const mark = entry.numbers ? (off === 0 ? "§d§l▸ " : "§5  ")
+                               : (off === 0 ? "§b§l▸ " : "§8  ");
+    parts.push({ text: mark });
+    parts.push({ translate: entry.name });
     parts.push({ text: "§r  " });
   }
   parts.push({ text: `\n§7解放戦力 ${releaseColour(rate)}${rate}%` });

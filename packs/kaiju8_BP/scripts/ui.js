@@ -4,7 +4,7 @@ import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/serve
 import { PROP, ENERGY_MAX, RELEASE_CAP_NO_SUIT } from "./config.js";
 import { tr, tell, num, distance } from "./util.js";
 import { releaseRate, setReleaseRate, wearsFullSuit } from "./weapons.js";
-import { TECH, selectedIndex } from "./techniques.js";
+import { TECH, listFor, selectedIndex } from "./techniques.js";
 import { rankKey } from "./kaiju.js";
 import { hasPower, isTransformed } from "./transform.js";
 import { alertsEnabled, setAlerts } from "./alert.js";
@@ -159,13 +159,17 @@ function openRelease(player) {
 
 function openTechList(player) {
   const lines = [{ translate: "kaiju8.ui.techlist_hint" }, { text: "\n" }];
-  for (const [itemId, list] of Object.entries(TECH)) {
+  for (const itemId of Object.keys(TECH)) {
+    // 装備中のナンバーズの能力もその武器の切り返しに並ぶので、一緒に出す
+    const list = listFor(player, itemId) ?? [];
     const current = selectedIndex(player, itemId);
     lines.push({ text: "\n§e" });
     lines.push({ translate: `item.${itemId}` });
     lines.push({ text: "§r\n" });
     list.forEach((t, i) => {
-      lines.push({ text: i === current ? "  §b▸ " : "  §8- " });
+      const mark = t.numbers ? (i === current ? "  §d▸ " : "  §5- ")
+                             : (i === current ? "  §b▸ " : "  §8- ");
+      lines.push({ text: mark });
       lines.push({ translate: t.name });
       lines.push({ text: "§r\n" });
     });

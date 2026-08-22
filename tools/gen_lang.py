@@ -199,21 +199,27 @@ UI = {
     "kaiju8.numbers.10": ("尾が第3の刃として自動で追撃する",
                           "The tail strikes on its own as a third blade"),
     "kaiju8.ui.techlist_hint": (
-        "武器を持ってスニークすると技を切り返せる。",
-        "Hold a weapon and sneak to rotate through its techniques."),
+        "武器を持ってスニークすると技を切り返せる。ナンバーズ装備中は"
+        "その機体の固有能力も同じ切り返しに並ぶ（§d紫§r表示）。",
+        "Hold a weapon and sneak to rotate through its techniques. A worn Numbers "
+        "adds its own abilities to the same wheel (shown in §dmagenta§r)."),
 
     # --- ナンバーズ能力 ------------------------------------------------
     "kaiju8.ui.numbers": ("ナンバーズ能力", "Numbers abilities"),
     "kaiju8.ui.numbers_hint": (
-        "地上でスニーク＋ジャンプで発動。ここで能力を選ぶ。",
-        "Sneak and jump on the ground to fire. Pick the ability here."),
+        "武器を持ってスニークすれば技と同じ切り返しに並ぶ。"
+        "地上でスニーク＋ジャンプでも即発動できる。",
+        "A worn Numbers adds its abilities to the held weapon's technique wheel. "
+        "Sneak + jump on the ground also fires the selected one."),
     "kaiju8.ui.numbers_none": (
         "§7識別怪獣兵器を頭に装備すると、その機体の能力が使えるようになる。",
         "§7Equip a Numbers weapon on your head to unlock its abilities."),
     "kaiju8.msg.numbers_pick": ("§7選択:", "§7Selected:"),
     "kaiju8.msg.numbers_hint": (
-        "§7能力は §b地上でスニーク＋ジャンプ§7 で発動。切替は怪獣探知機の端末から。",
-        "§7Sneak + jump on the ground to fire. Switch abilities from the detector terminal."),
+        "§7固有能力は §b武器の切り返し§7 に並ぶ（§d紫§7表示）。"
+        "右クリックで発動、地上でスニーク＋ジャンプでも撃てる。",
+        "§7Its abilities join the held weapon's technique wheel (§dmagenta§7). "
+        "Right-click to fire, or sneak + jump on the ground."),
     "kaiju8.msg.full_release": (
         "§c全開放。解放戦力 100%%。",
         "§cFull release. Combat power at 100%%."),

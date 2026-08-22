@@ -406,6 +406,13 @@ export function setAbility(player, id, index) {
   return list[next];
 }
 
+/** 能力 id を指定して選ぶ。技ホイールから呼ばれる。 */
+export function setAbilityById(player, id, abilityId) {
+  const list = NUMBERS[id]?.abilities ?? [];
+  const at = list.findIndex((a) => a.id === abilityId);
+  return at < 0 ? undefined : setAbility(player, id, at);
+}
+
 export function cycleAbility(player, id, step = 1) {
   const list = NUMBERS[id]?.abilities ?? [];
   if (list.length < 2) return undefined;

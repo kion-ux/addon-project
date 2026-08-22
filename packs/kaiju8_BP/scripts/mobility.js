@@ -4,7 +4,7 @@ import { PROP, RELEASE_SAFE } from "./config.js";
 import { num, allPlayers, knockback } from "./util.js";
 import { fx, fxScatter, sound, shakeNearby, targetsNear, hit, bleed } from "./effects.js";
 import { container, selectedSlot, isTransformed } from "./transform.js";
-import { TECH, cycle } from "./techniques.js";
+import { listFor, cycle } from "./techniques.js";
 import { cycleTechnique, releaseRate, wearsFullSuit } from "./weapons.js";
 import { wornNumbers, activate } from "./numbers.js";
 
@@ -31,7 +31,8 @@ export function tickMobility() {
     const sneaking = !!player.isSneaking;
     const wasSneaking = sneakState.get(id) ?? false;
     sneakState.set(id, sneaking);
-    const canCycle = held && TECH[held] && TECH[held].length > 1 &&
+    const wheel = held ? listFor(player, held) : undefined;
+    const canCycle = !!wheel && wheel.length > 1 &&
       (held !== "kaiju8:no8_power" || transformed);
     if (sneaking && !wasSneaking && canCycle) {
       // スニークで技を切り返す。ダッシュ中なら逆順に戻す
