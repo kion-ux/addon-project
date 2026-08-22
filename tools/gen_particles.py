@@ -837,6 +837,9 @@ add("kaiju8:tube_flash_hot", "burst", count=1, life=0.16, speed=0, size=(1.7, 1.
     colour=CAUTER, shape="point", drag=0)
 add("kaiju8:muzzle_frost", "burst", count=1, life=0.16, speed=0, size=(1.6, 1.6),
     colour=ICE, shape="point", drag=0)
+# ユニソケットは銃口の火だけで弾種が分かる。炸裂=橙の放射、凍結=冷気環、発雷=十字
+add("kaiju8:muzzle_he", "burst", count=1, life=0.14, speed=0, size=(1.5, 1.5),
+    colour=EMBER, shape="point", drag=0)
 add("kaiju8:barrel_vent", "smoke", count=10, life=1.2, speed=6, size=(0.6, 0.9),
     colour=A("#FADBA0", 0.65), radius=0.4, drag=4, gravity=-1.2)
 add("kaiju8:brass_case", "debris", count=1, life=1.1, speed=4.5, size=(0.14, 0.20),
