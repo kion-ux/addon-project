@@ -6,7 +6,8 @@ import {
   onCooldown, setCooldown, forward,
 } from "./util.js";
 import {
-  fx, fxRing, fxLine, fxScatter, sound, shakeNearby, hit, bleed, later,
+  fx, fxRing, fxLine, fxScatter, fxArc, fxCone, fxWall, fxColumn, sequence,
+  sound, shakeNearby, targetsNear, hit, bleed, later,
 } from "./effects.js";
 import { wearsFullSuit } from "./weapons.js";
 
@@ -247,87 +248,259 @@ function toward(from, to) {
   return { x: dx / len, y: dy / len, z: dz / len };
 }
 
-const ALLY_TECH = {
-  // 亜白ミナ: 識別怪獣兵器2号の狙撃
-  "kaiju8:mina_ashiro": { range: 30, cd: 5, run: beamShot(30, 26, 1.6) },
-  "kaiju8:gen_narumi": { range: 26, cd: 4, run: beamShot(26, 20, 1.4) },
-  "kaiju8:isao_shinomiya": { range: 30, cd: 4, run: beamShot(30, 24, 1.5) },
-  "kaiju8:haruichi_izumo": { range: 22, cd: 5, run: beamShot(22, 12, 1.2) },
-  // 保科宗四郎: 双刃刀の連撃
+// ===========================================================================
+//  味方隊員の技
+//  隊員はモーションを一の型／二の型で交互に出すので、演出もそれに合わせて
+//  二種類持たせる。同じ「斬撃線ひとつ」が全員から出ていた状態をやめる。
+//  run(ally, target, second) — second が true なら二の型。
+// ===========================================================================
+function eye(ally) {
+  return { x: ally.location.x, y: ally.location.y + 1.4, z: ally.location.z };
+}
+
+function nearby(ally, target, radius, damage, each) {
+  for (const t of targetsNear(ally, radius)) {
+    if (t.id !== target.id && !hasFamily(t, "kaiju")) continue;
+    if (hit(ally, t, damage)) bleed(t);
+    if (each) each(t);
+  }
+}
+
+function above(target, y = 1.1) {
+  return { x: target.location.x, y: target.location.y + y, z: target.location.z };
+}
+
+function groundAt(target) {
+  return { x: target.location.x, y: target.location.y + 0.1, z: target.location.z };
+}
+
+/** 狙撃: 一条の射線を通す。 */
+function snipe(range, damage, beam, impact, snd, pitch) {
+  return (ally, target) => {
+    const dir = toward(ally, target);
+    const from = eye(ally);
+    fxLine(ally.dimension, beam, from, dir, range, 1.1);
+    fx(ally.dimension, "kaiju8:muzzle_flash", forward(from, dir, 1.0));
+    if (hit(ally, target, damage)) bleed(target);
+    fxScatter(ally.dimension, impact, above(target), 7, 0.8);
+    sound(ally.dimension, snd, ally.location, { pitch, volume: 1.1 });
+  };
+}
+
+/** 斉射: 何発かに分けて撃ち込む。 */
+function volley(shots, gap, range, damage, muzzle, impact, snd, pitch) {
+  return (ally, target) => {
+    const steps = [];
+    for (let i = 0; i < shots; i++) {
+      steps.push([i * gap, () => {
+        const dir = toward(ally, target);
+        const from = eye(ally);
+        fx(ally.dimension, muzzle, forward(from, dir, 1.0));
+        fxLine(ally.dimension, "kaiju8:beam_trail", from, dir, range, 1.8);
+        if (hit(ally, target, damage)) bleed(target);
+        fxWall(ally.dimension, impact, above(target, 0.9), dir, 0.2, 1.8, 1.8, 3, 2);
+        sound(ally.dimension, snd, ally.location,
+              { pitch: pitch + i * 0.06, volume: 0.95 });
+      }]);
+    }
+    sequence(steps);
+  };
+}
+
+/** 連撃: 弧を描いて何度も斬る。 */
+function flurry(times, gap, damage, arcs, snd, pitch, radius) {
+  return (ally, target) => {
+    const steps = [];
+    for (let i = 0; i < times; i++) {
+      steps.push([i * gap, () => {
+        const dir = toward(ally, target);
+        fxArc(ally.dimension, arcs[i % arcs.length], eye(ally), dir, radius,
+              150, 5, i % 2 ? -0.4 : 0.4);
+        if (hit(ally, target, damage)) bleed(target);
+        sound(ally.dimension, snd, ally.location,
+              { pitch: pitch + (i % 3) * 0.09, volume: 0.85 });
+      }]);
+    }
+    sequence(steps);
+  };
+}
+
+/** 叩きつけ: 地面を割る。 */
+function smash(damage, radius, ring, snd, pitch, quake) {
+  return (ally, target) => {
+    const g =groundAt(target);
+    fx(ally.dimension, ring, g);
+    fxScatter(ally.dimension, "kaiju8:impact_dust", g, 9, 1.5);
+    fxScatter(ally.dimension, "kaiju8:debris", g, 7, 1.1);
+    fxColumn(ally.dimension, "kaiju8:crack_burst", g, 2.4, 5, 0.5);
+    nearby(ally, target, radius, damage);
+    sound(ally.dimension, snd, ally.location, { pitch, volume: 1.2 });
+    shakeNearby(ally.dimension, g, 12, quake, 0.38);
+  };
+}
+
+/** 薙ぎ払い: 横一線に払う。 */
+function sweep(damage, radius, arc, snd, pitch) {
+  return (ally, target) => {
+    const dir = toward(ally, target);
+    fxArc(ally.dimension, arc, eye(ally), dir, radius * 0.7, 175, 9, -0.2);
+    nearby(ally, target, radius, damage,
+           (t) => fxScatter(ally.dimension, "kaiju8:crack_burst", above(t), 4, 0.7));
+    sound(ally.dimension, snd, ally.location, { pitch, volume: 1.1 });
+    shakeNearby(ally.dimension, ally.location, 9, 0.16, 0.3);
+  };
+}
+
+export const ALLY_TECH = {
+  // ---- 亜白ミナ: 狙撃と斉射 ------------------------------------------
+  "kaiju8:mina_ashiro": {
+    range: 30, cd: 5,
+    one: snipe(30, 30, "kaiju8:railgun_lance", "kaiju8:beam_impact",
+               "mob.wither.death", 1.35),
+    two: volley(3, 5, 30, 13, "kaiju8:cannon_muzzle", "kaiju8:beam_impact",
+                "mob.wither.shoot", 0.75),
+  },
+  // ---- 四ノ宮功: 斉射のあとに一撃 ------------------------------------
+  "kaiju8:isao_shinomiya": {
+    range: 30, cd: 4,
+    one: volley(3, 4, 30, 12, "kaiju8:cannon_muzzle", "kaiju8:impact_dust",
+                "mob.wither.shoot", 0.65),
+    two: snipe(30, 28, "kaiju8:railgun_lance", "kaiju8:beam_impact",
+               "mob.wither.death", 1.15),
+  },
+  // ---- 鳴海弦: 銃剣の乱撃と、刺してから撃つ刺突 -----------------------
+  "kaiju8:gen_narumi": {
+    range: 26, cd: 4,
+    one: flurry(5, 2, 9, ["kaiju8:burst_slash", "kaiju8:slash_heavy"],
+                "mob.ravager.bite", 1.7, 2.4),
+    two(ally, target) {
+      const dir = toward(ally, target);
+      sequence([
+        [0, () => {
+          fxLine(ally.dimension, "kaiju8:slash_heavy", eye(ally), dir, 4.5, 1.5);
+          sound(ally.dimension, "item.trident.riptide_1", ally.location,
+                { pitch: 1.5 });
+        }],
+        [4, () => {
+          if (hit(ally, target, 22)) bleed(target);
+          fxScatter(ally.dimension, "kaiju8:cauterize", above(target), 10, 0.7);
+          fx(ally.dimension, "kaiju8:muzzle_flash", above(target, 0.9));
+          sound(ally.dimension, "random.explode", ally.location,
+                { pitch: 1.3, volume: 1.0 });
+          shakeNearby(ally.dimension, target.location, 10, 0.2, 0.3);
+        }],
+      ]);
+    },
+  },
+  // ---- 出雲ハルイチ: 制圧射撃と精密射撃 ------------------------------
+  "kaiju8:haruichi_izumo": {
+    range: 22, cd: 5,
+    one: volley(5, 2, 22, 5, "kaiju8:muzzle_flash", "kaiju8:impact_dust",
+                "random.explode", 1.6),
+    two: snipe(22, 16, "kaiju8:beam_trail", "kaiju8:beam_impact",
+               "mob.wither.shoot", 1.1),
+  },
+  // ---- 市川レノ: 精密射撃と速射 --------------------------------------
+  "kaiju8:reno_ichikawa": {
+    range: 22, cd: 5,
+    one: snipe(22, 15, "kaiju8:beam_trail", "kaiju8:beam_impact",
+               "mob.wither.shoot", 1.25),
+    two: volley(2, 3, 22, 9, "kaiju8:muzzle_flash", "kaiju8:impact_dust",
+                "random.explode", 1.75),
+  },
+  // ---- 一般隊員 ------------------------------------------------------
+  "kaiju8:defense_force_officer": {
+    range: 20, cd: 6,
+    one: snipe(20, 10, "kaiju8:beam_trail", "kaiju8:impact_dust",
+               "mob.wither.shoot", 1.4),
+    two: volley(4, 2, 20, 4, "kaiju8:muzzle_flash", "kaiju8:impact_dust",
+                "random.explode", 1.7),
+  },
+  // ---- 保科宗四郎: 二刀の連撃と八重討ち --------------------------------
   "kaiju8:soshiro_hoshina": {
     range: 5.5, cd: 4,
-    run(ally, target) {
-      for (let i = 0; i < 3; i++) {
-        later(i * 3, () => {
-          try {
-            fx(ally.dimension, "kaiju8:slash_air",
-               { x: target.location.x, y: target.location.y + 1.1, z: target.location.z });
-            if (hit(ally, target, 9)) bleed(target);
-            sound(ally.dimension, "mob.ravager.bite", ally.location, { pitch: 1.5 });
-          } catch (_) { }
-        });
+    one: flurry(3, 3, 9, ["kaiju8:slash_air", "kaiju8:slash_cross"],
+                "mob.ravager.bite", 1.55, 1.9),
+    two(ally, target) {
+      // 八重討ち。的の周りを回りながら八度斬る
+      const steps = [];
+      for (let i = 0; i < 8; i++) {
+        steps.push([i * 2, () => {
+          const a = (i / 8) * Math.PI * 2;
+          fx(ally.dimension, "kaiju8:slash_air", {
+            x: target.location.x + Math.cos(a) * 1.5,
+            y: target.location.y + 0.6 + (i % 3) * 0.55,
+            z: target.location.z + Math.sin(a) * 1.5,
+          });
+          if (hit(ally, target, 7)) bleed(target);
+          sound(ally.dimension, "mob.ravager.bite", ally.location,
+                { pitch: 1.35 + (i % 4) * 0.12, volume: 0.8 });
+        }]);
       }
+      steps.push([17, () => {
+        fxScatter(ally.dimension, "kaiju8:slash_scatter", above(target), 14, 1.2);
+        shakeNearby(ally.dimension, target.location, 10, 0.24, 0.35);
+      }]);
+      sequence(steps);
     },
   },
-  // 神楽木葵: 隊内随一の膂力
-  "kaiju8:aoi_kaguragi": {
-    range: 4.8, cd: 6,
-    run(ally, target) {
-      const g = { x: target.location.x, y: target.location.y + 0.1, z: target.location.z };
-      fx(ally.dimension, "kaiju8:shock_ring_gold", g);
-      fxScatter(ally.dimension, "kaiju8:impact_dust", g, 6, 1.2);
-      if (hit(ally, target, 16)) bleed(target);
-      sound(ally.dimension, "random.anvil_land", ally.location, { pitch: 0.7 });
-    },
-  },
-  // 古橋伊春
-  "kaiju8:iharu_furuhashi": {
-    range: 4.5, cd: 4,
-    run(ally, target) {
-      fx(ally.dimension, "kaiju8:slash_air",
-         { x: target.location.x, y: target.location.y + 1.0, z: target.location.z });
-      if (hit(ally, target, 11)) bleed(target);
-      sound(ally.dimension, "mob.ravager.bite", ally.location, { pitch: 1.3 });
-    },
-  },
-  // 四ノ宮キコル: 大型戦斧の叩きつけ
+  // ---- 四ノ宮キコル: 叩きつけと薙ぎ払い --------------------------------
   "kaiju8:kikoru_shinomiya": {
     range: 5.0, cd: 6,
-    run(ally, target) {
-      const g = { x: target.location.x, y: target.location.y + 0.1, z: target.location.z };
-      fx(ally.dimension, "kaiju8:shock_ring_gold", g);
-      fxScatter(ally.dimension, "kaiju8:impact_dust", g, 8, 1.4);
-      fxScatter(ally.dimension, "kaiju8:debris", g, 6, 1.0);
-      if (hit(ally, target, 20)) bleed(target);
-      sound(ally.dimension, "random.anvil_land", ally.location, { pitch: 0.6 });
-      shakeNearby(ally.dimension, g, 10, 0.22, 0.35);
+    one: smash(22, 4.2, "kaiju8:shock_ring_gold", "random.anvil_land", 0.6, 0.26),
+    two: sweep(17, 5.4, "kaiju8:axe_crescent", "random.anvil_land", 1.2),
+  },
+  // ---- 神楽木葵: 隊内随一の膂力。薙ぎが先、返しが叩きつけ ---------------
+  "kaiju8:aoi_kaguragi": {
+    range: 4.8, cd: 6,
+    one: sweep(15, 5.0, "kaiju8:axe_arc", "random.anvil_land", 1.05),
+    two: smash(19, 4.0, "kaiju8:shock_ring", "random.anvil_land", 0.5, 0.3),
+  },
+  // ---- 古橋伊春: 霞討ちと十字斬り --------------------------------------
+  "kaiju8:iharu_furuhashi": {
+    range: 4.5, cd: 4,
+    two(ally, target) {
+      const dir = toward(ally, target);
+      fx(ally.dimension, "kaiju8:slash_cross", above(target));
+      fxArc(ally.dimension, "kaiju8:slash_air", eye(ally), dir, 1.7, 120, 5, 0.5);
+      fxArc(ally.dimension, "kaiju8:slash_air", eye(ally), dir, 1.7, 120, 5, -0.5);
+      if (hit(ally, target, 13)) bleed(target);
+      sound(ally.dimension, "mob.ravager.bite", ally.location, { pitch: 1.25 });
+    },
+    one(ally, target) {
+      const dir = toward(ally, target);
+      sequence([
+        [0, () => {
+          fxLine(ally.dimension, "kaiju8:slash_scatter", eye(ally), dir, 4.0, 1.0);
+          sound(ally.dimension, "item.trident.riptide_1", ally.location,
+                { pitch: 1.8, volume: 0.8 });
+        }],
+        [3, () => {
+          fx(ally.dimension, "kaiju8:slash_air", above(target));
+          if (hit(ally, target, 12)) bleed(target);
+          sound(ally.dimension, "mob.ravager.bite", ally.location, { pitch: 1.5 });
+        }],
+      ]);
     },
   },
-  // 日比野カフカ / 市川レノ / 一般隊員
+  // ---- 日比野カフカ: 素手の一撃とナイフ --------------------------------
   "kaiju8:kafka_hibino": {
     range: 4.5, cd: 5,
-    run(ally, target) {
-      fx(ally.dimension, "kaiju8:slash_air",
-         { x: target.location.x, y: target.location.y + 1.0, z: target.location.z });
+    one(ally, target) {
+      fx(ally.dimension, "kaiju8:fist_shock", above(target, 1.0));
+      if (hit(ally, target, 12)) bleed(target);
+      fxScatter(ally.dimension, "kaiju8:impact_dust",groundAt(target), 5, 0.9);
+      sound(ally.dimension, "mob.ravager.stun", ally.location,
+            { pitch: 0.95, volume: 1.0 });
+    },
+    two(ally, target) {
+      const dir = toward(ally, target);
+      fxArc(ally.dimension, "kaiju8:slash_air", eye(ally), dir, 1.5, 110, 4, 0.3);
       if (hit(ally, target, 10)) bleed(target);
       sound(ally.dimension, "mob.ravager.bite", ally.location, { pitch: 1.2 });
     },
   },
 };
-
-function beamShot(range, damage, spread) {
-  return (ally, target) => {
-    const dir = toward(ally, target);
-    const eye = { x: ally.location.x, y: ally.location.y + 1.4, z: ally.location.z };
-    fxLine(ally.dimension, "kaiju8:beam_trail", eye, dir, range, 1.4);
-    fx(ally.dimension, "kaiju8:muzzle_flash", forward(eye, dir, 1.0));
-    if (hit(ally, target, damage)) bleed(target);
-    fxScatter(ally.dimension, "kaiju8:beam_impact",
-              { x: target.location.x, y: target.location.y + 1, z: target.location.z },
-              6, 0.8);
-    sound(ally.dimension, "mob.wither.shoot", ally.location, { pitch: 0.8, volume: 1.1 });
-  };
-}
 
 const techAlt = new Map();   // allyId -> 次は二の型か
 
@@ -354,7 +527,9 @@ export function tickAllies() {
       techAlt.set(ally.id, second);
       try { ally.triggerEvent(second ? "kaiju8:tech2" : "kaiju8:tech"); }
       catch (_) { }
-      try { spec.run(ally, target); } catch (_) { }
+      // モーションと演出を必ず同じ型で揃える
+      const run = (second ? spec.two : spec.one) ?? spec.one ?? spec.two;
+      try { run(ally, target); } catch (_) { }
     }
   }
 }

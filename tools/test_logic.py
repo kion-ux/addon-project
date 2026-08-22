@@ -294,12 +294,54 @@ check("trail queues one emission per step",
       globalThis.__pending.length === 4, String(globalThis.__pending.length));
 globalThis.__pending.splice(0).forEach((f) => f());
 
-// ------------------------------------------------ 10. release-rate ceilings
+// ----------------------------------------- 10. 味方隊員の二種類の技
+import { ALLY_TECH } from "./kaiju.js";
+
+const fakeKaiju = {
+  id: "k1", typeId: "kaiju8:yoju", dimension: spy,
+  location: { x: 14, y: 70, z: -1 },
+  getComponent(n) {
+    if (n === "minecraft:type_family") {
+      return { hasTypeFamily: (f) => f === "kaiju", getTypeFamilies: () => ["kaiju"] };
+    }
+    return undefined;
+  },
+  applyDamage() { return true; }, addEffect() { },
+};
+let allyTechs = 0;
+for (const [id, spec] of Object.entries(ALLY_TECH)) {
+  check(`${id} has a 一の型`, typeof spec.one === "function");
+  check(`${id} has a 二の型`, typeof spec.two === "function");
+  check(`${id} declares range and cooldown`,
+        typeof spec.range === "number" && typeof spec.cd === "number");
+  const ally = {
+    id: `a-${id}`, typeId: id, dimension: spy,
+    location: { x: 10, y: 70, z: -4 },
+    getViewDirection() { return { x: 1, y: 0, z: 0 }; },
+    getHeadLocation() { return { x: 10, y: 71.6, z: -4 }; },
+    getComponent() { return undefined; },
+    applyDamage() { }, addEffect() { }, runCommand() { }, triggerEvent() { },
+  };
+  for (const which of ["one", "two"]) {
+    allyTechs++;
+    try { spec[which](ally, fakeKaiju); } catch (e) {
+      check(`${id}.${which} runs`, false, String(e));
+    }
+  }
+}
+for (let i = 0; i < 4; i++) {
+  globalThis.__pending.splice(0).forEach((f) => { try { f(); } catch (e) {
+    check("a queued ally callback throws", false, String(e));
+  } });
+}
+check("both 型 of every ally ran", allyTechs === Object.keys(ALLY_TECH).length * 2);
+
+// ------------------------------------------------ 11. release-rate ceilings
 check("release rate is capped without the suit", releaseRate(bare) <= 100);
 check("release rate is a number", Number.isFinite(releaseRate(worn)));
 
 console.log(`  ${techCount} techniques, ${Object.keys(NUMBERS).length} machines, `
-            + `${combos} weapon x machine wheels exercised`);
+            + `${combos} weapon x machine wheels, ${allyTechs} ally 型 exercised`);
 if (failures) {
   console.log(`  ${failures} assertion(s) failed`);
   process.exit(1);
