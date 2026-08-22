@@ -236,6 +236,7 @@ python3 tools/validate.py       # 参照切れ（ジオメトリ・テクスチ�
 python3 tools/check_scripts.py  # スクリプトをスタブ環境で実際にロードして検証
 python3 tools/test_logic.py     # 偽プレイヤーで技ホイール・全技・全能力を実行して検証
 python3 tools/preview.py kafka mina kaiju_no8   # モデルをPNGにレンダリングして確認
+python3 tools/preview_particles.py slash axe   # パーティクルの色と形を一覧で確認
 ```
 
 | パス | 役割 |
@@ -250,6 +251,7 @@ python3 tools/preview.py kafka mina kaiju_no8   # モデルをPNGにレンダリ
 | `tools/gen_particles.py` | 52種のパーティクルとスプライトアトラス |
 | `tools/preview.py` | .geo.json を実際に描画する簡易ソフトレンダラ（Minecraft なしで見た目を検証） |
 | `tools/test_logic.py` | @minecraft/server をスタブして偽プレイヤーを走らせる挙動テスト（技ホイール・全技・全能力） |
+| `tools/preview_particles.py` | 全パーティクルを色・スプライト・サイズどおりに並べたコンタクトシートを描く |
 | `packs/kaiju8_BP/scripts/` | ゲームロジック（技・変身・解放戦力・要塞度・機動・怪獣災害） |
 
 ---
