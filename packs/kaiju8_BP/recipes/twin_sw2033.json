@@ -2,15 +2,15 @@
   "format_version": "1.20.10",
   "minecraft:recipe_shaped": {
     "description": {
-      "identifier": "kaiju8:battle_axe"
+      "identifier": "kaiju8:twin_sw2033"
     },
     "tags": [
       "crafting_table"
     ],
     "pattern": [
-      "AAA",
-      "ACS",
-      "  S"
+      "A A",
+      "ACA",
+      "S S"
     ],
     "key": {
       "A": {
@@ -24,7 +24,7 @@
       }
     },
     "result": {
-      "item": "kaiju8:battle_axe",
+      "item": "kaiju8:twin_sw2033",
       "count": 1
     }
   }

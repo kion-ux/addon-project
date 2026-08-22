@@ -2,7 +2,7 @@
   "format_version": "1.20.10",
   "minecraft:recipe_shaped": {
     "description": {
-      "identifier": "kaiju8:combat_blade"
+      "identifier": "kaiju8:combat_knife"
     },
     "tags": [
       "crafting_table"
@@ -21,7 +21,7 @@
       }
     },
     "result": {
-      "item": "kaiju8:combat_blade",
+      "item": "kaiju8:combat_knife",
       "count": 1
     }
   }

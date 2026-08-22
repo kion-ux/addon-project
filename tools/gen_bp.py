@@ -30,11 +30,12 @@ MATERIALS = [
 
 WEAPONS = [
     # id, icon, damage, durability, enchant value
-    ("combat_blade", "combat_blade", 7, 820, 12),
-    ("df_rifle", "df_rifle", 4, 640, 10),
-    ("weapon_no2", "weapon_no2", 6, 1800, 20),
-    ("weapon_no4", "weapon_no4", 9, 1600, 20),
-    ("battle_axe", "battle_axe", 12, 1900, 18),
+    ("combat_knife", "combat_knife", 6, 620, 10),
+    ("df_rifle", "df_rifle", 4, 700, 12),
+    ("twin_sw2033", "twin_sw2033", 9, 1700, 20),
+    ("axe_03ax", "axe_03ax", 13, 1900, 18),
+    ("cannon_t25", "cannon_t25", 7, 1900, 20),
+    ("gunblade_gs3305", "gunblade_gs3305", 12, 2000, 20),
 ]
 
 ARMOR = [
@@ -155,14 +156,42 @@ def behaviours_common(walk_speed, attack_damage, reach, attack_dur=0.6,
     }
 
 
-def roar_groups():
+def state_groups(roar_time=2.0):
+    """mark_variant drives the resource-pack animation controllers:
+       0 normal / 1 咆哮 / 2 技 / 4 被弾リアクション"""
     return {
         "kaiju8:roaring": {
             "minecraft:mark_variant": {"value": 1},
-            "minecraft:timer": {"looping": False, "time": 2.0,
+            "minecraft:timer": {"looping": False, "time": roar_time,
                                 "time_down_event": {"event": "kaiju8:calm_down"}}
-        }
+        },
+        "kaiju8:performing": {
+            "minecraft:mark_variant": {"value": 2},
+            "minecraft:timer": {"looping": False, "time": 0.9,
+                                "time_down_event": {"event": "kaiju8:calm_down"}}
+        },
+        "kaiju8:reeling": {
+            "minecraft:mark_variant": {"value": 4},
+            "minecraft:timer": {"looping": False, "time": 0.35,
+                                "time_down_event": {"event": "kaiju8:calm_down"}}
+        },
     }
+
+
+STATE_EVENTS = {
+    "minecraft:entity_spawned": {"add": {"component_groups": ["kaiju8:roaring"]}},
+    "kaiju8:roar": {
+        "remove": {"component_groups": ["kaiju8:performing", "kaiju8:reeling"]},
+        "add": {"component_groups": ["kaiju8:roaring"]}},
+    "kaiju8:tech": {
+        "remove": {"component_groups": ["kaiju8:roaring", "kaiju8:reeling"]},
+        "add": {"component_groups": ["kaiju8:performing"]}},
+    "kaiju8:hurt_flash": {
+        "add": {"component_groups": ["kaiju8:reeling"]}},
+    "kaiju8:calm_down": {
+        "remove": {"component_groups": ["kaiju8:roaring", "kaiju8:performing",
+                                        "kaiju8:reeling"]}},
+}
 
 
 def kaiju_entity(name, health, damage, speed, width, height, xp, loot,
@@ -245,23 +274,20 @@ def kaiju_entity(name, health, damage, speed, width, height, xp, loot,
                 "is_summonable": summonable,
                 "is_experimental": False
             },
-            "component_groups": roar_groups(),
+            "component_groups": state_groups(),
             "components": comps,
-            "events": {
-                "minecraft:entity_spawned": {"add": {"component_groups": ["kaiju8:roaring"]}},
-                "kaiju8:roar": {"add": {"component_groups": ["kaiju8:roaring"]}},
-                "kaiju8:calm_down": {"remove": {"component_groups": ["kaiju8:roaring"]}}
-            }
+            "events": dict(STATE_EVENTS)
         }
     }
     return doc
 
 
 def soldier_entity(name, health, damage, speed, xp, ranged=None, reach=1.2,
-                   knockback=0.35):
+                   knockback=0.35, box=(0.6, 1.85)):
     comps = {
         "minecraft:type_family": {"family": ["defense_force", "kaiju8_ally", "mob"]},
-        "minecraft:collision_box": {"width": 0.6, "height": 1.9},
+        "minecraft:collision_box": {"width": box[0], "height": box[1]},
+        "minecraft:mark_variant": {"value": 0},
         "minecraft:health": {"value": health, "max": health},
         "minecraft:attack": {"damage": damage},
         "minecraft:movement": {"value": speed},
@@ -273,7 +299,6 @@ def soldier_entity(name, health, damage, speed, xp, ranged=None, reach=1.2,
         "minecraft:physics": {},
         "minecraft:pushable": {"is_pushable": True, "is_pushable_by_piston": True},
         "minecraft:nameable": {},
-        "minecraft:mark_variant": {"value": 0},
         "minecraft:knockback_resistance": {"value": knockback},
         "minecraft:follow_range": {"value": 48, "max": 48},
         "minecraft:experience_reward": {"on_death": str(xp)},
@@ -308,9 +333,10 @@ def soldier_entity(name, health, damage, speed, xp, ranged=None, reach=1.2,
         "minecraft:entity": {
             "description": {"identifier": f"kaiju8:{name}", "is_spawnable": True,
                             "is_summonable": True, "is_experimental": False},
-            "component_groups": {},
+            "component_groups": state_groups(1.2),
             "components": comps,
-            "events": {}
+            "events": dict(STATE_EVENTS, **{
+                "minecraft:entity_spawned": {"remove": {"component_groups": []}}})
         }
     }
 
@@ -362,56 +388,64 @@ def projectile_entity(name, damage, power, gravity, particle, knockback=True,
 def gen_entities():
     out = os.path.join(BP, "entities")
 
+    # collision boxes follow the actual modelled heights
     dump(os.path.join(out, "yoju.entity.json"), kaiju_entity(
-        "yoju", 40, 6, 0.32, 1.3, 1.2, 12, "yoju", reach=1.7,
-        families=("kaiju", "yoju", "monster"), knockback=0.35))
+        "yoju", 46, 8, 0.34, 1.90, 2.40, 14, "yoju", reach=2.0,
+        families=("kaiju", "yoju", "monster"), knockback=0.30))
 
     dump(os.path.join(out, "honju.entity.json"), kaiju_entity(
-        "honju", 260, 16, 0.28, 3.0, 3.6, 90, "honju", reach=2.4,
-        families=("kaiju", "honju", "monster"), knockback=0.9,
+        "honju", 300, 18, 0.30, 2.60, 5.00, 110, "honju", reach=3.2,
+        families=("kaiju", "honju", "monster"), knockback=0.90,
         boss=("entity.kaiju8:honju.name", False), persistent=False,
         ranged=("kaiju8:kaiju_acid", 1, 5.0)))
 
     dump(os.path.join(out, "kaiju_no8.entity.json"), kaiju_entity(
-        "kaiju_no8", 400, 24, 0.42, 1.4, 2.4, 160, "kaiju_no8", reach=2.0,
+        "kaiju_no8", 420, 26, 0.46, 1.15, 2.05, 170, "kaiju_no8", reach=2.0,
         families=("kaiju", "identified_kaiju", "no8"), knockback=0.95,
         boss=("entity.kaiju8:kaiju_no8.name", True), fire_immune=True,
-        spawnable=False, targets=("kaiju", "monster")))
+        targets=("kaiju", "monster")))
 
     dump(os.path.join(out, "kaiju_no9.entity.json"), kaiju_entity(
-        "kaiju_no9", 500, 20, 0.36, 1.2, 2.3, 220, "kaiju_no9", reach=1.9,
+        "kaiju_no9", 540, 22, 0.40, 1.30, 3.60, 240, "kaiju_no9", reach=2.6,
         families=("kaiju", "identified_kaiju", "no9", "monster"), knockback=1.0,
-        boss=("entity.kaiju8:kaiju_no9.name", True), fire_immune=True,
-        spawnable=False,
-        extra={"minecraft:health": {"value": 500, "max": 500}}))
+        boss=("entity.kaiju8:kaiju_no9.name", True), fire_immune=True))
 
     dump(os.path.join(out, "kaiju_no10.entity.json"), kaiju_entity(
-        "kaiju_no10", 420, 22, 0.38, 3.2, 3.4, 200, "kaiju_no10", reach=2.6,
-        families=("kaiju", "identified_kaiju", "no10", "monster"), knockback=1.0,
-        boss=("entity.kaiju8:kaiju_no10.name", True), fly=True, fire_immune=True,
-        spawnable=False, ranged=("kaiju8:kaiju_acid", 2, 3.0)))
+        "kaiju_no10", 460, 25, 0.40, 2.20, 4.90, 220, "kaiju_no10", reach=3.0,
+        families=("kaiju", "identified_kaiju", "no10", "monster"),
+        boss=("entity.kaiju8:kaiju_no10.name", True), fire_immune=True,
+        knockback=1.0, ranged=("kaiju8:kaiju_acid", 2, 3.0)))
 
+    # 日本防衛隊: speed and reach follow each character's build
     dump(os.path.join(out, "defense_force_officer.entity.json"),
-         soldier_entity("defense_force_officer", 40, 7, 0.32, 10,
-                        ranged=("kaiju8:df_bullet", 3, 2.0)))
+         soldier_entity("defense_force_officer", 44, 7, 0.33, 10,
+                        ranged=("kaiju8:df_bullet", 3, 2.0), box=(0.60, 1.75)))
     dump(os.path.join(out, "kafka_hibino.entity.json"),
-         soldier_entity("kafka_hibino", 60, 9, 0.33, 15))
+         soldier_entity("kafka_hibino", 70, 10, 0.34, 18, box=(0.62, 1.87)))
     dump(os.path.join(out, "reno_ichikawa.entity.json"),
-         soldier_entity("reno_ichikawa", 55, 8, 0.34, 15))
+         soldier_entity("reno_ichikawa", 60, 9, 0.36, 18,
+                        ranged=("kaiju8:df_bullet", 3, 1.8), box=(0.60, 1.76)))
     dump(os.path.join(out, "mina_ashiro.entity.json"),
-         soldier_entity("mina_ashiro", 140, 12, 0.32, 60,
-                        ranged=("kaiju8:rifle_beam", 1, 2.5), knockback=0.7))
+         soldier_entity("mina_ashiro", 150, 13, 0.33, 70,
+                        ranged=("kaiju8:rifle_beam", 1, 2.5), knockback=0.7,
+                        box=(0.60, 1.75)))
     dump(os.path.join(out, "soshiro_hoshina.entity.json"),
-         soldier_entity("soshiro_hoshina", 130, 22, 0.42, 60, reach=1.4, knockback=0.6))
+         soldier_entity("soshiro_hoshina", 140, 24, 0.46, 70, reach=1.5,
+                        knockback=0.6, box=(0.60, 1.68)))
     dump(os.path.join(out, "kikoru_shinomiya.entity.json"),
-         soldier_entity("kikoru_shinomiya", 120, 26, 0.34, 60, reach=1.6, knockback=0.6))
+         soldier_entity("kikoru_shinomiya", 130, 28, 0.36, 70, reach=1.7,
+                        knockback=0.6, box=(0.55, 1.56)))
+    dump(os.path.join(out, "gen_narumi.entity.json"),
+         soldier_entity("gen_narumi", 170, 20, 0.42, 90, reach=1.5,
+                        ranged=("kaiju8:rifle_beam", 2, 2.0), knockback=0.75,
+                        box=(0.62, 1.80)))
 
     dump(os.path.join(out, "rifle_beam.entity.json"),
-         projectile_entity("rifle_beam", 22, 3.2, 0.0, "critical_hit_emitter"))
+         projectile_entity("rifle_beam", 24, 3.4, 0.0, "critical_hit_emitter"))
     dump(os.path.join(out, "kaiju_acid.entity.json"),
-         projectile_entity("kaiju_acid", 9, 1.6, 0.05, "mob_block_on_fire"))
+         projectile_entity("kaiju_acid", 10, 1.7, 0.05, "mob_block_on_fire"))
     dump(os.path.join(out, "df_bullet.entity.json"),
-         projectile_entity("df_bullet", 6, 2.6, 0.02, "crit"))
+         projectile_entity("df_bullet", 6, 2.8, 0.02, "crit"))
 
     # the parasite kaiju as a tiny crawling creature
     dump(os.path.join(out, "parasite_kaiju.entity.json"), {
@@ -421,7 +455,7 @@ def gen_entities():
                             "is_summonable": True, "is_experimental": False},
             "components": {
                 "minecraft:type_family": {"family": ["kaiju", "parasite", "mob"]},
-                "minecraft:collision_box": {"width": 0.4, "height": 0.35},
+                "minecraft:collision_box": {"width": 0.50, "height": 0.35},
                 "minecraft:health": {"value": 4, "max": 4},
                 "minecraft:movement": {"value": 0.26},
                 "minecraft:movement.basic": {},
@@ -568,22 +602,27 @@ def gen_recipes():
             "result": {"item": "kaiju8:kaiju_shell", "count": 1}
         }
     })
-    dump(os.path.join(out, "combat_blade.json"), shaped(
+    dump(os.path.join(out, "combat_knife.json"), shaped(
         [" A ", " A ", " S "], {"A": "kaiju8:kaiju_alloy", "S": "minecraft:stick"},
-        "kaiju8:combat_blade"))
+        "kaiju8:combat_knife"))
     dump(os.path.join(out, "df_rifle.json"), shaped(
         ["AAI", " SA", "  S"], {"A": "kaiju8:kaiju_alloy", "I": "minecraft:iron_ingot",
                                 "S": "minecraft:stick"}, "kaiju8:df_rifle"))
-    dump(os.path.join(out, "weapon_no2.json"), shaped(
-        ["CAA", "AAR", "S  "], {"C": "kaiju8:kaiju_core", "A": "kaiju8:kaiju_alloy",
-                                "R": "minecraft:redstone_block", "S": "minecraft:stick"},
-        "kaiju8:weapon_no2"))
-    dump(os.path.join(out, "weapon_no4.json"), shaped(
+    dump(os.path.join(out, "twin_sw2033.json"), shaped(
         ["A A", "ACA", "S S"], {"A": "kaiju8:kaiju_alloy", "C": "kaiju8:kaiju_core",
-                                "S": "minecraft:stick"}, "kaiju8:weapon_no4"))
-    dump(os.path.join(out, "battle_axe.json"), shaped(
-        ["AAA", "ACS", "  S"], {"A": "kaiju8:kaiju_alloy", "C": "kaiju8:kaiju_core",
-                                "S": "minecraft:stick"}, "kaiju8:battle_axe"))
+                                "S": "minecraft:stick"}, "kaiju8:twin_sw2033"))
+    dump(os.path.join(out, "axe_03ax.json"), shaped(
+        ["AAA", "ACR", "  S"], {"A": "kaiju8:kaiju_alloy", "C": "kaiju8:kaiju_core",
+                                "R": "minecraft:redstone_block",
+                                "S": "minecraft:stick"}, "kaiju8:axe_03ax"))
+    dump(os.path.join(out, "cannon_t25.json"), shaped(
+        ["CAA", "AAR", "S  "], {"C": "kaiju8:kaiju_core", "A": "kaiju8:kaiju_alloy",
+                                "R": "minecraft:redstone_block",
+                                "S": "minecraft:stick"}, "kaiju8:cannon_t25"))
+    dump(os.path.join(out, "gunblade_gs3305.json"), shaped(
+        ["AAC", "AAR", "S  "], {"A": "kaiju8:kaiju_alloy", "C": "kaiju8:kaiju_core",
+                                "R": "minecraft:iron_block",
+                                "S": "minecraft:stick"}, "kaiju8:gunblade_gs3305"))
     dump(os.path.join(out, "kaiju_detector.json"), shaped(
         [" A ", "ACA", " A "], {"A": "kaiju8:kaiju_alloy", "C": "minecraft:compass"},
         "kaiju8:kaiju_detector"))

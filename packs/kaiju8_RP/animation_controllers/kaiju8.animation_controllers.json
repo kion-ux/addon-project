@@ -2,9 +2,24 @@
   "format_version": "1.10.0",
   "animation_controllers": {
     "controller.animation.kaiju8.humanoid.general": {
-      "initial_state": "default",
+      "initial_state": "stand",
       "states": {
-        "default": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle"
+          ],
+          "transitions": [
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            },
+            {
+              "death": "query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "walk": {
           "animations": [
             "look",
             "idle",
@@ -12,26 +27,53 @@
           ],
           "transitions": [
             {
+              "run": "query.modified_move_speed > 0.72"
+            },
+            {
+              "stand": "query.modified_move_speed <= 0.02"
+            },
+            {
               "death": "query.health <= 0"
             }
-          ]
+          ],
+          "blend_transition": 0.15
+        },
+        "run": {
+          "animations": [
+            "look",
+            "run"
+          ],
+          "transitions": [
+            {
+              "walk": "query.modified_move_speed <= 0.72"
+            },
+            {
+              "death": "query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.15
         },
         "death": {
           "animations": [
             "death"
           ],
-          "blend_transition": 0.2,
-          "transitions": []
+          "blend_transition": 0.2
         }
       }
     },
-    "controller.animation.kaiju8.humanoid.attack": {
+    "controller.animation.kaiju8.humanoid.action": {
       "initial_state": "idle",
       "states": {
         "idle": {
           "transitions": [
             {
+              "tech": "query.mark_variant >= 2 && query.health > 0"
+            },
+            {
               "attack": "query.is_delayed_attacking && query.health > 0"
+            },
+            {
+              "hurt": "query.mark_variant == 4"
             }
           ]
         },
@@ -39,65 +81,112 @@
           "animations": [
             "attack"
           ],
-          "blend_transition": 0.08,
           "transitions": [
             {
               "idle": "query.all_animations_finished || query.health <= 0"
             }
-          ]
+          ],
+          "blend_transition": 0.06
+        },
+        "tech": {
+          "animations": [
+            "tech"
+          ],
+          "transitions": [
+            {
+              "idle": "query.mark_variant < 2 || query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.1
+        },
+        "hurt": {
+          "animations": [
+            "hurt"
+          ],
+          "transitions": [
+            {
+              "idle": "query.all_animations_finished || query.mark_variant != 4"
+            }
+          ],
+          "blend_transition": 0.05
         }
       }
     },
     "controller.animation.kaiju8.kaiju.general": {
-      "initial_state": "default",
+      "initial_state": "stand",
       "states": {
-        "default": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle",
+            "extras"
+          ],
+          "transitions": [
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            },
+            {
+              "roar": "query.mark_variant == 1"
+            },
+            {
+              "death": "query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.25
+        },
+        "walk": {
           "animations": [
             "look",
             "idle",
             "walk",
-            "tail"
+            "extras"
           ],
           "transitions": [
             {
-              "roar": "query.mark_variant == 1 && query.health > 0"
+              "stand": "query.modified_move_speed <= 0.02"
+            },
+            {
+              "roar": "query.mark_variant == 1"
             },
             {
               "death": "query.health <= 0"
             }
-          ]
+          ],
+          "blend_transition": 0.2
         },
         "roar": {
           "animations": [
-            "tail",
-            "roar"
+            "roar",
+            "extras"
           ],
-          "blend_transition": 0.25,
           "transitions": [
             {
               "death": "query.health <= 0"
             },
             {
-              "default": "query.mark_variant != 1 || query.all_animations_finished"
+              "stand": "query.mark_variant != 1 || query.all_animations_finished"
             }
-          ]
+          ],
+          "blend_transition": 0.25
         },
         "death": {
           "animations": [
             "death"
           ],
-          "blend_transition": 0.3,
-          "transitions": []
+          "blend_transition": 0.3
         }
       }
     },
-    "controller.animation.kaiju8.kaiju.attack": {
+    "controller.animation.kaiju8.kaiju.action": {
       "initial_state": "idle",
       "states": {
         "idle": {
           "transitions": [
             {
               "attack": "query.is_delayed_attacking && query.mark_variant != 1 && query.health > 0"
+            },
+            {
+              "hurt": "query.mark_variant == 4"
             }
           ]
         },
@@ -105,12 +194,102 @@
           "animations": [
             "attack"
           ],
-          "blend_transition": 0.1,
           "transitions": [
             {
               "idle": "query.all_animations_finished || query.health <= 0"
             }
+          ],
+          "blend_transition": 0.1
+        },
+        "hurt": {
+          "animations": [
+            "hurt"
+          ],
+          "transitions": [
+            {
+              "idle": "query.all_animations_finished || query.mark_variant != 4"
+            }
+          ],
+          "blend_transition": 0.06
+        }
+      }
+    },
+    "controller.animation.kaiju8.beast.general": {
+      "initial_state": "stand",
+      "states": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle"
+          ],
+          "transitions": [
+            {
+              "walk": "query.modified_move_speed > 0.02"
+            },
+            {
+              "death": "query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "walk": {
+          "animations": [
+            "look",
+            "idle",
+            "walk"
+          ],
+          "transitions": [
+            {
+              "stand": "query.modified_move_speed <= 0.02"
+            },
+            {
+              "death": "query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    },
+    "controller.animation.kaiju8.beast.action": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "transitions": [
+            {
+              "attack": "query.is_delayed_attacking && query.health > 0"
+            },
+            {
+              "hurt": "query.mark_variant == 4"
+            }
           ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "transitions": [
+            {
+              "idle": "query.all_animations_finished || query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.06
+        },
+        "hurt": {
+          "animations": [
+            "hurt"
+          ],
+          "transitions": [
+            {
+              "idle": "query.all_animations_finished || query.mark_variant != 4"
+            }
+          ],
+          "blend_transition": 0.05
         }
       }
     },
@@ -121,71 +300,84 @@
           "animations": [
             "wings_idle"
           ],
-          "blend_transition": 0.3,
           "transitions": [
             {
-              "flying": "!query.is_on_ground"
+              "fly": "!query.is_on_ground"
             }
-          ]
+          ],
+          "blend_transition": 0.3
         },
-        "flying": {
+        "fly": {
           "animations": [
             "wings_flap"
           ],
-          "blend_transition": 0.3,
           "transitions": [
             {
               "ground": "query.is_on_ground"
             }
-          ]
+          ],
+          "blend_transition": 0.3
         }
       }
     },
-    "controller.animation.kaiju8.quadruped.general": {
-      "initial_state": "default",
+    "controller.animation.kaiju8.no8_form": {
+      "initial_state": "stand",
       "states": {
-        "default": {
+        "stand": {
           "animations": [
-            "look",
-            "idle",
-            "walk",
-            "tail"
+            "form_idle"
           ],
           "transitions": [
             {
-              "death": "query.health <= 0"
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "charge": "query.is_using_item"
             }
-          ]
+          ],
+          "blend_transition": 0.18
         },
-        "death": {
+        "crouch": {
           "animations": [
-            "death"
+            "form_idle",
+            "crouch"
           ],
-          "blend_transition": 0.2,
-          "transitions": []
-        }
-      }
-    },
-    "controller.animation.kaiju8.quadruped.attack": {
-      "initial_state": "idle",
-      "states": {
-        "idle": {
           "transitions": [
             {
-              "attack": "query.is_delayed_attacking && query.health > 0"
+              "charge": "query.is_using_item"
+            },
+            {
+              "stand": "!query.is_sneaking"
             }
-          ]
+          ],
+          "blend_transition": 0.18
         },
-        "attack": {
+        "air": {
           "animations": [
-            "attack"
+            "form_idle",
+            "air"
           ],
-          "blend_transition": 0.06,
           "transitions": [
             {
-              "idle": "query.all_animations_finished || query.health <= 0"
+              "stand": "query.is_on_ground"
             }
-          ]
+          ],
+          "blend_transition": 0.2
+        },
+        "charge": {
+          "animations": [
+            "form_idle",
+            "charge"
+          ],
+          "transitions": [
+            {
+              "stand": "!query.is_using_item"
+            }
+          ],
+          "blend_transition": 0.12
         }
       }
     }

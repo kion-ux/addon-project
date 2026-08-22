@@ -6,6 +6,7 @@ import {
 import {
   tr, tell, actionbar, playSound, burst, bar, num, bool, allPlayers,
 } from "./util.js";
+import { fx, fxRing, fxScatter, sound, shake, shakeNearby } from "./effects.js";
 
 const BUFFS = [
   ["strength", 2],
@@ -68,9 +69,12 @@ export function grantPower(player) {
   player.setDynamicProperty(PROP.energy, ENERGY_MAX);
   consumeSelected(player);
   give(player, "kaiju8:no8_power");
-  playSound(player.dimension, "mob.enderdragon.growl", player.location, { volume: 1.2, pitch: 0.7 });
-  playSound(player.dimension, "random.levelup", player.location, { pitch: 0.6 });
-  burst(player.dimension, "minecraft:large_explosion", player.location, 3, 0.6);
+  sound(player.dimension, "mob.enderdragon.growl", player.location,
+        { volume: 1.4, pitch: 0.65 });
+  sound(player.dimension, "random.levelup", player.location, { pitch: 0.55 });
+  fxScatter(player.dimension, "kaiju8:transform_burst", player.location, 6, 0.8);
+  fxScatter(player.dimension, "kaiju8:kaiju_blood", player.location, 8, 0.9);
+  shake(player, 0.45, 0.9, "rotational");
   try {
     player.onScreenDisplay.setTitle(tr("kaiju8.title.awaken"), {
       fadeInDuration: 8, stayDuration: 50, fadeOutDuration: 20,
@@ -145,9 +149,16 @@ export function transform(player) {
   player.setDynamicProperty(PROP.form, true);
   player.addTag(TAG_NO8);
   applyBuffs(player);
-  playSound(player.dimension, "mob.enderdragon.growl", player.location, { volume: 1.4, pitch: 0.65 });
-  playSound(player.dimension, "random.explode", player.location, { volume: 0.7, pitch: 1.4 });
-  burst(player.dimension, "minecraft:large_explosion", player.location, 4, 0.9);
+  const at = { x: player.location.x, y: player.location.y + 1.0, z: player.location.z };
+  fx(player.dimension, "kaiju8:transform_burst", at);
+  fx(player.dimension, "kaiju8:shock_ring", player.location);
+  fxScatter(player.dimension, "kaiju8:transform_smoke", player.location, 10, 1.4);
+  fxRing(player.dimension, "kaiju8:no8_aura", player.location, 1.6, 12, 0.4);
+  sound(player.dimension, "mob.enderdragon.growl", player.location,
+        { volume: 1.8, pitch: 0.6 });
+  sound(player.dimension, "random.explode", player.location, { volume: 0.9, pitch: 1.2 });
+  shake(player, 0.5, 0.7);
+  shakeNearby(player.dimension, player.location, 14, 0.3, 0.5);
   try {
     player.onScreenDisplay.setTitle(tr("kaiju8.title.transform"), {
       fadeInDuration: 4, stayDuration: 26, fadeOutDuration: 12,
@@ -170,8 +181,10 @@ export function revert(player, exhausted = false) {
     try { player.removeEffect(id); } catch (_) { }
   }
   try { player.removeEffect("invisibility"); } catch (_) { }
-  playSound(player.dimension, "mob.evocation_illager.prepare_summon", player.location, { pitch: 0.7 });
-  burst(player.dimension, "minecraft:basic_smoke_particle", player.location, 12, 1.0);
+  sound(player.dimension, "mob.evocation_illager.prepare_summon", player.location,
+        { pitch: 0.65 });
+  fxScatter(player.dimension, "kaiju8:transform_smoke", player.location, 12, 1.2);
+  shake(player, 0.2, 0.4);
   if (exhausted) {
     try { player.addEffect("weakness", 300, { amplifier: 1, showParticles: true }); } catch (_) { }
     try { player.addEffect("slowness", 200, { amplifier: 0, showParticles: false }); } catch (_) { }

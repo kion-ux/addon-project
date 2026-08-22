@@ -18,7 +18,7 @@
         "value": 4
       },
       "minecraft:durability": {
-        "max_durability": 640
+        "max_durability": 700
       },
       "minecraft:repairable": {
         "repair_items": [
@@ -26,13 +26,13 @@
             "items": [
               "kaiju8:kaiju_alloy"
             ],
-            "repair_amount": 160
+            "repair_amount": 175
           }
         ]
       },
       "minecraft:enchantable": {
         "slot": "sword",
-        "value": 10
+        "value": 12
       },
       "minecraft:can_destroy_in_creative": false,
       "minecraft:should_despawn": false,

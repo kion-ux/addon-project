@@ -4,8 +4,8 @@
     {
       "description": {
         "identifier": "geometry.kaiju8.bullet",
-        "texture_width": 16,
-        "texture_height": 16,
+        "texture_width": 128,
+        "texture_height": 128,
         "visible_bounds_width": 0.6,
         "visible_bounds_height": 0.6,
         "visible_bounds_offset": [
@@ -25,19 +25,77 @@
           "cubes": [
             {
               "origin": [
-                -0.5,
-                -0.5,
-                -2.0
+                -0.4,
+                -0.4,
+                -2.2
               ],
               "size": [
-                1.0,
-                1.0,
-                4.0
+                0.8,
+                0.8,
+                4.4
               ],
-              "uv": [
-                0,
-                0
-              ]
+              "uv": {
+                "up": {
+                  "uv": [
+                    26,
+                    0
+                  ],
+                  "uv_size": [
+                    5,
+                    26
+                  ]
+                },
+                "down": {
+                  "uv": [
+                    31,
+                    0
+                  ],
+                  "uv_size": [
+                    5,
+                    26
+                  ]
+                },
+                "east": {
+                  "uv": [
+                    0,
+                    26
+                  ],
+                  "uv_size": [
+                    26,
+                    5
+                  ]
+                },
+                "north": {
+                  "uv": [
+                    26,
+                    26
+                  ],
+                  "uv_size": [
+                    5,
+                    5
+                  ]
+                },
+                "west": {
+                  "uv": [
+                    31,
+                    26
+                  ],
+                  "uv_size": [
+                    26,
+                    5
+                  ]
+                },
+                "south": {
+                  "uv": [
+                    57,
+                    26
+                  ],
+                  "uv_size": [
+                    5,
+                    5
+                  ]
+                }
+              }
             }
           ]
         }

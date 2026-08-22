@@ -4,6 +4,7 @@ import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/serve
 import { PROP, ENERGY_MAX, RELEASE_CAP_NO_SUIT } from "./config.js";
 import { tr, tell, num, distance } from "./util.js";
 import { releaseRate, setReleaseRate, wearsFullSuit } from "./weapons.js";
+import { TECH, selectedIndex } from "./techniques.js";
 import { rankKey } from "./kaiju.js";
 import { hasPower, isTransformed } from "./transform.js";
 import { alertsEnabled, setAlerts } from "./alert.js";
@@ -57,6 +58,7 @@ export function openTerminal(player) {
       ],
     })
     .button(tr("kaiju8.ui.set_release"))
+    .button(tr("kaiju8.ui.techlist"))
     .button(tr("kaiju8.ui.record"))
     .button(tr("kaiju8.ui.scan"))
     .button(alertsEnabled() ? tr("kaiju8.ui.alerts_on") : tr("kaiju8.ui.alerts_off"));
@@ -65,9 +67,10 @@ export function openTerminal(player) {
     if (!res || res.canceled) return;
     switch (res.selection) {
       case 0: return openRelease(player);
-      case 1: return openRecord(player);
-      case 2: return quickScan(player);
-      case 3:
+      case 1: return openTechList(player);
+      case 2: return openRecord(player);
+      case 3: return quickScan(player);
+      case 4:
         setAlerts(!alertsEnabled());
         tell(player, tr(alertsEnabled() ? "kaiju8.msg.alerts_on" : "kaiju8.msg.alerts_off"));
         return;
@@ -87,6 +90,27 @@ function openRelease(player) {
     tell(player, tr("kaiju8.msg.release_set", String(value)));
     if (value > cap) tell(player, tr("kaiju8.msg.release_capped", String(cap)));
   }).catch(() => { });
+}
+
+function openTechList(player) {
+  const lines = [{ translate: "kaiju8.ui.techlist_hint" }, { text: "\n" }];
+  for (const [itemId, list] of Object.entries(TECH)) {
+    const current = selectedIndex(player, itemId);
+    lines.push({ text: "\n§e" });
+    lines.push({ translate: `item.${itemId}` });
+    lines.push({ text: "§r\n" });
+    list.forEach((t, i) => {
+      lines.push({ text: i === current ? "  §b▸ " : "  §8- " });
+      lines.push({ translate: t.name });
+      lines.push({ text: "§r\n" });
+    });
+  }
+  const form = new MessageFormData()
+    .title(tr("kaiju8.ui.techlist"))
+    .body({ rawtext: lines })
+    .button1(tr("kaiju8.ui.close"))
+    .button2(tr("kaiju8.ui.close"));
+  show(form, player).catch(() => { });
 }
 
 function openRecord(player) {

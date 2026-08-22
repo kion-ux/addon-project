@@ -13,18 +13,26 @@
         "default": "geometry.kaiju8.parasite"
       },
       "animations": {
-        "crawl": "animation.kaiju8.parasite.crawl"
+        "look": "animation.kaiju8.look_at_target",
+        "idle": "animation.kaiju8.beast.idle",
+        "walk": "animation.kaiju8.beast.walk",
+        "attack": "animation.kaiju8.beast.attack",
+        "hurt": "animation.kaiju8.beast.hurt",
+        "death": "animation.kaiju8.beast.death",
+        "general": "controller.animation.kaiju8.beast.general",
+        "action": "controller.animation.kaiju8.beast.action"
       },
       "scripts": {
         "animate": [
-          "crawl"
+          "general",
+          "action"
         ]
       },
       "render_controllers": [
         "controller.render.kaiju8.default"
       ],
       "spawn_egg": {
-        "base_color": "#967884",
+        "base_color": "#9c7884",
         "overlay_color": "#ff6078"
       }
     }

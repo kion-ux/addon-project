@@ -1,0 +1,34 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:gunblade_gs3305"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AAC",
+      "AAR",
+      "S  "
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      },
+      "C": {
+        "item": "kaiju8:kaiju_core"
+      },
+      "R": {
+        "item": "minecraft:iron_block"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "kaiju8:gunblade_gs3305",
+      "count": 1
+    }
+  }
+}

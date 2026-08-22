@@ -16,25 +16,35 @@
         "look": "animation.kaiju8.look_at_target",
         "idle": "animation.kaiju8.humanoid.idle",
         "walk": "animation.kaiju8.humanoid.walk",
+        "run": "animation.kaiju8.humanoid.run",
         "attack": "animation.kaiju8.humanoid.attack",
+        "hurt": "animation.kaiju8.humanoid.hurt",
         "death": "animation.kaiju8.humanoid.death",
         "general": "controller.animation.kaiju8.humanoid.general",
-        "atk": "controller.animation.kaiju8.humanoid.attack",
-        "pose": "animation.kaiju8.pose.blades"
+        "action": "controller.animation.kaiju8.humanoid.action",
+        "pose": "animation.kaiju8.pose.twin",
+        "tech": "animation.kaiju8.tech.twin_slash",
+        "hair": "animation.kaiju8.hair_sway"
       },
       "scripts": {
         "animate": [
           "general",
+          "hair",
           "pose",
-          "atk"
+          "action"
         ]
       },
       "render_controllers": [
         "controller.render.kaiju8.default"
       ],
+      "particle_effects": {
+        "muzzle": "kaiju8:muzzle_flash",
+        "slash": "kaiju8:slash_air",
+        "release": "kaiju8:release_aura"
+      },
       "spawn_egg": {
-        "base_color": "#e0e4ea",
-        "overlay_color": "#46325c"
+        "base_color": "#12141a",
+        "overlay_color": "#3b2e5a"
       }
     }
   }

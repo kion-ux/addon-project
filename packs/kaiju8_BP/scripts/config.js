@@ -1,15 +1,24 @@
 // 怪獣8号 アドオン - 定数定義 / shared constants
 export const NS = "kaiju8";
 
-/** 要塞度 (fortitude) — the Defense Force's threat rating for each kaiju. */
+/** 要塞度 (fortitude) — 討伐庁の脅威評価。
+ *  余獣は個別に測定されないので null（UI では "--"）。 */
 export const FORTITUDE = {
-  "kaiju8:parasite_kaiju": 0.4,
-  "kaiju8:yoju": 2.4,
+  "kaiju8:parasite_kaiju": null,
+  "kaiju8:yoju": null,
   "kaiju8:honju": 6.8,
   "kaiju8:kaiju_no8": 9.8,
-  "kaiju8:kaiju_no9": 9.8,
-  "kaiju8:kaiju_no10": 9.8,
+  "kaiju8:kaiju_no9": 8.5,
+  "kaiju8:kaiju_no10": 8.3,
 };
+
+/** 6.0以上=本獣級 / 8.0以上=大怪獣級 / 9.0以上=識別種 */
+export const FORTITUDE_CLASS = [
+  [9.0, "kaiju8.class.identified"],
+  [8.0, "kaiju8.class.great"],
+  [6.0, "kaiju8.class.honju"],
+  [0.0, "kaiju8.class.yoju"],
+];
 
 /** Identified-kaiju class (識別怪獣) get the red threat colour. */
 export const IDENTIFIED = new Set([
@@ -34,6 +43,11 @@ export const TRANSFORM_ITEM = "kaiju8:no8_power";
 export const FORM_ITEM = "kaiju8:no8_form";
 export const PARASITE_ITEM = "kaiju8:parasite_kaiju";
 export const DETECTOR_ITEM = "kaiju8:kaiju_detector";
+
+/** 解放戦力の帯 (仕様書 §2)。数値のみで表示し、オーラは出さない。 */
+export const RELEASE_BANDS = [
+  [90, "§6"], [60, "§e"], [30, "§a"], [10, "§b"], [0, "§7"],
+];
 
 export const SUIT = [
   "kaiju8:combat_suit_helmet",
@@ -61,10 +75,13 @@ export const ENERGY_DRAIN = 0.30;   // per second while transformed
 export const ENERGY_REGEN = 0.55;   // per second while human
 export const ENERGY_HIT_COST = 1.2; // per landed hit
 
-export const WEAPON_COOLDOWN = {
-  "kaiju8:weapon_no2": 24,
-  "kaiju8:df_rifle": 8,
-  "kaiju8:weapon_no4": 50,
-  "kaiju8:battle_axe": 90,
-  "kaiju8:combat_blade": 45,
-};
+/** Items that carry 技 — kept in sync with techniques.js. */
+export const TECH_ITEMS = [
+  "kaiju8:combat_knife",
+  "kaiju8:df_rifle",
+  "kaiju8:twin_sw2033",
+  "kaiju8:axe_03ax",
+  "kaiju8:cannon_t25",
+  "kaiju8:gunblade_gs3305",
+  "kaiju8:no8_power",
+];

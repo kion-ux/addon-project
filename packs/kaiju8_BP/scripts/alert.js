@@ -1,7 +1,8 @@
 // 怪獣災害警報 / Kaiju disaster alerts
 import { world, system } from "@minecraft/server";
 import { PROP } from "./config.js";
-import { tr, tell, playSound, burst, num, allPlayers } from "./util.js";
+import { tr, tell, num, allPlayers } from "./util.js";
+import { fx, fxRing, fxScatter, sound, shake } from "./effects.js";
 
 const CHECK_SECONDS = 45;
 const BASE_CHANCE = 0.18;
@@ -57,12 +58,15 @@ export function spawnWave(player, forced = false) {
   if (bringHonju) {
     try { player.dimension.spawnEntity("kaiju8:honju", origin); } catch (_) { }
   }
-  burst(player.dimension, "minecraft:large_explosion", origin, 4, 2.0);
-  playSound(player.dimension, "mob.enderdragon.growl", origin, { volume: 3.0, pitch: 0.55 });
+  fxScatter(player.dimension, "kaiju8:transform_smoke", origin, 12, 2.2);
+  fx(player.dimension, "kaiju8:shock_ring", origin);
+  sound(player.dimension, "mob.enderdragon.growl", origin, { volume: 3.0, pitch: 0.55 });
 
   for (const p of allPlayers()) {
     if (p.dimension.id !== player.dimension.id) continue;
-    playSound(p.dimension, "note.pling", p.location, { pitch: 0.6 });
+    sound(p.dimension, "note.pling", p.location, { pitch: 0.6 });
+    fxRing(p.dimension, "kaiju8:alert_flare", p.location, 3.0, 10, 0.4);
+    shake(p, 0.18, 0.6, "rotational");
     try {
       p.onScreenDisplay.setTitle(tr("kaiju8.title.alert"), {
         fadeInDuration: 6, stayDuration: 44, fadeOutDuration: 16,

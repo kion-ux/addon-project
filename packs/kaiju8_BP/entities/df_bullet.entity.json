@@ -43,7 +43,7 @@
           },
           "remove_on_hit": {}
         },
-        "power": 2.6,
+        "power": 2.8,
         "gravity": 0.02,
         "angle_offset": 0.0,
         "hit_sound": "bow.hit",

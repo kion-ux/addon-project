@@ -19,6 +19,30 @@
             "event": "kaiju8:calm_down"
           }
         }
+      },
+      "kaiju8:performing": {
+        "minecraft:mark_variant": {
+          "value": 2
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 0.9,
+          "time_down_event": {
+            "event": "kaiju8:calm_down"
+          }
+        }
+      },
+      "kaiju8:reeling": {
+        "minecraft:mark_variant": {
+          "value": 4
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 0.35,
+          "time_down_event": {
+            "event": "kaiju8:calm_down"
+          }
+        }
       }
     },
     "components": {
@@ -31,18 +55,18 @@
         ]
       },
       "minecraft:collision_box": {
-        "width": 1.4,
-        "height": 2.4
+        "width": 1.15,
+        "height": 2.05
       },
       "minecraft:health": {
-        "value": 400,
-        "max": 400
+        "value": 420,
+        "max": 420
       },
       "minecraft:attack": {
-        "damage": 24
+        "damage": 26
       },
       "minecraft:movement": {
-        "value": 0.42
+        "value": 0.46
       },
       "minecraft:knockback_resistance": {
         "value": 0.95
@@ -63,7 +87,7 @@
         "value": 0
       },
       "minecraft:experience_reward": {
-        "on_death": "160"
+        "on_death": "170"
       },
       "minecraft:loot": {
         "table": "loot_tables/entities/kaiju_no8.json"
@@ -180,16 +204,44 @@
         }
       },
       "kaiju8:roar": {
+        "remove": {
+          "component_groups": [
+            "kaiju8:performing",
+            "kaiju8:reeling"
+          ]
+        },
         "add": {
           "component_groups": [
             "kaiju8:roaring"
           ]
         }
       },
+      "kaiju8:tech": {
+        "remove": {
+          "component_groups": [
+            "kaiju8:roaring",
+            "kaiju8:reeling"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "kaiju8:performing"
+          ]
+        }
+      },
+      "kaiju8:hurt_flash": {
+        "add": {
+          "component_groups": [
+            "kaiju8:reeling"
+          ]
+        }
+      },
       "kaiju8:calm_down": {
         "remove": {
           "component_groups": [
-            "kaiju8:roaring"
+            "kaiju8:roaring",
+            "kaiju8:performing",
+            "kaiju8:reeling"
           ]
         }
       }

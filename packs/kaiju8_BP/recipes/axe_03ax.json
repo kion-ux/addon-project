@@ -2,22 +2,22 @@
   "format_version": "1.20.10",
   "minecraft:recipe_shaped": {
     "description": {
-      "identifier": "kaiju8:weapon_no2"
+      "identifier": "kaiju8:axe_03ax"
     },
     "tags": [
       "crafting_table"
     ],
     "pattern": [
-      "CAA",
-      "AAR",
-      "S  "
+      "AAA",
+      "ACR",
+      "  S"
     ],
     "key": {
-      "C": {
-        "item": "kaiju8:kaiju_core"
-      },
       "A": {
         "item": "kaiju8:kaiju_alloy"
+      },
+      "C": {
+        "item": "kaiju8:kaiju_core"
       },
       "R": {
         "item": "minecraft:redstone_block"
@@ -27,7 +27,7 @@
       }
     },
     "result": {
-      "item": "kaiju8:weapon_no2",
+      "item": "kaiju8:axe_03ax",
       "count": 1
     }
   }

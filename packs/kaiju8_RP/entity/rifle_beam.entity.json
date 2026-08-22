@@ -12,17 +12,16 @@
       "geometry": {
         "default": "geometry.kaiju8.beam"
       },
-      "animations": {
-        "spin": "animation.kaiju8.projectile.spin"
-      },
+      "animations": {},
       "scripts": {
-        "animate": [
-          "spin"
-        ]
+        "animate": []
       },
       "render_controllers": [
         "controller.render.kaiju8.default"
-      ]
+      ],
+      "particle_effects": {
+        "trail": "kaiju8:beam_trail"
+      }
     }
   }
 }

@@ -14,10 +14,17 @@
       "geometry": {
         "default": "geometry.kaiju8.no8"
       },
+      "animations": {
+        "form_idle": "animation.kaiju8.no8.form_idle",
+        "crouch": "animation.kaiju8.no8.crouch",
+        "air": "animation.kaiju8.no8.air",
+        "charge": "animation.kaiju8.no8.charge",
+        "controller": "controller.animation.kaiju8.no8_form"
+      },
       "scripts": {
         "parent_setup": "variable.helmet_layer_visible = 0.0;",
-        "pre_animation": [
-          "variable.no8 = 1.0;"
+        "animate": [
+          "controller"
         ]
       },
       "render_controllers": [

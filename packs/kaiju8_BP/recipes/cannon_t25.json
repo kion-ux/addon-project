@@ -2,29 +2,32 @@
   "format_version": "1.20.10",
   "minecraft:recipe_shaped": {
     "description": {
-      "identifier": "kaiju8:weapon_no4"
+      "identifier": "kaiju8:cannon_t25"
     },
     "tags": [
       "crafting_table"
     ],
     "pattern": [
-      "A A",
-      "ACA",
-      "S S"
+      "CAA",
+      "AAR",
+      "S  "
     ],
     "key": {
+      "C": {
+        "item": "kaiju8:kaiju_core"
+      },
       "A": {
         "item": "kaiju8:kaiju_alloy"
       },
-      "C": {
-        "item": "kaiju8:kaiju_core"
+      "R": {
+        "item": "minecraft:redstone_block"
       },
       "S": {
         "item": "minecraft:stick"
       }
     },
     "result": {
-      "item": "kaiju8:weapon_no4",
+      "item": "kaiju8:cannon_t25",
       "count": 1
     }
   }

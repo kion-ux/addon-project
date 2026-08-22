@@ -12,15 +12,16 @@ ITEMS = {
     "kaiju_shell": ("怪獣外殻", "Kaiju Carapace"),
     "kaiju_alloy": ("怪獣合金", "Kaiju Alloy"),
     "kaiju_remains": ("怪獣残骸", "Kaiju Remains"),
-    "combat_blade": ("討伐隊制式刀", "Defense Force Blade"),
-    "df_rifle": ("討伐隊制式銃", "Defense Force Rifle"),
-    "weapon_no2": ("識別怪獣兵器2号", "Numbers Weapon No.2"),
-    "weapon_no4": ("識別怪獣兵器4号 双刃刀", "Numbers Weapon No.4 - Twin Blades"),
-    "battle_axe": ("大型戦斧", "Heavy Battle Axe"),
-    "combat_suit_helmet": ("討伐隊戦闘服 ヘルメット", "Combat Suit Helmet"),
-    "combat_suit_chestplate": ("討伐隊戦闘服 上衣", "Combat Suit Jacket"),
-    "combat_suit_leggings": ("討伐隊戦闘服 脚部", "Combat Suit Leggings"),
-    "combat_suit_boots": ("討伐隊戦闘服 ブーツ", "Combat Suit Boots"),
+    "combat_knife": ("戦闘用ナイフ", "Combat Knife"),
+    "df_rifle": ("DF-STD アサルトライフル", "DF-STD Assault Rifle"),
+    "twin_sw2033": ("SW-2033 二刀", "SW-2033 Twin Blades"),
+    "axe_03ax": ("03Ax-0112 大戦斧", "03Ax-0112 Battle Axe"),
+    "cannon_t25": ("T-25101985 大型火砲", "T-25101985 Heavy Cannon"),
+    "gunblade_gs3305": ("GS-3305 巨大銃剣", "GS-3305 Gunblade"),
+    "combat_suit_helmet": ("戦闘服 G-X4552 頭部", "Combat Suit G-X4552 Head"),
+    "combat_suit_chestplate": ("戦闘服 G-X4552 上衣", "Combat Suit G-X4552 Torso"),
+    "combat_suit_leggings": ("戦闘服 G-X4552 脚部", "Combat Suit G-X4552 Legs"),
+    "combat_suit_boots": ("戦闘服 G-X4552 ブーツ", "Combat Suit G-X4552 Boots"),
     "parasite_kaiju": ("小型怪獣", "Small Kaiju"),
     "no8_power": ("怪獣8号の力", "Power of Kaiju No.8"),
     "kaiju_detector": ("怪獣探知機", "Kaiju Detector"),
@@ -39,6 +40,7 @@ ENTITIES = {
     "mina_ashiro": ("亜白ミナ", "Mina Ashiro"),
     "soshiro_hoshina": ("保科宗四郎", "Soshiro Hoshina"),
     "kikoru_shinomiya": ("四ノ宮キコル", "Kikoru Shinomiya"),
+    "gen_narumi": ("鳴海弦", "Gen Narumi"),
     "parasite_kaiju": ("小型怪獣", "Small Kaiju"),
     "rifle_beam": ("砲撃", "Cannon Round"),
     "kaiju_acid": ("怪獣の酸", "Kaiju Acid"),
@@ -47,7 +49,45 @@ ENTITIES = {
 
 EGGS = ["yoju", "honju", "kaiju_no8", "kaiju_no9", "kaiju_no10",
         "defense_force_officer", "kafka_hibino", "reno_ichikawa",
-        "mina_ashiro", "soshiro_hoshina", "kikoru_shinomiya", "parasite_kaiju"]
+        "mina_ashiro", "soshiro_hoshina", "kikoru_shinomiya", "gen_narumi",
+        "parasite_kaiju"]
+
+# 技 — 原作にある技名と、本アドオン独自の技名が混在する
+TECH = {
+    # ✅ 原作にある技名（保科流刀伐術／抜討術・隊式斧術・隊式銃剣術・ユニソケット）
+    "kaiju8.tech.karauchi": ("刀伐術1式 空討ち", "Kenpo 1st: Empty Strike"),
+    "kaiju8.tech.kousa": ("刀伐術2式 交差討ち", "Kenpo 2nd: Cross Strike"),
+    "kaiju8.tech.midare": ("刀伐術4式 乱討ち", "Kenpo 4th: Wild Strike"),
+    "kaiju8.tech.junihitoe": ("刀伐術7式 十二単", "Kenpo 7th: Twelve Layers"),
+    "kaiju8.tech.oboro": ("抜討術1式 朧抜き", "Iai 1st: Hazy Draw"),
+    "kaiju8.tech.rakurai": ("隊式斧術1式 落雷", "Axe 1st: Thunderfall"),
+    "kaiju8.tech.mizukiri": ("隊式斧術2式 水切", "Axe 2nd: Skipping Stone"),
+    "kaiju8.tech.hangetsu": ("隊式斧術3式 半月", "Axe 3rd: Half Moon"),
+    "kaiju8.tech.darumaotoshi": ("隊式斧術4式 達磨落", "Axe 4th: Daruma Drop"),
+    "kaiju8.tech.sakuretsuzan": ("隊式銃剣術1式 炸裂斬", "Bayonet 1st: Burst Slash"),
+    "kaiju8.tech.zanmaku": ("隊式銃剣術2式 斬幕砲火", "Bayonet 2nd: Slash Curtain"),
+    "kaiju8.tech.kaiten": ("隊式銃剣術5式 回天", "Bayonet 5th: Revolution"),
+    "kaiju8.tech.shichishitou": ("隊式銃剣術6式 七支刀", "Bayonet 6th: Seven-Branched"),
+    "kaiju8.tech.socket_burst": ("ユニソケット 炸裂弾", "Unisocket: Burst Round"),
+    "kaiju8.tech.socket_freeze": ("ユニソケット 凍結弾", "Unisocket: Freeze Round"),
+    "kaiju8.tech.socket_thunder": ("ユニソケット 発雷弾", "Unisocket: Thunder Round"),
+    # ⚠️ 原作に技名が存在しないため本アドオンで命名したもの
+    "kaiju8.tech.slash": ("斬撃", "Slash"),
+    "kaiju8.tech.thrust": ("刺突", "Thrust"),
+    "kaiju8.tech.senkou": ("砲撃 穿光", "Cannon: Piercing Light"),
+    "kaiju8.tech.danmaku": ("砲撃 弾幕", "Cannon: Barrage"),
+    "kaiju8.tech.raitei": ("砲撃 雷霆", "Cannon: Thunderbolt"),
+    "kaiju8.tech.fist": ("怪獣の一撃", "Kaiju Fist"),
+    "kaiju8.tech.boost": ("解放跳躍", "Released Leap"),
+    "kaiju8.tech.energy_roar": ("エネルギー咆哮", "Energy Roar"),
+}
+
+CLASSES = {
+    "kaiju8.class.identified": ("識別種", "Identified"),
+    "kaiju8.class.great": ("大怪獣級", "Great Kaiju"),
+    "kaiju8.class.honju": ("本獣級", "Honju"),
+    "kaiju8.class.yoju": ("余獣", "Yoju"),
+}
 
 UI = {
     "kaiju8.rank.cadet": ("訓練生", "Cadet"),
@@ -86,9 +126,13 @@ UI = {
                                "§bCombat power release set to %s%%."),
     "kaiju8.msg.release_capped": ("§7戦闘服がなければ %s%% までしか耐えられない。",
                                   "§7Without the full combat suit your body caps out at %s%%."),
-    "kaiju8.msg.fire_no2": ("§b砲撃", "§bCannon fired"),
-    "kaiju8.msg.slash": ("§b高速斬撃", "§bHigh-speed slash"),
-    "kaiju8.msg.smash": ("§6叩きつけ", "§6Ground smash"),
+    "kaiju8.msg.form_only": ("§7その技は怪獣8号の体でなければ使えない。",
+                             "§7That technique needs the Kaiju No.8 body."),
+    "kaiju8.msg.welcome_tech": (
+        "§7武器を持って§bスニーク§7で技を切り返し、§b右クリック§7で発動。",
+        "§7Hold a weapon and §bsneak§7 to switch techniques, §bright-click§7 to use."),
+    "kaiju8.msg.form_only": ("§7その技は怪獣8号の体でなければ使えない。",
+                             "§7That technique needs the Kaiju No.8 body."),
     "kaiju8.msg.reset": ("§7記録を初期化した。", "§7Your record has been reset."),
 
     "kaiju8.title.awaken": ("§c怪獣8号", "§cKAIJU NO.8"),
@@ -117,6 +161,10 @@ UI = {
     "kaiju8.ui.record_suit": ("戦闘服 一式着用: %s", "Full combat suit: %s"),
     "kaiju8.ui.record_no8": ("怪獣化エネルギー: %s", "Kaiju energy: %s"),
     "kaiju8.ui.close": ("閉じる", "Close"),
+    "kaiju8.ui.techlist": ("技一覧", "Technique list"),
+    "kaiju8.ui.techlist_hint": (
+        "武器を持ってスニークすると技を切り返せる。",
+        "Hold a weapon and sneak to rotate through its techniques."),
 }
 
 PACK = {
@@ -152,6 +200,12 @@ def write_lang(folder, pack_key, include_content):
                 label = (f"{ENTITIES[name][0]}のスポーンエッグ" if idx == 0
                          else f"Spawn {ENTITIES[name][1]}")
                 out.append(f"item.spawn_egg.entity.kaiju8:{name}.name={label}")
+            out.append("")
+            for key, vals in TECH.items():
+                out.append(f"{key}={vals[idx]}")
+            out.append("")
+            for key, vals in CLASSES.items():
+                out.append(f"{key}={vals[idx]}")
             out.append("")
             for key, vals in UI.items():
                 out.append(f"{key}={vals[idx]}")

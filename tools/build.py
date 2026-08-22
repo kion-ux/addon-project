@@ -13,7 +13,8 @@ DIST = os.path.join(ROOT, "dist")
 VERSION = "1.0.0"
 NAME = "KaijuNo8"
 
-STEPS = ["gen_entities.py", "gen_client_entities.py", "gen_items.py",
+STEPS = ["gen_weapons.py", "gen_entities.py", "gen_particles.py",
+         "gen_anim.py", "gen_client_entities.py", "gen_items.py",
          "gen_bp.py", "gen_lang.py"]
 
 

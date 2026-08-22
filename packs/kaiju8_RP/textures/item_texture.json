@@ -2,11 +2,14 @@
   "resource_pack_name": "kaiju8",
   "texture_name": "atlas.items",
   "texture_data": {
-    "battle_axe": {
-      "textures": "textures/items/battle_axe"
+    "axe_03ax": {
+      "textures": "textures/items/axe_03ax"
     },
-    "combat_blade": {
-      "textures": "textures/items/combat_blade"
+    "cannon_t25": {
+      "textures": "textures/items/cannon_t25"
+    },
+    "combat_knife": {
+      "textures": "textures/items/combat_knife"
     },
     "combat_suit_boots": {
       "textures": "textures/items/combat_suit_boots"
@@ -22,6 +25,9 @@
     },
     "df_rifle": {
       "textures": "textures/items/df_rifle"
+    },
+    "gunblade_gs3305": {
+      "textures": "textures/items/gunblade_gs3305"
     },
     "kaiju_alloy": {
       "textures": "textures/items/kaiju_alloy"
@@ -44,11 +50,8 @@
     "parasite_kaiju": {
       "textures": "textures/items/parasite_kaiju"
     },
-    "weapon_no2": {
-      "textures": "textures/items/weapon_no2"
-    },
-    "weapon_no4": {
-      "textures": "textures/items/weapon_no4"
+    "twin_sw2033": {
+      "textures": "textures/items/twin_sw2033"
     }
   }
 }

@@ -70,6 +70,43 @@ def main() -> int:
         render_controllers |= set(load(path).get("render_controllers", {}))
     render_controllers |= {"controller.render.armor", "controller.render.item_default"}
 
+    # ---- particles ------------------------------------------------------
+    particles = set()
+    part_dir = os.path.join(RP, "particles")
+    if os.path.isdir(part_dir):
+        for path in walk(part_dir):
+            doc = load(path)["particle_effect"]
+            particles.add(doc["description"]["identifier"])
+            tex = doc["description"]["basic_render_parameters"]["texture"]
+            if not os.path.exists(os.path.join(RP, tex + ".png")):
+                errors.append(f"{os.path.relpath(path, ROOT)}: missing {tex}.png")
+
+    # every kaiju8: particle the scripts spawn must actually exist
+    import re
+    spawn_call = re.compile(
+        r'(?:fx|fxRing|fxLine|fxScatter|arcFx|spawnParticle)\s*'
+        r'\([^;]{0,160}?"(kaiju8:[a-z0-9_]+)"')
+    used = set()
+    script_dir = os.path.join(BP, "scripts")
+    if os.path.isdir(script_dir):
+        for path in walk(script_dir, ".js"):
+            with open(path, encoding="utf-8") as fh:
+                body = fh.read()
+            for m in spawn_call.finditer(body):
+                name = m.group(1)
+                if name in particles:
+                    used.add(name)
+                else:
+                    errors.append(f"scripts: unknown particle {name} "
+                                  f"({os.path.basename(path)})")
+    for path in walk(os.path.join(RP, "entity")):
+        for value in load(path)["minecraft:client_entity"]["description"].get(
+                "particle_effects", {}).values():
+            if value in particles:
+                used.add(value)
+    for name in sorted(particles - used):
+        warnings.append(f"particle {name} is defined but never used")
+
     # ---- client entities ---------------------------------------------
     client_ids = set()
     for path in walk(os.path.join(RP, "entity")):
@@ -104,6 +141,7 @@ def main() -> int:
                         f"{rel}: controller {value} plays '{ref}' "
                         f"but the entity maps no such animation")
 
+    attachable_ids = set()
     # attachables
     for path in walk(os.path.join(RP, "attachables")):
         desc = load(path)["minecraft:attachable"]["description"]
@@ -116,6 +154,21 @@ def main() -> int:
                 continue
             if not os.path.exists(os.path.join(RP, tex + ".png")):
                 errors.append(f"{rel}: missing texture {tex}.png")
+        for key, value in desc.get("animations", {}).items():
+            if value.startswith("controller.") and value not in controllers:
+                errors.append(f"{rel}: unknown animation controller {value}")
+            if value.startswith("animation.") and value not in animations:
+                errors.append(f"{rel}: unknown animation {value}")
+        for short in desc.get("scripts", {}).get("animate", []):
+            key = short if isinstance(short, str) else list(short)[0]
+            if key not in desc.get("animations", {}):
+                errors.append(f"{rel}: animate entry '{key}' is not mapped")
+        for value in desc.get("animations", {}).values():
+            for ref in controller_anim_refs.get(value, ()):
+                if ref not in desc.get("animations", {}):
+                    errors.append(f"{rel}: controller {value} plays '{ref}' "
+                                  f"but the attachable maps no such animation")
+        attachable_ids.add(desc["identifier"])
 
     # ---- behaviour entities -------------------------------------------
     bp_ids = set()
@@ -145,6 +198,19 @@ def main() -> int:
         key = icon.get("texture") if isinstance(icon, dict) else icon
         if key not in atlas:
             errors.append(f"item {ident}: icon '{key}' not in item_texture.json")
+
+    # every attachable must belong to a real item
+    for ident in attachable_ids:
+        if ident not in item_ids:
+            errors.append(f"attachable {ident} has no matching item")
+
+    # client-entity particle_effects must resolve
+    for path in walk(os.path.join(RP, "entity")):
+        desc = load(path)["minecraft:client_entity"]["description"]
+        rel = os.path.relpath(path, ROOT)
+        for key, value in desc.get("particle_effects", {}).items():
+            if value not in particles and not value.startswith("minecraft:"):
+                errors.append(f"{rel}: unknown particle {value}")
 
     # ---- spawn rules / loot / recipes reference real things -------------
     for path in walk(os.path.join(BP, "spawn_rules")):
@@ -216,7 +282,8 @@ def main() -> int:
     for e in errors:
         print("ERROR", e)
     print(f"\n{len(bp_ids)} entities, {len(item_ids)} items, {len(geometries)} geometries, "
-          f"{len(animations)} animations")
+          f"{len(animations)} animations, {len(particles)} particles, "
+          f"{len(attachable_ids)} attachables")
     print(f"{len(errors)} errors, {len(warnings)} warnings")
     return 1 if errors else 0
 
