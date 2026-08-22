@@ -13,7 +13,13 @@
               "fp": "c.is_first_person"
             },
             {
-              "swing": "v.swing > 0.0"
+              "tech": "v.tech > 0.5"
+            },
+            {
+              "swing_a": "v.swing > 0.0 && v.alt < 0.5"
+            },
+            {
+              "swing_b": "v.swing > 0.0 && v.alt >= 0.5"
             },
             {
               "ready": "q.is_sneaking"
@@ -31,25 +37,61 @@
               "fp": "c.is_first_person"
             },
             {
-              "swing": "v.swing > 0.0"
+              "tech": "v.tech > 0.5"
+            },
+            {
+              "swing_a": "v.swing > 0.0 && v.alt < 0.5"
+            },
+            {
+              "swing_b": "v.swing > 0.0 && v.alt >= 0.5"
             },
             {
               "hold": "!q.is_sneaking"
             }
           ]
         },
-        "swing": {
+        "swing_a": {
           "animations": [
             "third",
             "swing"
           ],
-          "blend_transition": 0.05,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "fp": "c.is_first_person"
             },
             {
               "hold": "q.all_animations_finished"
+            }
+          ]
+        },
+        "swing_b": {
+          "animations": [
+            "third",
+            "swing2"
+          ],
+          "blend_transition": 0.04,
+          "transitions": [
+            {
+              "fp": "c.is_first_person"
+            },
+            {
+              "hold": "q.all_animations_finished"
+            }
+          ]
+        },
+        "tech": {
+          "animations": [
+            "third",
+            "tech"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "fp": "c.is_first_person"
+            },
+            {
+              "hold": "v.tech <= 0.5"
             }
           ]
         },
@@ -62,22 +104,58 @@
               "hold": "!c.is_first_person"
             },
             {
-              "fp_swing": "v.swing > 0.0"
+              "fp_tech": "v.tech > 0.5"
+            },
+            {
+              "fp_swing_a": "v.swing > 0.0 && v.alt < 0.5"
+            },
+            {
+              "fp_swing_b": "v.swing > 0.0 && v.alt >= 0.5"
             }
           ]
         },
-        "fp_swing": {
+        "fp_swing_a": {
           "animations": [
             "first",
             "swing"
           ],
-          "blend_transition": 0.05,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "hold": "!c.is_first_person"
             },
             {
               "fp": "q.all_animations_finished"
+            }
+          ]
+        },
+        "fp_swing_b": {
+          "animations": [
+            "first",
+            "swing2"
+          ],
+          "blend_transition": 0.04,
+          "transitions": [
+            {
+              "hold": "!c.is_first_person"
+            },
+            {
+              "fp": "q.all_animations_finished"
+            }
+          ]
+        },
+        "fp_tech": {
+          "animations": [
+            "first",
+            "tech"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "hold": "!c.is_first_person"
+            },
+            {
+              "fp": "v.tech <= 0.5"
             }
           ]
         }
@@ -149,7 +227,10 @@
         "idle": {
           "transitions": [
             {
-              "tech": "query.mark_variant >= 2 && query.health > 0"
+              "tech2": "query.mark_variant == 3 && query.health > 0"
+            },
+            {
+              "tech": "query.mark_variant == 2 && query.health > 0"
             },
             {
               "attack": "query.is_delayed_attacking && query.health > 0"
@@ -176,7 +257,18 @@
           ],
           "transitions": [
             {
-              "idle": "query.mark_variant < 2 || query.health <= 0"
+              "idle": "query.mark_variant != 2 || query.health <= 0"
+            }
+          ],
+          "blend_transition": 0.1
+        },
+        "tech2": {
+          "animations": [
+            "tech2"
+          ],
+          "transitions": [
+            {
+              "idle": "query.mark_variant != 3 || query.health <= 0"
             }
           ],
           "blend_transition": 0.1

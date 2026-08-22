@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from mcmodel import Cube, Model  # noqa: E402
+import mctexture  # noqa: E402
 from mctexture import Painter  # noqa: E402
 from rig import (Build, BeastRig, HumanRig, KaijuParts, HAIR,  # noqa: E402
                  HAIR_FRONT, PLAYER_PIVOTS)
@@ -510,10 +511,10 @@ def main() -> None:
     for key in CHARACTERS:
         pal = dict(palettes.ALL[CHARACTERS[key]["pal"]])
         pal.update({k: v for k, v in palettes.WEAPON.items() if k not in pal})
-        emit(build_character(key), pal, key, key, abs(hash(key)) % 9000)
+        emit(build_character(key), pal, key, key, mctexture._h(key) % 9000)
 
     for name, (builder, pal) in NUMBERS.items():
-        emit(builder(), palettes.ALL[pal], name, name, abs(hash(name)) % 9000)
+        emit(builder(), palettes.ALL[pal], name, name, mctexture._h(name) % 9000)
 
     emit(build_beam(), palettes.BEAM, "beam", "beam", 21)
     emit(build_acid(), palettes.ACID, "acid", "acid", 22)

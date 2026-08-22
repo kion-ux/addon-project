@@ -24,6 +24,7 @@
         "action": "controller.animation.kaiju8.humanoid.action",
         "pose": "animation.kaiju8.pose.rifle",
         "tech": "animation.kaiju8.tech.snipe",
+        "tech2": "animation.kaiju8.tech.quickdraw",
         "hair": "animation.kaiju8.hair_sway"
       },
       "scripts": {

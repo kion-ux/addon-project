@@ -92,6 +92,13 @@ export function onCooldown(id, key) {
   return system.currentTick < until;
 }
 
+/** 残り tick。0 なら使用可能。 */
+export function cooldownLeft(id, key) {
+  const map = cooldowns.get(id);
+  if (!map) return 0;
+  return Math.max(0, (map.get(key) ?? 0) - system.currentTick);
+}
+
 export function setCooldown(id, key, ticks) {
   let map = cooldowns.get(id);
   if (!map) { map = new Map(); cooldowns.set(id, map); }

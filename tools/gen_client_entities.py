@@ -94,19 +94,21 @@ TROOPS = [
     ("isao_shinomiya", "isao", "cannon", ("#12141a", "#d9b25e")),
 ]
 
-# character -> the 技 clip its action controller plays
+# character -> the two 技 clips its action controller alternates between.
+# 一の型は mark_variant 2、二の型は 3。原作の得意技に合わせて振り分けてある。
 TECH = {
-    "defense_force_officer": "tech.snipe",
-    "kafka_hibino": "tech.slash",
-    "reno_ichikawa": "tech.snipe",
-    "mina_ashiro": "tech.snipe",
-    "soshiro_hoshina": "tech.twin_slash",
-    "kikoru_shinomiya": "tech.axe_smash",
-    "gen_narumi": "tech.storm",
-    "iharu_furuhashi": "tech.slash",
-    "haruichi_izumo": "tech.snipe",
-    "aoi_kaguragi": "tech.axe_smash",
-    "isao_shinomiya": "tech.snipe",
+    # 一の型 / 二の型。武器の構えを基準に振ってあるので、持ち替えは効かない
+    "defense_force_officer": ("tech.snipe", "tech.suppress"),
+    "kafka_hibino":          ("tech.punch", "tech.slash"),        # 素手の一撃
+    "reno_ichikawa":         ("tech.snipe", "tech.quickdraw"),    # 速射
+    "mina_ashiro":           ("tech.snipe", "tech.volley"),       # 狙撃と斉射
+    "soshiro_hoshina":       ("tech.twin_slash", "tech.eight_fold"),  # 八重討ち
+    "kikoru_shinomiya":      ("tech.axe_smash", "tech.axe_sweep"),
+    "gen_narumi":            ("tech.storm", "tech.thrust"),       # 刺してから撃つ
+    "iharu_furuhashi":       ("tech.iai", "tech.cross"),          # 霞討ち／十字
+    "haruichi_izumo":        ("tech.suppress", "tech.snipe"),
+    "aoi_kaguragi":          ("tech.axe_sweep", "tech.axe_smash"),
+    "isao_shinomiya":        ("tech.volley", "tech.snipe"),
 }
 
 
@@ -156,7 +158,8 @@ def main() -> None:
     for ident, key, pose, egg in TROOPS:
         anims = dict(HUMAN)
         anims["pose"] = A + "pose." + pose
-        anims["tech"] = A + TECH[ident]
+        anims["tech"] = A + TECH[ident][0]
+        anims["tech2"] = A + TECH[ident][1]
         anims["hair"] = A + "hair_sway"
         write(f"{ident}.entity.json", client(
             f"kaiju8:{ident}", key, f"geometry.kaiju8.{key}", anims,

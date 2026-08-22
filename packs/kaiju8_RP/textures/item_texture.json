@@ -5,6 +5,9 @@
     "axe_03ax": {
       "textures": "textures/items/axe_03ax"
     },
+    "blade_sw1023": {
+      "textures": "textures/items/blade_sw1023"
+    },
     "cannon_t25": {
       "textures": "textures/items/cannon_t25"
     },
@@ -22,6 +25,12 @@
     },
     "combat_suit_leggings": {
       "textures": "textures/items/combat_suit_leggings"
+    },
+    "df_bazooka": {
+      "textures": "textures/items/df_bazooka"
+    },
+    "df_pistol": {
+      "textures": "textures/items/df_pistol"
     },
     "df_rifle": {
       "textures": "textures/items/df_rifle"

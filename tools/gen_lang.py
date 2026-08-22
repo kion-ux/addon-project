@@ -21,6 +21,9 @@ ITEMS = {
     "combat_knife": ("戦闘用ナイフ", "Combat Knife"),
     "df_rifle": ("DF-STD アサルトライフル", "DF-STD Assault Rifle"),
     "twin_sw2033": ("SW-2033 二刀", "SW-2033 Twin Blades"),
+    "blade_sw1023": ("SW-1023 一刀", "SW-1023 Long Blade"),
+    "df_pistol": ("DF-STD 自動拳銃", "DF-STD Sidearm"),
+    "df_bazooka": ("DF-STD バズーカ", "DF-STD Bazooka"),
     "axe_03ax": ("03Ax-0112 大戦斧", "03Ax-0112 Battle Axe"),
     "cannon_t25": ("T-25101985 大型火砲", "T-25101985 Heavy Cannon"),
     "gunblade_gs3305": ("GS-3305 巨大銃剣", "GS-3305 Gunblade"),
@@ -69,7 +72,14 @@ TECH = {
     "kaiju8.tech.karauchi": ("刀伐術1式 空討ち", "Kenpo 1st: Empty Strike"),
     "kaiju8.tech.kousa": ("刀伐術2式 交差討ち", "Kenpo 2nd: Cross Strike"),
     "kaiju8.tech.midare": ("刀伐術4式 乱討ち", "Kenpo 4th: Wild Strike"),
+    "kaiju8.tech.kaeshi": ("刀伐術3式 返し討ち", "Kenpo 3rd: Counter Strike"),
+    "kaiju8.tech.kasumi": ("刀伐術5式 霞討ち", "Kenpo 5th: Haze Strike"),
+    "kaiju8.tech.yae": ("刀伐術6式 八重討ち", "Kenpo 6th: Eightfold Strike"),
     "kaiju8.tech.junihitoe": ("刀伐術7式 十二単", "Kenpo 7th: Twelve Layers"),
+    "kaiju8.tech.kazaana": ("抜討術2式 風穴", "Iai 2nd: Air Hole"),
+    "kaiju8.tech.sakabyoshi": ("抜討術3式 逆拍子", "Iai 3rd: Reverse Beat"),
+    "kaiju8.tech.raika": ("隊式銃剣術3式 雷火", "Bayonet 3rd: Thunderfire"),
+    "kaiju8.tech.enu": ("隊式銃剣術4式 炎雨", "Bayonet 4th: Flame Rain"),
     "kaiju8.tech.oboro": ("抜討術1式 朧抜き", "Iai 1st: Hazy Draw"),
     "kaiju8.tech.rakurai": ("隊式斧術1式 落雷", "Axe 1st: Thunderfall"),
     "kaiju8.tech.mizukiri": ("隊式斧術2式 水切", "Axe 2nd: Skipping Stone"),
@@ -85,6 +95,10 @@ TECH = {
     # ⚠️ 原作に技名が存在しないため本アドオンで命名したもの
     "kaiju8.tech.slash": ("斬撃", "Slash"),
     "kaiju8.tech.thrust": ("刺突", "Thrust"),
+    "kaiju8.tech.he_shell": ("榴弾", "HE Shell"),
+    "kaiju8.tech.incendiary": ("焼夷弾", "Incendiary"),
+    "kaiju8.tech.rapid": ("速射", "Rapid Fire"),
+    "kaiju8.tech.aimed": ("精密射撃", "Aimed Shot"),
     "kaiju8.tech.senkou": ("砲撃 穿光", "Cannon: Piercing Light"),
     "kaiju8.tech.danmaku": ("砲撃 弾幕", "Cannon: Barrage"),
     "kaiju8.tech.raitei": ("砲撃 雷霆", "Cannon: Thunderbolt"),
@@ -187,6 +201,35 @@ UI = {
     "kaiju8.ui.techlist_hint": (
         "武器を持ってスニークすると技を切り返せる。",
         "Hold a weapon and sneak to rotate through its techniques."),
+
+    # --- ナンバーズ能力 ------------------------------------------------
+    "kaiju8.ui.numbers": ("ナンバーズ能力", "Numbers abilities"),
+    "kaiju8.ui.numbers_hint": (
+        "地上でスニーク＋ジャンプで発動。ここで能力を選ぶ。",
+        "Sneak and jump on the ground to fire. Pick the ability here."),
+    "kaiju8.ui.numbers_none": (
+        "§7識別怪獣兵器を頭に装備すると、その機体の能力が使えるようになる。",
+        "§7Equip a Numbers weapon on your head to unlock its abilities."),
+    "kaiju8.msg.numbers_pick": ("§7選択:", "§7Selected:"),
+    "kaiju8.msg.numbers_hint": (
+        "§7能力は §b地上でスニーク＋ジャンプ§7 で発動。切替は怪獣探知機の端末から。",
+        "§7Sneak + jump on the ground to fire. Switch abilities from the detector terminal."),
+    "kaiju8.msg.full_release": (
+        "§c全開放。解放戦力 100%%。",
+        "§cFull release. Combat power at 100%%."),
+
+    "kaiju8.na.kaigan": ("開眼", "Awakened Eyes"),
+    "kaiju8.na.inuki": ("射抜き", "Piercing Shot"),
+    "kaiju8.na.main_burst": ("メインバースト", "Main Burst"),
+    "kaiju8.na.impact": ("衝撃拳", "Impact Fist"),
+    "kaiju8.na.flight": ("飛行", "Flight"),
+    "kaiju8.na.repulsor": ("リパルサー連射", "Repulsor Barrage"),
+    "kaiju8.na.launch": ("電磁射出", "Magnetic Launch"),
+    "kaiju8.na.ice_shot": ("氷結弾", "Freezing Round"),
+    "kaiju8.na.absolute_zero": ("絶対零度", "Absolute Zero"),
+    "kaiju8.na.remote": ("遠隔兵器", "Remote Weapons"),
+    "kaiju8.na.tail_strike": ("尾撃", "Tail Strike"),
+    "kaiju8.na.full_release": ("全開放", "Full Release"),
 }
 
 PACK = {

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import math
 import random
+import zlib
 from typing import Dict, Optional, Sequence, Tuple
 
 from PIL import Image
@@ -42,6 +43,12 @@ def hexc(s) -> RGB:
         return (int(s[0]), int(s[1]), int(s[2]))
     s = s.lstrip("#")
     return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16))
+
+
+def _h(text: str) -> int:
+    """安定したハッシュ。組み込み hash() はプロセスごとに変わるので、同じソース
+    から同じテクスチャが出てこなくなる（差分がノイズだらけになる）。"""
+    return zlib.crc32(str(text).encode("utf-8"))
 
 
 class Painter:
@@ -137,7 +144,7 @@ class Painter:
         x0, y0, w, h = rect
         if w <= 0 or h <= 0:
             return
-        rng = random.Random((key * 7919) ^ (hash(face) & 0xFFFF))
+        rng = random.Random((key * 7919) ^ (_h(face) & 0xFFFF))
         light = FACE_LIGHT.get(face, 1.0)
         base = shade(hexc(style.get("base", (128, 128, 128))), light)
         second = shade(hexc(style.get("second", shade(hexc(style.get("base", (128, 128, 128))), 0.74))), light)
@@ -370,7 +377,7 @@ class Painter:
             ellipse(0.5, 0.5, 0.22, 0.22, shade(glow, 0.7), EM)
             ellipse(0.5, 0.5, 0.11, 0.11, (255, 255, 236), EM)
         elif name == "veins":
-            rng = random.Random(hash(name) ^ w ^ h)
+            rng = random.Random(_h(name) ^ w ^ h)
             for _ in range(max(3, w * h // 26)):
                 u, v = rng.random(), rng.random()
                 du, dv = (rng.random() - 0.5) * 0.3, 0.18 + rng.random() * 0.2

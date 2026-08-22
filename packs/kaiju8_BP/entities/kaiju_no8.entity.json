@@ -32,6 +32,18 @@
           }
         }
       },
+      "kaiju8:performing2": {
+        "minecraft:mark_variant": {
+          "value": 3
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 1.1,
+          "time_down_event": {
+            "event": "kaiju8:calm_down"
+          }
+        }
+      },
       "kaiju8:reeling": {
         "minecraft:mark_variant": {
           "value": 4
@@ -220,12 +232,27 @@
         "remove": {
           "component_groups": [
             "kaiju8:roaring",
-            "kaiju8:reeling"
+            "kaiju8:reeling",
+            "kaiju8:performing2"
           ]
         },
         "add": {
           "component_groups": [
             "kaiju8:performing"
+          ]
+        }
+      },
+      "kaiju8:tech2": {
+        "remove": {
+          "component_groups": [
+            "kaiju8:roaring",
+            "kaiju8:reeling",
+            "kaiju8:performing"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "kaiju8:performing2"
           ]
         }
       },
@@ -241,6 +268,7 @@
           "component_groups": [
             "kaiju8:roaring",
             "kaiju8:performing",
+            "kaiju8:performing2",
             "kaiju8:reeling"
           ]
         }

@@ -6,8 +6,10 @@ import { fx, fxScatter, sound, shakeNearby, targetsNear, hit, bleed } from "./ef
 import { container, selectedSlot, isTransformed } from "./transform.js";
 import { TECH, cycle } from "./techniques.js";
 import { cycleTechnique, releaseRate, wearsFullSuit } from "./weapons.js";
+import { wornNumbers, activate } from "./numbers.js";
 
 const sneakState = new Map();     // playerId -> was sneaking
+const jumpState = new Map();      // playerId -> was holding jump
 const airJump = new Map();        // playerId -> already used this airtime
 const falling = new Map();        // playerId -> most negative y velocity seen
 
@@ -32,7 +34,8 @@ export function tickMobility() {
     const canCycle = held && TECH[held] && TECH[held].length > 1 &&
       (held !== "kaiju8:no8_power" || transformed);
     if (sneaking && !wasSneaking && canCycle) {
-      cycle(player, held, 1);
+      // スニークで技を切り返す。ダッシュ中なら逆順に戻す
+      cycle(player, held, player.isSprinting ? -1 : 1);
       cycleTechnique(player, held, undefined);
     }
 
@@ -40,6 +43,16 @@ export function tickMobility() {
     let vel = { x: 0, y: 0, z: 0 };
     try { vel = player.getVelocity(); } catch (_) { }
     const onGround = !!player.isOnGround;
+
+    // ---- ナンバーズ能力: 地上でスニーク＋ジャンプ ----------------------
+    const jumping = player.isJumping === true;
+    const wasJumping = jumpState.get(id) ?? false;
+    jumpState.set(id, jumping);
+    const numbers = wornNumbers(player);
+    if (numbers && sneaking && jumping && !wasJumping && onGround) {
+      activate(player);
+      continue;   // 同じ入力でジャンプ機動まで走らせない
+    }
 
     if (onGround) {
       airJump.delete(id);

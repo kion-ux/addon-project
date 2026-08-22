@@ -23,7 +23,8 @@
         "general": "controller.animation.kaiju8.humanoid.general",
         "action": "controller.animation.kaiju8.humanoid.action",
         "pose": "animation.kaiju8.pose.cannon",
-        "tech": "animation.kaiju8.tech.snipe",
+        "tech": "animation.kaiju8.tech.volley",
+        "tech2": "animation.kaiju8.tech.snipe",
         "hair": "animation.kaiju8.hair_sway"
       },
       "scripts": {

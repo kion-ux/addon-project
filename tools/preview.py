@@ -50,8 +50,12 @@ def rot_matrix(rx, ry, rz):
     return mx @ my @ mz
 
 
-def load_pose(names):
-    """Constant (non-molang) rotations/positions from our animation clips."""
+def load_pose(names, t=None):
+    """Constant (non-molang) rotations/positions from our animation clips.
+
+    ``t`` picks the keyframe nearest that time so a technique can be inspected
+    mid-swing rather than at its neutral first frame.
+    """
     path = os.path.join(RP, "animations", "kaiju8.animation.json")
     if not os.path.exists(path) or not names:
         return {}
@@ -65,8 +69,11 @@ def load_pose(names):
             entry = out.setdefault(bone, {"rotation": [0, 0, 0], "position": [0, 0, 0]})
             for key in ("rotation", "position"):
                 v = tracks.get(key)
-                if isinstance(v, dict):          # keyframed - take the first frame
-                    v = v[sorted(v, key=float)[0]]
+                if isinstance(v, dict):
+                    stamps = sorted(v, key=float)
+                    pick = stamps[0] if t is None else min(
+                        stamps, key=lambda k: abs(float(k) - t))
+                    v = v[pick]
                 if isinstance(v, list) and all(isinstance(c, (int, float)) for c in v):
                     for i in range(3):
                         entry[key][i] += v[i]
@@ -148,8 +155,8 @@ class Geo:
 
 
 def render(geo_path, tex_path, size=360, yaw=28.0, pitch=-12.0, margin=0.10,
-           bg=(28, 30, 38), pose=None, hide=()):
-    geo = Geo(geo_path, load_pose(pose), hide)
+           bg=(28, 30, 38), pose=None, hide=(), t=None):
+    geo = Geo(geo_path, load_pose(pose, t), hide)
     tex = Image.open(tex_path).convert("RGBA")
     tw, th = tex.size
     tpx = np.array(tex, dtype=np.float32)
@@ -232,8 +239,9 @@ def sheet(entries, out_path, size=300, views=((24, -10),), poses=None):
     for entry in entries:
         label, geo, tex = entry[0], entry[1], entry[2]
         pose = entry[3] if len(entry) > 3 else (poses or {}).get(label)
+        at = entry[4] if len(entry) > 4 else None
         for yaw, pitch in views:
-            im = render(geo, tex, size, yaw, pitch, pose=pose)
+            im = render(geo, tex, size, yaw, pitch, pose=pose, t=at)
             tiles.append((label, im))
     cols = min(5, len(tiles))
     rows = (len(tiles) + cols - 1) // cols

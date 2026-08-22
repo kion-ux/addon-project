@@ -320,6 +320,109 @@ A["animation.kaiju8.tech.leap"] = clip({
                                  t0_4=[-140, 0, 30], t0_9=[0, 0, 3])},
 }, length=0.9, loop=False)
 
+# --- 八重討ち: 保科の連撃。踏み込みながら左右交互に八度斬る -------------
+A["animation.kaiju8.tech.eight_fold"] = clip({
+    "body": {"rotation": [0, f"math.cos({T} * 1720) * 44", 0],
+             "position": keys(t0=[0, 0, 0], t0_1=[0, 0, -2.6], t0_9=[0, 0, -5.2],
+                              t1_1=[0, 0, 0])},
+    "chest": {"rotation": [0, f"math.cos({T} * 1720 + 40) * 20", 0]},
+    "rightArm": {"rotation": [f"-46 + math.cos({T} * 1720) * 52",
+                              f"math.cos({T} * 1720 + 90) * 54", -20]},
+    "leftArm": {"rotation": [f"-46 + math.cos({T} * 1720 + 180) * 52",
+                             f"math.cos({T} * 1720 + 270) * 54", 20]},
+    "rightForearm": {"rotation": [f"-34 + math.cos({T} * 1720) * 26", 0, 0]},
+    "leftForearm": {"rotation": [f"-34 + math.cos({T} * 1720 + 180) * 26", 0, 0]},
+    "head": {"rotation": [0, f"math.cos({T} * 1720) * 18", 0]},
+    "rightLeg": {"rotation": keys(t0=[0, 0, 0], t0_3=[-28, 0, 0], t0_7=[-14, 0, 0],
+                                  t1_1=[0, 0, 0])},
+    "leftLeg": {"rotation": keys(t0=[0, 0, 0], t0_3=[22, 0, 0], t0_7=[12, 0, 0],
+                                 t1_1=[0, 0, 0])},
+}, length=1.1, loop=False)
+
+# --- 刺突: 鳴海の GS-3305。刺してから内部に撃ち込む二段動作 -------------
+# 刃の高さは肩+肘の合計角で決まるので、合計を -122 に保ったまま腕を伸ばす。
+# そうしないと突きのはずが振り上げになる。
+A["animation.kaiju8.tech.thrust"] = clip({
+    "body": {"rotation": keys(t0=[0, 0, 0], t0_14=[-6, 26, 0], t0_3=[4, -10, 0],
+                              t0_52=[4, -10, 0], t0_9=[0, 0, 0]),
+             "position": keys(t0=[0, 0, 0], t0_14=[0, 0, 2.4], t0_3=[0, 0, -5.4],
+                              t0_52=[0, 0, -4.6], t0_9=[0, 0, 0])},
+    "rightArm": {"rotation": keys(t0=[-96, -8, 0], t0_14=[-70, -26, -6],
+                                  t0_3=[-110, 4, 0], t0_46=[-104, 4, 0],
+                                  t0_52=[-114, 4, 0], t0_9=[-96, -8, 0])},
+    "rightForearm": {"rotation": keys(t0=[-26, 0, 0], t0_14=[-52, 0, 0],
+                                      t0_3=[-12, 0, 0], t0_46=[-18, 0, 0],
+                                      t0_52=[-8, 0, 0], t0_9=[-26, 0, 0])},
+    "leftArm": {"rotation": keys(t0=[-84, 24, 0], t0_14=[-60, 40, 0],
+                                 t0_3=[-98, 14, 0], t0_9=[-84, 24, 0])},
+    "leftForearm": {"rotation": keys(t0=[-30, -16, 0], t0_14=[-54, -16, 0],
+                                     t0_3=[-16, -16, 0], t0_9=[-30, -16, 0])},
+    "head": {"rotation": keys(t0=[0, 0, 0], t0_3=[4, 0, 0], t0_9=[0, 0, 0])},
+    "rightLeg": {"rotation": keys(t0=[0, 0, 0], t0_3=[-36, 0, 0], t0_9=[0, 0, 0])},
+    "leftLeg": {"rotation": keys(t0=[0, 0, 0], t0_3=[28, 0, 0], t0_9=[0, 0, 0])},
+}, length=0.9, loop=False)
+
+# --- 十字斬り: 二刀を交差させて斬る。pose.twin を基準に振る -------------
+A["animation.kaiju8.tech.cross"] = clip({
+    "body": {"rotation": keys(t0=[0, 0, 0], t0_08=[-6, 44, 0], t0_22=[8, -38, 0],
+                              t0_36=[6, -50, 0], t0_5=[-4, 42, 0], t0_8=[0, 0, 0])},
+    "chest": {"rotation": keys(t0=[0, 14, 0], t0_22=[0, -14, 0], t0_5=[0, 26, 0],
+                               t0_8=[0, 14, 0])},
+    "rightArm": {"rotation": keys(t0=[-22, 0, -16], t0_08=[-94, -46, -38],
+                                  t0_22=[-8, 46, 18], t0_5=[-14, 30, 12],
+                                  t0_8=[-22, 0, -16])},
+    "rightForearm": {"rotation": keys(t0=[-36, 0, -10], t0_08=[-64, 0, -10],
+                                      t0_22=[-4, 0, -4], t0_8=[-36, 0, -10])},
+    "leftArm": {"rotation": keys(t0=[-14, 0, 22], t0_08=[-18, 34, 40],
+                                 t0_36=[-88, -40, 26], t0_5=[-10, 44, 34],
+                                 t0_8=[-14, 0, 22])},
+    "leftForearm": {"rotation": keys(t0=[-52, 0, 14], t0_36=[-6, 0, 6],
+                                     t0_8=[-52, 0, 14])},
+    "head": {"rotation": keys(t0=[0, 0, 0], t0_08=[0, -26, 0], t0_22=[0, 22, 0],
+                              t0_5=[0, -20, 0], t0_8=[0, 0, 0])},
+    "rightLeg": {"rotation": keys(t0=[0, 0, 0], t0_22=[-24, 0, 0], t0_8=[0, 0, 0])},
+    "leftLeg": {"rotation": keys(t0=[0, 0, 0], t0_22=[18, 0, 0], t0_8=[0, 0, 0])},
+}, length=0.8, loop=False)
+
+# --- 斉射: 砲・バズーカの three-round。反動で体が押し戻される -----------
+A["animation.kaiju8.tech.volley"] = clip({
+    "chest": {"rotation": keys(t0=[-2, -18, 0], t0_06=[-12, -18, 0],
+                               t0_2=[-4, -18, 0], t0_26=[-12, -18, 0],
+                               t0_4=[-4, -18, 0], t0_46=[-12, -18, 0],
+                               t0_8=[-2, -18, 0])},
+    "rightArm": {"rotation": keys(t0=[-70, -10, 0], t0_06=[-54, -10, 0],
+                                  t0_26=[-54, -10, 0], t0_46=[-54, -10, 0],
+                                  t0_8=[-70, -10, 0])},
+    "leftArm": {"rotation": keys(t0=[-58, 34, 0], t0_06=[-44, 34, 0],
+                                 t0_26=[-44, 34, 0], t0_46=[-44, 34, 0],
+                                 t0_8=[-58, 34, 0])},
+    "body": {"position": keys(t0=[0, 0, 0], t0_06=[0, 0, 2.6], t0_2=[0, 0, 0.8],
+                              t0_26=[0, 0, 2.6], t0_4=[0, 0, 0.8],
+                              t0_46=[0, 0, 2.6], t0_8=[0, 0, 0])},
+    "rightLeg": {"rotation": keys(t0=[0, 0, 0], t0_06=[-12, 0, 0], t0_8=[0, 0, 0])},
+}, length=0.8, loop=False)
+
+# --- 速射: ローレディから跳ね上げて二点射。pose.rifle を基準にする -----
+A["animation.kaiju8.tech.quickdraw"] = clip({
+    "body": {"rotation": keys(t0=[0, 0, 0], t0_08=[0, 18, 0], t0_2=[0, -6, 0],
+                              t0_6=[0, 0, 0]),
+             "position": keys(t0=[0, 0, 0], t0_2=[0, 0, 2.0], t0_28=[0, 0, 0.4],
+                              t0_38=[0, 0, 2.0], t0_6=[0, 0, 0])},
+    "chest": {"rotation": keys(t0=[0, -12, 0], t0_08=[6, -12, 0], t0_2=[-6, -14, 0],
+                               t0_6=[0, -12, 0])},
+    "rightArm": {"rotation": keys(t0=[-74, -8, 0], t0_08=[-38, -18, 0],
+                                  t0_2=[-80, -6, 0], t0_28=[-66, -6, 0],
+                                  t0_38=[-80, -6, 0], t0_6=[-74, -8, 0])},
+    "rightForearm": {"rotation": keys(t0=[-14, 22, 0], t0_08=[-44, 22, 0],
+                                      t0_2=[-10, 22, 0], t0_6=[-14, 22, 0])},
+    "leftArm": {"rotation": keys(t0=[-66, 30, 0], t0_08=[-34, 40, 0],
+                                 t0_2=[-72, 26, 0], t0_28=[-60, 26, 0],
+                                 t0_6=[-66, 30, 0])},
+    "leftForearm": {"rotation": keys(t0=[-22, -30, 0], t0_08=[-50, -30, 0],
+                                     t0_2=[-18, -30, 0], t0_6=[-22, -30, 0])},
+    "head": {"rotation": keys(t0=[0, 0, 0], t0_2=[-4, -8, 0], t0_6=[0, 0, 0])},
+}, length=0.6, loop=False)
+
 # ======================================================================
 #  怪獣  (kaiju)
 # ======================================================================
@@ -584,7 +687,8 @@ CONTROLLERS.update({
         "initial_state": "idle",
         "states": {
             "idle": state(None, [
-                {"tech": "query.mark_variant >= 2 && query.health > 0"},
+                {"tech2": "query.mark_variant == 3 && query.health > 0"},
+                {"tech": "query.mark_variant == 2 && query.health > 0"},
                 {"attack": "query.is_delayed_attacking && query.health > 0"},
                 {"hurt": "query.mark_variant == 4"},
             ]),
@@ -592,7 +696,10 @@ CONTROLLERS.update({
                 {"idle": "query.all_animations_finished || query.health <= 0"},
             ], 0.06),
             "tech": state(["tech"], [
-                {"idle": "query.mark_variant < 2 || query.health <= 0"},
+                {"idle": "query.mark_variant != 2 || query.health <= 0"},
+            ], 0.10),
+            "tech2": state(["tech2"], [
+                {"idle": "query.mark_variant != 3 || query.health <= 0"},
             ], 0.10),
             "hurt": state(["hurt"], [
                 {"idle": "query.all_animations_finished || query.mark_variant != 4"},

@@ -78,6 +78,9 @@ export const ENERGY_HIT_COST = 1.2; // per landed hit
 /** Items that carry 技 — kept in sync with techniques.js. */
 export const TECH_ITEMS = [
   "kaiju8:combat_knife",
+  "kaiju8:df_pistol",
+  "kaiju8:df_bazooka",
+  "kaiju8:blade_sw1023",
   "kaiju8:df_rifle",
   "kaiju8:twin_sw2033",
   "kaiju8:axe_03ax",

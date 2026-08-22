@@ -6,7 +6,7 @@ import {
 } from "./util.js";
 import { container, selectedSlot, isTransformed, spendEnergy } from "./transform.js";
 import { TECH, selected, showWheel } from "./techniques.js";
-import { liftsReleaseCap, wornNumbers } from "./numbers.js";
+import { liftsReleaseCap, wornNumbers, fullReleaseActive } from "./numbers.js";
 import { fx, sound, shake } from "./effects.js";
 
 export function wearsFullSuit(player) {
@@ -20,6 +20,8 @@ export function wearsFullSuit(player) {
 }
 
 export function releaseRate(player) {
+  // 全開放中は解放戦力が 100% に固定される（ナンバーズ10）
+  if (fullReleaseActive(player)) return 100;
   const raw = Math.max(1, Math.min(100, num(player, PROP.release, 10)));
   // 怪獣の身体と適合者専用装備(ナンバーズ)は上限を持たない
   if (isTransformed(player) || liftsReleaseCap(player)) return raw;

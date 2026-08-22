@@ -329,6 +329,8 @@ function beamShot(range, damage, spread) {
   };
 }
 
+const techAlt = new Map();   // allyId -> 次は二の型か
+
 export function tickAllies() {
   const seen = new Set();
   for (const player of allPlayers()) {
@@ -347,7 +349,11 @@ export function tickAllies() {
       const target = nearestKaiju(ally, spec.range);
       if (!target) continue;
       setCooldown(ally.id, "tech", spec.cd * 20);
-      try { ally.triggerEvent("kaiju8:tech"); } catch (_) { }
+      // 一の型と二の型を交互に出す。同じ振りが続くと嘘くさい
+      const second = !techAlt.get(ally.id);
+      techAlt.set(ally.id, second);
+      try { ally.triggerEvent(second ? "kaiju8:tech2" : "kaiju8:tech"); }
+      catch (_) { }
       try { spec.run(ally, target); } catch (_) { }
     }
   }

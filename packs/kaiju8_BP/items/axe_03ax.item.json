@@ -34,6 +34,10 @@
         "slot": "sword",
         "value": 18
       },
+      "minecraft:use_modifiers": {
+        "use_duration": 1.1,
+        "movement_modifier": 0.6
+      },
       "minecraft:can_destroy_in_creative": false,
       "minecraft:should_despawn": false,
       "minecraft:display_name": {

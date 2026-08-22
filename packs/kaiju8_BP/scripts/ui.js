@@ -8,6 +8,9 @@ import { TECH, selectedIndex } from "./techniques.js";
 import { rankKey } from "./kaiju.js";
 import { hasPower, isTransformed } from "./transform.js";
 import { alertsEnabled, setAlerts } from "./alert.js";
+import {
+  NUMBERS, wornNumbers, abilityIndex, setAbility, abilityCooldown,
+} from "./numbers.js";
 
 async function show(form, player, tries = 6) {
   for (let i = 0; i < tries; i++) {
@@ -59,6 +62,7 @@ export function openTerminal(player) {
     })
     .button(tr("kaiju8.ui.set_release"))
     .button(tr("kaiju8.ui.techlist"))
+    .button(tr("kaiju8.ui.numbers"))
     .button(tr("kaiju8.ui.record"))
     .button(tr("kaiju8.ui.scan"))
     .button(alertsEnabled() ? tr("kaiju8.ui.alerts_on") : tr("kaiju8.ui.alerts_off"));
@@ -68,13 +72,74 @@ export function openTerminal(player) {
     switch (res.selection) {
       case 0: return openRelease(player);
       case 1: return openTechList(player);
-      case 2: return openRecord(player);
-      case 3: return quickScan(player);
-      case 4:
+      case 2: return openNumbers(player);
+      case 3: return openRecord(player);
+      case 4: return quickScan(player);
+      case 5:
         setAlerts(!alertsEnabled());
         tell(player, tr(alertsEnabled() ? "kaiju8.msg.alerts_on" : "kaiju8.msg.alerts_off"));
         return;
     }
+  }).catch(() => { });
+}
+
+/** ナンバーズ能力の選択。装備中の機体の能力だけが選べる。 */
+function openNumbers(player) {
+  const id = wornNumbers(player);
+  if (!id) {
+    // 未装備なら一覧だけ見せる
+    const lines = [{ translate: "kaiju8.ui.numbers_none" }, { text: "\n" }];
+    for (const [itemId, data] of Object.entries(NUMBERS)) {
+      lines.push({ text: "\n§e" });
+      lines.push({ translate: `item.${itemId}` });
+      lines.push({ text: "§r\n" });
+      for (const a of data.abilities) {
+        lines.push({ text: "  §8- " });
+        lines.push({ translate: a.name });
+        lines.push({ text: ` §8${Math.round(a.cd / 20)}s§r\n` });
+      }
+    }
+    const info = new MessageFormData()
+      .title(tr("kaiju8.ui.numbers"))
+      .body({ rawtext: lines })
+      .button1(tr("kaiju8.ui.close"))
+      .button2(tr("kaiju8.ui.close"));
+    show(info, player).catch(() => { });
+    return;
+  }
+
+  const list = NUMBERS[id].abilities;
+  const current = abilityIndex(player, id);
+  const left = abilityCooldown(player);
+  const form = new ActionFormData()
+    .title(tr("kaiju8.ui.numbers"))
+    .body({
+      rawtext: [
+        { text: "§e" }, { translate: `item.${id}` }, { text: "§r\n" },
+        { translate: `kaiju8.numbers.${NUMBERS[id].id}` }, { text: "\n\n§7" },
+        { translate: "kaiju8.ui.numbers_hint" },
+        { text: left > 0 ? `\n§c再充填 ${left}s` : "\n§a準備完了" },
+      ],
+    });
+  for (let i = 0; i < list.length; i++) {
+    form.button({
+      rawtext: [
+        { text: i === current ? "§b▸ " : "§8  " },
+        { translate: list[i].name },
+        { text: `§r §8${Math.round(list[i].cd / 20)}s` },
+      ],
+    });
+  }
+  show(form, player).then((res) => {
+    if (!res || res.canceled) return;
+    const picked = setAbility(player, id, res.selection ?? 0);
+    if (!picked) return;
+    tell(player, {
+      rawtext: [
+        { translate: "kaiju8.msg.numbers_pick" }, { text: " §b" },
+        { translate: picked.name },
+      ],
+    });
   }).catch(() => { });
 }
 

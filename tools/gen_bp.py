@@ -42,12 +42,30 @@ NUMBERS = [
 WEAPONS = [
     # id, icon, damage, durability, enchant value
     ("combat_knife", "combat_knife", 6, 620, 10),
+    ("df_pistol", "df_pistol", 3, 520, 10),
+    ("df_bazooka", "df_bazooka", 5, 900, 14),
+    ("blade_sw1023", "blade_sw1023", 11, 1750, 20),
     ("df_rifle", "df_rifle", 4, 700, 12),
     ("twin_sw2033", "twin_sw2033", 9, 1700, 20),
     ("axe_03ax", "axe_03ax", 13, 1900, 18),
     ("cannon_t25", "cannon_t25", 7, 1900, 20),
     ("gunblade_gs3305", "gunblade_gs3305", 12, 2000, 20),
 ]
+
+# 技を撃つあいだ「構え」の姿勢が出るよう、右クリックを保持できる武器にする。
+# use_duration があるとアタッチャブル側の q.is_using_item が立ち、技モーション
+# へ遷移する。技そのものは押した瞬間の itemUse で発動するので発生は遅れない。
+BRACE = {
+    "combat_knife":    (0.55, 0.95),
+    "df_pistol":       (0.60, 0.90),
+    "df_bazooka":      (1.00, 0.55),
+    "blade_sw1023":    (0.80, 0.85),
+    "df_rifle":        (0.70, 0.80),
+    "twin_sw2033":     (0.70, 0.88),
+    "axe_03ax":        (1.10, 0.60),
+    "cannon_t25":      (1.20, 0.45),
+    "gunblade_gs3305": (1.00, 0.65),
+}
 
 ARMOR = [
     # id, slot, protection, durability, enchant slot
@@ -88,6 +106,10 @@ def gen_items():
                 "repair_items": [{"items": ["kaiju8:kaiju_alloy"], "repair_amount": dur // 4}]
             },
             "minecraft:enchantable": {"slot": "sword", "value": ench},
+            "minecraft:use_modifiers": {
+                "use_duration": BRACE[ident][0],
+                "movement_modifier": BRACE[ident][1],
+            },
             "minecraft:can_destroy_in_creative": False,
             "minecraft:should_despawn": False,
         }, "equipment", "itemGroup.name.sword"))
@@ -118,6 +140,7 @@ def gen_items():
         "minecraft:max_stack_size": 1,
         "minecraft:glint": True,
         "minecraft:hand_equipped": True,
+        "minecraft:use_modifiers": {"use_duration": 0.9, "movement_modifier": 0.8},
         "minecraft:should_despawn": False,
     }, "items", "itemGroup.name.miscFood"))
 
@@ -197,6 +220,12 @@ def state_groups(roar_time=2.0):
             "minecraft:timer": {"looping": False, "time": 0.9,
                                 "time_down_event": {"event": "kaiju8:calm_down"}}
         },
+        # 二の型。同じ技が続けて出ないよう技モーションを交互に振る
+        "kaiju8:performing2": {
+            "minecraft:mark_variant": {"value": 3},
+            "minecraft:timer": {"looping": False, "time": 1.1,
+                                "time_down_event": {"event": "kaiju8:calm_down"}}
+        },
         "kaiju8:reeling": {
             "minecraft:mark_variant": {"value": 4},
             "minecraft:timer": {"looping": False, "time": 0.35,
@@ -211,13 +240,18 @@ STATE_EVENTS = {
         "remove": {"component_groups": ["kaiju8:performing", "kaiju8:reeling"]},
         "add": {"component_groups": ["kaiju8:roaring"]}},
     "kaiju8:tech": {
-        "remove": {"component_groups": ["kaiju8:roaring", "kaiju8:reeling"]},
+        "remove": {"component_groups": ["kaiju8:roaring", "kaiju8:reeling",
+                                        "kaiju8:performing2"]},
         "add": {"component_groups": ["kaiju8:performing"]}},
+    "kaiju8:tech2": {
+        "remove": {"component_groups": ["kaiju8:roaring", "kaiju8:reeling",
+                                        "kaiju8:performing"]},
+        "add": {"component_groups": ["kaiju8:performing2"]}},
     "kaiju8:hurt_flash": {
         "add": {"component_groups": ["kaiju8:reeling"]}},
     "kaiju8:calm_down": {
         "remove": {"component_groups": ["kaiju8:roaring", "kaiju8:performing",
-                                        "kaiju8:reeling"]}},
+                                        "kaiju8:performing2", "kaiju8:reeling"]}},
 }
 
 
@@ -650,6 +684,16 @@ def gen_recipes():
     dump(os.path.join(out, "df_rifle.json"), shaped(
         ["AAI", " SA", "  S"], {"A": "kaiju8:kaiju_alloy", "I": "minecraft:iron_ingot",
                                 "S": "minecraft:stick"}, "kaiju8:df_rifle"))
+    dump(os.path.join(out, "df_pistol.json"), shaped(
+        ["AA ", " SA", "  S"], {"A": "kaiju8:kaiju_alloy", "S": "minecraft:stick"},
+        "kaiju8:df_pistol"))
+    dump(os.path.join(out, "df_bazooka.json"), shaped(
+        ["AAA", "IRA", "S  "], {"A": "kaiju8:kaiju_alloy", "I": "minecraft:iron_block",
+                                "R": "minecraft:redstone_block",
+                                "S": "minecraft:stick"}, "kaiju8:df_bazooka"))
+    dump(os.path.join(out, "blade_sw1023.json"), shaped(
+        [" AC", " AA", "S  "], {"A": "kaiju8:kaiju_alloy", "C": "kaiju8:kaiju_core",
+                                "S": "minecraft:stick"}, "kaiju8:blade_sw1023"))
     dump(os.path.join(out, "twin_sw2033.json"), shaped(
         ["A A", "ACA", "S S"], {"A": "kaiju8:kaiju_alloy", "C": "kaiju8:kaiju_core",
                                 "S": "minecraft:stick"}, "kaiju8:twin_sw2033"))
