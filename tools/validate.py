@@ -81,11 +81,14 @@ def main() -> int:
             if not os.path.exists(os.path.join(RP, tex + ".png")):
                 errors.append(f"{os.path.relpath(path, ROOT)}: missing {tex}.png")
 
-    # every kaiju8: particle the scripts spawn must actually exist
+    # every kaiju8: particle the scripts spawn must actually exist.
+    # NOTE: keep this list in step with effects.js — a helper missing from it
+    # means typo'd particle ids in those calls ship silently.
     import re
     spawn_call = re.compile(
-        r'(?:fx|fxRing|fxLine|fxScatter|arcFx|spawnParticle)\s*'
-        r'\([^;]{0,160}?"(kaiju8:[a-z0-9_]+)"')
+        r'(?:fx|fxRing|fxLine|fxScatter|fxArc|fxSpiral|fxColumn|fxCone|fxWall|'
+        r'trail|arcFx|spawnParticle)\s*'
+        r'\([^;]{0,200}?"(kaiju8:[a-z0-9_]+)"')
     used = set()
     script_dir = os.path.join(BP, "scripts")
     if os.path.isdir(script_dir):
@@ -104,8 +107,30 @@ def main() -> int:
                 "particle_effects", {}).values():
             if value in particles:
                 used.add(value)
+    # a particle id can also be named in a table and spawned indirectly; count
+    # any bare mention so the "never used" warning does not cry wolf
+    if os.path.isdir(script_dir):
+        bare = re.compile(r'"(kaiju8:[a-z0-9_]+)"')
+        for path in walk(script_dir, ".js"):
+            with open(path, encoding="utf-8") as fh:
+                for m in bare.finditer(fh.read()):
+                    if m.group(1) in particles:
+                        used.add(m.group(1))
     for name in sorted(particles - used):
         warnings.append(f"particle {name} is defined but never used")
+
+    # two effects that differ only by name are a copy-paste, not variety
+    seen_shapes = {}
+    if os.path.isdir(part_dir):
+        for path in walk(part_dir):
+            doc = load(path)["particle_effect"]
+            key = json.dumps(doc["components"], sort_keys=True)
+            ident = doc["description"]["identifier"]
+            if key in seen_shapes:
+                warnings.append(
+                    f"particle {ident} is identical to {seen_shapes[key]}")
+            else:
+                seen_shapes[key] = ident
 
     # ---- client entities ---------------------------------------------
     client_ids = set()
