@@ -314,7 +314,9 @@ export function tickTransform() {
   for (const player of allPlayers()) {
     if (!isMutant(player)) continue;
     const transformed = isTransformed(player);
-    const stage = stageOf(player);
+    // 撃破数が伸びても誰も段階を上げ直さないと、永久に段階1のままになり
+    // 必殺技（段階3）に一生届かない。毎秒ここで見直す。
+    const stage = refreshStage(player);
     let mag = magOf(player);
 
     if (transformed) {

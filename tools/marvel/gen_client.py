@@ -249,9 +249,12 @@ def main() -> None:
         n += 1
 
     # ---- ヘルメット / セレブロ（手に持つ）---------------------------------
-    for key in ("magneto_helmet", "cerebro"):
+    #  変身アイテムが手の中で紫の玉に見えては話にならないので、
+    #  兜には兜そのもののジオメトリを持たせる。
+    for key, geo_key in (("magneto_helmet", "helmet_prop"),
+                         ("cerebro", "tech_orb")):
         write_json(f"{K.ATTACH_DIR}/{key}.attachable.json", attachable(
-            K.eid(key), K.tex("tech_orb"), K.geo("tech_orb"),
+            K.eid(key), K.tex(geo_key), K.geo(geo_key),
             {"third": a("prop", "pulse")}, ["third"]))
         n += 1
 

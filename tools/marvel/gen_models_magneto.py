@@ -184,6 +184,43 @@ def build_fp_hand() -> Model:
     return m
 
 
+def build_helmet_prop() -> Model:
+    """手に持ったときに見える兜そのもの。
+
+    変身アイテムが紫の玉に見えていては話にならないので、
+    兜のシルエットを単体のジオメトリとして持たせる。
+    ここは `helmet()` と同じ形を、頭に依存しない寸法で組み直したもの。
+    """
+    m = Model(K.geo("helmet_prop"), uv_scale=5, visible_bounds=(1.6, 1.6),
+              vb_offset=(0, 0.4, 0), max_atlas=(256, 256))
+    root = m.bone("root", (0, 0, 0))
+    w, h, d = 8.0, 9.0, 8.4
+    # ドームを 3 段に分けて丸みを出す
+    root.add(Cube((-w / 2, 0, -d / 2), (w, h * 0.46, d), "helm", uv_scale=5,
+                  decals={"east": "helm_side", "west": "helm_side"}))
+    root.add(Cube((-w * 0.44, h * 0.46, -d * 0.44), (w * 0.88, h * 0.32, d * 0.88),
+                  "helm", uv_scale=5))
+    root.add(Cube((-w * 0.36, h * 0.78, -d * 0.36), (w * 0.72, h * 0.20, d * 0.72),
+                  "helm", uv_scale=5))
+    # 左右に跳ね上がる二枚のフィン
+    for sgn in (-1, 1):
+        fin = m.bone(f"fin_{'r' if sgn < 0 else 'l'}",
+                     (sgn * w * 0.30, h * 0.42, -d * 0.30), "root",
+                     rotation=(-14, -26 * sgn, 47 * sgn))
+        fin.add(Cube((sgn * w * 0.30 - 0.7, h * 0.42, -d * 0.36),
+                     (1.4, h * 0.78, d * 0.42), "helm_crest", uv_scale=6,
+                     decals={"north": "helm_crest"}))
+    # 頬当てと眉間のリッジ
+    for sgn in (-1, 1):
+        root.add(Cube((sgn * w * 0.42 - (w * 0.10 if sgn > 0 else 0), -h * 0.34,
+                       -d * 0.42), (w * 0.10, h * 0.46, d * 0.52), "helm",
+                      uv_scale=5, rotation=(0, -10 * sgn, 7 * sgn)))
+    root.add(Cube((-w * 0.09, h * 0.10, -d * 0.56), (w * 0.18, h * 0.22, d * 0.10),
+                  "helm_crest", uv_scale=6, rotation=(14, 0, 0)))
+    m.pack()
+    return m
+
+
 def build_tech_orb() -> Model:
     """技アイテムを持っている時に三人称で手元に浮く磁力球。"""
     m = Model(K.geo("tech_orb"), uv_scale=5, visible_bounds=(1.0, 1.0),
@@ -205,6 +242,7 @@ def main() -> None:
     emit(build_magneto(), colours.MAGNETO, K.MAGNETO, seed=101)
     emit(build_fp_hand(), colours.MAGNETO, "fp_hand", seed=102)
     emit(build_tech_orb(), colours.MAGNETO, "tech_orb", seed=103)
+    emit(build_helmet_prop(), colours.MAGNETO, "helmet_prop", seed=104)
 
 
 if __name__ == "__main__":

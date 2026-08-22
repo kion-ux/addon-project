@@ -216,7 +216,8 @@ ENTITY_KEYS = ALL_CHARACTERS + list(PROP_ENTITIES)
 #: エンティティではないが必要なジオメトリ。
 #:   fp_hand   一人称で手元に出る磁力ガントレット（技アイテムの attachable）
 #:   tech_orb  技アイテムを持っている時に三人称で手に浮かぶ磁力球
-EXTRA_GEOMETRIES = ["fp_hand", "tech_orb"]
+#:   helmet_prop  手に持った時に表示される兜そのもの（変身アイテムの見た目）
+EXTRA_GEOMETRIES = ["fp_hand", "tech_orb", "helmet_prop"]
 
 
 # ===========================================================================
@@ -237,38 +238,38 @@ TECHNIQUES = {
     "repulse": dict(
         ja="磁力斥力", en="Repulse", romaji="Jiryoku Sekiryoku",
         item="tech_repulse", icon="tech_repulse", pose="cast", clip="repulse",
-        fp="thrust", cost=12, cd=20, stage=1, colour="#7B4BC8",
+        fp="thrust", cost=14, cd=35, stage=1, colour="#7B4BC8",
         desc_ja="正面の全てを磁力で弾き飛ばす。金属を持つ相手ほど強く吹き飛ぶ。",
     ),
     "attract": dict(
         ja="磁力引力", en="Attract", romaji="Jiryoku Inryoku",
         item="tech_attract", icon="tech_attract", pose="cast", clip="attract",
-        fp="pull", cost=10, cd=20, stage=1, colour="#4B7BC8",
+        fp="pull", cost=8, cd=16, stage=1, colour="#4B7BC8",
         desc_ja="視線の先の敵・アイテム・金属ブロックを手元へ引き寄せる。",
     ),
     "disarm": dict(
         ja="金属剥奪", en="Disarm", romaji="Kinzoku Hakudatsu",
         item="tech_disarm", icon="tech_disarm", pose="cast", clip="disarm",
-        fp="grip", cost=16, cd=60, stage=1, colour="#C8C04B",
+        fp="grip", cost=12, cd=45, stage=1, colour="#C8C04B",
         desc_ja="相手の武器と防具を磁力で引き剥がす。鉄の鎧は文字通り脱げる。",
     ),
     "lance": dict(
         ja="磁界斬", en="Magnetic Lance", romaji="Jikai Zan",
         item="tech_lance", icon="tech_lance", pose="cast", clip="lance",
-        fp="lance", cost=14, cd=30, stage=1, colour="#9B5BE0",
+        fp="lance", cost=14, cd=24, stage=1, colour="#9B5BE0",
         desc_ja="鉄片を槍状に束ね、直線上を貫く。壁も敵も纏めて刺し貫く。",
     ),
     "shard_storm": dict(
         ja="鉄片嵐", en="Shard Storm", romaji="Teppen Arashi",
         item="tech_shard_storm", icon="tech_shard_storm", pose="raise",
-        clip="shard_storm", fp="storm", cost=26, cd=80, stage=2,
+        clip="shard_storm", fp="storm", cost=30, cd=160, stage=2,
         colour="#B04BC8",
         desc_ja="周囲の金属を無数の刃に変え、標的へ叩き込む嵐。",
     ),
     "barrier": dict(
         ja="磁力障壁", en="Magnetic Barrier", romaji="Jiryoku Shouheki",
         item="tech_barrier", icon="tech_barrier", pose="guard", clip="barrier",
-        fp="guard", cost=20, cd=110, stage=1, colour="#4BC8C0",
+        fp="guard", cost=20, cd=200, stage=1, colour="#4BC8C0",
         desc_ja="磁界のドームを展開。矢も弾も爆風も、届く前に逸らされる。",
     ),
     "iron_bind": dict(
@@ -280,7 +281,7 @@ TECHNIQUES = {
     "crush": dict(
         ja="磁気圧壊", en="Crush", romaji="Jiki Akkai",
         item="tech_crush", icon="tech_crush", pose="cast", clip="crush",
-        fp="crush", cost=30, cd=120, stage=2, colour="#C8344B",
+        fp="crush", cost=34, cd=200, stage=2, colour="#C8344B",
         desc_ja="装甲を内側から握り潰す。金属を纏う者ほど、無惨に潰れる。",
     ),
     "uprising": dict(
@@ -293,20 +294,20 @@ TECHNIQUES = {
     "emp": dict(
         ja="EMPパルス", en="EMP Pulse", romaji="EMP Pulse",
         item="tech_emp", icon="tech_emp", pose="focus", clip="emp",
-        fp="pulse", cost=24, cd=140, stage=2, colour="#4BE0FF",
+        fp="pulse", cost=20, cd=160, stage=2, colour="#4BE0FF",
         desc_ja="電磁パルスで機械を沈黙させる。センチネルには致命的。",
     ),
     "polarity": dict(
         ja="磁極反転", en="Polarity Reversal", romaji="Jikyoku Hanten",
         item="tech_polarity", icon="tech_polarity", pose="raise",
-        clip="polarity", fp="raise", cost=28, cd=160, stage=2,
+        clip="polarity", fp="raise", cost=22, cd=120, stage=2,
         colour="#6B4BE0",
         desc_ja="一帯の磁極を反転させ、重さという概念を取り上げる。",
     ),
     "flight": dict(
         ja="磁気飛行", en="Magnetic Flight", romaji="Jiki Hikou",
         item="tech_flight", icon="tech_flight", pose="fly", clip="flight",
-        fp="fly", cost=8, cd=10, stage=1, colour="#9B7BE0",
+        fp="fly", cost=8, cd=6, stage=1, colour="#9B7BE0",
         desc_ja="己の磁界に乗って空を征く。マントが風を孕む。",
     ),
     "throne": dict(
@@ -318,13 +319,13 @@ TECHNIQUES = {
     "sight": dict(
         ja="磁力視", en="Magnetic Sight", romaji="Jiryoku Shi",
         item="tech_sight", icon="tech_sight", pose="focus", clip="sight",
-        fp="focus", cost=6, cd=40, stage=1, colour="#4BC8FF",
+        fp="focus", cost=6, cd=60, stage=1, colour="#4BC8FF",
         desc_ja="壁越しに金属を視る。鉱脈も、隠れた鎧も、全て光って見える。",
     ),
     "sphere": dict(
         ja="磁界の棺", en="Sphere of Ruin", romaji="Jikai no Hitsugi",
         item="tech_sphere", icon="tech_sphere", pose="raise", clip="sphere",
-        fp="storm", cost=70, cd=400, stage=3, colour="#E04B7B", ultimate=True,
+        fp="storm", cost=70, cd=600, stage=3, colour="#E04B7B", ultimate=True,
         desc_ja="半径40の金属を残らず引き寄せ、圧縮し、解き放つ。必殺技。",
     ),
 }
@@ -690,8 +691,8 @@ MAG_REGEN = 3.0          # 毎秒
 MAG_REGEN_STAGE3 = 6.0
 MAG_DRAIN = 0.6          # 変身維持コスト / 秒
 
-#: 段階の解禁条件（撃破数）
-STAGE_THRESHOLDS = [(0, 1), (25, 2), (80, 3)]
+#: 段階の解禁条件（撃破数）。25 は現在の敵湧き密度では遠すぎたので 12/40 に。
+STAGE_THRESHOLDS = [(0, 1), (12, 2), (40, 3)]
 
 #: 磁力が効く素材。値は「磁化強度」— 引き寄せ・圧壊の効きに比例する。
 MAGNETIC_BLOCKS = {
