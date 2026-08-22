@@ -1,0 +1,24 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:combat_suit_helmet"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AAA",
+      "A A"
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      }
+    },
+    "result": {
+      "item": "kaiju8:combat_suit_helmet",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:kaiju_detector"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " A ",
+      "ACA",
+      " A "
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      },
+      "C": {
+        "item": "minecraft:compass"
+      }
+    },
+    "result": {
+      "item": "kaiju8:kaiju_detector",
+      "count": 1
+    }
+  }
+}

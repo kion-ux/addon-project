@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:battle_axe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AAA",
+      "ACS",
+      "  S"
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      },
+      "C": {
+        "item": "kaiju8:kaiju_core"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "kaiju8:battle_axe",
+      "count": 1
+    }
+  }
+}

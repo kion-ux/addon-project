@@ -1,0 +1,223 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "kaiju8:kaiju_no10",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "kaiju8:roaring": {
+        "minecraft:mark_variant": {
+          "value": 1
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 2.0,
+          "time_down_event": {
+            "event": "kaiju8:calm_down"
+          }
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "kaiju",
+          "identified_kaiju",
+          "no10",
+          "monster",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 3.2,
+        "height": 3.4
+      },
+      "minecraft:health": {
+        "value": 420,
+        "max": 420
+      },
+      "minecraft:attack": {
+        "damage": 22
+      },
+      "minecraft:movement": {
+        "value": 0.38
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:follow_range": {
+        "value": 64,
+        "max": 64
+      },
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:nameable": {},
+      "minecraft:mark_variant": {
+        "value": 0
+      },
+      "minecraft:experience_reward": {
+        "on_death": "200"
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/kaiju_no10.json"
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "kaiju"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "operator": "!=",
+                    "value": "identified_kaiju"
+                  }
+                ]
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "fall",
+            "damage_multiplier": 0.0,
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:persistent": {},
+      "minecraft:fire_immune": {},
+      "minecraft:can_fly": {},
+      "minecraft:movement.fly": {},
+      "minecraft:navigation.fly": {
+        "can_path_over_water": true,
+        "can_path_from_air": true
+      },
+      "minecraft:behavior.float_wander": {
+        "priority": 9,
+        "xz_dist": 12,
+        "y_dist": 8,
+        "y_offset": 2,
+        "must_reach": true,
+        "random_reselect": true
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1
+      },
+      "minecraft:behavior.delayed_attack": {
+        "priority": 2,
+        "attack_once": false,
+        "track_target": true,
+        "require_complete_path": false,
+        "random_stop_interval": 0,
+        "reach_multiplier": 2.6,
+        "speed_multiplier": 1.15,
+        "attack_duration": 0.6,
+        "hit_delay_pct": 0.4
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 3,
+        "must_see": true,
+        "reselect_targets": true,
+        "must_see_forget_duration": 12.0,
+        "within_radius": 48,
+        "entity_types": [
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "player"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "villager"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "defense_force"
+                }
+              ]
+            },
+            "max_dist": 48
+          }
+        ]
+      },
+      "minecraft:behavior.move_towards_target": {
+        "priority": 4,
+        "speed_multiplier": 1.0,
+        "within_radius": 32
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.8
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 7,
+        "look_distance": 16
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 8
+      },
+      "minecraft:shooter": {
+        "def": "kaiju8:kaiju_acid"
+      },
+      "minecraft:behavior.ranged_attack": {
+        "priority": 3,
+        "burst_shots": 2,
+        "burst_interval": 0.3,
+        "charge_charged_trigger": 0.0,
+        "charge_shoot_trigger": 2.0,
+        "attack_interval_min": 3.0,
+        "attack_interval_max": 5.0,
+        "attack_radius": 24,
+        "speed_multiplier": 1.0
+      },
+      "minecraft:boss": {
+        "should_darken_sky": true,
+        "hud_range": 60,
+        "name": "entity.kaiju8:kaiju_no10.name"
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "kaiju8:roaring"
+          ]
+        }
+      },
+      "kaiju8:roar": {
+        "add": {
+          "component_groups": [
+            "kaiju8:roaring"
+          ]
+        }
+      },
+      "kaiju8:calm_down": {
+        "remove": {
+          "component_groups": [
+            "kaiju8:roaring"
+          ]
+        }
+      }
+    }
+  }
+}

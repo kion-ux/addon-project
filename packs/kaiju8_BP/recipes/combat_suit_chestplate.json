@@ -1,0 +1,25 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:combat_suit_chestplate"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "A A",
+      "AAA",
+      "AAA"
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      }
+    },
+    "result": {
+      "item": "kaiju8:combat_suit_chestplate",
+      "count": 1
+    }
+  }
+}

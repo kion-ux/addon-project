@@ -1,0 +1,78 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "kaiju8:kaiju_acid",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "kaiju8:despawn": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:collision_box": {
+        "width": 0.25,
+        "height": 0.25
+      },
+      "minecraft:physics": {
+        "has_gravity": true
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:projectile": {
+        "on_hit": {
+          "impact_damage": {
+            "damage": 9,
+            "knockback": true,
+            "semi_random_diff_damage": false,
+            "destroy_on_hit": true
+          },
+          "definition_event": {
+            "affect_projectile": true,
+            "event_trigger": {
+              "event": "kaiju8:explode",
+              "target": "self"
+            }
+          },
+          "particle_on_hit": {
+            "particle_type": "mob_block_on_fire",
+            "on_other_hit": true,
+            "num_particles": 8
+          },
+          "remove_on_hit": {}
+        },
+        "power": 1.6,
+        "gravity": 0.05,
+        "angle_offset": 0.0,
+        "hit_sound": "bow.hit",
+        "uncertainty_base": 2.0,
+        "uncertainty_multiplier": 0.0,
+        "anchor": 1,
+        "should_bounce": false,
+        "offset": [
+          0,
+          -0.1,
+          0
+        ]
+      },
+      "minecraft:timer": {
+        "looping": false,
+        "time": 6.0,
+        "time_down_event": {
+          "event": "kaiju8:explode"
+        }
+      }
+    },
+    "events": {
+      "kaiju8:explode": {
+        "add": {
+          "component_groups": [
+            "kaiju8:despawn"
+          ]
+        }
+      }
+    }
+  }
+}

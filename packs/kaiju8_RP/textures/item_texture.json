@@ -1,0 +1,54 @@
+{
+  "resource_pack_name": "kaiju8",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "battle_axe": {
+      "textures": "textures/items/battle_axe"
+    },
+    "combat_blade": {
+      "textures": "textures/items/combat_blade"
+    },
+    "combat_suit_boots": {
+      "textures": "textures/items/combat_suit_boots"
+    },
+    "combat_suit_chestplate": {
+      "textures": "textures/items/combat_suit_chestplate"
+    },
+    "combat_suit_helmet": {
+      "textures": "textures/items/combat_suit_helmet"
+    },
+    "combat_suit_leggings": {
+      "textures": "textures/items/combat_suit_leggings"
+    },
+    "df_rifle": {
+      "textures": "textures/items/df_rifle"
+    },
+    "kaiju_alloy": {
+      "textures": "textures/items/kaiju_alloy"
+    },
+    "kaiju_core": {
+      "textures": "textures/items/kaiju_core"
+    },
+    "kaiju_detector": {
+      "textures": "textures/items/kaiju_detector"
+    },
+    "kaiju_remains": {
+      "textures": "textures/items/kaiju_remains"
+    },
+    "kaiju_shell": {
+      "textures": "textures/items/kaiju_shell"
+    },
+    "no8_power": {
+      "textures": "textures/items/no8_power"
+    },
+    "parasite_kaiju": {
+      "textures": "textures/items/parasite_kaiju"
+    },
+    "weapon_no2": {
+      "textures": "textures/items/weapon_no2"
+    },
+    "weapon_no4": {
+      "textures": "textures/items/weapon_no4"
+    }
+  }
+}

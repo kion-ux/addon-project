@@ -1,0 +1,193 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.kaiju8.humanoid.general": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": [
+            "look",
+            "idle",
+            "walk"
+          ],
+          "transitions": [
+            {
+              "death": "query.health <= 0"
+            }
+          ]
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2,
+          "transitions": []
+        }
+      }
+    },
+    "controller.animation.kaiju8.humanoid.attack": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "transitions": [
+            {
+              "attack": "query.is_delayed_attacking && query.health > 0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.08,
+          "transitions": [
+            {
+              "idle": "query.all_animations_finished || query.health <= 0"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.kaiju8.kaiju.general": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": [
+            "look",
+            "idle",
+            "walk",
+            "tail"
+          ],
+          "transitions": [
+            {
+              "roar": "query.mark_variant == 1 && query.health > 0"
+            },
+            {
+              "death": "query.health <= 0"
+            }
+          ]
+        },
+        "roar": {
+          "animations": [
+            "tail",
+            "roar"
+          ],
+          "blend_transition": 0.25,
+          "transitions": [
+            {
+              "death": "query.health <= 0"
+            },
+            {
+              "default": "query.mark_variant != 1 || query.all_animations_finished"
+            }
+          ]
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.3,
+          "transitions": []
+        }
+      }
+    },
+    "controller.animation.kaiju8.kaiju.attack": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "transitions": [
+            {
+              "attack": "query.is_delayed_attacking && query.mark_variant != 1 && query.health > 0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "idle": "query.all_animations_finished || query.health <= 0"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.kaiju8.wings": {
+      "initial_state": "ground",
+      "states": {
+        "ground": {
+          "animations": [
+            "wings_idle"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "flying": "!query.is_on_ground"
+            }
+          ]
+        },
+        "flying": {
+          "animations": [
+            "wings_flap"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "ground": "query.is_on_ground"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.kaiju8.quadruped.general": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": [
+            "look",
+            "idle",
+            "walk",
+            "tail"
+          ],
+          "transitions": [
+            {
+              "death": "query.health <= 0"
+            }
+          ]
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2,
+          "transitions": []
+        }
+      }
+    },
+    "controller.animation.kaiju8.quadruped.attack": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "transitions": [
+            {
+              "attack": "query.is_delayed_attacking && query.health > 0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.06,
+          "transitions": [
+            {
+              "idle": "query.all_animations_finished || query.health <= 0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

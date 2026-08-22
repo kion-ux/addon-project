@@ -1,0 +1,28 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "de4fb696-54d5-4fdd-b4ae-5d00325aa534",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 30]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "5a033a29-9350-489f-9ad8-3da55eda658a",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "18df971b-b90c-4e17-a3eb-84bfdc713d20",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Kaiju No.8 Addon Project"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

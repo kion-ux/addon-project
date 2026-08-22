@@ -1,0 +1,19 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.kaiju8.default": {
+      "geometry": "Geometry.default",
+      "materials": [ { "*": "Material.default" } ],
+      "textures": [ "Texture.default" ]
+    },
+    "controller.render.kaiju8.glow": {
+      "geometry": "Geometry.default",
+      "materials": [ { "*": "Material.default" } ],
+      "textures": [ "Texture.default" ],
+      "overlay_color": {
+        "r": 1.0, "g": 1.0, "b": 1.0,
+        "a": "math.clamp(variable.hurt_flash, 0.0, 0.6)"
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "18df971b-b90c-4e17-a3eb-84bfdc713d20",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 30]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "70fa4170-f380-4e8c-8147-d5689660a2e7",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "574a5d6d-7538-47d2-95ab-bf7877ff6c07",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "de4fb696-54d5-4fdd-b4ae-5d00325aa534",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.13.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.2.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Kaiju No.8 Addon Project"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

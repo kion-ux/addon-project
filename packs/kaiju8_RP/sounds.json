@@ -1,0 +1,90 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "kaiju8:yoju": {
+        "volume": 1.0,
+        "pitch": [0.85, 1.05],
+        "events": {
+          "ambient": "mob.spider.say",
+          "hurt": "mob.spider.say",
+          "death": "mob.spider.death",
+          "attack": "mob.ravager.bite"
+        }
+      },
+      "kaiju8:honju": {
+        "volume": 1.4,
+        "pitch": [0.6, 0.8],
+        "events": {
+          "ambient": "mob.ravager.ambient",
+          "hurt": "mob.ravager.hurt",
+          "death": "mob.ravager.death",
+          "attack": "mob.ravager.bite",
+          "roar": "mob.ravager.roar"
+        }
+      },
+      "kaiju8:kaiju_no8": {
+        "volume": 1.6,
+        "pitch": [0.6, 0.75],
+        "events": {
+          "ambient": "mob.enderdragon.growl",
+          "hurt": "mob.enderdragon.hit",
+          "death": "mob.enderdragon.death",
+          "attack": "mob.ravager.bite"
+        }
+      },
+      "kaiju8:kaiju_no9": {
+        "volume": 1.4,
+        "pitch": [0.75, 0.95],
+        "events": {
+          "ambient": "mob.evocation_illager.ambient",
+          "hurt": "mob.evocation_illager.hurt",
+          "death": "mob.enderdragon.death",
+          "attack": "mob.ravager.bite"
+        }
+      },
+      "kaiju8:kaiju_no10": {
+        "volume": 1.6,
+        "pitch": [0.55, 0.7],
+        "events": {
+          "ambient": "mob.enderdragon.growl",
+          "hurt": "mob.ravager.hurt",
+          "death": "mob.enderdragon.death",
+          "attack": "mob.ravager.bite"
+        }
+      },
+      "kaiju8:parasite_kaiju": {
+        "volume": 0.8,
+        "pitch": [1.2, 1.5],
+        "events": {
+          "ambient": "mob.silverfish.say",
+          "hurt": "mob.silverfish.hurt",
+          "death": "mob.silverfish.kill"
+        }
+      },
+      "kaiju8:defense_force_officer": {
+        "volume": 1.0,
+        "events": { "hurt": "damage.hit", "death": "damage.hit" }
+      },
+      "kaiju8:kafka_hibino": {
+        "volume": 1.0,
+        "events": { "hurt": "damage.hit", "death": "damage.hit" }
+      },
+      "kaiju8:reno_ichikawa": {
+        "volume": 1.0,
+        "events": { "hurt": "damage.hit", "death": "damage.hit" }
+      },
+      "kaiju8:mina_ashiro": {
+        "volume": 1.0,
+        "events": { "hurt": "damage.hit", "death": "damage.hit" }
+      },
+      "kaiju8:soshiro_hoshina": {
+        "volume": 1.0,
+        "events": { "hurt": "damage.hit", "death": "damage.hit" }
+      },
+      "kaiju8:kikoru_shinomiya": {
+        "volume": 1.0,
+        "events": { "hurt": "damage.hit", "death": "damage.hit" }
+      }
+    }
+  }
+}

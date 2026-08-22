@@ -1,0 +1,28 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kaiju8:kaiju_acid",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju8/acid"
+      },
+      "geometry": {
+        "default": "geometry.kaiju8.acid"
+      },
+      "animations": {
+        "spin": "animation.kaiju8.projectile.spin"
+      },
+      "scripts": {
+        "animate": [
+          "spin"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.kaiju8.default"
+      ]
+    }
+  }
+}

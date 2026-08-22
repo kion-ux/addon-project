@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kaiju8:parasite_kaiju",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju8/parasite"
+      },
+      "geometry": {
+        "default": "geometry.kaiju8.parasite"
+      },
+      "animations": {
+        "crawl": "animation.kaiju8.parasite.crawl"
+      },
+      "scripts": {
+        "animate": [
+          "crawl"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.kaiju8.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#967884",
+        "overlay_color": "#ff6078"
+      }
+    }
+  }
+}

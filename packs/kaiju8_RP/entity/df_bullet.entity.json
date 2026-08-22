@@ -1,0 +1,24 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kaiju8:df_bullet",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju8/bullet"
+      },
+      "geometry": {
+        "default": "geometry.kaiju8.bullet"
+      },
+      "animations": {},
+      "scripts": {
+        "animate": []
+      },
+      "render_controllers": [
+        "controller.render.kaiju8.default"
+      ]
+    }
+  }
+}

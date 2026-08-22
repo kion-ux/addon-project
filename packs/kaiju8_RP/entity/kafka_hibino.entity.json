@@ -1,0 +1,39 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kaiju8:kafka_hibino",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju8/kafka"
+      },
+      "geometry": {
+        "default": "geometry.kaiju8.kafka"
+      },
+      "animations": {
+        "look": "animation.kaiju8.look_at_target",
+        "idle": "animation.kaiju8.humanoid.idle",
+        "walk": "animation.kaiju8.humanoid.walk",
+        "attack": "animation.kaiju8.humanoid.attack",
+        "death": "animation.kaiju8.humanoid.death",
+        "general": "controller.animation.kaiju8.humanoid.general",
+        "atk": "controller.animation.kaiju8.humanoid.attack"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "atk"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.kaiju8.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#e0e4ea",
+        "overlay_color": "#262a34"
+      }
+    }
+  }
+}

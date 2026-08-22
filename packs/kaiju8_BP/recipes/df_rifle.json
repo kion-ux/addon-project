@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:df_rifle"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AAI",
+      " SA",
+      "  S"
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "kaiju8:df_rifle",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kaiju8:yoju",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju8/yoju"
+      },
+      "geometry": {
+        "default": "geometry.kaiju8.yoju"
+      },
+      "animations": {
+        "look": "animation.kaiju8.look_at_target",
+        "idle": "animation.kaiju8.quadruped.idle",
+        "walk": "animation.kaiju8.quadruped.walk",
+        "tail": "animation.kaiju8.tail",
+        "attack": "animation.kaiju8.quadruped.attack",
+        "death": "animation.kaiju8.quadruped.death",
+        "general": "controller.animation.kaiju8.quadruped.general",
+        "atk": "controller.animation.kaiju8.quadruped.attack"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "atk"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.kaiju8.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#627058",
+        "overlay_color": "#ffc442"
+      }
+    }
+  }
+}

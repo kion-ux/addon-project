@@ -1,0 +1,69 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "kaiju8:parasite_kaiju",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "kaiju",
+          "parasite",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.4,
+        "height": 0.35
+      },
+      "minecraft:health": {
+        "value": 4,
+        "max": 4
+      },
+      "minecraft:movement": {
+        "value": 0.26
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "avoid_water": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "max_distance": 96,
+          "min_distance": 64
+        }
+      },
+      "minecraft:experience_reward": {
+        "on_death": "3"
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/parasite_kaiju.json"
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.panic": {
+        "priority": 1,
+        "speed_multiplier": 1.6
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 4,
+        "speed_multiplier": 1.0
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 6
+      }
+    },
+    "events": {}
+  }
+}

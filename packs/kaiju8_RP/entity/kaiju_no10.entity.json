@@ -1,0 +1,45 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kaiju8:kaiju_no10",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju8/kaiju_no10"
+      },
+      "geometry": {
+        "default": "geometry.kaiju8.no10"
+      },
+      "animations": {
+        "look": "animation.kaiju8.look_at_target",
+        "idle": "animation.kaiju8.kaiju.idle",
+        "walk": "animation.kaiju8.kaiju.walk",
+        "tail": "animation.kaiju8.tail",
+        "attack": "animation.kaiju8.kaiju.attack",
+        "roar": "animation.kaiju8.kaiju.roar",
+        "death": "animation.kaiju8.kaiju.death",
+        "general": "controller.animation.kaiju8.kaiju.general",
+        "atk": "controller.animation.kaiju8.kaiju.attack",
+        "wings_idle": "animation.kaiju8.wings.idle",
+        "wings_flap": "animation.kaiju8.wings.flap",
+        "wings": "controller.animation.kaiju8.wings"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "atk",
+          "wings"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.kaiju8.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#4e325c",
+        "overlay_color": "#ff6038"
+      }
+    }
+  }
+}

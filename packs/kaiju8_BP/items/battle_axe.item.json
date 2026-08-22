@@ -1,0 +1,44 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "kaiju8:battle_axe",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "battle_axe"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": {
+        "value": 12
+      },
+      "minecraft:durability": {
+        "max_durability": 1900
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "kaiju8:kaiju_alloy"
+            ],
+            "repair_amount": 475
+          }
+        ]
+      },
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 18
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.kaiju8:battle_axe"
+      }
+    }
+  }
+}

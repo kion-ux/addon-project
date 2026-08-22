@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kaiju8:weapon_no4"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "A A",
+      "ACA",
+      "S S"
+    ],
+    "key": {
+      "A": {
+        "item": "kaiju8:kaiju_alloy"
+      },
+      "C": {
+        "item": "kaiju8:kaiju_core"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "kaiju8:weapon_no4",
+      "count": 1
+    }
+  }
+}

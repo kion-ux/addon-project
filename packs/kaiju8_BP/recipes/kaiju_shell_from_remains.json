@@ -1,0 +1,26 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "kaiju8:kaiju_shell_from_remains"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "kaiju8:kaiju_remains"
+      },
+      {
+        "item": "kaiju8:kaiju_remains"
+      },
+      {
+        "item": "kaiju8:kaiju_remains"
+      }
+    ],
+    "result": {
+      "item": "kaiju8:kaiju_shell",
+      "count": 1
+    }
+  }
+}
