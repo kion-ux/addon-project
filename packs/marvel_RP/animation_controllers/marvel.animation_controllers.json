@@ -24,7 +24,7 @@
             "look",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
@@ -42,7 +42,7 @@
             "look",
             "run"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
@@ -57,7 +57,7 @@
             "look",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "stand": "query.is_on_ground"
@@ -71,7 +71,7 @@
       "states": {
         "none": {
           "animations": [],
-          "blend_transition": 0.2,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "hurt": "query.is_delayed_attacking || variable.hurt"
@@ -91,7 +91,7 @@
           "animations": [
             "attack"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "none": "query.mark_variant != 1"
@@ -102,7 +102,7 @@
           "animations": [
             "tech"
           ],
-          "blend_transition": 0.12,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "none": "query.mark_variant != 2"
@@ -113,7 +113,7 @@
           "animations": [
             "hurt"
           ],
-          "blend_transition": 0.08,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "none": "query.mark_variant != 3"
@@ -124,7 +124,7 @@
           "animations": [
             "death"
           ],
-          "blend_transition": 0.2
+          "blend_transition": 0.3
         }
       }
     },
@@ -134,8 +134,7 @@
         "stand": {
           "animations": [
             "look",
-            "idle",
-            "cape"
+            "idle"
           ],
           "blend_transition": 0.2,
           "transitions": [
@@ -155,7 +154,7 @@
             "look",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "hover": "query.mark_variant == 5"
@@ -176,7 +175,7 @@
             "look",
             "run"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "hover": "query.mark_variant == 5"
@@ -194,7 +193,7 @@
             "look",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "hover": "query.mark_variant == 5"
@@ -209,7 +208,7 @@
             "look",
             "hover"
           ],
-          "blend_transition": 0.3,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "stand": "query.mark_variant != 5"
@@ -223,7 +222,7 @@
       "states": {
         "none": {
           "animations": [],
-          "blend_transition": 0.2,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "attack": "query.mark_variant == 1"
@@ -246,7 +245,7 @@
           "animations": [
             "attack"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "none": "query.mark_variant != 1"
@@ -257,7 +256,7 @@
           "animations": [
             "tech"
           ],
-          "blend_transition": 0.12,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "none": "query.mark_variant != 2"
@@ -268,7 +267,7 @@
           "animations": [
             "hurt"
           ],
-          "blend_transition": 0.08,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "none": "query.mark_variant != 3"
@@ -279,7 +278,7 @@
           "animations": [
             "ult"
           ],
-          "blend_transition": 0.25,
+          "blend_transition": 0.16,
           "transitions": [
             {
               "none": "query.mark_variant != 4"
@@ -290,7 +289,7 @@
           "animations": [
             "death"
           ],
-          "blend_transition": 0.2
+          "blend_transition": 0.3
         }
       }
     },
@@ -302,7 +301,7 @@
             "look",
             "idle"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.34,
           "transitions": [
             {
               "walk": "query.modified_move_speed > 0.02"
@@ -314,7 +313,7 @@
             "look",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.34,
           "transitions": [
             {
               "stand": "query.modified_move_speed <= 0.02"
@@ -328,7 +327,7 @@
       "states": {
         "none": {
           "animations": [],
-          "blend_transition": 0.2,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "beam": "query.mark_variant == 2"
@@ -351,7 +350,7 @@
           "animations": [
             "beam"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.24,
           "transitions": [
             {
               "none": "query.mark_variant != 2"
@@ -362,7 +361,7 @@
           "animations": [
             "stomp"
           ],
-          "blend_transition": 0.14,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "none": "query.mark_variant != 1"
@@ -373,7 +372,7 @@
           "animations": [
             "scan"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.24,
           "transitions": [
             {
               "none": "query.mark_variant != 5"
@@ -384,7 +383,7 @@
           "animations": [
             "hurt"
           ],
-          "blend_transition": 0.08,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "none": "query.mark_variant != 3"
@@ -395,7 +394,7 @@
           "animations": [
             "death"
           ],
-          "blend_transition": 0.2
+          "blend_transition": 0.3
         }
       }
     },
@@ -427,7 +426,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -439,7 +438,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -448,13 +471,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -475,7 +498,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -490,7 +513,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -507,7 +530,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -529,7 +552,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -541,7 +564,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -551,13 +599,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -567,7 +615,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -580,7 +628,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -596,7 +644,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -613,7 +661,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -635,7 +683,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -647,7 +695,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -657,13 +730,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -673,7 +746,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -686,7 +759,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -702,7 +775,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -719,7 +792,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -741,7 +814,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -753,7 +826,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -763,13 +861,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -779,7 +877,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -792,7 +890,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -808,7 +906,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -825,7 +923,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -847,7 +945,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -859,7 +957,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -869,13 +992,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -885,7 +1008,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -898,7 +1021,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -914,7 +1037,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -931,7 +1054,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -953,7 +1076,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -965,7 +1088,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -975,13 +1123,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -991,7 +1139,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1004,7 +1152,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1020,7 +1168,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1037,7 +1185,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1059,7 +1207,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1071,7 +1219,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1081,13 +1254,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1097,7 +1270,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1110,7 +1283,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1126,7 +1299,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1143,7 +1316,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1165,7 +1338,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1177,7 +1350,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1187,13 +1385,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1203,7 +1401,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1216,7 +1414,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1232,7 +1430,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1249,7 +1447,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1271,7 +1469,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1283,7 +1481,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1293,13 +1516,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1309,7 +1532,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1322,7 +1545,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1338,7 +1561,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1355,7 +1578,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1377,7 +1600,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1389,7 +1612,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1399,13 +1647,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1415,7 +1663,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1428,7 +1676,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1444,7 +1692,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1461,7 +1709,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1483,7 +1731,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1495,7 +1743,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1505,13 +1778,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1521,7 +1794,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1534,7 +1807,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1550,7 +1823,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1567,7 +1840,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1589,7 +1862,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1601,7 +1874,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1611,13 +1909,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1627,7 +1925,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1640,7 +1938,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1656,7 +1954,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1673,7 +1971,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1695,7 +1993,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1707,7 +2005,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1717,13 +2040,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1733,7 +2056,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1746,7 +2069,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1762,7 +2085,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1779,7 +2102,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1801,7 +2124,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1813,7 +2136,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1823,13 +2171,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1839,7 +2187,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1852,7 +2200,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1868,7 +2216,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1885,7 +2233,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1907,7 +2255,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -1919,7 +2267,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -1929,13 +2302,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -1945,7 +2318,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -1958,7 +2331,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -1974,7 +2347,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -1991,7 +2364,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2013,7 +2386,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2025,7 +2398,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2035,13 +2433,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2051,7 +2449,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -2064,7 +2462,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2080,7 +2478,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2117,7 +2515,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2129,7 +2527,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2138,13 +2560,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2165,7 +2587,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2180,7 +2602,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2197,7 +2619,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2219,7 +2641,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2231,7 +2653,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2241,13 +2688,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2257,7 +2704,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -2270,7 +2717,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2286,7 +2733,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2303,7 +2750,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2325,7 +2772,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2337,7 +2784,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2347,13 +2819,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2363,7 +2835,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -2376,7 +2848,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2392,7 +2864,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2409,7 +2881,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2431,7 +2903,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2443,7 +2915,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2453,13 +2950,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2469,7 +2966,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -2482,7 +2979,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2498,7 +2995,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2535,7 +3032,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2547,7 +3044,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2556,13 +3077,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2583,7 +3104,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2598,7 +3119,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2615,7 +3136,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2637,7 +3158,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2649,7 +3170,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2659,13 +3205,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2675,7 +3221,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -2688,7 +3234,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2704,7 +3250,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2721,7 +3267,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2743,7 +3289,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2755,7 +3301,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2765,13 +3336,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2781,7 +3352,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -2794,7 +3365,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2810,7 +3381,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2827,7 +3398,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2849,7 +3420,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2861,7 +3432,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2871,13 +3467,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -2887,7 +3483,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -2900,7 +3496,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -2916,7 +3512,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -2953,7 +3549,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -2965,7 +3561,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -2974,13 +3594,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3001,7 +3621,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3016,7 +3636,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3033,7 +3653,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3055,7 +3675,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3067,7 +3687,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3077,13 +3722,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3093,7 +3738,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -3106,7 +3751,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3122,7 +3767,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3139,7 +3784,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3161,7 +3806,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3173,7 +3818,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3183,13 +3853,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3199,7 +3869,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -3212,7 +3882,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3228,7 +3898,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3245,7 +3915,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3267,7 +3937,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3279,7 +3949,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3289,13 +3984,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3305,7 +4000,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -3318,7 +4013,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3334,7 +4029,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3371,7 +4066,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3383,7 +4078,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3392,13 +4111,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3419,7 +4138,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3434,7 +4153,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3451,7 +4170,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3473,7 +4192,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3485,7 +4204,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3495,13 +4239,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3511,7 +4255,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -3524,7 +4268,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3540,7 +4284,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3557,7 +4301,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3579,7 +4323,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3591,7 +4335,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3601,13 +4370,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3617,7 +4386,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -3630,7 +4399,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3646,7 +4415,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3663,7 +4432,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3685,7 +4454,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3697,7 +4466,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3707,13 +4501,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3723,7 +4517,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -3736,7 +4530,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3752,7 +4546,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3789,7 +4583,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3801,7 +4595,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3810,13 +4628,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3837,7 +4655,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3852,7 +4670,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3869,7 +4687,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3891,7 +4709,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3903,7 +4721,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -3913,13 +4756,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -3929,7 +4772,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -3942,7 +4785,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -3958,7 +4801,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -3975,7 +4818,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -3997,7 +4840,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4009,7 +4852,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4019,13 +4887,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4035,7 +4903,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4048,7 +4916,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4064,7 +4932,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4081,7 +4949,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4103,7 +4971,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4115,7 +4983,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4125,13 +5018,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4141,7 +5034,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4154,7 +5047,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4170,7 +5063,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4207,7 +5100,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4219,7 +5112,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4228,13 +5145,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4255,7 +5172,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4270,7 +5187,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4287,7 +5204,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4309,7 +5226,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4321,7 +5238,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4331,13 +5273,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4347,7 +5289,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4360,7 +5302,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4376,7 +5318,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4393,7 +5335,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4415,7 +5357,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4427,7 +5369,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4437,13 +5404,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4453,7 +5420,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4466,7 +5433,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4482,7 +5449,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4499,7 +5466,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4521,7 +5488,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4533,7 +5500,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4543,13 +5535,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4559,7 +5551,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4572,7 +5564,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4588,7 +5580,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4625,7 +5617,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4637,7 +5629,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4646,13 +5662,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4673,7 +5689,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4688,7 +5704,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4705,7 +5721,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4727,7 +5743,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4739,7 +5755,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4749,13 +5790,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4765,7 +5806,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4778,7 +5819,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4794,7 +5835,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4811,7 +5852,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4833,7 +5874,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4845,7 +5886,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4855,13 +5921,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4871,7 +5937,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4884,7 +5950,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -4900,7 +5966,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -4917,7 +5983,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4939,7 +6005,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -4951,7 +6017,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -4961,13 +6052,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -4977,7 +6068,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -4990,7 +6081,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5006,7 +6097,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5043,7 +6134,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5055,7 +6146,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5064,13 +6179,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5091,7 +6206,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5106,7 +6221,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5123,7 +6238,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5145,7 +6260,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5157,7 +6272,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5167,13 +6307,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5183,7 +6323,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -5196,7 +6336,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5212,7 +6352,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5229,7 +6369,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5251,7 +6391,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5263,7 +6403,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5273,13 +6438,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5289,7 +6454,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -5302,7 +6467,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5318,7 +6483,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5335,7 +6500,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5357,7 +6522,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5369,7 +6534,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5379,13 +6569,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5395,7 +6585,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -5408,7 +6598,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5424,7 +6614,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5461,7 +6651,7 @@
             "idle",
             "walk"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5473,7 +6663,31 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run"
+          ],
+          "blend_transition": 0.26,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5482,13 +6696,13 @@
             "idle",
             "sprint"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.26,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5509,7 +6723,7 @@
             "idle",
             "air"
           ],
-          "blend_transition": 0.16,
+          "blend_transition": 0.12,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5524,7 +6738,7 @@
             "idle",
             "swim"
           ],
-          "blend_transition": 0.2,
+          "blend_transition": 0.38,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5541,7 +6755,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5563,7 +6777,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5575,7 +6789,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5585,13 +6824,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5601,7 +6840,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -5614,7 +6853,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5630,7 +6869,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5647,7 +6886,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5669,7 +6908,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5681,7 +6920,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5691,13 +6955,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5707,7 +6971,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -5720,7 +6984,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5736,7 +7000,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5753,7 +7017,7 @@
             "idle",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5775,7 +7039,7 @@
             "walk",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "crouch": "query.is_sneaking"
@@ -5787,7 +7051,32 @@
               "sprint": "query.is_sprinting"
             },
             {
+              "run": "query.modified_move_speed > 0.24"
+            },
+            {
               "base": "query.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "idle",
+            "run",
+            "pose"
+          ],
+          "blend_transition": 0.09,
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "sprint": "query.is_sprinting"
+            },
+            {
+              "walk": "query.modified_move_speed <= 0.24"
             }
           ]
         },
@@ -5797,13 +7086,13 @@
             "sprint",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "air": "!query.is_on_ground"
             },
             {
-              "walk": "!query.is_sprinting"
+              "run": "!query.is_sprinting"
             }
           ]
         },
@@ -5813,7 +7102,7 @@
             "crouch",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "!query.is_sneaking"
@@ -5826,7 +7115,7 @@
             "air",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "swim": "query.is_in_water"
@@ -5842,7 +7131,7 @@
             "swim",
             "pose"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.09,
           "transitions": [
             {
               "base": "query.is_on_ground"
@@ -5858,7 +7147,7 @@
           "animations": [
             "idle"
           ],
-          "blend_transition": 0.14,
+          "blend_transition": 0.04,
           "transitions": [
             {
               "act": "query.is_using_item"
@@ -5867,10 +7156,9 @@
         },
         "act": {
           "animations": [
-            "idle",
             "act"
           ],
-          "blend_transition": 0.1,
+          "blend_transition": 0.16,
           "transitions": [
             {
               "idle": "!query.is_using_item"
