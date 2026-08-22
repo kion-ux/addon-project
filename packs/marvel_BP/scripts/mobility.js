@@ -5,7 +5,7 @@
 import { system } from "@minecraft/server";
 import { PROP, FX, SOUND, MAG_MAX } from "./config.js";
 import { allPlayers, forward, num, safe, setProp, str } from "./util.js";
-import { fx, fxRing, sound } from "./effects.js";
+import { fx, fxRing, selfPush, sound } from "./effects.js";
 import { revealMetal } from "./magnetism.js";
 import { isTransformed, magOf, spendMag } from "./transform.js";
 
@@ -28,7 +28,7 @@ export function tickMobility() {
       } else {
         const dir = player.getViewDirection();
         const lift = safe(() => player.isSneaking) ? -0.22 : 0.16;
-        safe(() => player.applyKnockback(dir.x, dir.z, 0.62, lift + dir.y * 0.30));
+        selfPush(player, dir.x, dir.z, 0.62, lift + dir.y * 0.30);
         safe(() => player.addEffect("slow_falling", 20,
           { amplifier: 0, showParticles: false }));
         if (phase % 2 === 0) {

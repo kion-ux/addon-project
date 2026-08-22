@@ -9,7 +9,7 @@ import {
 } from "./util.js";
 import {
   chord, cone, fx, fxRing, fxScatter, fxSphere, hit, hitstop, knock,
-  lookTarget, ray, shake, shakeNearby, sound,
+  lookTarget, ray, selfPush, shake, shakeNearby, sound,
 } from "./effects.js";
 import { drag, launchShard } from "./magnetism.js";
 import { heroOf, isTransformed, magOf, pose, spendMag } from "./transform.js";
@@ -99,7 +99,7 @@ const KIT = {
   leap: (p) => {
     const dir = p.getViewDirection();
     fxRing(p.dimension, FX.leap_dust, p.location, 1.2, 10, 0.1);
-    safe(() => p.applyKnockback(dir.x, dir.z, 2.6, 1.2));
+    selfPush(p, dir.x, dir.z, 2.6, 1.2);
     safe(() => p.addEffect("slow_falling", 90, { amplifier: 0, showParticles: false }));
     sound(p.dimension, "mob.slime.jump", p.location, { pitch: 0.7 });
   },
@@ -128,7 +128,7 @@ const KIT = {
       ticks += 2;
       if (ticks > 100 || !isTransformed(p)) { system.clearRun(run); return; }
       const d = p.getViewDirection();
-      safe(() => p.applyKnockback(d.x, d.z, 1.1, 0.02));
+      selfPush(p, d.x, d.z, 1.1, 0.02);
       fx(p.dimension, FX.impact_dust, p.location);
       for (const { entity, dir: to } of cone(p, 3.4, 0.0)) {
         hit(p, entity, 22);
@@ -196,7 +196,7 @@ const KIT = {
   sonic_dash: (p) => {
     const dir = p.getViewDirection();
     fx(p.dimension, FX.speed_line, p.location);
-    safe(() => p.applyKnockback(dir.x, dir.z, 3.2, 0.25));
+    selfPush(p, dir.x, dir.z, 3.2, 0.25);
     safe(() => p.addEffect("speed", 120, { amplifier: 4, showParticles: false }));
     for (let i = 1; i <= 5; i++) {
       system.runTimeout(() => fx(p.dimension, FX.blur_after, p.location), i * 2);
@@ -305,7 +305,7 @@ const KIT = {
   },
   body_slam: (p) => {
     const dir = p.getViewDirection();
-    safe(() => p.applyKnockback(dir.x, dir.z, 1.6, 0.9));
+    selfPush(p, dir.x, dir.z, 1.6, 0.9);
     system.runTimeout(() => {
       fx(p.dimension, FX.slam_ring, p.location);
       fx(p.dimension, FX.quake_dust, p.location);

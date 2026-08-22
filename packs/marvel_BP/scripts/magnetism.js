@@ -15,7 +15,7 @@ import {
   MAGNETIC_BLOCKS, MAGNETIC_ITEMS, IMMUNE_ITEMS, FAMILY, FX, ENTITY,
 } from "./config.js";
 import { distance, forward, hasFamily, normalise, safe, sub } from "./util.js";
-import { fx, fxTrail } from "./effects.js";
+import { fx, fxTrail, selfPush } from "./effects.js";
 
 const EQUIP_SLOTS = ["Head", "Chest", "Legs", "Feet", "Mainhand", "Offhand"];
 
@@ -106,11 +106,8 @@ export function drag(entity, toward, power, vertical = 0.15) {
     });
     return true;
   } catch (_) {
-    // プレイヤーには applyImpulse が効かないので knockback を使う
-    try {
-      entity.applyKnockback(n.x * power, n.z * power, power * 0.6, n.y * power * 0.4 + vertical);
-      return true;
-    } catch (_e) { return false; }
+    // プレイヤーには applyImpulse が効かないので knockback へ落とす
+    return selfPush(entity, n.x, n.z, power, n.y * power * 0.4 + vertical);
   }
 }
 

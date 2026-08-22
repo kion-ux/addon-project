@@ -215,9 +215,7 @@ def main() -> None:
             K.eid(key), K.tex(key), K.geo(key),
             {"spin": a(group, clip_name), "controller": K.ctrl("prop.spin")},
             ["controller"], render=K.render_ctrl(render),
-            particles=particles,
-            extra={"animations": {"spin": a(group, clip_name),
-                                  "controller": K.ctrl("prop.spin")}}))
+            particles=particles))
 
     print(f"  {1 + len(K.BROTHERHOOD) + 4 + len(PROP_CLIENTS)} client entities")
 

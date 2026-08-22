@@ -12,7 +12,12 @@
       "minecraft:should_despawn": false,
       "minecraft:display_name": {
         "value": "item.marvel:scarlet_witch_form_hex_bolt"
-      }
+      },
+      "minecraft:wearable": {
+        "slot": "slot.armor.head",
+        "protection": 0
+      },
+      "minecraft:allow_off_hand": false
     }
   }
 }

@@ -241,6 +241,11 @@ def item_doc(key: str, spec: dict) -> dict:
         comps["minecraft:glint"] = True
     if spec.get("hand", True):
         comps["minecraft:hand_equipped"] = True
+    if spec.get("wearable"):
+        # 変身体は頭スロットに装備して初めて描画される。これが無いと
+        # setEquipment が黙って失敗し、三人称の姿も技の構えも一切出ない。
+        comps["minecraft:wearable"] = {"slot": spec["wearable"], "protection": 0}
+        comps["minecraft:allow_off_hand"] = False
     desc = {"identifier": K.eid(key)}
     if not spec.get("hidden"):
         desc["menu_category"] = {
@@ -269,7 +274,8 @@ def all_items() -> dict:
         key = K.form_key(character, tech)
         out[key] = dict(ja=f"{K.CHARACTERS[character]['ja']}の体",
                         en=f"{K.CHARACTERS[character]['en']} Form",
-                        icon=key, stack=1, hidden=True, hand=False)
+                        icon=key, stack=1, hidden=True, hand=False,
+                        wearable="slot.armor.head")
     return out
 
 

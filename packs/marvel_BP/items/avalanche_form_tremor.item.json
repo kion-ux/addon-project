@@ -12,7 +12,12 @@
       "minecraft:should_despawn": false,
       "minecraft:display_name": {
         "value": "item.marvel:avalanche_form_tremor"
-      }
+      },
+      "minecraft:wearable": {
+        "slot": "slot.armor.head",
+        "protection": 0
+      },
+      "minecraft:allow_off_hand": false
     }
   }
 }

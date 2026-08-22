@@ -202,11 +202,28 @@ export function hit(attacker, target, damage) {
   } catch (_) { return false; }
 }
 
+/**
+ * ノックバック。
+ *
+ * `applyKnockback` の引数は Bedrock のバージョンで二通りある
+ * （新: `(水平ベクトル, 縦の強さ)` / 旧: `(dx, dz, 水平, 縦)`）。
+ * どちらの環境でも動くよう順に試し、最後にプレイヤー以外向けの
+ * `applyImpulse` へ落とす。ここを決め打ちにすると、
+ * 片方の環境で**全ての技のノックバックが無言で効かなくなる**。
+ */
 export function knock(entity, dir, power, vertical = 0.5) {
-  try {
-    entity.applyKnockback(dir.x * power, dir.z * power, power, vertical);
-  } catch (_) {
-    try { entity.applyImpulse({ x: dir.x * power * 0.4, y: vertical, z: dir.z * power * 0.4 }); }
-    catch (_e) { }
-  }
+  const hx = dir.x * power;
+  const hz = dir.z * power;
+  try { entity.applyKnockback({ x: hx, z: hz }, vertical); return true; } catch (_) { }
+  try { entity.applyKnockback(dir.x, dir.z, power, vertical); return true; } catch (_) { }
+  try { entity.applyImpulse({ x: hx * 0.4, y: vertical, z: hz * 0.4 }); return true; } catch (_) { }
+  return false;
+}
+
+/** 自分自身を押す（突進・跳躍・飛行）。knock と同じ理由で二通り試す。 */
+export function selfPush(entity, dirX, dirZ, horizontal, vertical) {
+  try { entity.applyKnockback({ x: dirX * horizontal, z: dirZ * horizontal }, vertical); return true; } catch (_) { }
+  try { entity.applyKnockback(dirX, dirZ, horizontal, vertical); return true; } catch (_) { }
+  try { entity.applyImpulse({ x: dirX * horizontal * 0.4, y: vertical, z: dirZ * horizontal * 0.4 }); return true; } catch (_) { }
+  return false;
 }
