@@ -74,8 +74,9 @@ def load_pose(names):
 
 
 class Geo:
-    def __init__(self, path, pose=None):
+    def __init__(self, path, pose=None, hide=()):
         self.pose = pose or {}
+        self.hide = set(hide)
         doc = json.load(open(path, encoding="utf-8"))
         g = doc["minecraft:geometry"][0]
         self.tw = g["description"]["texture_width"]
@@ -109,7 +110,14 @@ class Geo:
     def quads(self):
         cache = {}
         out = []
+        hidden = set()
         for name in self.order:
+            parent = self.bones[name].get("parent")
+            if name in self.hide or (parent and parent in hidden):
+                hidden.add(name)
+        for name in self.order:
+            if name in hidden:
+                continue
             m, t = self.world(name, cache)
             for cube in self.bones[name].get("cubes", []):
                 origin = np.array(cube["origin"], dtype=float)
@@ -140,8 +148,8 @@ class Geo:
 
 
 def render(geo_path, tex_path, size=360, yaw=28.0, pitch=-12.0, margin=0.10,
-           bg=(28, 30, 38), pose=None):
-    geo = Geo(geo_path, load_pose(pose))
+           bg=(28, 30, 38), pose=None, hide=()):
+    geo = Geo(geo_path, load_pose(pose), hide)
     tex = Image.open(tex_path).convert("RGBA")
     tw, th = tex.size
     tpx = np.array(tex, dtype=np.float32)
@@ -161,7 +169,8 @@ def render(geo_path, tex_path, size=360, yaw=28.0, pitch=-12.0, margin=0.10,
 
     img = np.zeros((size, size, 3), dtype=np.float32)
     img[:, :] = np.array(bg, dtype=np.float32)
-    zbuf = np.full((size, size), -1e9, dtype=np.float32)
+    # カメラは -Z 側から +Z を向いているので、z が小さいほど手前。
+    zbuf = np.full((size, size), 1e9, dtype=np.float32)
     light = np.array([0.45, 0.82, -0.35])
     light /= np.linalg.norm(light)
 
@@ -200,7 +209,7 @@ def render(geo_path, tex_path, size=360, yaw=28.0, pitch=-12.0, margin=0.10,
                 continue
             z = w0 * p0[2] + w1 * p1[2] + w2 * p2[2]
             sub = zbuf[miny:maxy + 1, minx:maxx + 1]
-            mask &= z > sub
+            mask &= z < sub
             if not mask.any():
                 continue
             u = (w0 * t0[0] + w1 * t1[0] + w2 * t2[0])

@@ -47,6 +47,10 @@ ENTITIES = {
     "soshiro_hoshina": ("保科宗四郎", "Soshiro Hoshina"),
     "kikoru_shinomiya": ("四ノ宮キコル", "Kikoru Shinomiya"),
     "gen_narumi": ("鳴海弦", "Gen Narumi"),
+    "iharu_furuhashi": ("古橋伊春", "Iharu Furuhashi"),
+    "haruichi_izumo": ("出雲ハルイチ", "Haruichi Izumo"),
+    "aoi_kaguragi": ("神楽木葵", "Aoi Kaguragi"),
+    "isao_shinomiya": ("四ノ宮功", "Isao Shinomiya"),
     "parasite_kaiju": ("小型怪獣", "Small Kaiju"),
     "rifle_beam": ("砲撃", "Cannon Round"),
     "kaiju_acid": ("怪獣の酸", "Kaiju Acid"),
@@ -56,6 +60,7 @@ ENTITIES = {
 EGGS = ["yoju", "honju", "kaiju_no8", "kaiju_no9", "kaiju_no10",
         "defense_force_officer", "kafka_hibino", "reno_ichikawa",
         "mina_ashiro", "soshiro_hoshina", "kikoru_shinomiya", "gen_narumi",
+        "iharu_furuhashi", "haruichi_izumo", "aoi_kaguragi", "isao_shinomiya",
         "parasite_kaiju"]
 
 # 技 — 原作にある技名と、本アドオン独自の技名が混在する

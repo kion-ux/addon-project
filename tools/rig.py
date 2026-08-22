@@ -259,9 +259,16 @@ class HumanRig:
         chest.add(Cube((-L.chest_w * 0.60, L.chest_top - L.arm_t * 0.85,
                         -L.chest_d * 0.42),
                        (L.chest_w * 1.20, L.arm_t * 0.85, L.chest_d * 0.84), suit))
+        if self.build.female:
+            # くびれてから腰へ広がるライン（胸は装甲側で出す）
+            body.add(Cube((-L.hip_w * 0.54, L.pelvis_bot, -L.waist_d * 0.58),
+                          (L.hip_w * 1.08, (L.abdomen_bot - L.pelvis_bot) * 0.76,
+                           L.waist_d * 1.16), suit, uv_scale=4))
         neck = self.b("neck")
-        neck.add(Cube((-L.head_w * 0.30, L.shoulder_y - L.neck_h * 0.3, -L.head_d * 0.24),
-                      (L.head_w * 0.60, L.neck_h * 1.35, L.head_d * 0.48), skin))
+        neck.add(Cube((-L.head_w * (0.30 if not self.build.female else 0.26),
+                       L.shoulder_y - L.neck_h * 0.3, -L.head_d * 0.24),
+                      (L.head_w * (0.60 if not self.build.female else 0.52),
+                       L.neck_h * 1.35, L.head_d * 0.48), skin))
         # dark under-suit at the shoulders and waist
         chest.add(Cube((-L.chest_w * 0.50, L.chest_bot - 0.01, -L.chest_d * 0.52),
                        (L.chest_w * 1.00, (L.chest_top - L.chest_bot) * 0.30,
@@ -342,6 +349,16 @@ class HumanRig:
         body = self.b("body")
         ch = L.chest_top - L.chest_bot
 
+        # --- 女性キャラは胸のラインを装甲の上に出す
+        if self.build.female:
+            chest.add(Cube((-L.chest_w * 0.44, L.chest_bot + ch * 0.34,
+                            -L.chest_d * 0.74),
+                           (L.chest_w * 0.88, ch * 0.30, L.chest_d * 0.18), green,
+                           uv_scale=4))
+            chest.add(Cube((-L.chest_w * 0.30, L.chest_bot + ch * 0.40,
+                            -L.chest_d * 0.82),
+                           (L.chest_w * 0.60, ch * 0.20, L.chest_d * 0.10), green,
+                           uv_scale=5))
         # --- 胸のリグ (olive) — wraps the front only
         chest.add(Cube((-L.chest_w * 0.50, L.chest_bot + ch * 0.08, -L.chest_d * 0.62),
                        (L.chest_w * 1.00, ch * 0.74, L.chest_d * 0.42), green,
@@ -450,9 +467,9 @@ class HumanRig:
         """亜白ミナ専用の白いバイザー — 目元だけを覆う横長バー。"""
         L = self.L
         head = self.b("head")
-        head.add(Cube((-L.head_w * 0.54, L.chin + L.head_h * 0.44, -L.head_d * 0.60),
-                      (L.head_w * 1.08, L.head_h * 0.22, L.head_d * 0.12), style,
-                      uv_scale=6, decals={"north": "visor"}))
+        head.add(Cube((-L.head_w * 0.54, L.chin + L.head_h * 0.60, -L.head_d * 0.60),
+                      (L.head_w * 1.08, L.head_h * 0.13, L.head_d * 0.10), style,
+                      uv_scale=8, decals={"north": "hud_bar"}))
 
     def face_mask(self, style: Optional[str] = None) -> None:
         """保科・鳴海の面体マスク（鼻〜顎の浅いシェル）。"""
@@ -475,9 +492,125 @@ class HumanRig:
                       uv_scale=4, decals={"north": "visor"}))
 
     # ------------------------------------------------------------------
-    def hair(self, spec: Sequence[Tuple[Sequence[float], Sequence[float]]],
-             style: Optional[str] = None, uv_scale: int = 3) -> None:
-        """Hair cubes given in head-local units (multiples of head width/height)."""
+    def hair(self, spec, style: Optional[str] = None) -> None:
+        """髪をレイヤーで組む。
+
+        キャップ（頭を覆う土台）／前髪（列ごとに長さを変えてギザつかせる）／
+        サイドの毛束／後ろ髪／逆立った毛先、という順で重ねる。アニメの髪が
+        ボクセルで「髪に見える」かどうかは、前髪の段差と顔を挟むサイドの毛束で
+        ほぼ決まるので、そこを列単位で指定できるようにしてある。
+
+        座標は頭ローカル（xは頭幅、yは顎からの頭高、zは頭奥行き）。
+        """
+        if isinstance(spec, (list, tuple)):       # 旧形式（キューブの直書き）
+            return self._hair_cubes(spec, style)
+        L = self.L
+        style = style or self.s["hair"]
+        bone = self.b("hair")
+        HW, HH, HD = L.head_w, L.head_h, L.head_d
+
+        def cube(x, y, z, w, h, d, st=None, uv=4, **kw):
+            bone.add(Cube((x * HW, L.chin + y * HH, z * HD),
+                          (w * HW, h * HH, d * HD), st or style, uv_scale=uv, **kw))
+
+        # --- キャップ: 頭より僅かに大きく被せる
+        cap = spec.get("cap", {})
+        cy = cap.get("y", 0.58)
+        ch = cap.get("h", 0.50)
+        out = cap.get("out", 0.04)
+        cube(-0.5 - out, cy, -0.52 - out, 1.0 + out * 2, ch, 1.04 + out * 2)
+        if cap.get("crown"):                      # 頭頂の膨らみ
+            cube(-0.40, cy + ch - 0.02, -0.40, 0.80, 0.14, 0.84)
+
+        # --- 後頭部
+        back = spec.get("back")
+        if back:
+            cube(-0.48, back.get("y", 0.16), 0.42,
+                 0.96, back.get("h", 0.46), back.get("t", 0.16))
+        # --- 背中まで届く長い髪
+        long = spec.get("long")
+        if long:
+            cube(-long.get("w", 0.92) / 2, long.get("y", -1.2), 0.40,
+                 long.get("w", 0.92), long.get("h", 1.8), long.get("t", 0.16), uv=3)
+            cube(-long.get("w", 0.92) / 2 * 0.7, long.get("y", -1.2) - 0.28, 0.44,
+                 long.get("w", 0.92) * 0.7, 0.34, long.get("t", 0.16) * 0.8, uv=3)
+
+        # --- 前髪: 列ごとに落ちる長さを変えて段差を作る
+        bangs = spec.get("bangs")
+        if bangs:
+            # low[i] は「その列の前髪がどこまで垂れるか」を顎からの頭高で指定する。
+            # 目は 0.50、眉は 0.60 付近にあるので、覆いたくなければ 0.56 以上に置く。
+            top = bangs.get("y", cy + 0.02)
+            if "low" in bangs:
+                drops = [max(0.02, top - v) for v in bangs["low"]]
+            else:
+                drops = bangs.get("drops", [0.14] * 6)
+            n = len(drops)
+            t = bangs.get("t", 0.14)
+            for i, drop in enumerate(drops):
+                u0 = -0.5 + i / n
+                cube(u0, top - drop, -0.52 - t, 1.0 / n + 0.005, drop, t)
+            l2 = bangs.get("layer2")
+            if l2:
+                for i, drop in enumerate(drops):
+                    d2 = drop * l2
+                    u0 = -0.46 + i / n * 0.92
+                    cube(u0, top - d2 - 0.02, -0.52 - t * 1.9,
+                         0.92 / n + 0.005, d2, t * 0.9, uv=5)
+            if bangs.get("parting") is not None:  # 分け目の一房を持ち上げる
+                pu = bangs["parting"]
+                cube(pu - 0.09, top - 0.06, -0.56 - t, 0.18, 0.20, t * 1.4, uv=5)
+
+        # --- サイドの毛束（顔を挟む）
+        sides = spec.get("sides")
+        if sides:
+            t = sides.get("t", 0.14)
+            h = sides.get("h", 0.46)
+            y = sides.get("y", 0.16)
+            z0 = sides.get("z0", -0.54)
+            d = sides.get("d", 0.60)
+            for sgn in (-1, 1):
+                x = sgn * 0.5 - (t if sgn > 0 else 0)
+                cube(x, y, z0, t, h, d)
+                if sides.get("tip"):
+                    cube(x + (0.02 if sgn > 0 else 0), y - sides["tip"], z0 + 0.08,
+                         t * 0.8, sides["tip"], d * 0.7, uv=5)
+
+        # --- 刈り上げ / もみあげ
+        if spec.get("shaved"):
+            for sgn in (-1, 1):
+                cube(sgn * 0.5 - (0.07 if sgn > 0 else 0), 0.30, -0.40,
+                     0.07, 0.30, 0.80, uv=5)
+
+        # --- 逆立った毛先
+        for sp in spec.get("spikes", []):
+            u, y, ln, tilt = sp
+            cube(u - 0.07, y, -0.20, 0.14, ln, 0.20, uv=5, rotation=(tilt, 0, 0))
+
+        # --- 後頭部のお団子
+        bun = spec.get("bun")
+        if bun:
+            r = bun.get("r", 0.28)
+            cube(bun.get("u", 0.0) - r / 2, bun.get("y", 0.52), 0.46 + 0.02,
+                 r, r * (HW / HH), r, uv=5)
+
+        # --- リーゼント（前髪だけ立ち上げる）
+        pomp = spec.get("pompadour")
+        if pomp:
+            cube(-0.36, cy + 0.02, -0.56, 0.72, pomp.get("h", 0.34), 0.26, uv=4,
+                 rotation=(-16, 0, 0))
+            cube(-0.30, cy + pomp.get("h", 0.34) - 0.04, -0.50, 0.60, 0.18, 0.30,
+                 uv=4, rotation=(-28, 0, 0))
+
+        # --- 髭（もみあげと繋がる）
+        beard = spec.get("beard")
+        if beard:
+            cube(-0.42, 0.02, -0.56, 0.84, beard.get("h", 0.22), 0.14, uv=6)
+            for sgn in (-1, 1):
+                cube(sgn * 0.46 - (0.10 if sgn > 0 else 0), 0.06, -0.50,
+                     0.10, beard.get("h", 0.22) + 0.18, 0.56, uv=6)
+
+    def _hair_cubes(self, spec, style=None) -> None:
         L = self.L
         style = style or self.s["hair"]
         bone = self.b("hair")
@@ -486,7 +619,7 @@ class HumanRig:
                 (origin[0] * L.head_w, L.chin + origin[1] * L.head_h,
                  origin[2] * L.head_d),
                 (size[0] * L.head_w, size[1] * L.head_h, size[2] * L.head_d),
-                style, uv_scale=uv_scale))
+                style, uv_scale=3))
 
     def ponytail(self, name: str, anchor: Sequence[float], segments: int,
                  length: float, thickness: float, style: Optional[str] = None,
@@ -537,73 +670,101 @@ class HumanRig:
 #  each entry is (origin_xyz, size_xyz) with x,z in head widths/depths and
 #  y measured up from the chin in head heights
 # ---------------------------------------------------------------------------
-HAIR: Dict[str, List[Tuple[Tuple[float, float, float], Tuple[float, float, float]]]] = {
+# ---------------------------------------------------------------------------
+#  髪型。アニメの各キャラのシルエットに合わせたレイヤー指定。
+#  座標は頭ローカル: x=頭幅 / y=顎からの頭高 / z=頭奥行き
+# ---------------------------------------------------------------------------
+HAIR: Dict[str, dict] = {
     # 日比野カフカ: 分け目なしの不揃いなツンツン短髪
-    "kafka": [
-        ((-0.53, 0.60, -0.55), (1.06, 0.48, 1.10)),
-        ((-0.53, 0.28, 0.40), (1.06, 0.34, 0.16)),
-        ((-0.55, 0.56, -0.60), (0.40, 0.34, 0.14)),
-        ((0.15, 0.56, -0.60), (0.40, 0.34, 0.14)),
-        ((-0.24, 1.00, -0.28), (0.22, 0.18, 0.26)),
-        ((0.06, 1.04, -0.06), (0.18, 0.16, 0.22)),
-        ((-0.44, 1.02, 0.16), (0.20, 0.14, 0.22)),
-    ],
-    # 市川レノ: 眉上ぱっつんの厚い前髪、低ボリューム
-    "reno": [
-        ((-0.53, 0.62, -0.55), (1.06, 0.46, 1.10)),
-        ((-0.53, 0.34, 0.42), (1.06, 0.30, 0.14)),
-        ((-0.55, 0.58, -0.62), (1.10, 0.32, 0.16)),
-        ((-0.56, 0.48, -0.58), (0.16, 0.36, 0.34)),
-        ((0.40, 0.48, -0.58), (0.16, 0.36, 0.34)),
-    ],
-    # 亜白ミナ: バレッタ留めの長いストレートポニーテール
-    "mina": [
-        ((-0.53, 0.62, -0.55), (1.06, 0.46, 1.12)),
-        ((-0.55, 0.60, -0.62), (1.10, 0.32, 0.16)),
-        ((-0.56, 0.40, -0.52), (0.14, 0.52, 0.96)),
-        ((0.42, 0.40, -0.52), (0.14, 0.52, 0.96)),
-        ((-0.34, 0.52, 0.46), (0.68, 0.42, 0.20)),
-    ],
+    "kafka": {
+        "cap": {"y": 0.78, "h": 0.34, "out": 0.05, "crown": True},
+        "back": {"y": 0.24, "h": 0.56, "t": 0.16},
+        "bangs": {"y": 0.80, "low": [0.66, 0.74, 0.63, 0.72, 0.65, 0.73],
+                  "t": 0.15, "layer2": 0.55},
+        "sides": {"y": 0.34, "h": 0.34, "t": 0.13, "d": 0.44},
+        "spikes": [(-0.26, 1.10, 0.20, -24), (0.04, 1.14, 0.18, -14),
+                   (0.30, 1.08, 0.16, -30), (-0.06, 1.12, 0.14, -34)],
+    },
+    # 市川レノ: 眉上で切り揃えた厚い前髪、低ボリューム
+    "reno": {
+        "cap": {"y": 0.80, "h": 0.32, "out": 0.035},
+        "back": {"y": 0.32, "h": 0.50, "t": 0.14},
+        "bangs": {"y": 0.82, "low": [0.68, 0.67, 0.675, 0.675, 0.67, 0.68],
+                  "t": 0.16, "layer2": 0.45},
+        "sides": {"y": 0.30, "h": 0.40, "t": 0.12, "d": 0.50, "tip": 0.10},
+    },
+    # 亜白ミナ: 腰まで届くストレートのポニーテール、顔を挟む長いサイド
+    "mina": {
+        "cap": {"y": 0.80, "h": 0.32, "out": 0.04},
+        "back": {"y": 0.22, "h": 0.60, "t": 0.16},
+        "bangs": {"y": 0.82, "low": [0.64, 0.70, 0.78, 0.78, 0.70, 0.64],
+                  "t": 0.14, "layer2": 0.50, "parting": 0.0},
+        "sides": {"y": 0.02, "h": 0.66, "t": 0.13, "d": 0.62, "tip": 0.12},
+    },
     # 保科宗四郎: 顎ラインで切り揃えた丸いマッシュ
-    "hoshina": [
-        ((-0.55, 0.58, -0.58), (1.10, 0.50, 1.16)),
-        ((-0.56, 0.58, -0.64), (1.12, 0.30, 0.18)),
-        ((-0.58, 0.06, -0.56), (0.16, 0.58, 1.10)),
-        ((0.42, 0.06, -0.56), (0.16, 0.58, 1.10)),
-        ((-0.56, 0.10, 0.42), (1.12, 0.54, 0.18)),
-    ],
-    # 四ノ宮キコル: 黒リボンで低めに結んだ長いツインテール
-    "kikoru": [
-        ((-0.53, 0.62, -0.55), (1.06, 0.46, 1.12)),
-        ((-0.55, 0.58, -0.62), (1.10, 0.34, 0.16)),
-        ((-0.54, 0.30, 0.42), (1.08, 0.36, 0.18)),
-        ((-0.57, 0.42, -0.48), (0.14, 0.42, 0.86)),
-        ((0.43, 0.42, -0.48), (0.14, 0.42, 0.86)),
-    ],
+    "hoshina": {
+        "cap": {"y": 0.76, "h": 0.36, "out": 0.06, "crown": True},
+        "back": {"y": 0.04, "h": 0.74, "t": 0.18},
+        "bangs": {"y": 0.78, "low": [0.63, 0.61, 0.62, 0.62, 0.61, 0.63],
+                  "t": 0.16, "layer2": 0.55},
+        "sides": {"y": 0.00, "h": 0.68, "t": 0.15, "d": 0.66},
+    },
+    # 四ノ宮キコル: 低めに結んだ長いツインテール
+    "kikoru": {
+        "cap": {"y": 0.80, "h": 0.32, "out": 0.045},
+        "back": {"y": 0.24, "h": 0.58, "t": 0.16},
+        "bangs": {"y": 0.82, "low": [0.66, 0.72, 0.79, 0.79, 0.72, 0.66],
+                  "t": 0.14, "layer2": 0.50, "parting": 0.0},
+        "sides": {"y": 0.06, "h": 0.62, "t": 0.13, "d": 0.58, "tip": 0.12},
+    },
     # 鳴海弦: 目を覆うもっさりマッシュ（前髪だけ色が違う）
-    "narumi": [
-        ((-0.55, 0.56, -0.58), (1.10, 0.52, 1.16)),
-        ((-0.56, 0.34, 0.44), (1.12, 0.34, 0.16)),
-        ((-0.58, 0.28, -0.54), (0.16, 0.44, 1.04)),
-        ((0.42, 0.28, -0.54), (0.16, 0.44, 1.04)),
-    ],
-    # 四ノ宮功: 前髪なしのオールバック
-    "isao": [
-        ((-0.53, 0.64, -0.52), (1.06, 0.44, 1.06)),
-        ((-0.53, 0.36, 0.42), (1.06, 0.30, 0.16)),
-        ((-0.54, 0.62, -0.56), (1.08, 0.24, 0.10)),
-    ],
+    "narumi": {
+        "cap": {"y": 0.76, "h": 0.36, "out": 0.055, "crown": True},
+        "back": {"y": 0.10, "h": 0.68, "t": 0.17},
+        "sides": {"y": 0.02, "h": 0.66, "t": 0.14, "d": 0.62},
+    },
+    # 四ノ宮功: 前髪なしのオールバック＋もみあげと繋がる髭
+    "isao": {
+        "cap": {"y": 0.82, "h": 0.30, "out": 0.04},
+        "back": {"y": 0.26, "h": 0.58, "t": 0.16},
+        "beard": {"h": 0.24},
+    },
+    # 古橋伊春: 前髪だけ立ち上げたリーゼント＋サイド刈り上げ
+    "furuhashi": {
+        "cap": {"y": 0.82, "h": 0.28, "out": 0.03},
+        "back": {"y": 0.38, "h": 0.46, "t": 0.12},
+        "pompadour": {"h": 0.36},
+        "shaved": True,
+    },
+    # 出雲ハルイチ: 額を出したオールバック＋後頭部のハーフアップお団子
+    "izumo": {
+        "cap": {"y": 0.82, "h": 0.30, "out": 0.04},
+        "back": {"y": 0.16, "h": 0.68, "t": 0.16},
+        "bun": {"u": 0.0, "y": 0.52, "r": 0.30},
+    },
+    # 神楽木葵: 刈り込んだ短いツンツンの軍人カット
+    "kaguragi": {
+        "cap": {"y": 0.84, "h": 0.26, "out": 0.025},
+        "back": {"y": 0.44, "h": 0.40, "t": 0.10},
+        "spikes": [(-0.22, 1.08, 0.12, -18), (0.06, 1.09, 0.10, -12),
+                   (0.26, 1.08, 0.11, -22)],
+    },
     # 一般隊員
-    "crew": [
-        ((-0.52, 0.64, -0.54), (1.04, 0.42, 1.08)),
-        ((-0.52, 0.38, 0.40), (1.04, 0.26, 0.14)),
-        ((-0.54, 0.60, -0.58), (1.08, 0.24, 0.12)),
-    ],
+    "crew": {
+        "cap": {"y": 0.80, "h": 0.32, "out": 0.035},
+        "back": {"y": 0.34, "h": 0.48, "t": 0.14},
+        "bangs": {"y": 0.82, "low": [0.71, 0.73, 0.69, 0.72, 0.69, 0.72],
+                  "t": 0.13, "layer2": 0.50},
+        "sides": {"y": 0.36, "h": 0.32, "t": 0.11, "d": 0.42},
+    },
 }
 
-# 鳴海の前髪だけ別色にするための追加パーツ
+# 鳴海の前髪だけ地毛と色が違うので、別スタイルで重ねる
 HAIR_FRONT = {
-    "narumi": [((-0.56, 0.52, -0.64), (1.12, 0.34, 0.18))],
+    "narumi": {
+        "bangs": {"y": 0.78, "low": [0.52, 0.48, 0.50, 0.50, 0.48, 0.52],
+                  "t": 0.17, "layer2": 0.55},
+    },
 }
 
 

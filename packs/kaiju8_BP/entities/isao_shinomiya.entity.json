@@ -1,0 +1,247 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "kaiju8:isao_shinomiya",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "kaiju8:roaring": {
+        "minecraft:mark_variant": {
+          "value": 1
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 1.2,
+          "time_down_event": {
+            "event": "kaiju8:calm_down"
+          }
+        }
+      },
+      "kaiju8:performing": {
+        "minecraft:mark_variant": {
+          "value": 2
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 0.9,
+          "time_down_event": {
+            "event": "kaiju8:calm_down"
+          }
+        }
+      },
+      "kaiju8:reeling": {
+        "minecraft:mark_variant": {
+          "value": 4
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 0.35,
+          "time_down_event": {
+            "event": "kaiju8:calm_down"
+          }
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "defense_force",
+          "kaiju8_ally",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.66,
+        "height": 1.9
+      },
+      "minecraft:mark_variant": {
+        "value": 0
+      },
+      "minecraft:health": {
+        "value": 220,
+        "max": 220
+      },
+      "minecraft:attack": {
+        "damage": 26
+      },
+      "minecraft:movement": {
+        "value": 0.36
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "avoid_water": true,
+        "can_open_doors": true,
+        "can_break_doors": false
+      },
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:nameable": {},
+      "minecraft:knockback_resistance": {
+        "value": 0.85
+      },
+      "minecraft:follow_range": {
+        "value": 48,
+        "max": 48
+      },
+      "minecraft:experience_reward": {
+        "on_death": "110"
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/defense_force.json"
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:persistent": {},
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "damage_multiplier": 0.35
+          }
+        ]
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1
+      },
+      "minecraft:behavior.delayed_attack": {
+        "priority": 2,
+        "attack_once": false,
+        "track_target": true,
+        "require_complete_path": false,
+        "random_stop_interval": 0,
+        "reach_multiplier": 1.6,
+        "speed_multiplier": 1.15,
+        "attack_duration": 0.6,
+        "hit_delay_pct": 0.4
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 3,
+        "must_see": true,
+        "reselect_targets": true,
+        "must_see_forget_duration": 12.0,
+        "within_radius": 48,
+        "entity_types": [
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "kaiju"
+                }
+              ]
+            },
+            "max_dist": 48
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "player"
+                },
+                {
+                  "test": "has_tag",
+                  "subject": "other",
+                  "value": "kaiju8_no8"
+                }
+              ]
+            },
+            "max_dist": 32
+          }
+        ]
+      },
+      "minecraft:behavior.move_towards_target": {
+        "priority": 4,
+        "speed_multiplier": 1.0,
+        "within_radius": 32
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.8
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 7,
+        "look_distance": 16
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 8
+      },
+      "minecraft:shooter": {
+        "def": "kaiju8:rifle_beam"
+      },
+      "minecraft:behavior.ranged_attack": {
+        "priority": 2,
+        "burst_shots": 1,
+        "burst_interval": 0.25,
+        "charge_charged_trigger": 0.0,
+        "charge_shoot_trigger": 1.5,
+        "attack_interval_min": 2.2,
+        "attack_interval_max": 3.2,
+        "attack_radius": 28,
+        "speed_multiplier": 1.0
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "remove": {
+          "component_groups": []
+        }
+      },
+      "kaiju8:roar": {
+        "remove": {
+          "component_groups": [
+            "kaiju8:performing",
+            "kaiju8:reeling"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "kaiju8:roaring"
+          ]
+        }
+      },
+      "kaiju8:tech": {
+        "remove": {
+          "component_groups": [
+            "kaiju8:roaring",
+            "kaiju8:reeling"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "kaiju8:performing"
+          ]
+        }
+      },
+      "kaiju8:hurt_flash": {
+        "add": {
+          "component_groups": [
+            "kaiju8:reeling"
+          ]
+        }
+      },
+      "kaiju8:calm_down": {
+        "remove": {
+          "component_groups": [
+            "kaiju8:roaring",
+            "kaiju8:performing",
+            "kaiju8:reeling"
+          ]
+        }
+      }
+    }
+  }
+}

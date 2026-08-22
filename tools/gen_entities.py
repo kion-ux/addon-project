@@ -48,6 +48,17 @@ CHARACTERS = {
                    hair="narumi", pal="narumi", weapon="gunblade_gs3305",
                    mount=(-40, 0, 0), front_hair=True,
                    face={"expr": "grin"}),
+    "furuhashi": dict(cm=177, heads=7.5, sh=0.244, limb=1.00, female=False,
+                      hair="furuhashi", pal="furuhashi", weapon="combat_knife",
+                      mount=(-10, 0, 0), face={"expr": "grin"}),
+    "izumo": dict(cm=178, heads=8.0, sh=0.234, limb=0.94, female=False,
+                  hair="izumo", pal="izumo", weapon="df_rifle", mount=(-84, 0, 0)),
+    "kaguragi": dict(cm=183, heads=8.0, sh=0.256, limb=1.10, female=False, bulk=1.10,
+                     hair="kaguragi", pal="kaguragi", weapon="axe_03ax",
+                     mount=(-34, 0, 0), face={"no_brow": True, "expr": "stern"}),
+    "isao": dict(cm=190, heads=8.0, sh=0.262, limb=1.16, female=False, bulk=1.14,
+                 hair="isao", pal="isao", weapon="cannon_t25", mount=(-86, 0, 0),
+                 face={"expr": "stern"}),
     "soldier": dict(cm=175, heads=7.4, sh=0.242, limb=1.00, female=False,
                     hair="crew", pal="officer", weapon="df_rifle",
                     mount=(-84, 0, 0)),
@@ -75,18 +86,15 @@ def build_character(key: str) -> Model:
               max_atlas=(512, 512))
     build = Build(c["cm"], c["heads"], c["sh"], c["limb"], female=c["female"],
                   bulk=c.get("bulk", 1.0))
+    face = dict(c.get("face") or {})
+    if c["female"]:
+        face.setdefault("lashes", True)
     rig = HumanRig(m, build)
-    rig.flesh(face=c.get("face"))
+    rig.flesh(face=face)
     rig.combat_suit()
     rig.hair(HAIR[c["hair"]])
     if c.get("front_hair"):
-        for origin, size in HAIR_FRONT[c["hair"]]:
-            L = rig.L
-            rig.b("hair").add(Cube(
-                (origin[0] * L.head_w, L.chin + origin[1] * L.head_h,
-                 origin[2] * L.head_d),
-                (size[0] * L.head_w, size[1] * L.head_h, size[2] * L.head_d),
-                "decal", uv_scale=3))
+        rig.hair(HAIR_FRONT[c["hair"]], style="decal")
     if c.get("ponytail"):
         name, anchor, seg, length, thick = c["ponytail"]
         rig.ponytail(name, anchor, seg, length, thick, tilt=12)

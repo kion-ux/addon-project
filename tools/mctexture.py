@@ -262,6 +262,13 @@ class Painter:
                 u = (i + 0.5) / n
                 ellipse(u, 0.30, 0.45 / n, 0.10, light)
                 ellipse(u, 0.94, 0.45 / n, 0.09, shade(light, 0.9))
+        elif name == "hud_bar":
+            # 亜白ミナのバイザー。原作では目元を覆うが、キャラの識別性を優先して
+            # 眉の上に薄く掛ける解釈にしてある
+            box(0.0, 0.10, 1.0, 0.90, hexc(style.get("light", "#EDEFF2")))
+            box(0.0, 0.42, 1.0, 0.58, shade(hexc(style.get("glow", "#25E5D8")), 0.9), EM)
+            line(0.0, 0.10, 1.0, 0.10, shade(dark, 1.2))
+            line(0.0, 0.90, 1.0, 0.90, shade(dark, 1.2))
         elif name == "visor":
             box(0.0, 0.12, 1.0, 0.86, (18, 24, 34))
             for yy in range(h):
@@ -392,64 +399,56 @@ class Painter:
         sclera = (250, 250, 252)
         dark = hexc(style.get("dark", "#221f28"))
 
-        ew = max(2, int(round(w * decal.get("eye_w", 0.24))))
-        eh = max(2, int(round(h * decal.get("eye_h", 0.17))))
-        ey = int(round(h * decal.get("eye_v", 0.50)))
-        gap = max(1, int(round(w * decal.get("eye_gap", 0.10))))
+        ew = max(3, int(round(w * decal.get("eye_w", 0.21))))
+        eh = max(3, int(round(h * decal.get("eye_h", 0.13))))
+        ey = int(round(h * decal.get("eye_v", 0.52)))
+        gap = max(1, int(round(w * decal.get("eye_gap", 0.12))))
         detail = ew >= 4 and eh >= 3
         expr = decal.get("expr", "normal")
         if expr == "narrow":          # 保科: 常に細めた目
-            eh = max(1, int(eh * 0.55))
+            eh = max(2, eh - 1)
         elif expr == "stern":         # ミナ / 功: 目つきが鋭い
-            eh = max(2, int(eh * 0.82))
+            eh = max(2, eh - (1 if eh > 3 else 0))
 
         def rect(px, py, rw, rh, c, a=255):
             for yy in range(rh):
                 for xx in range(rw):
                     self.put(x0 + px + xx, y0 + py + yy, c, a)
 
+        # 白目を残さないとモデルサイズでは目が黒い帯に潰れるので、
+        # 「睫毛1行 / 白目+虹彩 / 下瞼1行」に分けて描く。
         centres = [(w // 2) - gap - ew, (w // 2) + gap]
         for i, ex in enumerate(centres):
-            outer = 0 if i == 0 else ew - 1       # the temple side of each eye
+            outer = 0 if i == 0 else ew - 1
             top = ey - eh // 2
-            rect(ex, top, ew, eh, sclera)
-            # round the eye off so it does not read as a rectangle
+            rect(ex, top + 1, ew, eh - 1, sclera)                    # 白目
+            iw = max(1, ew - 2)
+            ix = ex + 1
+            rect(ix, top + 1, iw, eh - 1, iris)                      # 虹彩
             if detail:
-                for cx, cy in ((0, eh - 1), (ew - 1, eh - 1)):
-                    rect(ex + cx, top + cy, 1, 1, shade(skin, 0.92))
-            ix = ex + (1 if detail else 0)
-            iw = max(1, ew - (2 if detail else 0))
-            rect(ix, top, iw, eh, iris)
+                rect(ix, top + eh - 1, iw, 1, shade(iris, 0.55))     # 虹彩の陰
+                pw_ = max(1, iw // 2)
+                rect(ix + (iw - pw_) // 2, top + 1, pw_, max(1, eh - 2),
+                     shade(iris, 0.35))                              # 瞳孔
+                rect(ex + outer, top + 1, 1, 1, (255, 255, 255))     # ハイライト
+            rect(ex, top, ew, 1, dark)                               # 睫毛
+            if decal.get("lashes") and detail:                       # 目尻の跳ね
+                rect(ex - 1 if i == 0 else ex + ew, top, 1, 1, dark)
+                rect(ex - 2 if i == 0 else ex + ew + 1, top - 1, 1, 1, dark)
             if detail:
-                rect(ix + (iw - 1) // 2, top + 1, max(1, iw // 3), max(1, eh - 1),
-                     shade(iris, 0.38))
-                rect(ex + outer, top, 1, 1, (255, 255, 255))
-                rect(ex + outer + (1 if i == 0 else -1), top, 1, 1, (244, 248, 255))
-                rect(ex, top + eh - 1, ew, 1, shade(iris, 0.55))
-            # upper lash - the heaviest line on an anime face
-            rect(ex - 1, top - 1, ew + 2, 1, dark)
-            if detail:
-                rect(ex + (0 if i == 0 else ew // 2) - 1, top - 2,
-                     ew // 2 + 2, 1, shade(dark, 1.35))
-                rect(ex, ey + (eh + 1) // 2, ew, 1, shade(skin, 0.74))
-            # brow
-            by = top - (4 if detail else 3)
-            for xx in range(ew + 1):
-                lift = 0
-                if decal.get("brow_tilt", 1):
-                    inner_side = (xx >= ew // 2) if i == 0 else (xx < ew // 2)
-                    lift = 0 if inner_side else -1
-                rect(ex - 1 + xx, by + lift, 1, 1, brow)
+                rect(ex, top + eh, ew, 1, shade(skin, 0.76))         # 下瞼
+            if not decal.get("no_brow"):
+                by = top - max(2, eh // 2 + 1)
+                for xx in range(ew):
+                    lift = 0
+                    if decal.get("brow_tilt", 1):
+                        inner = (xx >= ew // 2) if i == 0 else (xx < ew // 2)
+                        lift = 0 if inner else -1
+                    rect(ex + xx, by + lift, 1, 1, brow)
 
         if detail:
-            nose = ey + eh + 1
-            rect(w // 2, nose, 1, max(1, h // 12), shade(skin, 0.78))
-        if expr == "grin" and detail:      # 八重歯の見える口元
-            gy = ey + eh + max(2, h // 7)
-            gw = max(3, int(round(w * 0.26)))
-            rect((w - gw) // 2, gy, gw, 1, dark)
-            rect((w - gw) // 2, gy - 1, 1, 1, (250, 250, 250))
-            rect((w + gw) // 2 - 1, gy - 1, 1, 1, (250, 250, 250))
+            nose = ey + eh + max(1, h // 14)
+            rect(w // 2, nose, 1, max(1, h // 14), shade(skin, 0.80))
         if decal.get("stubble") and detail:
             rng2 = random.Random(w * 17 + h * 5)
             beard = shade(hexc(style.get("hair_col", "#2a2630")), 1.3)
@@ -461,8 +460,8 @@ class Painter:
         if decal.get("moles"):
             for ex in centres:
                 rect(ex + ew // 2, ey + eh // 2 + 2, 1, 1, shade(skin, 0.52))
-        mv = ey + eh + max(2, h // 7)
-        mw = max(2, int(round(w * 0.20)))
+        mv = ey + eh + max(3, h // 5)
+        mw = max(2, int(round(w * 0.18)))
         rect((w - mw) // 2, mv, mw, 1, mouth)
         if decal.get("smile") and detail:
             rect((w - mw) // 2 - 1, mv - 1, 1, 1, mouth)

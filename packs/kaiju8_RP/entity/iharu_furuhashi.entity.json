@@ -1,0 +1,51 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kaiju8:iharu_furuhashi",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju8/furuhashi"
+      },
+      "geometry": {
+        "default": "geometry.kaiju8.furuhashi"
+      },
+      "animations": {
+        "look": "animation.kaiju8.look_at_target",
+        "idle": "animation.kaiju8.humanoid.idle",
+        "walk": "animation.kaiju8.humanoid.walk",
+        "run": "animation.kaiju8.humanoid.run",
+        "attack": "animation.kaiju8.humanoid.attack",
+        "hurt": "animation.kaiju8.humanoid.hurt",
+        "death": "animation.kaiju8.humanoid.death",
+        "general": "controller.animation.kaiju8.humanoid.general",
+        "action": "controller.animation.kaiju8.humanoid.action",
+        "pose": "animation.kaiju8.pose.knife",
+        "tech": "animation.kaiju8.tech.slash",
+        "hair": "animation.kaiju8.hair_sway"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "hair",
+          "pose",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.kaiju8.default"
+      ],
+      "particle_effects": {
+        "muzzle": "kaiju8:muzzle_flash",
+        "slash": "kaiju8:slash_air",
+        "release": "kaiju8:release_aura"
+      },
+      "spawn_egg": {
+        "base_color": "#12141a",
+        "overlay_color": "#e88ba8"
+      }
+    }
+  }
+}

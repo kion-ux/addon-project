@@ -467,6 +467,20 @@ def gen_entities():
                         ranged=("kaiju8:rifle_beam", 2, 2.0), knockback=0.75,
                         box=(0.62, 1.80)))
 
+    dump(os.path.join(out, "iharu_furuhashi.entity.json"),
+         soldier_entity("iharu_furuhashi", 95, 13, 0.36, 40, reach=1.4,
+                        box=(0.62, 1.77)))
+    dump(os.path.join(out, "haruichi_izumo.entity.json"),
+         soldier_entity("haruichi_izumo", 85, 11, 0.35, 40,
+                        ranged=("kaiju8:df_bullet", 3, 1.8), box=(0.60, 1.78)))
+    dump(os.path.join(out, "aoi_kaguragi.entity.json"),
+         soldier_entity("aoi_kaguragi", 115, 17, 0.34, 45, reach=1.6,
+                        knockback=0.5, box=(0.64, 1.83)))
+    dump(os.path.join(out, "isao_shinomiya.entity.json"),
+         soldier_entity("isao_shinomiya", 220, 26, 0.36, 110, reach=1.6,
+                        ranged=("kaiju8:rifle_beam", 1, 2.2), knockback=0.85,
+                        box=(0.66, 1.90)))
+
     dump(os.path.join(out, "rifle_beam.entity.json"),
          projectile_entity("rifle_beam", 24, 3.4, 0.0, "critical_hit_emitter"))
     dump(os.path.join(out, "kaiju_acid.entity.json"),

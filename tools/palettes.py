@@ -61,7 +61,10 @@ MINA = soldier("#14161C", "#C8712A")
 HOSHINA = soldier("#3B2E5A", "#7B4FA8")
 KIKORU = soldier("#F0D480", "#4CB86A", skin="#f6dcc4")
 NARUMI = soldier("#1A1A1F", "#D3357F")
-ISAO = soldier("#D9B25E", "#D8B23A")
+ISAO = soldier("#D9B25E", "#D8B23A", skin="#e0b08e")
+FURUHASHI = soldier("#E88BA8", "#E8823A")
+IZUMO = soldier("#2F5D52", "#2A3F7A")
+KAGURAGI = soldier("#E3C36A", "#C8323C", skin="#C08A5E")
 OFFICER = soldier("#2b2823", "#4c4a58")
 
 # --- 怪獣8号 ---------------------------------------------------------------
@@ -293,6 +296,7 @@ ALL = {
     "no8": NO8, "no9": NO9, "no10": NO10, "yoju": YOJU, "honju": HONJU,
     "kafka": KAFKA, "reno": RENO, "mina": MINA, "hoshina": HOSHINA,
     "kikoru": KIKORU, "narumi": NARUMI, "isao": ISAO, "officer": OFFICER,
+    "furuhashi": FURUHASHI, "izumo": IZUMO, "kaguragi": KAGURAGI,
     "beam": BEAM, "acid": ACID, "bullet": BULLET, "parasite": PARASITE,
     "weapon": WEAPON,
     "numbers_1": NUMBERS_1, "numbers_2": NUMBERS_2, "numbers_4": NUMBERS_4,

@@ -251,6 +251,8 @@ const ALLY_TECH = {
   // 亜白ミナ: 識別怪獣兵器2号の狙撃
   "kaiju8:mina_ashiro": { range: 30, cd: 5, run: beamShot(30, 26, 1.6) },
   "kaiju8:gen_narumi": { range: 26, cd: 4, run: beamShot(26, 20, 1.4) },
+  "kaiju8:isao_shinomiya": { range: 30, cd: 4, run: beamShot(30, 24, 1.5) },
+  "kaiju8:haruichi_izumo": { range: 22, cd: 5, run: beamShot(22, 12, 1.2) },
   // 保科宗四郎: 双刃刀の連撃
   "kaiju8:soshiro_hoshina": {
     range: 5.5, cd: 4,
@@ -265,6 +267,27 @@ const ALLY_TECH = {
           } catch (_) { }
         });
       }
+    },
+  },
+  // 神楽木葵: 隊内随一の膂力
+  "kaiju8:aoi_kaguragi": {
+    range: 4.8, cd: 6,
+    run(ally, target) {
+      const g = { x: target.location.x, y: target.location.y + 0.1, z: target.location.z };
+      fx(ally.dimension, "kaiju8:shock_ring_gold", g);
+      fxScatter(ally.dimension, "kaiju8:impact_dust", g, 6, 1.2);
+      if (hit(ally, target, 16)) bleed(target);
+      sound(ally.dimension, "random.anvil_land", ally.location, { pitch: 0.7 });
+    },
+  },
+  // 古橋伊春
+  "kaiju8:iharu_furuhashi": {
+    range: 4.5, cd: 4,
+    run(ally, target) {
+      fx(ally.dimension, "kaiju8:slash_air",
+         { x: target.location.x, y: target.location.y + 1.0, z: target.location.z });
+      if (hit(ally, target, 11)) bleed(target);
+      sound(ally.dimension, "mob.ravager.bite", ally.location, { pitch: 1.3 });
     },
   },
   // 四ノ宮キコル: 大型戦斧の叩きつけ

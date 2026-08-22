@@ -88,6 +88,10 @@ TROOPS = [
     ("soshiro_hoshina", "hoshina", "twin", ("#12141a", "#3b2e5a")),
     ("kikoru_shinomiya", "kikoru", "axe", ("#12141a", "#f0d480")),
     ("gen_narumi", "narumi", "gunblade", ("#12141a", "#d3357f")),
+    ("iharu_furuhashi", "furuhashi", "knife", ("#12141a", "#e88ba8")),
+    ("haruichi_izumo", "izumo", "rifle", ("#12141a", "#2f5d52")),
+    ("aoi_kaguragi", "kaguragi", "axe", ("#12141a", "#e3c36a")),
+    ("isao_shinomiya", "isao", "cannon", ("#12141a", "#d9b25e")),
 ]
 
 # character -> the 技 clip its action controller plays
@@ -99,6 +103,10 @@ TECH = {
     "soshiro_hoshina": "tech.twin_slash",
     "kikoru_shinomiya": "tech.axe_smash",
     "gen_narumi": "tech.storm",
+    "iharu_furuhashi": "tech.slash",
+    "haruichi_izumo": "tech.snipe",
+    "aoi_kaguragi": "tech.axe_smash",
+    "isao_shinomiya": "tech.snipe",
 }
 
 
