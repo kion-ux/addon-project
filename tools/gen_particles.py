@@ -161,14 +161,27 @@ def build_atlas() -> None:
             d = max(u * 0.866 + v * 0.5, v)
             put(ox, oy, x, y, max(0.0, 1 - abs(d - 0.72) / 0.12) * 255)
 
-    ox, oy = cell("crack")                                 # jagged crack
-    for i in range(3):
-        x, y = CELL // 2, 2
-        for step in range(CELL - 6):
-            x += rng.choice((-1, 0, 0, 1))
+    ox, oy = cell("crack")                                 # 枝分かれする放電・亀裂
+    # 幹を1本引いてから、そこから3本の枝を出す。細い線が1本だけだと粒に
+    # したとき何も見えないので、幹は3px幅、枝は2px幅で明るさを落とす。
+    def _branch(sx, sy, dx_bias, length, width, bright):
+        x, y = sx, sy
+        pts = []
+        for _ in range(length):
+            if not 1 <= x < CELL - 1 or not 0 <= y < CELL:
+                break
+            pts.append((x, y))
+            for k in range(-(width // 2), width // 2 + 1):
+                put(ox, oy, x + k, y, bright - abs(k) * (bright // 3))
+            x += rng.choice((-1, 0, 1)) + dx_bias
             y += 1
-            for k in range(-1 + i, 2 - i):
-                put(ox, oy, x + k, y, 255 - abs(k) * 90)
+        return pts
+
+    trunk = _branch(CELL // 2, 0, 0, CELL, 3, 255)
+    for frac, bias in ((0.28, -1), (0.52, 1), (0.74, -1)):
+        if len(trunk) > 4:
+            bx, by = trunk[int(len(trunk) * frac)]
+            _branch(bx, by, bias, int(CELL * 0.30), 2, 170)
 
     ox, oy = cell("flash")                                 # bright cross flare
     for y in range(CELL):
