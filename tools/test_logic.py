@@ -194,24 +194,45 @@ for (const a of abilities) {
 check("every ability of the worn machine ran", ran === abilities.length);
 
 // ------------------------------------------- 7. every technique in the game
+//   Each run is measured: an emitter spawns a whole burst of particles, so a
+//   technique that issues hundreds of emitters will cost frames on a phone.
+//   The cap is deliberately generous — it is a tripwire for runaway loops,
+//   not a style rule.
+const EMITTER_BUDGET = 260;
+// 前の節が積んだ later() が残っていると、最初に測る技に混ざって数字が狂う
+for (let i = 0; i < 8; i++) {
+  const left = globalThis.__pending.splice(0);
+  if (!left.length) break;
+  for (const f of left) { try { f(); } catch (_) { } }
+}
 let techCount = 0;
+const heaviest = [];
 for (const [itemId, list] of Object.entries(TECH)) {
   for (const t of list) {
     techCount++;
     check(`${itemId}/${t.id} has a name`, typeof t.name === "string" && t.name.length > 0);
     check(`${itemId}/${t.id} has a cooldown`, typeof t.cd === "number" && t.cd > 0);
+    const before = globalThis.__particles.length;
     try { t.run(worn, { mult: 1.5, rate: 50 }); } catch (e) {
       check(`${itemId}/${t.id} runs without throwing`, false, String(e));
     }
+    // drain everything this technique queued, including nested later() chains
+    for (let round = 0; round < 8; round++) {
+      const pending = globalThis.__pending.splice(0);
+      if (!pending.length) break;
+      for (const f of pending) { try { f(); } catch (e) {
+        check(`${itemId}/${t.id} queued callback throws`, false, String(e));
+      } }
+    }
+    const spent = globalThis.__particles.length - before;
+    heaviest.push([`${itemId.replace("kaiju8:", "")}/${t.id}`, spent]);
+    check(`${itemId}/${t.id} stays inside the emitter budget`,
+          spent <= EMITTER_BUDGET, `${spent} emitters`);
   }
 }
-// drain the later() callbacks the techniques queued
-for (let i = 0; i < 3; i++) {
-  const pending = globalThis.__pending.splice(0);
-  for (const f of pending) { try { f(); } catch (e) {
-    check("a queued technique callback throws", false, String(e));
-  } }
-}
+heaviest.sort((a, b) => b[1] - a[1]);
+console.log("  heaviest techniques: "
+  + heaviest.slice(0, 5).map(([n, c]) => `${n}=${c}`).join("  "));
 
 // ------------------------------------------- 8. every machine, every weapon
 let combos = 0;

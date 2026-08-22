@@ -928,9 +928,9 @@ export const TECH = {
                   z: at.z + (Math.random() - 0.5) * 1.2,
                 });
               }
-              fxScatter(player.dimension, "kaiju8:fire_gel", at, 12, 1.8);
+              fxScatter(player.dimension, "kaiju8:fire_gel", at, 9, 1.8);
               fxRing(player.dimension, "kaiju8:scorch_ring",
-                     { x: at.x, y: at.y + 0.06, z: at.z }, 2.4, 12, 0);
+                     { x: at.x, y: at.y + 0.06, z: at.z }, 2.4, 9, 0);
               for (const t of targetsNear(player, 20)) {
                 const d = Math.hypot(t.location.x - at.x, t.location.z - at.z);
                 if (d > 3.2) continue;
@@ -943,13 +943,16 @@ export const TECH = {
                     { pitch: 1.5, volume: 0.6 });
               sound(player.dimension, "random.explode", player.location,
                     { pitch: 1.1, volume: 0.55 });
-              // 這って広がる火。この技の本体はここ
-              for (let k = 1; k <= 6; k++) {
-                later(k * 8, () => {
+              // 這って広がる火。この技の本体はここ。
+              // 3発ぶんが同時に走るので、一発あたりの段数と粒数は絞ってある
+              for (let k = 1; k <= 4; k++) {
+                later(k * 10, () => {
                   fxRing(player.dimension, "kaiju8:scorch_ring", at,
-                         2.4 + k * 0.15, 10, 0.06);
-                  fxScatter(player.dimension, "kaiju8:ember_rain", at, 5, 2.0);
-                  fxScatter(player.dimension, "kaiju8:heat_smoke", at, 3, 1.6);
+                         2.4 + k * 0.22, 8, 0.06);
+                  fxScatter(player.dimension, "kaiju8:ember_rain", at, 3, 2.0);
+                  if (k % 2) {
+                    fxScatter(player.dimension, "kaiju8:heat_smoke", at, 2, 1.6);
+                  }
                   for (const t of targetsNear(player, 20)) {
                     const d = Math.hypot(t.location.x - at.x, t.location.z - at.z);
                     if (d <= 3.0) { try { t.setOnFire(4, true); } catch (_) { } }
@@ -1624,22 +1627,22 @@ export const TECH = {
         later(2, () => {
           for (const at of marks) {
             fxRing(player.dimension, "kaiju8:chevron_ember",
-                   { x: at.x, y: at.y + 0.1, z: at.z }, 1.6, 10, 0.05);
+                   { x: at.x, y: at.y + 0.1, z: at.z }, 1.6, 8, 0.05);
           }
           sound(player.dimension, "beacon.power_select", player.location,
                 { pitch: 1.9, volume: 0.4 });
         });
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 8; i++) {
           later(4 + i * 3, () => {
             const at = marks[i % marks.length];
             fxLine(player.dimension, "kaiju8:wound_fire",
-                   { x: at.x, y: at.y + 7, z: at.z }, { x: 0, y: -1, z: 0 }, 7, 0.9);
+                   { x: at.x, y: at.y + 7, z: at.z }, { x: 0, y: -1, z: 0 }, 7, 1.4);
             sound(player.dimension, "mob.ghast.fireball", at,
                   { pitch: 1.6, volume: 0.35 });
             later(1, () => {
               fx(player.dimension, "kaiju8:detonation_ember", at);
-              fxScatter(player.dimension, "kaiju8:ember_rain", at, 7, 1.3);
-              fxScatter(player.dimension, "kaiju8:impact_dust", at, 5, 1.2);
+              fxScatter(player.dimension, "kaiju8:ember_rain", at, 5, 1.3);
+              fxScatter(player.dimension, "kaiju8:impact_dust", at, 4, 1.2);
               for (const t of targetsNear(player, 24)) {
                 const d = Math.hypot(t.location.x - at.x, t.location.z - at.z);
                 if (d > 2.6) continue;
@@ -1658,7 +1661,7 @@ export const TECH = {
           for (const at of marks) {
             fxScatter(player.dimension, "kaiju8:cauterize", at, 4, 1.6);
           }
-          fxScatter(player.dimension, "kaiju8:ember_rain", player.location, 10, 6.0);
+          fxScatter(player.dimension, "kaiju8:ember_rain", player.location, 6, 6.0);
         });
       } },
     { id: "kaiten", name: "kaiju8.tech.kaiten", cd: 70, wear: 4, canon: true,
