@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:tech_sphere_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " A ",
+      "ACA",
+      " A "
+    ],
+    "key": {
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      },
+      "C": {
+        "item": "minecraft:nether_star"
+      }
+    },
+    "result": {
+      "item": "marvel:tech_sphere",
+      "count": 1
+    }
+  }
+}

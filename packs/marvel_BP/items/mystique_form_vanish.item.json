@@ -1,0 +1,23 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:mystique_form_vanish"
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "mystique_form_vanish"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:mystique_form_vanish"
+      },
+      "minecraft:wearable": {
+        "slot": "slot.armor.head",
+        "protection": 0
+      },
+      "minecraft:allow_off_hand": false
+    }
+  }
+}

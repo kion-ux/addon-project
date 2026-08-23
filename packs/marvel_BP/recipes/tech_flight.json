@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:tech_flight_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " A ",
+      "ACA",
+      " A "
+    ],
+    "key": {
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      },
+      "C": {
+        "item": "minecraft:feather"
+      }
+    },
+    "result": {
+      "item": "marvel:tech_flight",
+      "count": 1
+    }
+  }
+}

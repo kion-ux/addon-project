@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:brotherhood_beacon_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " P ",
+      "SAS",
+      " S "
+    ],
+    "key": {
+      "P": {
+        "item": "marvel:brotherhood_pin"
+      },
+      "S": {
+        "item": "marvel:metal_scrap"
+      },
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      }
+    },
+    "result": {
+      "item": "marvel:brotherhood_beacon",
+      "count": 4
+    }
+  }
+}

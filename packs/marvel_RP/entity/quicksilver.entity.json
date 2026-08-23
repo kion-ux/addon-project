@@ -1,0 +1,47 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:quicksilver",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/quicksilver"
+      },
+      "geometry": {
+        "default": "geometry.marvel.quicksilver"
+      },
+      "animations": {
+        "look": "animation.marvel.look_at_target",
+        "idle": "animation.marvel.humanoid.idle",
+        "walk": "animation.marvel.humanoid.walk",
+        "run": "animation.marvel.humanoid.run",
+        "air": "animation.marvel.humanoid.air",
+        "attack": "animation.marvel.humanoid.attack",
+        "hurt": "animation.marvel.humanoid.hurt",
+        "death": "animation.marvel.humanoid.death",
+        "general": "controller.animation.marvel.humanoid.general",
+        "action": "controller.animation.marvel.humanoid.action",
+        "tech": "animation.marvel.ally.blitz"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "blur": "marvel:blur_after"
+      },
+      "spawn_egg": {
+        "base_color": "#C8CBD2",
+        "overlay_color": "#3C6FA8"
+      }
+    }
+  }
+}

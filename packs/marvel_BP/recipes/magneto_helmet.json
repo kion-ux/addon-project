@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:magneto_helmet_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AMA",
+      "M M",
+      "   "
+    ],
+    "key": {
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      },
+      "M": {
+        "item": "marvel:adamantium_ingot"
+      }
+    },
+    "result": {
+      "item": "marvel:magneto_helmet",
+      "count": 1
+    }
+  }
+}

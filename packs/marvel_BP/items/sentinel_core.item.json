@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:sentinel_core",
+      "menu_category": {
+        "category": "items",
+        "group": "itemGroup.name.miscFood"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "sentinel_core"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:sentinel_core"
+      },
+      "minecraft:glint": true,
+      "minecraft:hand_equipped": true
+    }
+  }
+}

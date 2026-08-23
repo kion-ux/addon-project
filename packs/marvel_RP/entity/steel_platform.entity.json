@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:steel_platform",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/steel_platform"
+      },
+      "geometry": {
+        "default": "geometry.marvel.steel_platform"
+      },
+      "animations": {
+        "spin": "animation.marvel.prop.orbit",
+        "controller": "controller.animation.marvel.prop.spin"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.default"
+      ],
+      "particle_effects": {
+        "dust": "marvel:throne_dust"
+      }
+    }
+  }
+}

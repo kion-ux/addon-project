@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:orbit_shard",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/orbit_shard"
+      },
+      "geometry": {
+        "default": "geometry.marvel.orbit_shard"
+      },
+      "animations": {
+        "spin": "animation.marvel.prop.orbit",
+        "controller": "controller.animation.marvel.prop.spin"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.default"
+      ],
+      "particle_effects": {
+        "glint": "marvel:metal_glint"
+      }
+    }
+  }
+}
