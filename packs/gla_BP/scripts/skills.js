@@ -13,6 +13,7 @@ import { tr, tell, later, viewDir, normalise, forward, cooldownLeft,
   setCooldown, clamp, hasFamily,
 } from "./util.js";
 import { makeContext, playStage, playSfx, shake, spawnHelper, spawn,
+  claimBigFx,
 } from "./fx.js";
 import { beginAction, endAction, mayHit, inCone, alongRay, aroundPoint,
   allAround, impactPoint, groundUnder, strike, bounce, terrainAllowed,
@@ -135,7 +136,13 @@ export function cast(player, tech) {
 // ---------------------------------------------------------------------------
 function runStages(player, tech, actionId, token) {
   const q = quality(player);
+  // 大技は「フル演出」の枠を取る。取れなかった分は 広がり・余韻 を落として
+  // 予兆・軌道・接触だけにする（企画書 §15 大技のフル演出・同時数）。
+  // 判定は一切変わらない。
+  const heavy = tech.damage >= 34 || tech.total >= 70;
+  const full = !heavy || claimBigFx(player, q, tech.total);
   for (const st of tech.stages) {
+    if (!full && st.layer >= 4) continue;
     // 「接触」の層で対象を原点にするコマは、ここでは絶対に流さない。
     // 当たったときに resolve() が実際の着弾点で出す。時間で出してしまうと
     // 空振りでも命中の演出が出て、位置も前回の着弾点になってしまう

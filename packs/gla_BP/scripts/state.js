@@ -19,7 +19,9 @@ import {
   tr, tell, actionbar, title, num, bool, str, setProp, allPlayers, bar,
   later, onForget, clamp, cooldownLeft,
 } from "./util.js";
-import { makeContext, playStage, playSfx, shake, spawn } from "./fx.js";
+import {
+  makeContext, playStage, playSfx, shake, spawn, claimBigFx, releaseBigFx,
+} from "./fx.js";
 
 const ARMOR_SLOTS = [
   EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet,
@@ -77,7 +79,7 @@ export function endCast(player, token) {
   if (r && r.cast === token) r.cast = null;
 }
 
-onForget((id) => runtime.delete(id));
+onForget((id) => { runtime.delete(id); releaseBigFx(id); });
 
 // ---------------------------------------------------------------------------
 //  読み書き
@@ -574,7 +576,11 @@ export function playAnim(player, id) {
 //  一切動かさないので、落下や壁抜けは増えない。
 // ---------------------------------------------------------------------------
 export function startShowpiece(player) {
-  const short = shortFx(player);
+  const q = quality(player);
+  // 同時に何本もフル演出が走ると一番重い。枠が取れなければ短縮版に落とす
+  // （企画書 §15 大技のフル演出・同時数）。判定も操作も変わらない。
+  const short = shortFx(player)
+    || !claimBigFx(player, q, SHOWPIECE_TICKS);
   const span = short ? SHOWPIECE_SHORT_TICKS : SHOWPIECE_TICKS;
   const r = rt(player);
   r.busyUntil = system.currentTick + span;
@@ -588,7 +594,6 @@ export function startShowpiece(player) {
   // スキップは状態が確定してからしか受け付けない（企画書 §08 技の連発防止）
   r.skipFrom = system.currentTick + Math.min(20, span);
   const handles = [];
-  const q = quality(player);
   if (!short) {
     for (const step of SHOWPIECE) {
       for (const st of step.stages) {
@@ -625,6 +630,7 @@ export function stopShowpiece(player) {
   if (!r || !r.showpiece) return;
   r.showpiece = null;                 // 予約済みの処理は token 不一致で自分から降りる
   r.busyUntil = 0;
+  releaseBigFx(player.id);
   try { player.runCommand("camerashake stop @s"); } catch (_) { }
   if (phase(player) === "transforming") setPhase(player, "active");
 }

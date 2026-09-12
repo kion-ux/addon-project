@@ -718,8 +718,13 @@ def tech_clip(t: spec.Tech) -> dict:
             *[(ft, [v[0] if i % 2 else v[0] * 0.5, -v[1], -v[2]])
               for i, (ft, v) in enumerate(frames)])}
     if t.form == "gear3":
-        # 技中だけ前腕と拳を膨らませる（企画書 §04 技中の部位変形）
-        for bone, peak in (("rightForearm", 2.6), ("rightHand", 3.0)):
+        # 技中だけ部位を膨らませる（企画書 §04 技中の部位変形）。
+        # 胴体には一切触らない。振り下ろす斧だけは脚の技なので脛も膨らませる。
+        parts = [("rightForearm", 2.6), ("rightHand", 3.0)]
+        if t.slug == "gigant_axe":
+            parts = [("rightShin", 2.4), ("rightFoot", 2.8),
+                     ("leftShin", 2.2), ("leftFoot", 2.6)]
+        for bone, peak in parts:
             bones.setdefault(bone, {})["scale"] = kf(
                 (0, [1, 1, 1]), (t0, [peak * 0.5, peak * 0.5, peak * 0.5]),
                 (t1, [peak, peak, peak]), (t2, [peak * 0.8, peak * 0.8, peak * 0.8]),

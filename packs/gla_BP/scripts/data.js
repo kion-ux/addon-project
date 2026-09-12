@@ -2805,7 +2805,7 @@ export const TRAINING = {
       "ja": "負荷テスト区画",
       "en": "Load Test Yard",
       "purpose": "同時戦闘時の重さを測る",
-      "props": "人数と敵数を固定できる配置・連続発動する技の指定"
+      "props": "人数と敵数を固定できる配置（標的20体ぶん・プレイヤー4人ぶんの目印）"
     },
     {
       "key": "course",

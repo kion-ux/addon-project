@@ -219,6 +219,45 @@ export function makeContext(player, quality, target) {
 }
 
 // ---------------------------------------------------------------------------
+//  大技のフル演出・同時数（企画書 §15）
+//
+//  軽量 1 / 標準 2 / 高品質 2。重い演出が同時に何本も走るのが一番効くので、
+//  枠を取れなかったものは「予兆・軌道・接触」だけの短い版に落とす。
+//  ゲーム上の判定は一切変えない — 落とすのは見た目だけ。
+// ---------------------------------------------------------------------------
+const bigFx = new Map();        // playerId -> 終了 tick
+
+export function bigFxSlots(quality) {
+  return qualityOf(quality).showpiece;
+}
+
+/** 大技のフル演出の枠を取る。取れなければ false（短い版で出す）。 */
+export function claimBigFx(player, quality, ticks) {
+  const now = system.currentTick;
+  for (const [id, until] of bigFx) {
+    if (until <= now) bigFx.delete(id);
+  }
+  if (bigFx.has(player.id)) {          // 自分の枠は取り直せる
+    bigFx.set(player.id, now + ticks);
+    return true;
+  }
+  if (bigFx.size >= bigFxSlots(quality)) return false;
+  bigFx.set(player.id, now + ticks);
+  return true;
+}
+
+export function releaseBigFx(id) {
+  bigFx.delete(id);
+}
+
+export function bigFxActive() {
+  const now = system.currentTick;
+  let n = 0;
+  for (const until of bigFx.values()) if (until > now) n++;
+  return n;
+}
+
+// ---------------------------------------------------------------------------
 //  近傍の演出補助エンティティの上限（企画書 §15 VFX補助エンティティ・近傍上限案）
 // ---------------------------------------------------------------------------
 export function helperBudget(quality) {

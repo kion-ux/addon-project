@@ -101,6 +101,7 @@ import * as data from "./data.js";
 import * as state from "./state.js";
 import * as skills from "./skills.js";
 import * as combat from "./combat.js";
+import * as fx from "./fx.js";
 import { handleUse } from "./main.js";
 
 let failures = 0;
@@ -215,6 +216,8 @@ class Player {
     this.tags = new Set();
     this.effects = new Map();
     this.container = new Container();
+    this.damage = 0;
+    this.hp = 20;
     this.head = undefined;
     this.anims = [];
     this.messages = 0;
@@ -236,6 +239,7 @@ class Player {
     if (n === "minecraft:health") return { currentValue: 20, effectiveMax: 20 };
     return undefined;
   }
+  applyDamage(a) { this.damage = (this.damage ?? 0) + a; return true; }
   addEffect(id, ticks, opt) { this.effects.set(id, { ticks, ...opt }); }
   removeEffect(id) { this.effects.delete(id); }
   addTag(t) { this.tags.add(t); }
@@ -471,17 +475,40 @@ advance(pistol.windup + pistol.active + pistol.recover + 6);
 globalThis.__wall = false;
 eq(t2.damage, 0, "QA-07 no hit through a wall");
 
-// --- QA-07: 自分には当たらない ---------------------------------------------
-dim.entities = [player];
-state.setEnergy(player, data.ENERGY_MAX);
-globalThis.__tick += 200;
+// --- QA-07: 全方位技でも自分には当たらない ------------------------------------
+// 自分を判定の対象に入れたうえで、PvP を切った状態と入れた状態の両方で試す。
+// PvP が入っているときに 0 なら、守っているのは「所有者を除く」側の判定。
 const star = data.TECH_BY_ID.white_star;          // 唯一の全方位技
-state.transform(player, "gear5");
-advance(data.SHOWPIECE_TICKS + 6);
-skills.cast(player, star);
-advance(star.windup + star.active + star.recover + 6);
-ok(true, "all-round technique does not throw");
-eq(player.effects.has("__damaged__"), false, "QA-07 the caster is never a target");
+for (const pvp of [false, true]) {
+  combat.setPvp(pvp);
+  state.safeReset(player, true);
+  player.setDynamicProperty(data.PROP.infinite, true);
+  state.transform(player, "gear5");
+  advance(data.SHOWPIECE_TICKS + 6);
+  player.damage = 0;
+  dim.entities = [player];                        // 自分だけを候補に置く
+  globalThis.__tick += 400;
+  ok(skills.cast(player, star), `all-round technique casts (pvp=${pvp})`);
+  advance(star.windup + star.active + star.recover + 8);
+  eq(player.damage, 0, `QA-07 the caster is never hit by their own technique (pvp=${pvp})`);
+}
+combat.setPvp(false);
+dim.entities = [];
+
+// --- 大技のフル演出は同時数で頭打ちになる（企画書 §15）------------------------
+{
+  const q = "light";                               // 軽量は同時1本
+  eq(fx.bigFxSlots(q), 1, "light quality allows one full performance");
+  const a = new Player(dim); a.id = "big_a";
+  const b = new Player(dim); b.id = "big_b";
+  eq(fx.claimBigFx(a, q, 100), true, "the first big performance gets a slot");
+  eq(fx.claimBigFx(b, q, 100), false, "the second is refused while the first runs");
+  eq(fx.claimBigFx(a, q, 100), true, "the holder can renew its own slot");
+  fx.releaseBigFx(a.id);
+  eq(fx.claimBigFx(b, q, 100), true, "the slot frees up once released");
+  fx.releaseBigFx(b.id);
+  eq(fx.bigFxSlots("high"), 2, "high quality allows two");
+}
 
 // --- 復旧は技が掛けた自己強化も落とす（企画書 §14）---------------------------
 state.safeReset(player, true);

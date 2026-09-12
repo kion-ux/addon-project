@@ -74,8 +74,30 @@ def quality_table() -> str:
         str(q[k]["helpers"]) for k in order) + " |")
     rows.append("| 大技のフル演出・同時数 | " + " | ".join(
         str(q[k]["showpiece"]) for k in order) + " |")
-    rows.append("| 本体キューブの設計予算 | " + " | ".join(
-        f"{q[k]['cubes'][0]}〜{q[k]['cubes'][1]}" for k in order) + " |")
+    return "\n".join(rows)
+
+
+def cube_table() -> str:
+    """実際に出来上がったモデルのキューブ数。企画書 §05 の予算と並べる。
+
+    予算は「上限候補として管理」するものなので、下回っている分には問題ない。
+    ただし品質設定で形が切り替わるわけではない（形態1つにつき1つ）ので、
+    品質の表には混ぜない。
+    """
+    import json
+    root = os.path.join(ROOT, spec.RP_DIR, "models", "entity")
+    rows = ["| 形態 | キューブ数 | ボーン数 | テクスチャ |", "|---|---|---|---|"]
+    for f in spec.FORMS:
+        path = os.path.join(root, f.geo + ".geo.json")
+        try:
+            with open(path, encoding="utf-8") as fh:
+                geo = json.load(fh)["minecraft:geometry"][0]
+        except OSError:
+            continue
+        cubes = sum(len(b.get("cubes", [])) for b in geo["bones"])
+        desc = geo["description"]
+        rows.append(f"| {f.ja} | {cubes} | {len(geo['bones'])} | "
+                    f"{desc['texture_width']}x{desc['texture_height']} |")
     return "\n".join(rows)
 
 
@@ -140,7 +162,8 @@ Minecraft・ONE PIECE の公式商品ではなく、権利者とは関係あり�
 | **ログポース** を使う | 設定・訓練場・通常状態へ復旧 |
 | **しゃがみ＋ログポース** | 技の一覧から直接選ぶ |
 
-画面に出しっぱなしにするのは **形態名・選択中の技・気力・再使用待ち** の4つだけ。
+画面に出しっぱなしにするのは **形態名・選択中の技・気力** の3つと、
+待っている間だけ出る **再使用待ち** の残り秒数だけです。
 詳しい説明はメニュー側にあります（企画書 §12）。
 
 ---
@@ -192,7 +215,9 @@ Minecraft・ONE PIECE の公式商品ではなく、権利者とは関係あり�
 
 最大 {emax:g}。技のコスト、形態の維持コスト、回復待ちを別々の項目にしています。
 
-- 通常時の回復 {regen:g}/秒、戦闘していない時間が続くと {idle:g}/秒
+- **変身していない間だけ**回復します: {regen:g}/秒、戦闘していない時間が
+  続くと {idle:g}/秒。**変身中は回復せず、維持コストだけが減り続けます**
+  （気力が尽きると自動で解除されます）
 - **気力無限**（設定）は**消費だけ**を無効にします。クールダウン、被ダメージ、
   解放条件は無効になりません（企画書 §09 / QA-09）
 
@@ -204,6 +229,8 @@ VFX は5層（{layers}）に分けてあり、削るのは外側からです。
 {quality}
 
 **接触（3層）はどの設定でも必ず描きます** — 命中が読めなくなるのが一番困るからです。
+「大技のフル演出・同時数」は、重い演出が同時に走る本数の上限です。枠を取れな
+かった分は 広がり・余韻 を落とした短い版で出ます（**判定も操作も変わりません**）。
 
 ### ホスト設定
 
@@ -262,6 +289,14 @@ VFX は5層（{layers}）に分けてあり、削るのは外側からです。
 | この説明書 | `tools/gla/gen_docs.py` |
 
 `packs/` 以下の生成物と `scripts/data.js` は**手で編集しないでください**。
+
+### モデルの規模
+
+形態1つにつきモデルは1つです（品質設定で形は切り替わりません）。
+企画書 §05 のキューブ予算は「上限候補として管理」するものなので、
+下回っている分は問題になりません。現状は全形態が軽量帯に収まっています。
+
+{cubes}
 
 ### 手で書いてあるもの
 
@@ -413,6 +448,7 @@ def main() -> None:
         regen=spec.ENERGY_REGEN, idle=spec.ENERGY_REGEN_IDLE,
         layers="・".join(spec.LAYER_JA[n] for n in (1, 2, 3, 4, 5)),
         quality=quality_table(), zones=zones, qa=qa_table(),
+        cubes=cube_table(),
     )
     with open(OUT, "w", encoding="utf-8") as fh:
         fh.write(text)
