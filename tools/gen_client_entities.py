@@ -51,6 +51,24 @@ BEAST = {
 }
 
 
+SWAY_BONES = {"cape"} | {f"tail{i}" for i in range(4)} | {
+    f"tail{s}{i}" for s in ("R", "L") for i in range(4)}
+
+
+def has_sway_bones(key: str) -> bool:
+    """そのジオメトリに、揺れ物のボーンが実際にあるか。"""
+    path = os.path.join(RP, "models", "entity", f"{key}.geo.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except OSError:
+        return False
+    for geo in doc.get("minecraft:geometry", []):
+        if any(b["name"] in SWAY_BONES for b in geo.get("bones", [])):
+            return True
+    return False
+
+
 def client(identifier, texture, geometry, animations, animate, egg=None,
            material="entity_emissive_alpha",
            render="controller.render.kaiju8.default", particles=None, extra=None):
@@ -125,7 +143,9 @@ def main() -> None:
                    "blood": "kaiju8:kaiju_blood", "roar": "kaiju8:roar_wave"}))
 
     no9 = dict(KAIJU)
-    no9["extras"] = A + "tendrils"
+    # 怪獣9号に尾は無い（角はある）。既定の尾クリップのままだと、
+    # 参照だけ残って何も動かない。
+    no9["extras"] = A + "horns_idle"
     write("kaiju_no9.entity.json", client(
         "kaiju8:kaiju_no9", "kaiju_no9", "geometry.kaiju8.no9", no9,
         ["general", "action"], ("#b8b6c4", "#ff3e94"),
@@ -160,10 +180,16 @@ def main() -> None:
         anims["pose"] = A + "pose." + pose
         anims["tech"] = A + TECH[ident][0]
         anims["tech2"] = A + TECH[ident][1]
-        anims["hair"] = A + "hair_sway"
+        # 髪の揺れは、揺れるボーンを実際に持っているキャラにだけ付ける。
+        # 無いキャラに付けても何も起きないが、参照だけが残って
+        # 「動くはずなのに動かない」の原因が見えなくなる。
+        animate = ["general", "pose", "action"]
+        if has_sway_bones(key):
+            anims["hair"] = A + "hair_sway"
+            animate.insert(1, "hair")
         write(f"{ident}.entity.json", client(
             f"kaiju8:{ident}", key, f"geometry.kaiju8.{key}", anims,
-            ["general", "hair", "pose", "action"], egg,
+            animate, egg,
             particles={"muzzle": "kaiju8:muzzle_flash", "slash": "kaiju8:slash_air",
                        "release": "kaiju8:release_aura"}))
 

@@ -3821,6 +3821,34 @@
     "animation.kaiju8.hair_sway": {
       "loop": true,
       "bones": {
+        "tail0": {
+          "rotation": [
+            "math.cos(query.anim_time * 44) * 4.5",
+            "math.cos(query.anim_time * 33) * 5.5",
+            0
+          ]
+        },
+        "tail1": {
+          "rotation": [
+            "math.cos(query.anim_time * 44 + -30) * 4.5",
+            "math.cos(query.anim_time * 33 + -26) * 5.5",
+            0
+          ]
+        },
+        "tail2": {
+          "rotation": [
+            "math.cos(query.anim_time * 44 + -60) * 4.5",
+            "math.cos(query.anim_time * 33 + -52) * 5.5",
+            0
+          ]
+        },
+        "tail3": {
+          "rotation": [
+            "math.cos(query.anim_time * 44 + -90) * 4.5",
+            "math.cos(query.anim_time * 33 + -78) * 5.5",
+            0
+          ]
+        },
         "tailR0": {
           "rotation": [
             "math.cos(query.anim_time * 44) * 4.5",
@@ -3842,6 +3870,13 @@
             0
           ]
         },
+        "tailR3": {
+          "rotation": [
+            "math.cos(query.anim_time * 44 + -90) * 4.5",
+            "math.cos(query.anim_time * 33 + -78) * 5.5",
+            0
+          ]
+        },
         "tailL0": {
           "rotation": [
             "math.cos(query.anim_time * 44) * 4.5",
@@ -3860,6 +3895,13 @@
           "rotation": [
             "math.cos(query.anim_time * 44 + -60) * 4.5",
             "math.cos(query.anim_time * 33 + -52) * 5.5",
+            0
+          ]
+        },
+        "tailL3": {
+          "rotation": [
+            "math.cos(query.anim_time * 44 + -90) * 4.5",
+            "math.cos(query.anim_time * 33 + -78) * 5.5",
             0
           ]
         },
@@ -4743,25 +4785,6 @@
             ]
           }
         },
-        "spine": {
-          "rotation": {
-            "0": [
-              0,
-              0,
-              0
-            ],
-            "0.08": [
-              -10,
-              0,
-              0
-            ],
-            "0.42": [
-              0,
-              0,
-              0
-            ]
-          }
-        },
         "rightFinger0": {
           "rotation": {
             "0": [
@@ -4871,44 +4894,6 @@
             ],
             "0.42": [
               10,
-              0,
-              0
-            ]
-          }
-        },
-        "rightWing": {
-          "rotation": {
-            "0": [
-              0,
-              0,
-              0
-            ],
-            "0.1": [
-              0,
-              -20,
-              -24
-            ],
-            "0.42": [
-              0,
-              0,
-              0
-            ]
-          }
-        },
-        "leftWing": {
-          "rotation": {
-            "0": [
-              0,
-              0,
-              0
-            ],
-            "0.1": [
-              0,
-              -20,
-              -24
-            ],
-            "0.42": [
-              0,
               0,
               0
             ]

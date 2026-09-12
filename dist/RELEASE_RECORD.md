@@ -13,13 +13,13 @@
 | @minecraft/server | 1.13.0 |
 | @minecraft/server-ui | 1.2.0 |
 | BP 中身のハッシュ (sha256) | `52e687eadc5603c7bc6d56245416bdf02ed6f4d1b6f3454cc704cc0f28863eb5` |
-| RP 中身のハッシュ (sha256) | `35c6c4440805a50651fb6c6a65c285db7098e099d8fa36eef09779ba81330cea` |
+| RP 中身のハッシュ (sha256) | `744823350fd7e82d116263b04c64a393326752ad7c11e52d521351faab3361f7` |
 
 配布ファイル:
 
 - `KaijuNo8_BP_v1.0.0.mcpack` (106.7 KB)
-- `KaijuNo8_RP_v1.0.0.mcpack` (2782.3 KB)
-- `KaijuNo8_v1.0.0.mcaddon` (2897.3 KB)
+- `KaijuNo8_RP_v1.0.0.mcpack` (2782.2 KB)
+- `KaijuNo8_v1.0.0.mcaddon` (2897.1 KB)
 
 ### 実機での確認欄（未記入）
 

@@ -518,9 +518,14 @@ A["animation.kaiju8.tendrils"] = clip({
                              bob(6.0, 39, -22 * (i + j * 2)), 0)
        for i in range(6) for j in range(3)},
 })
+#  揺れるのは 一本結び(tail0..3) / ツインテール(tailR,tailL 0..3) / マント。
+#  rig.ponytail() が作るボーン名に合わせてある。片方しか書いていないと、
+#  もう片方の髪が永久に動かない（Bedrock は無いボーンを黙って無視する）。
 A["animation.kaiju8.hair_sway"] = clip({
+    **{f"tail{i}": rot(bob(4.5, 44, -30 * i), bob(5.5, 33, -26 * i), 0)
+       for i in range(4)},
     **{f"tail{s}{i}": rot(bob(4.5, 44, -30 * i), bob(5.5, 33, -26 * i), 0)
-       for s in ("R", "L") for i in range(3)},
+       for s in ("R", "L") for i in range(4)},
     "cape": rot(f"4 + {bob(3.0, 36)}", 0, 0),
 })
 A["animation.kaiju8.wings.idle"] = clip({
@@ -621,13 +626,11 @@ A["animation.kaiju8.no8.swing"] = clip({
                               t0_42=[0, 0, 0])},
     "jaw": {"rotation": keys(t0=[2, 0, 0], t0_08=[30, 0, 0], t0_2=[8, 0, 0],
                              t0_42=[2, 0, 0])},
-    "spine": {"rotation": keys(t0=[0, 0, 0], t0_08=[-10, 0, 0], t0_42=[0, 0, 0])},
+    # 怪獣8号に spine（戦闘服の背骨）と翼は無い。書いても黙って無視される
+    # だけなので、実在するボーンだけを動かす。
     **{f"{s}Finger{i}": {"rotation": keys(t0=[10, 0, 0], t0_1=[44, 0, 0],
                                           t0_42=[10, 0, 0])}
        for s in ("right", "left") for i in range(3)},
-    **{f"{s}Wing": {"rotation": keys(t0=[0, 0, 0], t0_1=[0, -20, -24],
-                                     t0_42=[0, 0, 0])}
-       for s in ("right", "left")},
 }, length=0.42, loop=False)
 
 A["animation.kaiju8.no8.charge"] = clip({

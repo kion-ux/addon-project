@@ -51,10 +51,13 @@ def check(BP: str, RP: str, NS: str) -> int:
 
     # ---- geometry inventory ------------------------------------------
     geometries = set()
+    geo_bones: dict[str, set[str]] = {}
     for path in walk(os.path.join(RP, "models")):
         doc = load(path)
         for geo in doc.get("minecraft:geometry", []):
-            geometries.add(geo["description"]["identifier"])
+            ident = geo["description"]["identifier"]
+            geometries.add(ident)
+            geo_bones[ident] = {b["name"] for b in geo.get("bones", [])}
     # vanilla geometries the attachables lean on
     geometries |= {
         "geometry.humanoid.armor.helmet", "geometry.humanoid.armor.chestplate",
@@ -62,9 +65,12 @@ def check(BP: str, RP: str, NS: str) -> int:
     }
 
     animations = set()
+    anim_bones: dict[str, set[str]] = {}
     controllers = set()
     for path in walk(os.path.join(RP, "animations")):
-        animations |= set(load(path).get("animations", {}))
+        for name, clip in load(path).get("animations", {}).items():
+            animations.add(name)
+            anim_bones[name] = set(clip.get("bones", {}))
     for path in walk(os.path.join(RP, "animation_controllers")):
         controllers |= set(load(path).get("animation_controllers", {}))
     controller_anim_refs = {}
@@ -205,6 +211,50 @@ def check(BP: str, RP: str, NS: str) -> int:
                     errors.append(f"{rel}: controller {value} plays '{ref}' "
                                   f"but the attachable maps no such animation")
         attachable_ids.add(desc["identifier"])
+
+    # ---- アニメが動かすボーンは、そのジオメトリに実在すること ------------
+    #  存在しないボーン名を書いても Bedrock は黙って無視するので、
+    #  「動かないけどエラーも出ない」になる。ただし、1つのアニメ集合を
+    #  小さいジオメトリにも流用するのは正常な作り方なので（怪獣8号の
+    #  ナンバーズがそう）、欠けているだけでは咎めない。
+    #
+    #    error : そのクリップのボーンが1つもジオメトリに無い
+    #            → 貼り付け先を間違えている。確実に動かない。
+    #    warn  : そのジオメトリ専用のクリップなのにボーンが欠けている
+    #            → 名前を変えたときの取りこぼし。
+    def check_bones(label, desc):
+        geos = list(desc.get("geometry", {}).values())
+        known = set()
+        for g in geos:
+            known |= geo_bones.get(g, set())
+        if not known:
+            return
+        for key, value in desc.get("animations", {}).items():
+            for name in ([value] if value.startswith("animation.") else
+                         sorted(controller_anim_refs.get(value, ()))):
+                target = name
+                if not target.startswith("animation."):
+                    target = desc.get("animations", {}).get(name, "")
+                used = anim_bones.get(target, set())
+                if not used:
+                    continue
+                missing = sorted(used - known)
+                if len(missing) == len(used):
+                    errors.append(
+                        f"{label}: {target} animates only bones that do not "
+                        f"exist in {geos} — wrong geometry?")
+                elif missing and any(
+                        g.rsplit(".", 1)[-1] in target for g in geos):
+                    warnings.append(
+                        f"{label}: {target} is specific to {geos} but animates "
+                        f"missing bones: {', '.join(missing[:6])}")
+
+    for path in walk(os.path.join(RP, "entity")):
+        check_bones(os.path.relpath(path, ROOT),
+                    load(path)["minecraft:client_entity"]["description"])
+    for path in walk(os.path.join(RP, "attachables")):
+        check_bones(os.path.relpath(path, ROOT),
+                    load(path)["minecraft:attachable"]["description"])
 
     # ---- behaviour entities -------------------------------------------
     bp_ids = set()

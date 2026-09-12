@@ -24,13 +24,11 @@
         "action": "controller.animation.kaiju8.humanoid.action",
         "pose": "animation.kaiju8.pose.rifle",
         "tech": "animation.kaiju8.tech.suppress",
-        "tech2": "animation.kaiju8.tech.snipe",
-        "hair": "animation.kaiju8.hair_sway"
+        "tech2": "animation.kaiju8.tech.snipe"
       },
       "scripts": {
         "animate": [
           "general",
-          "hair",
           "pose",
           "action"
         ]

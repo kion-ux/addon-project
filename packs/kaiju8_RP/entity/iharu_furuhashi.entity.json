@@ -24,13 +24,11 @@
         "action": "controller.animation.kaiju8.humanoid.action",
         "pose": "animation.kaiju8.pose.knife",
         "tech": "animation.kaiju8.tech.iai",
-        "tech2": "animation.kaiju8.tech.cross",
-        "hair": "animation.kaiju8.hair_sway"
+        "tech2": "animation.kaiju8.tech.cross"
       },
       "scripts": {
         "animate": [
           "general",
-          "hair",
           "pose",
           "action"
         ]

@@ -20,7 +20,7 @@
         "roar": "animation.kaiju8.kaiju.roar",
         "hurt": "animation.kaiju8.kaiju.hurt",
         "death": "animation.kaiju8.kaiju.death",
-        "extras": "animation.kaiju8.tendrils",
+        "extras": "animation.kaiju8.horns_idle",
         "general": "controller.animation.kaiju8.kaiju.general",
         "action": "controller.animation.kaiju8.kaiju.action"
       },
