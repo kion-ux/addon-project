@@ -64,8 +64,10 @@ world.afterEvents.itemUse.subscribe((ev) => {
   handleUse(player, ev.itemStack);
 });
 
-// 悪魔の実は「食べ終わったら」能力を得る。
-// itemCompleteUse が無い版のために、時間切れの保険も持つ。
+// 悪魔の実は「食べ終わったら」能力を得て、実そのものは消える。
+// itemCompleteUse が無い版のために時間切れの保険を持つが、途中で
+// 手を離したときは必ず取り消す — 離しても能力だけ手に入るのでは、
+// 実が減らないまま能力が増えることになる。
 const eating = new Map();
 
 if (world.afterEvents.itemCompleteUse) {
@@ -74,7 +76,7 @@ if (world.afterEvents.itemCompleteUse) {
     if (player?.typeId !== "minecraft:player") return;
     if (ev.itemStack?.typeId !== ITEM.fruit) return;
     eating.delete(player.id);
-    system.run(() => grantPower(player));
+    system.run(() => grantPower(player, false, ITEM.fruit));
   });
 }
 
@@ -85,6 +87,14 @@ world.afterEvents.itemStartUse?.subscribe?.((ev) => {
   eating.set(player.id, system.currentTick);
 });
 
+// 途中で手を離した / 使うのをやめた場合は取り消す
+for (const name of ["itemReleaseUse", "itemStopUse"]) {
+  world.afterEvents[name]?.subscribe?.((ev) => {
+    const player = ev.source;
+    if (player?.typeId === "minecraft:player") eating.delete(player.id);
+  });
+}
+
 system.runInterval(() => {
   if (!eating.size) return;
   for (const player of allPlayers()) {
@@ -92,7 +102,8 @@ system.runInterval(() => {
     if (started === undefined) continue;
     if (system.currentTick - started < 44) continue;
     eating.delete(player.id);
-    if (!hasPower(player)) grantPower(player);
+    // 実をまだ持っていることを確かめてから。持っていなければ食べていない。
+    if (!hasPower(player)) grantPower(player, false, ITEM.fruit);
   }
 }, 10);
 

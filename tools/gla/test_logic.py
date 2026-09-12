@@ -205,6 +205,8 @@ class Player {
     this.anims = [];
     this.messages = 0;
   }
+  get selectedSlotIndex() { return this._slot ?? 0; }
+  set selectedSlotIndex(v) { this._slot = v; }
   getDynamicProperty(k) { return this.props.get(k); }
   setDynamicProperty(k, v) { this.props.set(k, v); }
   getViewDirection() { return { x: 0, y: 0, z: 1 }; }
@@ -259,6 +261,31 @@ ok(data.TECHS.some((t) => t.damage >= 40 && t.windup >= 20), "a heavy slow hit e
 state.grantPower(player, true);
 ok(state.hasPower(player), "power granted");
 eq(state.energy(player), data.ENERGY_MAX, "energy starts full");
+
+// --- 悪魔の実は食べたら消え、配り直されない（企画書 §14）----------------------
+{
+  const p2 = new Player(dim);
+  p2.id = "p2";
+  globalThis.__players = [player, p2];
+  p2.container.setItem(0, { typeId: data.ITEM.fruit, amount: 1 });
+  p2.selectedSlotIndex = 0;
+  eq(state.hasPower(p2), false, "a fresh player has no power");
+  state.grantPower(p2, false, data.ITEM.fruit);
+  eq(state.hasPower(p2), true, "eating the fruit grants the power");
+  eq(p2.container.count(data.ITEM.fruit), 0, "the fruit is consumed");
+  // 二度目は何も起きない（実も減らない）
+  p2.container.setItem(1, { typeId: data.ITEM.fruit, amount: 1 });
+  p2.selectedSlotIndex = 1;
+  state.grantPower(p2, true, data.ITEM.fruit);
+  eq(p2.container.count(data.ITEM.fruit), 1,
+     "a second fruit is not consumed once the power is held");
+  // 実を持っていなければ能力も得られない
+  const p3 = new Player(dim);
+  p3.id = "p3";
+  state.grantPower(p3, false, data.ITEM.fruit);
+  eq(state.hasPower(p3), false, "no fruit in hand means no power");
+  globalThis.__players = [player];
+}
 
 // --- QA-04: 変身・解除 20 往復で残留が出ない --------------------------------
 player.setDynamicProperty(data.PROP.hits, 9999);       // 全形態を解放
@@ -400,6 +427,75 @@ skills.cast(player, star);
 advance(star.windup + star.active + star.recover + 6);
 ok(true, "all-round technique does not throw");
 eq(player.effects.has("__damaged__"), false, "QA-07 the caster is never a target");
+
+// --- 復旧は技が掛けた自己強化も落とす（企画書 §14）---------------------------
+state.safeReset(player, true);
+player.setDynamicProperty(data.PROP.infinite, true);
+state.transform(player, "gear5");
+advance(data.SHOWPIECE_TICKS + 6);
+globalThis.__tick += 400;
+const giant = data.TECH_BY_ID.giant;
+skills.cast(player, giant);
+advance(giant.windup + 4);
+ok(player.effects.size > 0, "the self-buff technique applied effects");
+state.safeReset(player, true);
+for (const [id] of giant.buffs) {
+  eq(player.effects.has(id), false, `safe reset clears the technique effect ${id}`);
+}
+
+// --- 長い技の予約が、あとから出した別の技を壊さない（企画書 §14）---------------
+// 巨人化は 430 tick ぶんの処理を予約する。復旧してから別の技を出したとき、
+// 古い予約が phase を書き換えてしまうと、新しい技が空振りになる。
+state.safeReset(player, true);
+player.setDynamicProperty(data.PROP.infinite, true);
+state.transform(player, "gear5");
+advance(data.SHOWPIECE_TICKS + 6);
+globalThis.__tick += 500;
+skills.cast(player, data.TECH_BY_ID.giant);       // 長い予約を積む
+advance(6);
+state.safeReset(player, true);                    // 途中で復旧する
+state.transform(player, "normal");
+advance(24);
+const stale = new Target("stale", 0, 64, 4);
+dim.entities = [stale];
+globalThis.__tick += 500;
+ok(skills.cast(player, pistol), "a new technique casts after a long one was reset");
+advance(pistol.windup + pistol.active + pistol.recover + 6);
+eq(stale.damage, Math.round(pistol.damage),
+   "the earlier cast's reservations do not cancel the new one");
+
+// --- 叩きつけは着弾地点の周囲、前方の円錐ではない -----------------------------
+state.safeReset(player, true);
+player.setDynamicProperty(data.PROP.infinite, true);
+state.transform(player, "gear3");
+advance(20);
+const axe = data.TECH_BY_ID.gigant_axe;
+eq(axe.shape, "slam", "巨人の斧 is declared as a slam");
+// 射程(5)より遠いが、着弾地点(z=5)からは半径(3.4)以内。
+// 前方の円錐なら届かず、着弾地点の周囲なら届く位置。
+const beyond = new Target("beyond", 0, 64, 8);
+const behind = new Target("behind", 0, 64, -5);
+dim.entities = [beyond, behind];
+globalThis.__tick += 400;
+skills.cast(player, axe);
+advance(axe.windup + axe.active + axe.recover + 20);
+ok(beyond.damage > 0, "a slam reaches around its impact point, not just a cone");
+eq(behind.damage, 0, "a slam does not reach a target behind the caster");
+
+// --- 遅延技も壁越しには当たらない -------------------------------------------
+state.safeReset(player, true);
+player.setDynamicProperty(data.PROP.infinite, true);
+state.transform(player, "gear5");
+advance(data.SHOWPIECE_TICKS + 6);
+const under = data.TECH_BY_ID.under_strike;
+const walled = new Target("walled", 0, 64, 8);
+dim.entities = [walled];
+globalThis.__wall = true;
+globalThis.__tick += 400;
+skills.cast(player, under);
+advance(under.windup + under.active + under.recover + 20);
+globalThis.__wall = false;
+eq(walled.damage, 0, "the delayed technique does not reach through a wall");
 
 // --- QA-09: 気力無限は消費だけ無効、クールダウンは生きている -------------------
 state.safeReset(player, true);

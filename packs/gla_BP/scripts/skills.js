@@ -23,7 +23,7 @@ import {
 import {
   phase, setPhase, formKey, currentForm, isTransformed, quality, cameraFx,
   spend, energy, infinite, busy, setBusy, addHits, markFight, playAnim,
-  selectedTech, techIndex, setTechIndex,
+  selectedTech, techIndex, setTechIndex, beginCast, castIs, endCast,
 } from "./state.js";
 
 /** 押しっぱなし・連打で同じ発動が二重に走らないようにする受付間隔。 */
@@ -113,18 +113,22 @@ export function cast(player, tech) {
   markFight(player);
   playAnim(player, tech.anim);
 
+  const token = beginCast(player);
   const actionId = beginAction(tech.hits, tech.gap);
-  runStages(player, tech, actionId);
-  runSfx(player, tech);
-  scheduleHits(player, tech, actionId);
-  applySelfBuffs(player, tech);
-  applyLaunch(player, tech);
+  runStages(player, tech, actionId, token);
+  runSfx(player, tech, token);
+  scheduleHits(player, tech, actionId, token);
+  applySelfBuffs(player, tech, token);
+  applyLaunch(player, tech, token);
 
   later(tech.windup + tech.active, () => {
+    if (!castIs(player, token)) return;
     if (phase(player) === "attacking") setPhase(player, "recovering");
   });
   later(tech.windup + tech.active + tech.recover, () => {
     endAction(actionId);
+    if (!castIs(player, token)) return;
+    endCast(player, token);
     if (phase(player) === "recovering") setPhase(player, "active");
   });
   return true;
@@ -133,7 +137,7 @@ export function cast(player, tech) {
 // ---------------------------------------------------------------------------
 //  演出 — 予約した時刻に1コマずつ流す
 // ---------------------------------------------------------------------------
-function runStages(player, tech, actionId) {
+function runStages(player, tech, actionId, token) {
   const q = quality(player);
   for (const st of tech.stages) {
     // 「接触」の層で対象を原点にするコマは、ここでは絶対に流さない。
@@ -142,7 +146,7 @@ function runStages(player, tech, actionId) {
     // （企画書 §11: 命中時のみ強くする。空振りと同じ演出にしない）。
     if (st.layer >= 3 && st.at === "target") continue;
     later(st.t + 1, () => {
-      if (!stillCasting(player)) return;
+      if (!stillCasting(player, token)) return;
       const ctx = makeContext(player, q, lastImpact.get(player.id));
       // 足元ではなく「実際の地面」に置きたいコマだけ取り直す。
       // 空中で撃ったときに叩きつけの演出が宙に浮かないように。
@@ -153,22 +157,23 @@ function runStages(player, tech, actionId) {
   // 大技だけ、命中の瞬間に軽く揺らす。設定で切れる。
   if (tech.damage >= 24 && cameraFx(player)) {
     later(tech.windup + 2, () => {
-      if (!stillCasting(player)) return;
+      if (!stillCasting(player, token)) return;
       shake(player, clamp(tech.damage / 140, 0.1, 0.5), 0.28);
     });
   }
 }
 
-function runSfx(player, tech) {
+function runSfx(player, tech, token) {
   for (const s of tech.sfx) {
     later(s.t + 1, () => {
-      if (!stillCasting(player)) return;
+      if (!stillCasting(player, token)) return;
       playSfx(player.dimension, player.location, s);
     });
   }
 }
 
-function stillCasting(player) {
+function stillCasting(player, token) {
+  if (token !== undefined && !castIs(player, token)) return false;
   try {
     if (!player.dimension) return false;
   } catch (_) { return false; }
@@ -181,7 +186,7 @@ function stillCasting(player) {
 // ---------------------------------------------------------------------------
 const lastImpact = new Map();    // playerId -> 直近の着弾点（演出の原点に使う）
 
-function scheduleHits(player, tech, actionId) {
+function scheduleHits(player, tech, actionId, token) {
   if (tech.damage <= 0 && tech.shape !== "zone") return;
   const beats = Math.max(1, tech.hits);
   const gap = tech.gap || Math.max(1, Math.floor(tech.active / beats));
@@ -189,7 +194,7 @@ function scheduleHits(player, tech, actionId) {
   if (tech.shape === "delayed") {
     // 予兆が地面を走ってから打ち上げる。避けられる時間を作る。
     later(tech.windup + Math.max(6, Math.floor(tech.active * 0.6)), () => {
-      resolve(player, tech, actionId);
+      resolve(player, tech, actionId, token);
     });
     return;
   }
@@ -197,26 +202,26 @@ function scheduleHits(player, tech, actionId) {
     // 区域技は active の間、定期的に判定する
     const every = 10;
     for (let t = tech.windup; t < tech.windup + tech.active; t += every) {
-      later(t + 1, () => resolveZone(player, tech, actionId));
+      later(t + 1, () => resolveZone(player, tech, actionId, token));
     }
     return;
   }
   if (tech.shape === "projectile") {
-    flyProjectile(player, tech, actionId);
+    flyProjectile(player, tech, actionId, token);
     return;
   }
   if (tech.shape === "dash") {
     // 飛行中ずっと判定する
     for (let t = 0; t < tech.active; t += 2) {
-      later(tech.windup + t + 1, () => resolve(player, tech, actionId));
+      later(tech.windup + t + 1, () => resolve(player, tech, actionId, token));
     }
     return;
   }
   if (tech.shape === "line" && tech.reach >= 8) {
-    later(tech.windup, () => { if (stillCasting(player)) throwFist(player, tech); });
+    later(tech.windup, () => { if (stillCasting(player, token)) throwFist(player, tech); });
   }
   for (let i = 0; i < beats; i++) {
-    later(tech.windup + i * gap + 1, () => resolve(player, tech, actionId));
+    later(tech.windup + i * gap + 1, () => resolve(player, tech, actionId, token));
   }
 }
 
@@ -265,22 +270,29 @@ function targetsFor(player, tech) {
     case "arc":
       // 曲がる軌道。少し広めの角度で、射程は長い。
       return inCone(player, origin, dir, tech.reach, 58);
+    case "slam": {
+      // 叩きつけ — 前方の地面に落ちた点の周囲。前方打撃とは別物にする。
+      const at = impactPoint(player, origin, dir, Math.max(2, tech.reach));
+      return aroundPoint(player, { x: at.x, y: at.y - 0.3, z: at.z }, tech.radius);
+    }
     case "sphere":
-      // 唯一の全方位技
+      // 宣言した全方位技だけがここへ来る（spec.ALL_AROUND）
       return allAround(player, tech.radius);
     case "dash":
       return inCone(player, origin, dir, Math.max(2.5, tech.radius * 1.6), 70);
     case "delayed": {
+      // 地面を走ってから打ち上げる。着弾点からの見通しで判定するので、
+      // 壁の裏には届かない（企画書 §09 壁越しの命中を除外する）。
       const at = impactPoint(player, origin, dir, tech.reach);
-      return aroundPoint(player, { x: at.x, y: at.y - 0.4, z: at.z }, tech.radius, true);
+      return aroundPoint(player, { x: at.x, y: at.y - 0.4, z: at.z }, tech.radius);
     }
     default:
       return inCone(player, origin, dir, Math.max(2, tech.reach), 50);
   }
 }
 
-function resolve(player, tech, actionId) {
-  if (!stillCasting(player)) return;
+function resolve(player, tech, actionId, token) {
+  if (!stillCasting(player, token)) return;
   const found = targetsFor(player, tech);
   if (!found.length) return;
   let landed = 0;
@@ -307,10 +319,10 @@ function resolve(player, tech, actionId) {
   }
 }
 
-function resolveZone(player, tech, actionId) {
-  if (!stillCasting(player)) return;
+function resolveZone(player, tech, actionId, token) {
+  if (!stillCasting(player, token)) return;
   const centre = groundUnder(player);
-  for (const e of aroundPoint(player, centre, tech.radius, true)) {
+  for (const e of aroundPoint(player, centre, tech.radius)) {
     if (!mayHit(actionId, e)) continue;
     if (tech.damage > 0) strike(player, e, tech.damage, 0, 0);
     bounce(e, tech.kbV || 1.0);
@@ -321,10 +333,10 @@ function resolveZone(player, tech, actionId) {
  * 飛翔体。表示体を出せたらそれを飛ばし、出せなければ判定だけ前に送る。
  * 表示体はあくまで見た目で、当たり判定はここが持つ（企画書 §09）。
  */
-function flyProjectile(player, tech, actionId) {
+function flyProjectile(player, tech, actionId, token) {
   const q = quality(player);
   later(tech.windup + 1, () => {
-    if (!stillCasting(player)) return;
+    if (!stillCasting(player, token)) return;
     const dir = normalise(viewDir(player));
     const loc = player.location;
     const start = { x: loc.x, y: loc.y + 1.4, z: loc.z };
@@ -333,10 +345,13 @@ function flyProjectile(player, tech, actionId) {
     const steps = Math.ceil(tech.reach / speed);
     for (let i = 1; i <= steps; i++) {
       later(i, () => {
-        if (!player.dimension) return;
+        if (!stillCasting(player, token)) {
+          if (helper) { try { helper.remove(); } catch (_) { } }
+          return;
+        }
         const at = forward(start, dir, speed * i);
         if (helper) { try { helper.teleport(at); } catch (_) { } }
-        const near = aroundPoint(player, at, Math.max(1.2, tech.radius * 0.6), true);
+        const near = aroundPoint(player, at, Math.max(1.2, tech.radius * 0.6));
         let landed = 0;
         for (const e of near) {
           if (!mayHit(actionId, e)) continue;
@@ -361,9 +376,10 @@ function flyProjectile(player, tech, actionId) {
 // ---------------------------------------------------------------------------
 //  自己強化と移動
 // ---------------------------------------------------------------------------
-function applySelfBuffs(player, tech) {
+function applySelfBuffs(player, tech, token) {
   if (!tech.buffs?.length) return;
   later(Math.max(1, tech.windup), () => {
+    if (!castIs(player, token)) return;
     for (const [id, amp, ticks] of tech.buffs) {
       try {
         player.addEffect(id, ticks, { amplifier: amp, showParticles: false });
@@ -372,10 +388,11 @@ function applySelfBuffs(player, tech) {
   });
 }
 
-function applyLaunch(player, tech) {
+function applyLaunch(player, tech, token) {
   const [fwd, up] = tech.launch ?? [0, 0];
   if (!fwd && !up) return;
   later(Math.max(1, tech.windup), () => {
+    if (!castIs(player, token)) return;
     try {
       const d = normalise(viewDir(player));
       const l = Math.hypot(d.x, d.z) || 1;

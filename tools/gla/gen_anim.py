@@ -677,6 +677,7 @@ def _brace(c, t0, t1, t2, t3):
 
 SHAPE_POSE = {
     "line": _line,
+    "slam": _slam,
     "cone": _cone,
     "arc": _arc,
     "sphere": _radial,
@@ -687,8 +688,9 @@ SHAPE_POSE = {
     "delayed": _slam,
 }
 
-#  地面へ叩きつける技は、直線でも振り下ろしで見せたい。
-SLAM_SLUGS = {"gigant_axe", "rubber_ground"}
+#  shape が slam でなくても振り下ろしで見せたい技。
+#  地面のゴム化は区域技だが、動作としては踏み下ろしたい。
+SLAM_SLUGS = {"rubber_ground"}
 
 
 def tech_clip(t: spec.Tech) -> dict:

@@ -1042,7 +1042,7 @@ export const TECHS = [
     "id": "gigant_axe",
     "form": "gear3",
     "name": "gla.tech.gigant_axe",
-    "shape": "arc",
+    "shape": "slam",
     "cost": 22,
     "cd": 88,
     "windup": 18,

@@ -13,7 +13,7 @@ import { world, system, ItemStack, EquipmentSlot } from "@minecraft/server";
 import {
   PROP, PHASES, FORMS, FORM_BY_KEY, FORM_ORDER, FORM_ITEMS, TAG_ACTIVE,
   ENERGY_MAX, ENERGY_REGEN, ENERGY_REGEN_IDLE, LOW_ENERGY, DEFAULTS,
-  SHOWPIECE, SHOWPIECE_TICKS, SHOWPIECE_SHORT_TICKS, TECHS_BY_FORM,
+  SHOWPIECE, SHOWPIECE_TICKS, SHOWPIECE_SHORT_TICKS, TECHS_BY_FORM, TECHS,
 } from "./data.js";
 import {
   tr, tell, actionbar, title, num, bool, str, setProp, allPlayers, bar,
@@ -45,8 +45,36 @@ const runtime = new Map();       // playerId -> {showpiece, busyUntil, lastFight
 
 function rt(player) {
   let r = runtime.get(player.id);
-  if (!r) { r = { showpiece: null, busyUntil: 0, lastFight: 0 }; runtime.set(player.id, r); }
+  if (!r) {
+    r = { showpiece: null, cast: null, busyUntil: 0, lastFight: 0 };
+    runtime.set(player.id, r);
+  }
   return r;
+}
+
+// ---------------------------------------------------------------------------
+//  発動ごとの印
+//
+//  技は windup / active / recover を tick 予約で進める。予約は取り消せないので、
+//  「この予約は今も自分のものか」を印で確かめる。これが無いと、長い技
+//  （巨人化は 430 tick 予約する）の予約が、後から出した別の技の phase を
+//  勝手に書き換えてしまう。
+//  企画書 §14 の復旧が「予約された技処理」を解除することを求めているのは
+//  まさにこれ。safeReset は印を捨てるので、以後の予約はすべて空振りする。
+// ---------------------------------------------------------------------------
+export function beginCast(player) {
+  const token = Symbol("cast");
+  rt(player).cast = token;
+  return token;
+}
+
+export function castIs(player, token) {
+  return runtime.get(player.id)?.cast === token;
+}
+
+export function endCast(player, token) {
+  const r = runtime.get(player.id);
+  if (r && r.cast === token) r.cast = null;
 }
 
 onForget((id) => runtime.delete(id));
@@ -261,6 +289,30 @@ function restoreArmor(player) {
   }
 }
 
+/**
+ * 手に持っている特定のアイテムを1つ減らす。
+ *
+ * 悪魔の実は食べたら消えるべきだが、消費と配布を同じ処理にすると
+ * 企画書 §14 が禁じている「使用時に消費して再配布する循環」になる。
+ * ここは **減らすだけ** で、代わりに何も渡さない。
+ */
+export function consumeHeld(player, typeId) {
+  const inv = container(player);
+  if (!inv) return false;
+  let slot;
+  try {
+    slot = typeof player.selectedSlotIndex === "number"
+      ? player.selectedSlotIndex : (player.selectedSlot ?? 0);
+  } catch (_) { slot = 0; }
+  const item = inv.getItem(slot);
+  if (item?.typeId !== typeId) return false;
+  try {
+    if (item.amount > 1) { item.amount -= 1; inv.setItem(slot, item); }
+    else inv.setItem(slot, undefined);
+  } catch (_) { return false; }
+  return true;
+}
+
 /** 落ちている／持っている形態アイテムを掃除する。変身していなければ持てない。 */
 export function sweepFormItems(player) {
   if (isTransformed(player)) return;
@@ -281,8 +333,17 @@ function applyEffect(player, id, amp, ticks = EFFECT_TICKS) {
   } catch (_) { }
 }
 
+/** 技が自分に掛ける効果。巨人化や高速回避が解除後も残らないようにする。 */
+const TECH_EFFECTS = [...new Set(
+  TECHS.flatMap((t) => (t.buffs ?? []).map(([id]) => id)))];
+
+/**
+ * 変身に由来する効果をまとめて落とす。形態の常時効果だけでなく、
+ * 技が掛けた自己強化と透明化も含める — 企画書 §14 の必須の復旧経路は
+ * 「変身専用効果」を全部解除することを求めている。
+ */
 function clearFormEffects(player) {
-  const ids = new Set();
+  const ids = new Set(TECH_EFFECTS);
   for (const f of FORMS) for (const [id] of f.effects) ids.add(id);
   ids.add("invisibility");
   for (const id of ids) {
@@ -315,11 +376,13 @@ function refreshBody(player) {
 //  実は food として消費されるだけで、代わりのアイテムを渡す循環を作らない。
 //  麦わら帽子・拳の包帯・ログポースはレシピで作る（配布と使用の分離）。
 // ---------------------------------------------------------------------------
-export function grantPower(player, quiet = false) {
+export function grantPower(player, quiet = false, consume = "") {
   if (hasPower(player)) {
     if (!quiet) tell(player, tr("gla.msg.already_power"));
     return false;
   }
+  // 食べて得たときは実を消す。開発用コマンドからは何も消さない。
+  if (consume && !consumeHeld(player, consume)) return false;
   setProp(player, PROP.power, true);
   setEnergy(player, ENERGY_MAX);
   setPhase(player, "normal");
@@ -357,6 +420,7 @@ export function transform(player, key) {
   if (already === key) return false;
 
   stopShowpiece(player);
+  rt(player).cast = null;        // 形態を変えたら、前の形態の技は続けない
   if (!already && !stashArmor(player)) {
     tell(player, tr("gla.msg.no_room"));
     return false;
@@ -394,6 +458,7 @@ export function transform(player, key) {
 export function revert(player, exhausted = false) {
   if (!formKey(player)) return;
   stopShowpiece(player);
+  rt(player).cast = null;        // 解除で、進行中の技の予約も無効にする
   setPhase(player, "reverting");
   removeFormItem(player);
   setProp(player, PROP.form, "");
@@ -429,6 +494,7 @@ export function safeReset(player, quiet = false) {
   try { player.runCommand("camerashake stop @s"); } catch (_) { }
   const r = rt(player);
   r.showpiece = null;
+  r.cast = null;                 // 予約済みの技処理は印が合わず空振りになる
   r.busyUntil = 0;
   setPhase(player, "normal");
   if (!quiet) tell(player, tr("gla.msg.recovered"));
@@ -647,6 +713,9 @@ world.afterEvents.entityHurt?.subscribe?.((ev) => {
   if (player?.typeId !== "minecraft:player") return;
   const key = formKey(player);
   if (!key) return;
+  // 殴られている最中に4.5秒笑い続けない。演出を打ち切って操作を返す
+  // （企画書 §08 被弾では残留カメラや操作制限を解除する）。
+  stopShowpiece(player);
   playAnim(player, `animation.gla.${key}.hurt`);
 });
 

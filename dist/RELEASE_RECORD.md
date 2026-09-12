@@ -44,14 +44,14 @@
 | RP UUID | `3e8c50d1-9b27-4d6a-85f3-6a2b19e4c7d2` |
 | @minecraft/server | 1.13.0 |
 | @minecraft/server-ui | 1.2.0 |
-| BP 中身のハッシュ (sha256) | `356d2dfb06b3e9ee367f4e1b71d3c7da1847513e37794de793bee6443c073c1b` |
+| BP 中身のハッシュ (sha256) | `995d84288fbeb5364c9da217cf2c1984319f2e18e43f6775dc5bfdaa5c18c8e1` |
 | RP 中身のハッシュ (sha256) | `69dda8c83da1593fcf8394c4480d889127ea4975456b193a44ae459814f06d76` |
 
 配布ファイル:
 
-- `GrandLineAwakening_BP_v1.0.0.mcpack` (49.4 KB)
+- `GrandLineAwakening_BP_v1.0.0.mcpack` (50.8 KB)
 - `GrandLineAwakening_RP_v1.0.0.mcpack` (1171.9 KB)
-- `GrandLineAwakening_v1.0.0.mcaddon` (1223.2 KB)
+- `GrandLineAwakening_v1.0.0.mcaddon` (1224.6 KB)
 
 ### 実機での確認欄（未記入）
 

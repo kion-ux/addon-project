@@ -177,7 +177,7 @@ class Tech:
     form: str
     ja: str
     en: str
-    shape: str                  # line|cone|sphere|arc|zone|self|dash|projectile|delayed
+    shape: str                  # line|cone|arc|slam|sphere|zone|self|dash|projectile|delayed
     cost: float
     cooldown: int               # tick
     windup: int                 # 予備動作 tick
@@ -362,7 +362,7 @@ _GEAR3 = [
       sfx=[snd(0, "mob.slime.big", 0.8, 0.65), snd(18, "random.explode", 0.9, 1.0)],
       note="局所的な膨張。溜めが長い代わりに射程と判定が段違い。"),
 
-    T("gigant_axe", "gear3", "巨人の斧", "Gigant Axe", "arc",
+    T("gigant_axe", "gear3", "巨人の斧", "Gigant Axe", "slam",
       cost=22, cooldown=88, windup=18, active=8, recover=22,
       reach=5.0, radius=3.4, damage=22.0, kb_h=1.3, kb_v=0.95, terrain=True,
       stages=[
@@ -598,6 +598,12 @@ _GEAR5 = [
            snd(47, "random.explode", 1.4, 0.5)],
       note="最大の一撃。40tickの溜めと40tickの後隙。これだけは連発させない。"),
 ]
+
+#  「単に自分の周囲を毎回全方向攻撃しない」(企画書 §09) を守るため、
+#  自分を中心に全方位で判定してよい技はここに列挙したものだけ。
+#  white_star は宣言どおりの全方位技、rubber_ground は足元の区域技で、
+#  どちらも「前方の技のつもりで全方位になっている」ものではない。
+ALL_AROUND = {"white_star", "rubber_ground"}
 
 TECHS: List[Tech] = _NORMAL + _GEAR2 + _GEAR3 + _G4_BOUND + _G4_SNAKE + _GEAR5
 TECH_BY_SLUG: Dict[str, Tech] = {t.slug: t for t in TECHS}
@@ -903,6 +909,8 @@ if __name__ == "__main__":
     assert len({t.slug for t in TECHS}) == 24, "技IDが重複している"
     for t in TECHS:
         assert t.form in FORM_BY_KEY, f"{t.slug}: 未知の形態 {t.form}"
+        if t.shape in ("sphere", "zone"):
+            assert t.slug in ALL_AROUND, f"{t.slug}: 全方位なのに宣言が無い"
         assert t.stages, f"{t.slug}: 演出が空"
         layers = {s["layer"] for s in t.stages}
         assert LAYER_OMEN in layers, f"{t.slug}: 予兆がない"
