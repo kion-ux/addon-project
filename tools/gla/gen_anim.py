@@ -806,6 +806,8 @@ CONTROLLERS = {
             ], blend=0.15),
             "land": state(["land"], [
                 {"air": "!query.is_on_ground"},
+                # 着地してすぐ走り出したら、着地の残りを待たせない
+                {"move": f"{SPD} > 0.06"},
                 {"idle": "query.all_animations_finished"},
             ], blend=0.15),
             "crouch": state(["crouch"], [

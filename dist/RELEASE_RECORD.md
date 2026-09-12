@@ -45,7 +45,7 @@
 | @minecraft/server | 1.13.0 |
 | @minecraft/server-ui | 1.2.0 |
 | BP 中身のハッシュ (sha256) | `2d188ee648cf32848ce5addf7b9812aee427c5157894e2e300fb14028d203739` |
-| RP 中身のハッシュ (sha256) | `18c8fbaebec83619810b43cb064d5480ceac886a08a06fc9bc2ed5bea9491212` |
+| RP 中身のハッシュ (sha256) | `bd21c0d919cf1a05a656fb85e0e7cd30272aec9a3252bd9ac7db690fa1628cc4` |
 
 配布ファイル:
 

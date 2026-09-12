@@ -98,6 +98,9 @@
               "air": "!query.is_on_ground"
             },
             {
+              "move": "query.modified_move_speed > 0.06"
+            },
+            {
               "idle": "query.all_animations_finished"
             }
           ],
