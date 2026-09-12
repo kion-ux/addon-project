@@ -232,6 +232,21 @@ UI          ui.js         形態選択・設定・技一覧
 状態遷移は `normal → transforming → active → attacking → recovering → active`、
 解除は `reverting → normal`、異常時は `safe_reset → normal`。
 
+### ブラインド批評用のカード
+
+```bash
+python3 tools/gla/blind_sheet.py
+```
+
+技名を伏せたまま、24技の時間配分・判定の形・命中回数・反動を1枚に並べた
+`out/blind_techniques.png` と、答え合わせ用の `out/blind_answers.md` を作ります
+（企画書 §10 差別化の検収 / §16 ブラインド批評）。
+
+カードだけを見て「伸ばす技」「連打」「重い一撃」を言い当てられるかを試し、
+言い当てられない組があれば `spec.py` の windup / active / recover / hits /
+knockback を離します。**設計の段階で見分けが付かないものは、実機でも
+見分けが付きません。**
+
 ### 基準版の記録
 
 `./build.sh` は `dist/RELEASE_RECORD.md` も書き出します（企画書 §18 基準版の記録）。
