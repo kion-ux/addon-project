@@ -1,0 +1,103 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.gla.form": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [
+            "idle"
+          ],
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "move": "query.modified_move_speed > 0.02"
+            }
+          ],
+          "blend_transition": 0.25
+        },
+        "move": {
+          "animations": [
+            "walk"
+          ],
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "run": "query.modified_move_speed > 0.14"
+            },
+            {
+              "idle": "query.modified_move_speed <= 0.02"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "run": {
+          "animations": [
+            "run"
+          ],
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "move": "query.modified_move_speed <= 0.14"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "air": {
+          "animations": [
+            "air"
+          ],
+          "transitions": [
+            {
+              "land": "query.is_on_ground"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "land": {
+          "animations": [
+            "land"
+          ],
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "idle": "query.all_animations_finished"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "crouch": {
+          "animations": [
+            "crouch"
+          ],
+          "transitions": [
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "idle": "!query.is_sneaking"
+            }
+          ],
+          "blend_transition": 0.25
+        }
+      }
+    }
+  }
+}

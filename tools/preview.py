@@ -16,6 +16,13 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+#  このリポジトリは2つのアドオンを持つので、どちらのパックを見るか選べるようにする。
+#    python3 tools/preview.py --pack gla --out /tmp/luffy.png luffy_normal ...
+PACKS = {
+    "kaiju8": ("kaiju8_RP", "kaiju8"),
+    "gla": ("gla_RP", "gla"),
+}
 RP = os.path.join(ROOT, "packs", "kaiju8_RP")
 
 FACE_CORNERS = {
@@ -253,9 +260,28 @@ def sheet(entries, out_path, size=300, views=((24, -10),), poses=None):
 
 
 if __name__ == "__main__":
+    argv = sys.argv[1:]
+    pack = "kaiju8"
+    out = os.path.join(ROOT, "preview.png")
+    rest = []
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--pack" and i + 1 < len(argv):
+            pack = argv[i + 1]; i += 2
+        elif argv[i] == "--out" and i + 1 < len(argv):
+            out = argv[i + 1]; i += 2
+        else:
+            rest.append(argv[i]); i += 1
+    rp_name, tex_ns = PACKS[pack]
+    RP = os.path.join(ROOT, "packs", rp_name)
     geo_dir = os.path.join(RP, "models", "entity")
-    tex_dir = os.path.join(RP, "textures", "entity", "kaiju8")
-    names = sys.argv[1:] or ["kafka", "mina", "kikoru", "hoshina", "soldier"]
+    tex_dir = os.path.join(RP, "textures", "entity", tex_ns)
+    defaults = {
+        "kaiju8": ["kafka", "mina", "kikoru", "hoshina", "soldier"],
+        "gla": ["luffy_normal", "luffy_gear2", "luffy_gear3",
+                "luffy_g4_bound", "luffy_g4_snake", "luffy_gear5"],
+    }
+    names = rest or defaults[pack]
     entries = []
     for n in names:
         g = os.path.join(geo_dir, f"{n}.geo.json")
@@ -264,4 +290,4 @@ if __name__ == "__main__":
             g = os.path.join(geo_dir, f"weapon_{n}.geo.json")
             t = os.path.join(tex_dir, "weapons", f"{n}.png")
         entries.append((n, g, t))
-    sheet(entries, "/tmp/claude-0/-home-user-addon-project/13952f93-4d98-5dcc-8872-3d0adfba1fd3/scratchpad/preview.png")
+    sheet(entries, out)

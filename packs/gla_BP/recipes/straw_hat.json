@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "gla:straw_hat"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " W ",
+      "WRW",
+      "WWW"
+    ],
+    "key": {
+      "W": {
+        "item": "minecraft:wheat"
+      },
+      "R": {
+        "item": "minecraft:red_wool"
+      }
+    },
+    "result": {
+      "item": "gla:straw_hat",
+      "count": 1
+    }
+  }
+}

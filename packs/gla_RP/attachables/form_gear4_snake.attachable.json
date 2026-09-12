@@ -1,0 +1,43 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "gla:form_gear4_snake",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/entity/gla/luffy_g4_snake",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.gla.luffy_g4_snake"
+      },
+      "animations": {
+        "idle": "animation.gla.gear4_snake.idle",
+        "walk": "animation.gla.gear4_snake.walk",
+        "run": "animation.gla.gear4_snake.run",
+        "air": "animation.gla.gear4_snake.air",
+        "land": "animation.gla.gear4_snake.land",
+        "crouch": "animation.gla.gear4_snake.crouch",
+        "laugh": "animation.gla.gear4_snake.laugh",
+        "strafe": "animation.gla.gear4_snake.strafe",
+        "hurt": "animation.gla.gear4_snake.hurt",
+        "controller": "controller.animation.gla.form"
+      },
+      "scripts": {
+        "parent_setup": "variable.helmet_layer_visible = 0.0;",
+        "pre_animation": [
+          "v.swing = math.max(v.attack_time ?? 0.0, 0.0);"
+        ],
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.gla.default"
+      ]
+    }
+  }
+}

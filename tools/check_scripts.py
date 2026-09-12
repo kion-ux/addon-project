@@ -15,7 +15,13 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPTS = os.path.join(ROOT, "packs", "kaiju8_BP", "scripts")
+
+#  このリポジトリは1つのツールチェインで2つのアドオンを作るので、
+#  スクリプトの読み込み確認も両方に掛ける。
+SCRIPT_DIRS = [
+    ("Kaiju No.8", os.path.join(ROOT, "packs", "kaiju8_BP", "scripts")),
+    ("GRAND LINE AWAKENING", os.path.join(ROOT, "packs", "gla_BP", "scripts")),
+]
 
 STUB = """
 const handler = {
@@ -45,12 +51,15 @@ export default make();
 """
 
 
-def main() -> int:
-    tmp = tempfile.mkdtemp(prefix="kaiju8-scripts-")
+def check(label: str, scripts: str) -> int:
+    if not os.path.isdir(scripts):
+        print(f"  {label}: skipped (no scripts)")
+        return 0
+    tmp = tempfile.mkdtemp(prefix="addon-scripts-")
     try:
         pkg = os.path.join(tmp, "package.json")
         with open(pkg, "w", encoding="utf-8") as fh:
-            json.dump({"name": "kaiju8-check", "type": "module"}, fh)
+            json.dump({"name": "addon-check", "type": "module"}, fh)
         for mod in ("@minecraft/server", "@minecraft/server-ui"):
             d = os.path.join(tmp, "node_modules", *mod.split("/"))
             os.makedirs(d, exist_ok=True)
@@ -61,16 +70,17 @@ def main() -> int:
                            "main": "index.js"}, fh)
 
         names = []
-        for f in sorted(os.listdir(SCRIPTS)):
+        for f in sorted(os.listdir(scripts)):
             if f.endswith(".js"):
-                shutil.copy(os.path.join(SCRIPTS, f), os.path.join(tmp, f))
+                shutil.copy(os.path.join(scripts, f), os.path.join(tmp, f))
                 names.append(f)
 
         entry = os.path.join(tmp, "__check.js")
         with open(entry, "w", encoding="utf-8") as fh:
             for f in names:
                 fh.write(f'import "./{f}";\n')
-            fh.write('console.log("scripts loaded: %d modules");\n' % len(names))
+            fh.write('console.log("%s: %d modules loaded");\n'
+                     % (label, len(names)))
 
         res = subprocess.run([sys.executable and "node", entry],
                              capture_output=True, text=True)
@@ -82,6 +92,13 @@ def main() -> int:
         return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def main() -> int:
+    bad = 0
+    for label, scripts in SCRIPT_DIRS:
+        bad |= check(label, scripts)
+    return bad
 
 
 if __name__ == "__main__":

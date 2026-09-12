@@ -1,0 +1,26 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "gla:form_gear4_bound",
+      "menu_category": {
+        "category": "none"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "straw_hat"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:display_name": {
+        "value": "item.gla:form_gear4_bound"
+      },
+      "minecraft:should_despawn": false,
+      "minecraft:wearable": {
+        "slot": "slot.armor.head",
+        "protection": 0
+      },
+      "minecraft:allow_off_hand": false
+    }
+  }
+}

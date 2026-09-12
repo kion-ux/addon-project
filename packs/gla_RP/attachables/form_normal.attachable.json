@@ -1,0 +1,43 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "gla:form_normal",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/entity/gla/luffy_normal",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.gla.luffy_normal"
+      },
+      "animations": {
+        "idle": "animation.gla.normal.idle",
+        "walk": "animation.gla.normal.walk",
+        "run": "animation.gla.normal.run",
+        "air": "animation.gla.normal.air",
+        "land": "animation.gla.normal.land",
+        "crouch": "animation.gla.normal.crouch",
+        "laugh": "animation.gla.normal.laugh",
+        "strafe": "animation.gla.normal.strafe",
+        "hurt": "animation.gla.normal.hurt",
+        "controller": "controller.animation.gla.form"
+      },
+      "scripts": {
+        "parent_setup": "variable.helmet_layer_visible = 0.0;",
+        "pre_animation": [
+          "v.swing = math.max(v.attack_time ?? 0.0, 0.0);"
+        ],
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.gla.default"
+      ]
+    }
+  }
+}

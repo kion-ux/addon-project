@@ -1,4 +1,9 @@
-"""Cross-checks the two packs for dangling references."""
+"""Cross-checks each add-on's two packs for dangling references.
+
+This repository now ships two add-ons that share one toolchain, so every check
+runs once per pack pair.  Add a new add-on by appending to PACKS — nothing else
+in this file is add-on specific.
+"""
 from __future__ import annotations
 
 import json
@@ -6,8 +11,12 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BP = os.path.join(ROOT, "packs", "kaiju8_BP")
-RP = os.path.join(ROOT, "packs", "kaiju8_RP")
+
+#  (表示名, BP フォルダ, RP フォルダ, namespace)
+PACKS = [
+    ("Kaiju No.8", "kaiju8_BP", "kaiju8_RP", "kaiju8"),
+    ("GRAND LINE AWAKENING", "gla_BP", "gla_RP", "gla"),
+]
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -25,7 +34,9 @@ def walk(root, suffix=".json"):
                 yield os.path.join(base, f)
 
 
-def main() -> int:
+def check(BP: str, RP: str, NS: str) -> int:
+    errors.clear()
+    warnings.clear()
     # ---- every json parses -------------------------------------------
     for pack in (BP, RP):
         for path in walk(pack):
@@ -81,14 +92,14 @@ def main() -> int:
             if not os.path.exists(os.path.join(RP, tex + ".png")):
                 errors.append(f"{os.path.relpath(path, ROOT)}: missing {tex}.png")
 
-    # every kaiju8: particle the scripts spawn must actually exist.
+    # every <ns>: particle the scripts spawn must actually exist.
     # NOTE: keep this list in step with effects.js — a helper missing from it
     # means typo'd particle ids in those calls ship silently.
     import re
     spawn_call = re.compile(
         r'(?:fx|fxRing|fxLine|fxScatter|fxArc|fxSpiral|fxColumn|fxCone|fxWall|'
-        r'trail|arcFx|spawnParticle)\s*'
-        r'\([^;]{0,200}?"(kaiju8:[a-z0-9_]+)"')
+        r'trail|arcFx|spawn|spawnParticle|playStage)\s*'
+        r'\([^;]{0,200}?"(' + NS + r':[a-z0-9_]+)"')
     used = set()
     script_dir = os.path.join(BP, "scripts")
     if os.path.isdir(script_dir):
@@ -110,7 +121,7 @@ def main() -> int:
     # a particle id can also be named in a table and spawned indirectly; count
     # any bare mention so the "never used" warning does not cry wolf
     if os.path.isdir(script_dir):
-        bare = re.compile(r'"(kaiju8:[a-z0-9_]+)"')
+        bare = re.compile(r'"(' + NS + r':[a-z0-9_]+)"')
         for path in walk(script_dir, ".js"):
             with open(path, encoding="utf-8") as fh:
                 for m in bare.finditer(fh.read()):
@@ -250,7 +261,7 @@ def main() -> int:
         for pool in doc.get("pools", []):
             for e in pool.get("entries", []):
                 name = e.get("name", "")
-                if name.startswith("kaiju8:") and name not in known:
+                if name.startswith(NS + ":") and name not in known:
                     errors.append(f"{rel}: loot references unknown item {name}")
 
     for path in walk(os.path.join(BP, "recipes")):
@@ -263,7 +274,7 @@ def main() -> int:
         refs += [i["item"] for i in recipe.get("ingredients", [])]
         refs.append(recipe["result"]["item"])
         for name in refs:
-            if name.startswith("kaiju8:") and name not in known:
+            if name.startswith(NS + ":") and name not in known:
                 errors.append(f"{rel}: recipe references unknown item {name}")
 
     # ---- loot tables referenced by entities exist ----------------------
@@ -291,6 +302,28 @@ def main() -> int:
         if f"entity.{ident}.name" not in lang:
             warnings.append(f"no ja_JP name for entity {ident}")
 
+    # スクリプトが翻訳キーを引いているのに .lang に無いと、ゲーム内では
+    # 生の識別子がそのまま表示される。実機で気付くしかないので、ここで潰す。
+    en = {}
+    en_path = os.path.join(RP, "texts", "en_US.lang")
+    if os.path.exists(en_path):
+        with open(en_path, encoding="utf-8") as fh:
+            for row in fh:
+                if "=" in row:
+                    k, v = row.split("=", 1)
+                    en[k.strip()] = v.strip()
+    key_ref = re.compile(r'"(' + NS + r'\.[a-z][a-z0-9_.]*)"')
+    for path in walk(script_dir, ".js") if os.path.isdir(script_dir) else ():
+        rel = os.path.basename(path)
+        with open(path, encoding="utf-8") as fh:
+            body = fh.read()
+        for m in key_ref.finditer(body):
+            key = m.group(1)
+            if key not in lang:
+                errors.append(f"scripts/{rel}: ja_JP has no key {key}")
+            if en and key not in en:
+                errors.append(f"scripts/{rel}: en_US has no key {key}")
+
     # ---- manifests -----------------------------------------------------
     bp_manifest = load(os.path.join(BP, "manifest.json"))
     rp_manifest = load(os.path.join(RP, "manifest.json"))
@@ -306,11 +339,24 @@ def main() -> int:
         print("WARN ", w)
     for e in errors:
         print("ERROR", e)
-    print(f"\n{len(bp_ids)} entities, {len(item_ids)} items, {len(geometries)} geometries, "
-          f"{len(animations)} animations, {len(particles)} particles, "
-          f"{len(attachable_ids)} attachables")
-    print(f"{len(errors)} errors, {len(warnings)} warnings")
+    print(f"  {len(bp_ids)} entities, {len(item_ids)} items, "
+          f"{len(geometries)} geometries, {len(animations)} animations, "
+          f"{len(particles)} particles, {len(attachable_ids)} attachables")
+    print(f"  {len(errors)} errors, {len(warnings)} warnings")
     return 1 if errors else 0
+
+
+def main() -> int:
+    bad = 0
+    for label, bp, rp, ns in PACKS:
+        bp_dir = os.path.join(ROOT, "packs", bp)
+        rp_dir = os.path.join(ROOT, "packs", rp)
+        if not os.path.isdir(bp_dir) or not os.path.isdir(rp_dir):
+            print(f"\n-- {label}: skipped (packs not built)")
+            continue
+        print(f"\n-- {label}")
+        bad |= check(bp_dir, rp_dir, ns)
+    return bad
 
 
 if __name__ == "__main__":

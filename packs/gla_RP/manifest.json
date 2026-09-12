@@ -1,0 +1,46 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "3e8c50d1-9b27-4d6a-85f3-6a2b19e4c7d2",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      30
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "d7194b63-2a5f-4e08-91cc-4b83f2a60e95",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "6f2a1c48-5d3b-4a91-9f07-2c8e41d6b530",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "GrandLineAwakening Addon Project"
+    ],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

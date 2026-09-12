@@ -1,0 +1,154 @@
+pack.name=§6GRAND LINE AWAKENING§r [表示]
+pack.description=形態のモデル・技の演出・アイコン。非公式ファン制作。Minecraft・ONE PIECE の公式商品ではありません。
+
+gla.name.short=§6GLA§r
+gla.name.full=GRAND LINE AWAKENING（非公式ファン制作）
+
+item.gla:devil_fruit=悪魔の実（ゴム）
+item.gla:devil_fruit.name=悪魔の実（ゴム）
+item.gla:devil_fruit.desc=食べると能力を得る。一度だけ。
+item.gla:straw_hat=麦わら帽子
+item.gla:straw_hat.name=麦わら帽子
+item.gla:straw_hat.desc=使う=変身／解除、しゃがみ+使う=形態を選ぶ。
+item.gla:fist_wrap=拳の包帯
+item.gla:fist_wrap.name=拳の包帯
+item.gla:fist_wrap.desc=使う=選択中の技、しゃがみ+使う=次の技へ。
+item.gla:log_pose=ログポース
+item.gla:log_pose.name=ログポース
+item.gla:log_pose.desc=品質・演出・気力無限・訓練場・復旧の設定。
+item.gla:form_normal=形態表示体（通常）
+item.gla:form_normal.name=形態表示体（通常）
+item.gla:form_normal.desc=内部用。変身中の見た目を描くためだけに装備される。
+item.gla:form_gear2=形態表示体（ギア2）
+item.gla:form_gear2.name=形態表示体（ギア2）
+item.gla:form_gear2.desc=内部用。変身中の見た目を描くためだけに装備される。
+item.gla:form_gear3=形態表示体（ギア3）
+item.gla:form_gear3.name=形態表示体（ギア3）
+item.gla:form_gear3.desc=内部用。変身中の見た目を描くためだけに装備される。
+item.gla:form_gear4_bound=形態表示体（ギア4・バウンドマン）
+item.gla:form_gear4_bound.name=形態表示体（ギア4・バウンドマン）
+item.gla:form_gear4_bound.desc=内部用。変身中の見た目を描くためだけに装備される。
+item.gla:form_gear4_snake=形態表示体（ギア4・スネイクマン）
+item.gla:form_gear4_snake.name=形態表示体（ギア4・スネイクマン）
+item.gla:form_gear4_snake.desc=内部用。変身中の見た目を描くためだけに装備される。
+item.gla:form_gear5=形態表示体（ギア5・ニカ）
+item.gla:form_gear5.name=形態表示体（ギア5・ニカ）
+item.gla:form_gear5.desc=内部用。変身中の見た目を描くためだけに装備される。
+
+entity.gla:training_dummy.name=訓練用標的
+entity.gla:training_swarm.name=群れの標的
+entity.gla:vfx_fist.name=演出用の拳
+entity.gla:thrown_bolt.name=投げた雷
+
+item.spawn_egg.entity.gla:training_dummy.name=訓練用標的のスポーンエッグ
+item.spawn_egg.entity.gla:training_swarm.name=群れの標的のスポーンエッグ
+
+gla.form.normal=通常
+gla.form.gear2=ギア2
+gla.form.gear3=ギア3
+gla.form.gear4_bound=ギア4・バウンドマン
+gla.form.gear4_snake=ギア4・スネイクマン
+gla.form.gear5=ギア5・ニカ
+
+gla.tech.pistol=ゴム銃
+gla.tech.bazooka=ゴム大砲
+gla.tech.gatling=ゴム乱打
+gla.tech.rocket=ゴム推進
+gla.tech.jet_pistol=JETゴム銃
+gla.tech.jet_gatling=JETゴム乱打
+gla.tech.red_hawk=火拳銃
+gla.tech.high_dodge=高速回避
+gla.tech.gigant_pistol=巨人の銃
+gla.tech.gigant_axe=巨人の斧
+gla.tech.gigant_bazooka=巨人のバズーカ
+gla.tech.elephant_gun=象銃
+gla.tech.kong_gun=猿王銃
+gla.tech.rhino_schneider=犀榴弾砲
+gla.tech.king_kong_gun=大猿王銃
+gla.tech.jet_culverin=JET大蛇砲
+gla.tech.black_mamba=黒い蛇群
+gla.tech.king_cobra=王蛇
+gla.tech.giant=巨人化
+gla.tech.lightning_throw=雷の投擲
+gla.tech.rubber_ground=地面のゴム化
+gla.tech.under_strike=地中からの打撃
+gla.tech.white_star=白い星銃
+gla.tech.bajrang_gun=猿神銃
+
+gla.hud.form=形態
+gla.hud.tech=技
+gla.hud.energy=気力
+gla.hud.cooldown=再使用
+
+gla.msg.welcome=§6[GLA]§r ようこそ。まずは悪魔の実（ゴム）を食べるところから。
+gla.msg.welcome_hint=§7麦わら帽子で変身、しゃがみ＋麦わら帽子で形態を選ぶ。
+gla.msg.welcome_unofficial=§8非公式ファン制作。Minecraft・ONE PIECE の公式商品ではありません。
+gla.msg.power_gained=§c体がゴムになった！ 麦わら帽子で変身できる。
+gla.msg.already_power=§7その力はもう身についている。
+gla.msg.no_power=§7まだ能力がない。悪魔の実（ゴム）を食べよう。
+gla.msg.no_form=§7その形態は無い。
+gla.msg.locked=§7その形態はまだ解放されていない。
+gla.msg.already_form=§7すでにその形態だ。
+gla.msg.too_tired=§7気力が足りない。少し休め。
+gla.msg.no_room=§7持ち物がいっぱいで変身できない。1枠空けてくれ。
+gla.msg.exhausted=§c気力が尽きた。変身が解けた。
+gla.msg.recovered=§a通常状態へ戻した。
+gla.msg.not_transformed=§7変身していないと使えない。
+gla.msg.tech_selected=§7技:
+gla.msg.cooldown=§7あと %s 秒。
+gla.msg.no_energy=§7気力が足りない。
+gla.msg.low_energy=§e気力が残りわずか。切れると変身が解ける。
+gla.msg.unlocked=§a§l新しい形態を解放した！
+gla.msg.unlocked_form=§7解放:
+gla.msg.saved=§a設定を保存した。
+gla.msg.infinite_on=§b気力無限: ON（消費だけ無効）
+gla.msg.infinite_off=§7気力無限: OFF
+gla.msg.training_start=§7訓練場を建設中… %s ブロック
+gla.msg.training_progress=§7訓練場 %s%%
+gla.msg.training_done=§a訓練場ができた。
+gla.msg.training_busy=§7まだ建設中だ。
+gla.msg.training_cleared=§7標的を %s 体片付けた。
+gla.msg.dev_unlocked=§d[開発] 全形態を解放した。
+gla.msg.dev_reset=§d[開発] 進行を初期化した。
+
+gla.title.awaken=§6覚醒
+gla.title.awaken_sub=§f全身がゴムになった
+
+gla.ui.forms=形態を選ぶ
+gla.ui.forms_body=§7命中 §e%s§r 回　気力 §b%s§r
+gla.ui.locked_at=　§8(命中 %s 回で解放)
+gla.ui.revert=変身を解除
+gla.ui.techlist=技の一覧
+gla.ui.settings=ログポース
+gla.ui.settings_body=§7画面と遊び方の設定。ホスト設定はワールド全体に効く。
+gla.ui.display=画面・演出
+gla.ui.play=遊び方
+gla.ui.training=訓練場
+gla.ui.host=ホスト設定
+gla.ui.recover=通常状態へ復旧
+gla.ui.help=操作の説明
+gla.ui.close=閉じる
+gla.ui.quality=演出の品質
+gla.ui.shortfx=変身演出を短縮する
+gla.ui.camerafx=カメラを揺らす
+gla.ui.infinite=気力無限（消費だけ無効）
+gla.ui.training_body=§7その場に 128 四方の港島を建てる。地形は消さない。
+gla.ui.training_build=訓練場を建てる
+gla.ui.training_clear=標的を片付ける
+gla.ui.terrain=地形破壊を許可
+gla.ui.pvp=PvP を許可
+
+gla.help.hat=§e麦わら帽子§r 使う=変身／解除、しゃがみ+使う=形態を選ぶ。
+gla.help.wrap=§e拳の包帯§r 使う=選択中の技、しゃがみ+使う=次の技へ。
+gla.help.pose=§eログポース§r 品質・演出・気力無限・訓練場・復旧の設定。
+gla.help.unlock=§7技を当てた回数で形態が解放される（最後は 320 回）。
+gla.help.energy=§7気力は最大 100。技と維持で減り、休むと戻る。
+
+gla.quality.light=軽量
+gla.quality.standard=標準
+gla.quality.high=高品質
+
+gla.zone.plaza=訓練広場
+gla.zone.studio=撮影エリア
+gla.zone.load=負荷テスト区画
+gla.zone.course=移動コース

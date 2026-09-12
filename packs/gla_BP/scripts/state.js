@@ -1,0 +1,635 @@
+// 状態 / ゲーム状態と見た目の同期
+//
+// 企画書 §13 の層分けをそのまま守る。ここが「正しい状態」を決め、
+// 見た目（アタッチャブル）はその状態を受けて再生されるだけ。
+//
+//   normal → transforming → active → attacking → recovering → active
+//   解除時は reverting → normal、異常時は safe_reset → normal
+//
+// 企画書 §14 で最優先に挙がっている「変身すると本体が透明で、エフェクトだけ出る」
+// を防ぐため、透明化は "形態アイテムが実際に頭スロットに載っている間だけ" 掛ける。
+// アイテムが何かの理由で消えたら、次の tick で透明も外れる。
+import { world, system, ItemStack, EquipmentSlot } from "@minecraft/server";
+import {
+  PROP, PHASES, FORMS, FORM_BY_KEY, FORM_ORDER, FORM_ITEMS, TAG_ACTIVE,
+  ENERGY_MAX, ENERGY_REGEN, ENERGY_REGEN_IDLE, LOW_ENERGY, DEFAULTS,
+  SHOWPIECE, SHOWPIECE_TICKS, SHOWPIECE_SHORT_TICKS, TECHS_BY_FORM,
+} from "./data.js";
+import {
+  tr, tell, actionbar, title, num, bool, str, setProp, allPlayers, bar,
+  later, onForget, clamp,
+} from "./util.js";
+import { makeContext, playStage, playSfx, shake, spawn } from "./fx.js";
+
+const ARMOR_SLOTS = [
+  EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet,
+];
+
+/** 形態ごとの効果は毎秒掛け直す。切れ目を作らないよう寿命は少し長めに取る。 */
+const EFFECT_TICKS = 140;
+
+/** 形態を一目で分からせる常在演出。技の演出とは別に、薄く出し続ける。
+ *  企画書 §06「効果が消えても形態が分かる」の裏返しで、静止中でも形態が読める。 */
+const AMBIENT = {
+  gear2: "gla:steam_idle",
+  gear3: null,
+  gear4_bound: "gla:haki_idle",
+  gear4_snake: "gla:haki_idle",
+  gear5: "gla:cloud_idle",
+  normal: null,
+};
+
+// 演出中のタイマーなど「保存してはいけない」状態はここに置く。
+// 企画書 §13 保存用と描画用を分ける。
+const runtime = new Map();       // playerId -> {showpiece, busyUntil, lastFight}
+
+function rt(player) {
+  let r = runtime.get(player.id);
+  if (!r) { r = { showpiece: null, busyUntil: 0, lastFight: 0 }; runtime.set(player.id, r); }
+  return r;
+}
+
+onForget((id) => runtime.delete(id));
+
+// ---------------------------------------------------------------------------
+//  読み書き
+// ---------------------------------------------------------------------------
+export function hasPower(player) {
+  return bool(player, PROP.power, false);
+}
+
+export function phase(player) {
+  const p = str(player, PROP.phase, "normal");
+  return PHASES.includes(p) ? p : "normal";
+}
+
+export function setPhase(player, next) {
+  if (!PHASES.includes(next)) return;
+  setProp(player, PROP.phase, next);
+}
+
+export function formKey(player) {
+  const f = str(player, PROP.form, "");
+  return FORM_BY_KEY[f] ? f : "";
+}
+
+export function currentForm(player) {
+  const k = formKey(player);
+  return k ? FORM_BY_KEY[k] : null;
+}
+
+export function isTransformed(player) {
+  return !!formKey(player) && phase(player) !== "normal";
+}
+
+export function energy(player) {
+  return num(player, PROP.energy, ENERGY_MAX);
+}
+
+export function setEnergy(player, v) {
+  setProp(player, PROP.energy, clamp(v, 0, ENERGY_MAX));
+}
+
+export function infinite(player) {
+  return bool(player, PROP.infinite, DEFAULTS.infinite);
+}
+
+export function quality(player) {
+  return str(player, PROP.quality, DEFAULTS.quality);
+}
+
+export function shortFx(player) {
+  return bool(player, PROP.shortfx, DEFAULTS.shortfx);
+}
+
+export function cameraFx(player) {
+  return bool(player, PROP.camerafx, DEFAULTS.camerafx);
+}
+
+export function hits(player) {
+  return num(player, PROP.hits, 0);
+}
+
+export function addHits(player, n = 1) {
+  const before = hits(player);
+  const after = before + n;
+  setProp(player, PROP.hits, after);
+  // 解放の瞬間だけ知らせる。毎回の命中では何も出さない。
+  for (const f of FORMS) {
+    if (f.unlock > before && f.unlock <= after) {
+      tell(player, tr("gla.msg.unlocked", ""));
+      tell(player, { rawtext: [{ translate: "gla.msg.unlocked_form" },
+                               { text: " §e" }, { translate: f.name }] });
+      try {
+        spawn(player.dimension, "gla:unlock_spark",
+              { x: player.location.x, y: player.location.y + 1.2, z: player.location.z });
+      } catch (_) { }
+    }
+  }
+}
+
+export function unlocked(player, key) {
+  const f = FORM_BY_KEY[key];
+  if (!f) return false;
+  return hits(player) >= f.unlock;
+}
+
+export function unlockedForms(player) {
+  return FORM_ORDER.filter((k) => unlocked(player, k));
+}
+
+// ---------------------------------------------------------------------------
+//  選択中の技（形態ごとに別々に覚える）
+// ---------------------------------------------------------------------------
+export function techIndex(player, form) {
+  let map = {};
+  try { map = JSON.parse(str(player, PROP.tech, "{}")) ?? {}; } catch (_) { map = {}; }
+  const list = TECHS_BY_FORM[form] ?? [];
+  if (!list.length) return 0;
+  const raw = Number(map[form] ?? 0);
+  return ((Math.trunc(raw) % list.length) + list.length) % list.length;
+}
+
+export function setTechIndex(player, form, index) {
+  let map = {};
+  try { map = JSON.parse(str(player, PROP.tech, "{}")) ?? {}; } catch (_) { map = {}; }
+  map[form] = index;
+  setProp(player, PROP.tech, JSON.stringify(map));
+}
+
+export function selectedTech(player) {
+  const form = formKey(player);
+  if (!form) return null;
+  const list = TECHS_BY_FORM[form] ?? [];
+  if (!list.length) return null;
+  return list[techIndex(player, form)];
+}
+
+// ---------------------------------------------------------------------------
+//  インベントリ（企画書 §14 アイテム増殖を防ぐ構造）
+//
+//  形態アイテムは「装備する／外す」だけで、配布処理を一切通らない。
+//  消費して配り直す循環も作らない。
+// ---------------------------------------------------------------------------
+export function container(player) {
+  try { return player.getComponent("minecraft:inventory")?.container; } catch (_) { return undefined; }
+}
+
+function equippable(player) {
+  try { return player.getComponent("minecraft:equippable"); } catch (_) { return undefined; }
+}
+
+function wearingFormItem(player) {
+  const eq = equippable(player);
+  if (!eq) return "";
+  try {
+    const head = eq.getEquipment(EquipmentSlot.Head);
+    const id = head?.typeId ?? "";
+    return FORM_ITEMS.includes(id) ? id : "";
+  } catch (_) { return ""; }
+}
+
+function wearFormItem(player, itemId) {
+  const eq = equippable(player);
+  if (!eq) return false;
+  try {
+    eq.setEquipment(EquipmentSlot.Head, new ItemStack(itemId, 1));
+    return true;
+  } catch (_) { return false; }
+}
+
+function removeFormItem(player) {
+  const eq = equippable(player);
+  if (!eq) return;
+  try {
+    const head = eq.getEquipment(EquipmentSlot.Head);
+    if (head && FORM_ITEMS.includes(head.typeId)) {
+      eq.setEquipment(EquipmentSlot.Head, undefined);
+    }
+  } catch (_) { }
+}
+
+/** 変身中は普段の兜をしまう。戻すときに同じものを探して着せ直す。 */
+function stashArmor(player) {
+  const eq = equippable(player);
+  const inv = container(player);
+  if (!eq || !inv) return;
+  let worn;
+  try { worn = eq.getEquipment(EquipmentSlot.Head); } catch (_) { return; }
+  if (!worn || FORM_ITEMS.includes(worn.typeId)) return;
+  const left = inv.addItem(worn);
+  if (left) {
+    // 入りきらないなら、そのまま被せておく。落として消すより良い。
+    setProp(player, PROP.stored_armor, "");
+    return;
+  }
+  try { eq.setEquipment(EquipmentSlot.Head, undefined); } catch (_) { }
+  setProp(player, PROP.stored_armor, worn.typeId);
+}
+
+function restoreArmor(player) {
+  const id = str(player, PROP.stored_armor, "");
+  if (!id) return;
+  setProp(player, PROP.stored_armor, "");
+  const eq = equippable(player);
+  const inv = container(player);
+  if (!eq || !inv) return;
+  try { if (eq.getEquipment(EquipmentSlot.Head)) return; } catch (_) { return; }
+  for (let slot = 0; slot < inv.size; slot++) {
+    const item = inv.getItem(slot);
+    if (item?.typeId !== id) continue;
+    try {
+      eq.setEquipment(EquipmentSlot.Head, item);
+      inv.setItem(slot, undefined);
+    } catch (_) { }
+    return;
+  }
+}
+
+/** 落ちている／持っている形態アイテムを掃除する。変身していなければ持てない。 */
+export function sweepFormItems(player) {
+  if (isTransformed(player)) return;
+  const inv = container(player);
+  if (!inv) return;
+  for (let i = 0; i < inv.size; i++) {
+    const it = inv.getItem(i);
+    if (it && FORM_ITEMS.includes(it.typeId)) inv.setItem(i, undefined);
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  効果
+// ---------------------------------------------------------------------------
+function applyEffect(player, id, amp, ticks = EFFECT_TICKS) {
+  try {
+    player.addEffect(id, ticks, { amplifier: amp, showParticles: false });
+  } catch (_) { }
+}
+
+function clearFormEffects(player) {
+  const ids = new Set();
+  for (const f of FORMS) for (const [id] of f.effects) ids.add(id);
+  ids.add("invisibility");
+  for (const id of ids) {
+    try { player.removeEffect(id); } catch (_) { }
+  }
+}
+
+/**
+ * 形態の効果と透明化を掛け直す。毎秒呼ばれる。
+ *
+ * 透明化は「形態アイテムを実際に着ている」ことが条件。これで、何かの理由で
+ * アタッチャブルが外れたときに透明なプレイヤーだけが残る事故を防ぐ
+ * （企画書 §14 透明化を有効にする条件）。
+ */
+function refreshBody(player) {
+  const form = currentForm(player);
+  if (!form) return;
+  for (const [id, amp] of form.effects) applyEffect(player, id, amp);
+  if (wearingFormItem(player) === form.item) {
+    applyEffect(player, "invisibility", 0);
+  } else {
+    try { player.removeEffect("invisibility"); } catch (_) { }
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  能力の獲得（悪魔の実を食べる）
+//
+//  企画書 §14 の「アイテム増殖を防ぐ構造」に従い、ここは *何も配らない*。
+//  実は food として消費されるだけで、代わりのアイテムを渡す循環を作らない。
+//  麦わら帽子・拳の包帯・ログポースはレシピで作る（配布と使用の分離）。
+// ---------------------------------------------------------------------------
+export function grantPower(player, quiet = false) {
+  if (hasPower(player)) {
+    if (!quiet) tell(player, tr("gla.msg.already_power"));
+    return false;
+  }
+  setProp(player, PROP.power, true);
+  setEnergy(player, ENERGY_MAX);
+  setPhase(player, "normal");
+  const ctx = makeContext(player, quality(player));
+  spawn(player.dimension, "gla:transform_burst", ctx.chest);
+  playSfx(player.dimension, player.location, { id: "random.levelup", v: 0.9, p: 0.7 });
+  playAnim(player, "animation.gla.form.transform_in");
+  title(player, tr("gla.title.awaken"), {
+    fadeInDuration: 8, stayDuration: 46, fadeOutDuration: 18,
+  });
+  tell(player, tr("gla.msg.power_gained"));
+  tell(player, tr("gla.msg.welcome_hint"));
+  return true;
+}
+
+
+// ---------------------------------------------------------------------------
+//  変身・解除
+// ---------------------------------------------------------------------------
+export function canTransform(player, key) {
+  if (!hasPower(player)) return "gla.msg.no_power";
+  const form = FORM_BY_KEY[key];
+  if (!form) return "gla.msg.no_form";
+  if (!unlocked(player, key)) return "gla.msg.locked";
+  if (!infinite(player) && energy(player) < form.enter) return "gla.msg.too_tired";
+  return "";
+}
+
+export function transform(player, key) {
+  const why = canTransform(player, key);
+  if (why) { tell(player, tr(why)); return false; }
+  const form = FORM_BY_KEY[key];
+  const already = formKey(player);
+  if (already === key) return false;
+
+  stopShowpiece(player);
+  if (!already) stashArmor(player);
+  if (!wearFormItem(player, form.item)) {
+    tell(player, tr("gla.msg.no_room"));
+    return false;
+  }
+  setProp(player, PROP.form, key);
+  setPhase(player, "transforming");
+  try { player.addTag(TAG_ACTIVE); } catch (_) { }
+  if (!infinite(player)) setEnergy(player, energy(player) - form.enter);
+  refreshBody(player);
+
+  const ctx = makeContext(player, quality(player));
+  spawn(player.dimension, "gla:transform_burst", ctx.chest);
+  playSfx(player.dimension, player.location, { id: "mob.slime.big", v: 0.8, p: 0.7 });
+  // 形態ごとの登場ポーズ。ギア5だけは看板演出（下の startShowpiece）が担当する。
+  if (key !== "gear5") playAnim(player, `animation.gla.${key}.laugh`);
+  if (cameraFx(player)) shake(player, 0.22, 0.4);
+  title(player, { rawtext: [{ translate: form.name }] },
+        { fadeInDuration: 4, stayDuration: 22, fadeOutDuration: 10 });
+
+  const r = rt(player);
+  if (key === "gear5") {
+    startShowpiece(player);
+  } else {
+    r.busyUntil = system.currentTick + 16;
+    later(16, () => { if (phase(player) === "transforming") setPhase(player, "active"); });
+  }
+  return true;
+}
+
+export function revert(player, exhausted = false) {
+  if (!formKey(player)) return;
+  stopShowpiece(player);
+  setPhase(player, "reverting");
+  removeFormItem(player);
+  setProp(player, PROP.form, "");
+  clearFormEffects(player);
+  restoreArmor(player);
+  try { player.removeTag(TAG_ACTIVE); } catch (_) { }
+  playAnim(player, "animation.gla.form.revert");
+  const ctx = makeContext(player, quality(player));
+  spawn(player.dimension, "gla:revert_puff", ctx.chest);
+  playSfx(player.dimension, player.location, { id: "mob.slime.small", v: 0.6, p: 0.8 });
+  if (exhausted) {
+    tell(player, tr("gla.msg.exhausted"));
+    try { player.addEffect("slowness", 120, { amplifier: 0, showParticles: false }); } catch (_) { }
+  }
+  later(10, () => { if (phase(player) === "reverting") setPhase(player, "normal"); });
+  rt(player).busyUntil = system.currentTick + 10;
+}
+
+/**
+ * 通常状態へ復旧（企画書 §14 必須の復旧経路）。
+ * カメラ・入力制限・変身専用効果・予約された技処理をすべて解除する。
+ * ワールドを作り直さずに直せることが要件。
+ */
+export function safeReset(player, quiet = false) {
+  setPhase(player, "safe_reset");
+  stopShowpiece(player);
+  removeFormItem(player);
+  setProp(player, PROP.form, "");
+  clearFormEffects(player);
+  restoreArmor(player);
+  sweepFormItems(player);
+  try { player.removeTag(TAG_ACTIVE); } catch (_) { }
+  try { player.runCommand("camerashake stop @s"); } catch (_) { }
+  const r = rt(player);
+  r.showpiece = null;
+  r.busyUntil = 0;
+  setPhase(player, "normal");
+  if (!quiet) tell(player, tr("gla.msg.recovered"));
+}
+
+export function busy(player) {
+  return system.currentTick < rt(player).busyUntil;
+}
+
+export function setBusy(player, ticks) {
+  rt(player).busyUntil = system.currentTick + ticks;
+}
+
+export function markFight(player) {
+  rt(player).lastFight = system.currentTick;
+}
+
+export function playAnim(player, id) {
+  // 技ごとの専用クリップは対応版でないと再生されない。落ちないことだけ保証し、
+  // 演出は VFX 側で成立するようにしてある（企画書 §01 完成の判定）。
+  try { player.playAnimation(id); return true; } catch (_) { return false; }
+}
+
+// ---------------------------------------------------------------------------
+//  看板演出 — ニカ変身後の浮遊・大笑い（企画書 §08）
+//
+//  見た目の root を上げるのはアニメーション側の仕事で、ここは時間表に沿って
+//  粒子と音を出し、途中で止められるようにするだけ。プレイヤーの実座標は
+//  一切動かさないので、落下や壁抜けは増えない。
+// ---------------------------------------------------------------------------
+export function startShowpiece(player) {
+  const short = shortFx(player);
+  const span = short ? SHOWPIECE_SHORT_TICKS : SHOWPIECE_TICKS;
+  const r = rt(player);
+  r.busyUntil = system.currentTick + span;
+  playAnim(player, short ? "animation.gla.gear5.laugh_short"
+                         : "animation.gla.gear5.laugh");
+
+  // token は「この演出は今も自分のものか」を確かめる印。変身しなおしや中断で
+  // 差し替わると、予約済みの処理が自分から降りる。
+  const token = Symbol("showpiece");
+  r.showpiece = token;
+  // スキップは状態が確定してからしか受け付けない（企画書 §08 技の連発防止）
+  r.skipFrom = system.currentTick + Math.min(20, span);
+  const handles = [];
+  const q = quality(player);
+  if (!short) {
+    for (const step of SHOWPIECE) {
+      for (const st of step.stages) {
+        handles.push(later(step.t + st.t + 1, () => {
+          if (!alive(player) || rt(player).showpiece !== token) return;
+          playStage(makeContext(player, q), st);
+        }));
+      }
+      for (const s of step.sfx) {
+        handles.push(later(step.t + s.t + 1, () => {
+          if (!alive(player) || rt(player).showpiece !== token) return;
+          playSfx(player.dimension, player.location, s);
+        }));
+      }
+    }
+  } else {
+    handles.push(later(2, () => {
+      if (!alive(player) || rt(player).showpiece !== token) return;
+      const ctx = makeContext(player, q);
+      playStage(ctx, { t: 0, layer: 3, fx: "gla:nika_flash", form: "point", at: "chest" });
+      playStage(ctx, { t: 0, layer: 4, fx: "gla:wind_ring", form: "ring", n: 12, r: 2.0, at: "feet" });
+    }));
+  }
+  handles.push(later(span, () => {
+    if (rt(player).showpiece !== token) return;
+    rt(player).showpiece = null;
+    if (phase(player) === "transforming") setPhase(player, "active");
+  }));
+  r.handles = handles;
+}
+
+export function stopShowpiece(player) {
+  const r = runtime.get(player.id);
+  if (!r || !r.showpiece) return;
+  r.showpiece = null;                 // 予約済みの処理は token 不一致で自分から降りる
+  r.busyUntil = 0;
+  try { player.runCommand("camerashake stop @s"); } catch (_) { }
+  if (phase(player) === "transforming") setPhase(player, "active");
+}
+
+/** 演出のスキップ。状態が確定してからしか受け付けない（技の連発防止・企画書 §08）。 */
+export function skipShowpiece(player) {
+  const r = runtime.get(player.id);
+  if (!r?.showpiece) return false;
+  if (system.currentTick < (r.skipFrom ?? 0)) return false;
+  stopShowpiece(player);
+  return true;
+}
+
+function alive(player) {
+  try { return player.isValid?.() !== false && !!player.dimension; } catch (_) { return false; }
+}
+
+// ---------------------------------------------------------------------------
+//  毎秒の維持処理
+// ---------------------------------------------------------------------------
+export function tick() {
+  for (const player of allPlayers()) {
+    if (!hasPower(player)) continue;
+    const form = currentForm(player);
+    let e = energy(player);
+
+    if (form) {
+      refreshBody(player);
+      if (!infinite(player)) {
+        e -= form.upkeep;
+        if (e <= 0) { setEnergy(player, 0); revert(player, true); continue; }
+      }
+    } else {
+      const idleFor = system.currentTick - (runtime.get(player.id)?.lastFight ?? -9999);
+      e += idleFor > 160 ? ENERGY_REGEN_IDLE : ENERGY_REGEN;
+    }
+    setEnergy(player, e);
+
+    if (form) {
+      hud(player, form, e);
+      ambient(player, form, e);
+      if (!infinite(player) && e < LOW_ENERGY) {
+        // 予告なく解除されないよう、割ったときだけ知らせる
+        if (Math.floor(e) === Math.floor(LOW_ENERGY) - 1) tell(player, tr("gla.msg.low_energy"));
+      }
+    }
+  }
+}
+
+/** 形態の常在演出と、気力切れの予告。どちらも軽量設定では出さない。 */
+function ambient(player, form, e) {
+  const q = quality(player);
+  if (q === "light") return;
+  const ctx = makeContext(player, q);
+  const id = AMBIENT[form.key];
+  if (id) spawn(player.dimension, id, ctx.chest);
+  if (!infinite(player) && e < LOW_ENERGY) {
+    spawn(player.dimension, "gla:low_energy", ctx.chest);
+  }
+}
+
+/**
+ * 通常プレイ中の表示は 形態名 / 選択中の技 / 気力 / 再使用待ち の4つだけ。
+ * 詳しい説明はメニューへ分ける（企画書 §12 UIの方向性）。
+ */
+function hud(player, form, e) {
+  const ratio = clamp(e / ENERGY_MAX, 0, 1);
+  const colour = ratio > 0.5 ? "§a" : ratio > 0.2 ? "§e" : "§c";
+  const tech = selectedTech(player);
+  const parts = [{ translate: form.name }, { text: " §8|§r " }];
+  if (tech) parts.push({ translate: `gla.tech.${tech}` });
+  parts.push({ text: `  ${colour}${bar(ratio, 10)}§r ${Math.ceil(e)}` });
+  if (infinite(player)) parts.push({ text: " §b∞" });
+  actionbar(player, { rawtext: parts });
+}
+
+export function spend(player, amount) {
+  if (infinite(player)) return true;
+  const e = energy(player);
+  if (e < amount) return false;
+  setEnergy(player, e - amount);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+//  再接続・死亡・次元移動（企画書 §14 所有者と寿命）
+// ---------------------------------------------------------------------------
+export function restore(player) {
+  // 初期値を埋める
+  if (typeof player.getDynamicProperty(PROP.energy) !== "number") {
+    setEnergy(player, ENERGY_MAX);
+  }
+  for (const [key, val] of Object.entries(DEFAULTS)) {
+    const prop = PROP[key];
+    if (!prop) continue;
+    const cur = player.getDynamicProperty(prop);
+    if (typeof cur !== typeof val) setProp(player, prop, val);
+  }
+  // 再接続時は、前のセッションの演出を必ず捨てる
+  const ph = phase(player);
+  if (ph === "transforming" || ph === "attacking" || ph === "recovering"
+      || ph === "reverting" || ph === "safe_reset") {
+    setPhase(player, formKey(player) ? "active" : "normal");
+  }
+  if (formKey(player)) {
+    const form = currentForm(player);
+    if (form && wearingFormItem(player) !== form.item) wearFormItem(player, form.item);
+    try { player.addTag(TAG_ACTIVE); } catch (_) { }
+    refreshBody(player);
+  } else {
+    safeReset(player, true);
+  }
+}
+
+world.afterEvents.entityDie.subscribe((ev) => {
+  const e = ev.deadEntity;
+  if (e?.typeId !== "minecraft:player") return;
+  system.run(() => {
+    try {
+      safeReset(e, true);
+      setEnergy(e, ENERGY_MAX * 0.4);
+    } catch (_) { }
+  });
+});
+
+world.afterEvents.entityHurt?.subscribe?.((ev) => {
+  const player = ev.hurtEntity;
+  if (player?.typeId !== "minecraft:player") return;
+  const key = formKey(player);
+  if (!key) return;
+  playAnim(player, `animation.gla.${key}.hurt`);
+});
+
+world.afterEvents.playerDimensionChange?.subscribe?.((ev) => {
+  const player = ev.player;
+  system.run(() => {
+    try {
+      stopShowpiece(player);
+      if (formKey(player)) refreshBody(player);
+    } catch (_) { }
+  });
+});

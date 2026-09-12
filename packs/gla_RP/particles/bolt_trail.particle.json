@@ -1,0 +1,75 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "gla:bolt_trail",
+      "basic_render_parameters": {
+        "material": "particles_blend",
+        "texture": "textures/particle/gla/gla_particles"
+      }
+    },
+    "components": {
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0.05
+      },
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 1
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": 0.16
+      },
+      "minecraft:particle_initial_speed": 0,
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          0,
+          -0.0,
+          0
+        ],
+        "linear_drag_coefficient": 0
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          0.55,
+          1.7
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 256,
+          "texture_height": 160,
+          "uv": [
+            0,
+            96
+          ],
+          "uv_size": [
+            32,
+            32
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "1.000",
+          "0.957",
+          "0.769",
+          "0.88 - 0.88 * v.particle_age / v.particle_lifetime"
+        ]
+      },
+      "minecraft:emitter_shape_point": {
+        "offset": [
+          "0",
+          "0",
+          "0"
+        ],
+        "direction": [
+          0,
+          1,
+          0
+        ]
+      },
+      "minecraft:particle_initial_spin": {
+        "rotation": "v.particle_random_1 * 360",
+        "rotation_rate": "0"
+      }
+    }
+  }
+}

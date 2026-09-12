@@ -1,3 +1,21 @@
+# Minecraft 統合版アドオン集
+
+このリポジトリは、ひとつの生成ツールチェイン (`tools/`) で **2本のアドオン**を
+作っています。どちらも非公式のファン制作で、公式商品ではありません。
+
+| アドオン | 内容 | 説明書 |
+|---|---|---|
+| **怪獣8号** (`kaiju8`) | 日本防衛隊・識別怪獣・解放戦力・怪獣8号への変身 | このページ（以下） |
+| **GRAND LINE AWAKENING** (`gla`) | ワンピース / ルフィ〜ギア5(ニカ)の変身と24枠の技 | [docs/GRAND_LINE_AWAKENING.md](docs/GRAND_LINE_AWAKENING.md) |
+
+```bash
+./build.sh      # 両方をビルドして dist/ に .mcaddon / .mcpack を書き出す
+```
+
+必要なもの: Python 3.11+ / `Pillow` / Node.js。
+
+---
+
 # 怪獣8号 アドオン (Kaiju No.8 Add-on)
 
 Minecraft **統合版 (Bedrock Edition)** 用の非公式ファンメイド・アドオンです。

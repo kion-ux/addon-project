@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "gla:devil_fruit"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " C ",
+      "CAC",
+      " C "
+    ],
+    "key": {
+      "C": {
+        "item": "minecraft:chorus_fruit"
+      },
+      "A": {
+        "item": "minecraft:apple"
+      }
+    },
+    "result": {
+      "item": "gla:devil_fruit",
+      "count": 1
+    }
+  }
+}

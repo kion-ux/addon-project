@@ -1,0 +1,18 @@
+{
+  "resource_pack_name": "gla",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "devil_fruit": {
+      "textures": "textures/items/devil_fruit"
+    },
+    "fist_wrap": {
+      "textures": "textures/items/fist_wrap"
+    },
+    "log_pose": {
+      "textures": "textures/items/log_pose"
+    },
+    "straw_hat": {
+      "textures": "textures/items/straw_hat"
+    }
+  }
+}
