@@ -134,6 +134,18 @@ export function unlocked(player, key) {
   return hits(player) >= f.unlock;
 }
 
+/** 素の「使う」で入る形態。前に使っていたものを覚えておく。 */
+export function preferredForm(player) {
+  const last = str(player, PROP.lastform, "");
+  if (last && FORM_BY_KEY[last] && unlocked(player, last)) return last;
+  return FORM_ORDER[0];
+}
+
+/** 看板演出が走っているか。入力側がスキップを出し分けるために使う。 */
+export function inShowpiece(player) {
+  return !!runtime.get(player.id)?.showpiece;
+}
+
 export function unlockedForms(player) {
   return FORM_ORDER.filter((k) => unlocked(player, k));
 }
@@ -209,22 +221,25 @@ function removeFormItem(player) {
   } catch (_) { }
 }
 
-/** 変身中は普段の兜をしまう。戻すときに同じものを探して着せ直す。 */
+/**
+ * 変身中は普段の兜をしまう。戻すときに同じものを探して着せ直す。
+ *
+ * しまえなかったら false を返し、呼び出し側は変身をやめる。ここで「入らな
+ * かったけど被せたまま進む」を選ぶと、直後の wearFormItem が頭スロットを
+ * 上書きして兜が消える — 企画書 §17 QA-03「意図しない消失がない」に反する。
+ */
 function stashArmor(player) {
   const eq = equippable(player);
   const inv = container(player);
-  if (!eq || !inv) return;
+  if (!eq || !inv) return true;
   let worn;
-  try { worn = eq.getEquipment(EquipmentSlot.Head); } catch (_) { return; }
-  if (!worn || FORM_ITEMS.includes(worn.typeId)) return;
+  try { worn = eq.getEquipment(EquipmentSlot.Head); } catch (_) { return true; }
+  if (!worn || FORM_ITEMS.includes(worn.typeId)) return true;
   const left = inv.addItem(worn);
-  if (left) {
-    // 入りきらないなら、そのまま被せておく。落として消すより良い。
-    setProp(player, PROP.stored_armor, "");
-    return;
-  }
-  try { eq.setEquipment(EquipmentSlot.Head, undefined); } catch (_) { }
+  if (left) return false;                 // 持ち物がいっぱい。変身しない。
+  try { eq.setEquipment(EquipmentSlot.Head, undefined); } catch (_) { return false; }
   setProp(player, PROP.stored_armor, worn.typeId);
+  return true;
 }
 
 function restoreArmor(player) {
@@ -314,6 +329,7 @@ export function grantPower(player, quiet = false) {
   playAnim(player, "animation.gla.form.transform_in");
   title(player, tr("gla.title.awaken"), {
     fadeInDuration: 8, stayDuration: 46, fadeOutDuration: 18,
+    subtitle: tr("gla.title.awaken_sub"),
   });
   tell(player, tr("gla.msg.power_gained"));
   tell(player, tr("gla.msg.welcome_hint"));
@@ -341,12 +357,16 @@ export function transform(player, key) {
   if (already === key) return false;
 
   stopShowpiece(player);
-  if (!already) stashArmor(player);
+  if (!already && !stashArmor(player)) {
+    tell(player, tr("gla.msg.no_room"));
+    return false;
+  }
   if (!wearFormItem(player, form.item)) {
     tell(player, tr("gla.msg.no_room"));
     return false;
   }
   setProp(player, PROP.form, key);
+  setProp(player, PROP.lastform, key);      // 素の「使う」はここへ戻る
   setPhase(player, "transforming");
   try { player.addTag(TAG_ACTIVE); } catch (_) { }
   if (!infinite(player)) setEnergy(player, energy(player) - form.enter);
@@ -597,7 +617,13 @@ export function restore(player) {
   }
   if (formKey(player)) {
     const form = currentForm(player);
-    if (form && wearingFormItem(player) !== form.item) wearFormItem(player, form.item);
+    // 頭に別のものが載っているなら上書きしない。上書きするとそれが消える。
+    let head;
+    try { head = equippable(player)?.getEquipment(EquipmentSlot.Head); } catch (_) { }
+    const slotFree = !head || FORM_ITEMS.includes(head.typeId);
+    if (form && slotFree && wearingFormItem(player) !== form.item) {
+      wearFormItem(player, form.item);
+    }
     try { player.addTag(TAG_ACTIVE); } catch (_) { }
     refreshBody(player);
   } else {

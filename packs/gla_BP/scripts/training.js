@@ -338,3 +338,8 @@ export function removeTrainingGround(player) {
 export function isBuilding(id) {
   return building.has(id);
 }
+
+/** 退出・切断で建築を止める。runPlan が次の tick で自分から降りる。 */
+export function stopBuilding(id) {
+  building.delete(id);
+}

@@ -7,8 +7,9 @@ billboard size, and draws each effect the way a single particle of it would
 look at birth — so a mistyped uv, a colour that vanishes against the world, or
 a sprite that is the wrong shape for the effect shows up here.
 
-  python3 tools/preview_particles.py            # every effect
-  python3 tools/preview_particles.py slash axe  # only ids matching a substring
+  python3 tools/preview_particles.py                    # 怪獣8号のすべて
+  python3 tools/preview_particles.py slash axe          # id の部分一致で絞る
+  python3 tools/preview_particles.py --pack gla         # ワンピース側
 """
 from __future__ import annotations
 
@@ -20,10 +21,18 @@ import sys
 from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#  2本のアドオンのどちらを見るか。パーティクルの置き場が少し違う。
+PACKS = {
+    "kaiju8": ("kaiju8_RP", "textures/particle/kaiju8_particles.png", "kaiju8:"),
+    "gla": ("gla_RP", "textures/particle/gla/gla_particles.png", "gla:"),
+}
+PACK = "kaiju8"
 RP = os.path.join(ROOT, "packs", "kaiju8_RP")
 PART_DIR = os.path.join(RP, "particles")
 ATLAS = os.path.join(RP, "textures", "particle", "kaiju8_particles.png")
-OUT = os.environ.get("KAIJU8_PREVIEW_DIR", "/tmp")
+OUT = os.environ.get("ADDON_PREVIEW_DIR",
+                    os.environ.get("KAIJU8_PREVIEW_DIR", "/tmp"))
+PREFIX = "kaiju8:"
 
 TILE = 132
 COLS = 8
@@ -94,7 +103,7 @@ def draw(effects, out_path):
             lambda px: int(px * max(0.05, min(1.0, a)))))
         sheet.paste(tint, (ox + (TILE - pw) // 2, oy + 6 + (box - ph) // 2), tint)
 
-        name = e["id"].replace("kaiju8:", "")
+        name = e["id"].replace(PREFIX, "")
         pen.text((ox + 5, oy + TILE - 26), name[:22], fill=(226, 230, 238))
         pen.text((ox + 5, oy + TILE - 14),
                  f'x{e["count"]}  {e["life"]}s  {e["shape"]}',
@@ -105,7 +114,17 @@ def draw(effects, out_path):
 
 
 def main():
-    filters = [a.lower() for a in sys.argv[1:]]
+    global RP, PART_DIR, ATLAS, PREFIX, PACK
+    argv = sys.argv[1:]
+    if "--pack" in argv:
+        i = argv.index("--pack")
+        PACK = argv[i + 1]
+        del argv[i:i + 2]
+    rp_name, atlas_rel, PREFIX = PACKS[PACK]
+    RP = os.path.join(ROOT, "packs", rp_name)
+    PART_DIR = os.path.join(RP, "particles")
+    ATLAS = os.path.join(RP, atlas_rel)
+    filters = [a.lower() for a in argv]
     effects = []
     for name in sorted(os.listdir(PART_DIR)):
         if not name.endswith(".particle.json"):

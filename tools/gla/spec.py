@@ -780,6 +780,7 @@ PHASES = ["normal", "transforming", "active", "attacking", "recovering",
 PROPS = {
     "power": f"{NS}:power",          # 能力を得たか
     "form": f"{NS}:form",            # 現在の形態キー。normal でも「変身中」ではない
+    "lastform": f"{NS}:lastform",    # 直前に使っていた形態（素の「使う」で戻る先）
     "phase": f"{NS}:phase",
     "energy": f"{NS}:energy",
     "hits": f"{NS}:hits",            # 累計命中数（解放条件）

@@ -303,6 +303,37 @@ let leaked = 0;
 for (const id of data.FORM_ITEMS) leaked += player.container.count(id);
 eq(leaked, 0, "QA-03 no form item ever reaches the inventory");
 
+// --- QA-03: 持ち物がいっぱいのまま変身しても兜が消えない ----------------------
+state.safeReset(player, true);
+player.head = { typeId: "minecraft:diamond_helmet", amount: 1 };
+for (let i = 0; i < player.container.size; i++) {
+  player.container.setItem(i, { typeId: "minecraft:stone", amount: 64 });
+}
+state.setEnergy(player, data.ENERGY_MAX);
+state.transform(player, "normal");
+advance(20);
+eq(player.head?.typeId, "minecraft:diamond_helmet",
+   "QA-03 a full inventory refuses the transform instead of eating the helmet");
+eq(state.formKey(player), "", "QA-03 the refused transform left no form behind");
+// 片付けて次のテストへ
+player.head = undefined;
+for (let i = 0; i < player.container.size; i++) player.container.setItem(i, undefined);
+
+// --- 兜は変身でしまわれ、解除で戻る -----------------------------------------
+state.safeReset(player, true);
+player.head = { typeId: "minecraft:diamond_helmet", amount: 1 };
+state.setEnergy(player, data.ENERGY_MAX);
+state.transform(player, "normal");
+advance(20);
+eq(player.head?.typeId, data.FORM_BY_KEY.normal.item, "transform wears the form body");
+eq(player.container.count("minecraft:diamond_helmet"), 1, "the helmet was stashed");
+state.revert(player);
+advance(20);
+eq(player.head?.typeId, "minecraft:diamond_helmet", "revert puts the helmet back on");
+eq(player.container.count("minecraft:diamond_helmet"), 0, "the helmet is not duplicated");
+player.head = undefined;
+for (let i = 0; i < player.container.size; i++) player.container.setItem(i, undefined);
+
 // --- §09: しゃがみ＋使用は技を出さない -------------------------------------
 state.safeReset(player, true);
 state.setEnergy(player, data.ENERGY_MAX);
@@ -324,6 +355,17 @@ state.setEnergy(player, data.ENERGY_MAX);
 ok(skills.cast(player, pistol), "single-hit technique casts");
 advance(pistol.windup + pistol.active + pistol.recover + 6);
 eq(t0.damage, Math.round(pistol.damage), "QA-07 a single-hit technique lands exactly once");
+
+// --- 表示体は必ず片付く（企画書 §14 所有者と寿命）----------------------------
+dim.entities = [];
+state.setEnergy(player, data.ENERGY_MAX);
+globalThis.__tick += 200;
+skills.cast(player, pistol);
+advance(pistol.windup + pistol.active + pistol.recover + 40);
+const fists = dim.entities.filter((e) => e.typeId === "gla:vfx_fist");
+ok(fists.length > 0, "a line technique spawns the fist display entity");
+ok(fists.every((e) => e.removed), "every display entity it spawned was removed");
+dim.entities = [];
 
 // --- QA-07: 連打は定義回数だけ当たる ---------------------------------------
 const gatling = data.TECH_BY_ID.gatling;

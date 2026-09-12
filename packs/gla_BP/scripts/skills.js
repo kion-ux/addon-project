@@ -144,6 +144,9 @@ function runStages(player, tech, actionId) {
     later(st.t + 1, () => {
       if (!stillCasting(player)) return;
       const ctx = makeContext(player, q, lastImpact.get(player.id));
+      // 足元ではなく「実際の地面」に置きたいコマだけ取り直す。
+      // 空中で撃ったときに叩きつけの演出が宙に浮かないように。
+      if (st.at === "ground") ctx.ground = groundUnder(player);
       playStage(ctx, st);
     });
   }
@@ -209,9 +212,44 @@ function scheduleHits(player, tech, actionId) {
     }
     return;
   }
+  if (tech.shape === "line" && tech.reach >= 8) {
+    later(tech.windup, () => { if (stillCasting(player)) throwFist(player, tech); });
+  }
   for (let i = 0; i < beats; i++) {
     later(tech.windup + i * gap + 1, () => resolve(player, tech, actionId));
   }
+}
+
+/**
+ * 伸びる拳の表示体。平面のパーティクルでは伸びる腕の立体感が出ないので、
+ * 直線技だけは拳のモデルを飛ばす（企画書 §11 2Dと3Dを使い分ける）。
+ *
+ * 当たり判定はここに持たせない。判定は resolve() が action_id 経由で行う
+ * （企画書 §09 見た目エンティティに独立した攻撃責任を持たせない）。
+ * 予算を超えたら黙って粒子だけで済ませ、寿命が来たら必ず消す。
+ */
+function throwFist(player, tech) {
+  const q = quality(player);
+  const dir = normalise(viewDir(player));
+  const loc = player.location;
+  const start = { x: loc.x, y: loc.y + 1.3, z: loc.z };
+  const fist = spawnHelper(player.dimension, "gla:vfx_fist",
+                           forward(start, dir, 0.8), q);
+  if (!fist) return;
+  const outTicks = Math.max(2, Math.round(tech.active * 0.45));
+  const total = outTicks * 2;
+  for (let i = 1; i <= total; i++) {
+    later(i, () => {
+      // 往きは伸び、還りは縮む。腕が戻るところまで見せる。
+      const t = i <= outTicks ? i / outTicks : (total - i) / outTicks;
+      const at = forward(start, dir, 0.8 + tech.reach * t);
+      try { fist.teleport(at, { facingLocation: forward(at, dir, 2) }); }
+      catch (_) {
+        try { fist.teleport(at); } catch (__) { }
+      }
+    });
+  }
+  later(total + 2, () => { try { fist.remove(); } catch (_) { } });
 }
 
 function targetsFor(player, tech) {

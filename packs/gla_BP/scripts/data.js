@@ -20,6 +20,7 @@ export const PHASES = [
 export const PROP = {
   "power": "gla:power",
   "form": "gla:form",
+  "lastform": "gla:lastform",
   "phase": "gla:phase",
   "energy": "gla:energy",
   "hits": "gla:hits",

@@ -16,10 +16,12 @@ import { ITEM, PROP, ENERGY_MAX, FORM_ORDER } from "./data.js";
 import { tr, tell, allPlayers, forget, setProp } from "./util.js";
 import {
   hasPower, grantPower, transform, revert, safeReset, restore, tick as tickState,
-  formKey, sweepFormItems, isTransformed, markFight, unlockedForms,
+  formKey, sweepFormItems, isTransformed, markFight, preferredForm,
+  inShowpiece, skipShowpiece,
 } from "./state.js";
 import { useSelected, cycleTech, forgetPlayer, forgetImpact } from "./skills.js";
 import { openForms, openSettings, openTechList } from "./ui.js";
+import { stopBuilding } from "./training.js";
 
 // ---------------------------------------------------------------------------
 //  入力 — 1つの経路に正規化する（企画書 §13 入力層 / §18 増殖・二重発動）
@@ -29,8 +31,11 @@ export function handleUse(player, itemStack) {
   if (!id) return;
 
   if (id === ITEM.hat) {
-    if (player.isSneaking) openForms(player);
-    else if (formKey(player)) revert(player);
+    if (player.isSneaking) { openForms(player); return; }
+    // 看板演出の最中は「解除」ではなく「スキップ」。状態が確定する前は
+    // skipShowpiece 側が弾くので、技の連発には繋がらない（企画書 §08）。
+    if (inShowpiece(player)) { skipShowpiece(player); return; }
+    if (formKey(player)) revert(player);
     else transformDefault(player);
     return;
   }
@@ -46,11 +51,10 @@ export function handleUse(player, itemStack) {
   }
 }
 
-/** 素の「使う」で変身するときは、解放済みのうち一番手前の形態へ。 */
+/** 素の「使う」で変身するときは、前に使っていた形態へ戻る。 */
 export function transformDefault(player) {
   if (!hasPower(player)) { tell(player, tr("gla.msg.no_power")); return; }
-  const open = unlockedForms(player);
-  transform(player, open[0] ?? FORM_ORDER[0]);
+  transform(player, preferredForm(player));
 }
 
 world.afterEvents.itemUse.subscribe((ev) => {
@@ -126,6 +130,7 @@ world.afterEvents.playerLeave.subscribe((ev) => {
   forget(id);
   forgetPlayer(id);
   forgetImpact(id);
+  stopBuilding(id);            // 建築中のまま抜けても、次の tick で止まる
 });
 
 // ---------------------------------------------------------------------------
