@@ -111,6 +111,12 @@ FORMS: List[Form] = [
 FORM_BY_KEY: Dict[str, Form] = {f.key: f for f in FORMS}
 FORM_ORDER: List[str] = [f.key for f in FORMS]
 
+#  形態ごとに作るクリップ。企画書 §07「必要な動作」をそのまま並べたもの。
+#  gen_anim.py が作り、gen_client.py がアタッチャブルに載せる — 2か所で
+#  別々に書くと片方だけ増えて、静かに再生されないクリップができる。
+FORM_CLIPS = ("idle", "walk", "run", "strafe", "air", "land", "crouch",
+              "hurt", "laugh")
+
 # ---------------------------------------------------------------------------
 #  VFX の層 (企画書 §11)
 #     1 予兆 / 2 軌道 / 3 接触 / 4 広がり / 5 余韻

@@ -53,8 +53,9 @@ export default make();
 
 def check(label: str, scripts: str) -> int:
     if not os.path.isdir(scripts):
-        print(f"  {label}: skipped (no scripts)")
-        return 0
+        # 一覧に載っているのにスクリプトが無いのは、黙って通してよい状態ではない
+        print(f"  {label}: ERROR スクリプトが見つからない ({scripts})")
+        return 1
     tmp = tempfile.mkdtemp(prefix="addon-scripts-")
     try:
         pkg = os.path.join(tmp, "package.json")

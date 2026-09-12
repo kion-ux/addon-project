@@ -165,12 +165,26 @@ export function forget(id) {
 // ---------------------------------------------------------------------------
 //  その他
 // ---------------------------------------------------------------------------
+/**
+ * tick をまたいだ予約。技の演出も判定もこれで動く。
+ *
+ * 中で例外が出てもワールドを止めないが、**黙って消さない**。
+ * 握り潰すと「演出が丸ごと死んでいるのに何も起きない」になり、
+ * 実機で何時間も探すことになる。コンテンツログには必ず残す。
+ */
 export function later(ticks, fn) {
   try {
     return system.runTimeout(() => {
-      try { fn(); } catch (_) { }
+      try {
+        fn();
+      } catch (e) {
+        console.warn(`[gla] scheduled work failed: ${e?.stack ?? e}`);
+      }
     }, Math.max(1, Math.round(ticks)));
-  } catch (_) { return undefined; }
+  } catch (e) {
+    console.warn(`[gla] could not schedule work: ${e}`);
+    return undefined;
+  }
 }
 
 export function cancel(handle) {

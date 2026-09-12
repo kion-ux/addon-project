@@ -18,12 +18,12 @@
         "idle": "animation.gla.gear4_snake.idle",
         "walk": "animation.gla.gear4_snake.walk",
         "run": "animation.gla.gear4_snake.run",
+        "strafe": "animation.gla.gear4_snake.strafe",
         "air": "animation.gla.gear4_snake.air",
         "land": "animation.gla.gear4_snake.land",
         "crouch": "animation.gla.gear4_snake.crouch",
-        "laugh": "animation.gla.gear4_snake.laugh",
-        "strafe": "animation.gla.gear4_snake.strafe",
         "hurt": "animation.gla.gear4_snake.hurt",
+        "laugh": "animation.gla.gear4_snake.laugh",
         "controller": "controller.animation.gla.form"
       },
       "scripts": {

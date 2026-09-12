@@ -147,8 +147,7 @@ def gen_entities() -> int:
 #      看板演出 (企画書 §08) と、左右移動・被弾 (企画書 §07 の必要な動作) を
 #      スクリプトから直接鳴らすための口。組み込みのクエリだけでは
 #      「横に動いている」「今殴られた」を出し分けられないため。
-FORM_CLIPS = ("idle", "walk", "run", "air", "land", "crouch", "laugh",
-              "strafe", "hurt")
+FORM_CLIPS = spec.FORM_CLIPS       # 一覧は spec.py 側が持つ
 
 #  攻撃中かどうかを Molang 変数へ拾っておく。技の専用クリップは
 #  スクリプトから再生する「best effort」なので、変数が未定義のまま

@@ -18,12 +18,12 @@
         "idle": "animation.gla.gear3.idle",
         "walk": "animation.gla.gear3.walk",
         "run": "animation.gla.gear3.run",
+        "strafe": "animation.gla.gear3.strafe",
         "air": "animation.gla.gear3.air",
         "land": "animation.gla.gear3.land",
         "crouch": "animation.gla.gear3.crouch",
-        "laugh": "animation.gla.gear3.laugh",
-        "strafe": "animation.gla.gear3.strafe",
         "hurt": "animation.gla.gear3.hurt",
+        "laugh": "animation.gla.gear3.laugh",
         "controller": "controller.animation.gla.form"
       },
       "scripts": {

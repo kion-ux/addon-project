@@ -736,18 +736,26 @@ def tech_clip(t: spec.Tech) -> dict:
 #  組み立て
 # ---------------------------------------------------------------------------
 def build() -> None:
+    # spec.FORM_CLIPS が唯一の一覧。ここに無いものは作らないし、
+    # ここにあって作れないものはビルドを止める。
+    makers = {
+        "idle": idle_clip,
+        "walk": lambda f: _gait(f, run=False),
+        "run": lambda f: _gait(f, run=True),
+        "strafe": strafe_clip,
+        "air": air_clip,
+        "land": land_clip,
+        "crouch": crouch_clip,
+        "hurt": hurt_clip,
+        "laugh": lambda f: nika_showpiece() if f == "gear5" else arrival_clip(f),
+    }
+    missing = [c for c in spec.FORM_CLIPS if c not in makers]
+    if missing:
+        raise SystemExit(f"spec.FORM_CLIPS に作り手が無いクリップ: {missing}")
     for form in spec.FORM_ORDER:
         p = f"animation.{NS}.{form}."
-        A[p + "idle"] = idle_clip(form)
-        A[p + "walk"] = _gait(form, run=False)
-        A[p + "run"] = _gait(form, run=True)
-        A[p + "strafe"] = strafe_clip(form)
-        A[p + "air"] = air_clip(form)
-        A[p + "land"] = land_clip(form)
-        A[p + "crouch"] = crouch_clip(form)
-        A[p + "hurt"] = hurt_clip(form)
-        A[p + "laugh"] = (nika_showpiece() if form == "gear5"
-                          else arrival_clip(form))
+        for clip_name in spec.FORM_CLIPS:
+            A[p + clip_name] = makers[clip_name](form)
     A[f"animation.{NS}.gear5.laugh_short"] = nika_showpiece_short()
     A[f"animation.{NS}.form.transform_in"] = transform_in()
     A[f"animation.{NS}.form.revert"] = revert_out()

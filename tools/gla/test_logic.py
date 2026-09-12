@@ -44,6 +44,8 @@ export const system = {
     globalThis.__pending.push([globalThis.__tick + (ticks ?? 1), f]);
     return globalThis.__pending.length;
   },
+  // system.run の中で出た例外も落とさず記録する
+  _errors: [],
   runInterval() { return 0; },
   clearRun() { },
   afterEvents: new Proxy({}, { get() { return { subscribe() { } }; } }),
@@ -105,6 +107,21 @@ import * as fx from "./fx.js";
 import { handleUse } from "./main.js";
 
 let failures = 0;
+
+// 本体は予約の中の例外を握り潰すが、コンテンツログには必ず出す
+// （util.later）。ここではその1行を拾って失敗として数える。
+const realWarn = console.warn.bind(console);
+console.warn = (...args) => {
+  const text = args.join(" ");
+  if (text.includes("[gla] scheduled work failed")
+      || text.includes("[gla] could not schedule work")) {
+    failures++;
+    console.log("  FAIL " + text.split("\n")[0]);
+    return;
+  }
+  realWarn(...args);
+};
+
 function ok(cond, label) {
   if (!cond) { failures++; console.log("  FAIL " + label); }
 }
@@ -113,12 +130,20 @@ function eq(a, b, label) {
 }
 
 // --- 時間を進める ---------------------------------------------------------
+// 技の演出も判定も util.later() の予約で動く。later() は中の例外を握り潰す
+// ので、ここで拾わないと「VFX が全部死んでいてもテストは通る」状態になる。
+// 拾った例外は失敗として数える。
 function advance(ticks) {
   for (let i = 0; i < ticks; i++) {
     globalThis.__tick++;
     const due = globalThis.__pending.filter(([t]) => t <= globalThis.__tick);
     globalThis.__pending = globalThis.__pending.filter(([t]) => t > globalThis.__tick);
-    for (const [, fn] of due) { try { fn(); } catch (e) { console.log("  ERR " + e); } }
+    for (const [, fn] of due) {
+      try { fn(); } catch (e) {
+        failures++;
+        console.log("  FAIL scheduled work threw: " + (e?.stack ?? e));
+      }
+    }
   }
 }
 
@@ -623,6 +648,24 @@ for (const t of data.TECHS) {
 }
 eq(globalThis.__blockWrites.length, 0,
    "QA-10 no technique writes a block while terrain is off");
+
+// 対照: 地形破壊を ON にしても、現状はどの技もブロックを書き換えない。
+// 「許可されていないから書かない」のか「そもそも書く処理が無い」のかを
+// 区別するための対照（現状は後者で、docs にもそう書いてある）。
+combat.setTerrain(true);
+globalThis.__blockWrites.length = 0;
+for (const t of data.TECHS) {
+  state.safeReset(player, true);
+  player.setDynamicProperty(data.PROP.infinite, true);
+  state.transform(player, t.form);
+  advance(data.SHOWPIECE_TICKS + 4);
+  globalThis.__tick += 900;
+  skills.cast(player, t);
+  advance(t.windup + t.active + t.recover + 40);
+}
+eq(globalThis.__blockWrites.length, 0,
+   "QA-10 control: the terrain path is not implemented yet, so ON changes nothing");
+combat.setTerrain(false);
 eq(combat.pvpAllowed(), false, "PvP is off by default");
 
 // --- 復旧 -----------------------------------------------------------------
@@ -634,6 +677,7 @@ eq(state.formKey(player), "", "safe reset clears the form");
 
 // --- 全ての技が例外なく走り切る ---------------------------------------------
 let cast = 0;
+let silent = [];
 for (const t of data.TECHS) {
   state.safeReset(player, true);
   player.setDynamicProperty(data.PROP.infinite, true);
@@ -641,10 +685,16 @@ for (const t of data.TECHS) {
   advance(data.SHOWPIECE_TICKS + 4);
   globalThis.__tick += 900;
   dim.entities = [new Target("x" + cast, 0, 64, 3)];
+  const before = globalThis.__particles.length;
   if (skills.cast(player, t)) cast++;
   advance(t.windup + t.active + t.recover + 40);
+  // 「落ちずに走った」だけでは、演出が丸ごと死んでいても気付けない。
+  // 命中側ではない（時間で流れる）コマが実際に粒子を出したことを見る。
+  const timed = t.stages.filter((s) => !(s.layer >= 3 && s.at === "target"));
+  if (timed.length && globalThis.__particles.length <= before) silent.push(t.id);
 }
 eq(cast, 24, "every one of the 24 techniques casts without throwing");
+eq(silent.join(","), "", "every technique actually emitted its timed effects");
 ok(globalThis.__err === undefined, "no exception escaped into system.run");
 
 console.log(`  ${data.TECHS.length} techniques, ${data.FORMS.length} forms, ` +

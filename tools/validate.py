@@ -406,6 +406,9 @@ def check(BP: str, RP: str, NS: str) -> int:
             errors.append(f"texts: {k} is in en_US but not ja_JP")
 
     key_ref = re.compile(r'"(' + NS + r'\.[a-z][a-z0-9_.]*)"')
+    # `gla.tech.${x}` のように組み立てるキーは完全一致では拾えないので、
+    # 「その前置きで始まるキーが1つも無い」ことだけを見る。
+    key_tpl = re.compile(r'`(' + NS + r'\.[a-z][a-z0-9_.]*)\$\{')
     for path in walk(script_dir, ".js") if os.path.isdir(script_dir) else ():
         rel = os.path.basename(path)
         with open(path, encoding="utf-8") as fh:
@@ -416,6 +419,12 @@ def check(BP: str, RP: str, NS: str) -> int:
                 errors.append(f"scripts/{rel}: ja_JP has no key {key}")
             if en and key not in en:
                 errors.append(f"scripts/{rel}: en_US has no key {key}")
+        for m in key_tpl.finditer(body):
+            prefix = m.group(1)
+            if not any(k.startswith(prefix) for k in lang):
+                errors.append(f"scripts/{rel}: no ja_JP key starts with {prefix}")
+            if en and not any(k.startswith(prefix) for k in en):
+                errors.append(f"scripts/{rel}: no en_US key starts with {prefix}")
 
     # ---- manifests -----------------------------------------------------
     bp_manifest = load(os.path.join(BP, "manifest.json"))
@@ -445,7 +454,10 @@ def main() -> int:
         bp_dir = os.path.join(ROOT, "packs", bp)
         rp_dir = os.path.join(ROOT, "packs", rp)
         if not os.path.isdir(bp_dir) or not os.path.isdir(rp_dir):
-            print(f"\n-- {label}: skipped (packs not built)")
+            # 黙って飛ばすと、パックが丸ごと消えていてもビルドが通ってしまう。
+            print(f"\n-- {label}")
+            print(f"ERROR packs/{bp} または packs/{rp} が見つからない")
+            bad = 1
             continue
         print(f"\n-- {label}")
         bad |= check(bp_dir, rp_dir, ns)
