@@ -212,6 +212,40 @@ def check(BP: str, RP: str, NS: str) -> int:
                                   f"but the attachable maps no such animation")
         attachable_ids.add(desc["identifier"])
 
+    # ---- アニメの形そのものが壊れていないこと ---------------------------
+    #  時刻のキーが数字でない、値が3要素でない、知らないチャンネル名 —
+    #  どれも Bedrock 側は黙って無視するか、そのクリップごと読み飛ばす。
+    time_key = re.compile(r"^\d+(\.\d+)?$")
+    for path in walk(os.path.join(RP, "animations")):
+        rel = os.path.relpath(path, ROOT)
+        for name, clip in load(path).get("animations", {}).items():
+            if not isinstance(clip.get("loop", False), (bool, str)):
+                errors.append(f"{rel}: {name}: loop must be a bool or a string")
+            length = clip.get("animation_length")
+            if length is not None and not isinstance(length, (int, float)):
+                errors.append(f"{rel}: {name}: animation_length is not a number")
+            for bone, channels in clip.get("bones", {}).items():
+                for chan, val in channels.items():
+                    if chan not in ("rotation", "position", "scale"):
+                        errors.append(f"{rel}: {name}.{bone}: unknown channel {chan}")
+
+                    def ok_value(v):
+                        # scale だけは一様倍率のスカラーも書ける
+                        if chan == "scale" and isinstance(v, (int, float, str)):
+                            return True
+                        return isinstance(v, list) and len(v) == 3
+
+                    if isinstance(val, dict):
+                        for key, vec in val.items():
+                            if not time_key.match(str(key)):
+                                errors.append(f"{rel}: {name}.{bone}.{chan}: "
+                                              f"bad keyframe time {key!r}")
+                            if not ok_value(vec):
+                                errors.append(f"{rel}: {name}.{bone}.{chan}[{key}]: "
+                                              f"bad value")
+                    elif not ok_value(val):
+                        errors.append(f"{rel}: {name}.{bone}.{chan}: bad value")
+
     # ---- アニメが動かすボーンは、そのジオメトリに実在すること ------------
     #  存在しないボーン名を書いても Bedrock は黙って無視するので、
     #  「動かないけどエラーも出ない」になる。ただし、1つのアニメ集合を
