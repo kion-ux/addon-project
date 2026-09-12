@@ -224,6 +224,16 @@ UI          ui.js         形態選択・設定・技一覧
 状態遷移は `normal → transforming → active → attacking → recovering → active`、
 解除は `reverting → normal`、異常時は `safe_reset → normal`。
 
+### 基準版の記録
+
+`./build.sh` は `dist/RELEASE_RECORD.md` も書き出します（企画書 §18 基準版の記録）。
+配布ファイル名、パックの中身のハッシュ、BP/RP の UUID と版、本体版と
+モジュール版が入っています。ハッシュは zip の時刻ではなく**中身**から取るので、
+同じ内容なら何度ビルドしても同じ値になります。
+
+実機名・設定・確認日・確認者・合格した QA 項目の欄は**空のまま**です。
+実機で確認した人がそこへ記入するまで、確認は行われていないことを意味します。
+
 ### 検証コマンド
 
 ```bash
