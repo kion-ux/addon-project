@@ -567,6 +567,20 @@ advance(2);
 eq(skills.cast(player, pistol), false, "QA-09 cooldown still blocks a second cast");
 player.setDynamicProperty(data.PROP.infinite, false);
 
+// --- 再使用待ちの鍵が、HUD と技側で一致している（企画書 §12 の4つ目の欄）------
+state.safeReset(player, true);
+player.setDynamicProperty(data.PROP.infinite, true);
+state.transform(player, "normal");
+advance(20);
+state.setTechIndex(player, "normal", 0);
+globalThis.__tick += 400;
+dim.entities = [];
+ok(skills.cast(player, data.TECH_BY_ID.pistol), "cast to start a cooldown");
+const selected = state.selectedTech(player);
+eq(selected, "pistol", "the selected technique id is the slug");
+ok(skills.cooldownInfo(player).some((c) => c.id === selected && c.left > 0),
+   "the cooldown is readable under the same id the HUD uses");
+
 // --- QA-10: 地形破壊 OFF ではブロックを書き換えない ---------------------------
 globalThis.__blockWrites.length = 0;
 eq(combat.terrainAllowed(), false, "QA-10 terrain is off by default");

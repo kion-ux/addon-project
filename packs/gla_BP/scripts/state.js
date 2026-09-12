@@ -17,7 +17,7 @@ import {
 } from "./data.js";
 import {
   tr, tell, actionbar, title, num, bool, str, setProp, allPlayers, bar,
-  later, onForget, clamp,
+  later, onForget, clamp, cooldownLeft,
 } from "./util.js";
 import { makeContext, playStage, playSfx, shake, spawn } from "./fx.js";
 
@@ -696,6 +696,12 @@ function hud(player, form, e) {
   const tech = selectedTech(player);
   const parts = [{ translate: form.name }, { text: " §8|§r " }];
   if (tech) parts.push({ translate: `gla.tech.${tech}` });
+  // 再使用待ちは、待っている間だけ出す。待っていないときに 0 を出しても
+  // 情報にならないので、4つ目の欄はそのとき空になる（企画書 §12）。
+  if (tech) {
+    const left = cooldownLeft(player.id, tech);
+    if (left > 0) parts.push({ text: ` §8${(left / 20).toFixed(1)}s` });
+  }
   parts.push({ text: `  ${colour}${bar(ratio, 10)}§r ${Math.ceil(e)}` });
   if (infinite(player)) parts.push({ text: " §b∞" });
   actionbar(player, { rawtext: parts });
