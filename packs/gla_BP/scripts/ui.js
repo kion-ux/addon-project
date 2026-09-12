@@ -7,15 +7,12 @@
 // スマホの読みやすさ（§12）のため、ボタンは短い表示名だけにし、説明は本文へ回す。
 import { system } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import {
-  FORMS, FORM_ORDER, FORM_BY_KEY, TECHS_BY_FORM, TECH_BY_ID,
-  QUALITY, QUALITY_ORDER, PROP, ENERGY_MAX,
+import { FORM_ORDER, FORM_BY_KEY, TECHS_BY_FORM, TECH_BY_ID, QUALITY_ORDER,
+  PROP,
 } from "./data.js";
-import { tr, tell, setProp, num, str, bool, clamp } from "./util.js";
-import {
-  formKey, transform, revert, safeReset, unlocked, hits, energy, quality,
-  shortFx, cameraFx, infinite, techIndex, setTechIndex, currentForm,
-  hasPower,
+import { tr, tell, setProp, clamp } from "./util.js";
+import { formKey, transform, revert, safeReset, unlocked, hits, energy,
+  quality, shortFx, cameraFx, infinite, techIndex, setTechIndex, hasPower,
 } from "./state.js";
 import { terrainAllowed, pvpAllowed, setTerrain, setPvp } from "./combat.js";
 import { buildTrainingGround, removeTrainingGround } from "./training.js";

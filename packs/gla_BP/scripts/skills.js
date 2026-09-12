@@ -8,22 +8,18 @@
 //
 // 命中は必ず action_id 経由。粒子や表示体は攻撃責任を持たない（企画書 §09）。
 import { system } from "@minecraft/server";
-import { TECH_BY_ID, TECHS_BY_FORM, FORM_BY_KEY } from "./data.js";
-import {
-  tr, tell, later, viewDir, normalise, forward, onCooldown, cooldownLeft,
-  setCooldown, clamp, distance, hasFamily,
+import { TECH_BY_ID, TECHS_BY_FORM } from "./data.js";
+import { tr, tell, later, viewDir, normalise, forward, cooldownLeft,
+  setCooldown, clamp, hasFamily,
 } from "./util.js";
-import {
-  makeContext, playStage, playSfx, shake, spawnHelper, spawn,
+import { makeContext, playStage, playSfx, shake, spawnHelper, spawn,
 } from "./fx.js";
-import {
-  beginAction, endAction, mayHit, inCone, alongRay, aroundPoint, allAround,
-  impactPoint, groundUnder, strike, bounce, terrainAllowed,
+import { beginAction, endAction, mayHit, inCone, alongRay, aroundPoint,
+  allAround, impactPoint, groundUnder, strike, bounce, terrainAllowed,
 } from "./combat.js";
-import {
-  phase, setPhase, formKey, currentForm, isTransformed, quality, cameraFx,
-  spend, energy, infinite, busy, setBusy, addHits, markFight, playAnim,
-  selectedTech, techIndex, setTechIndex, beginCast, castIs, endCast,
+import { phase, setPhase, formKey, quality, cameraFx, spend, energy,
+  infinite, busy, setBusy, addHits, markFight, playAnim, selectedTech,
+  techIndex, setTechIndex, beginCast, castIs, endCast,
 } from "./state.js";
 
 /** 押しっぱなし・連打で同じ発動が二重に走らないようにする受付間隔。 */

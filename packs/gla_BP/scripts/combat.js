@@ -9,9 +9,7 @@
 //     粒子や見た目エンティティには攻撃責任を持たせない
 import { world, system } from "@minecraft/server";
 import { PROP, DEFAULTS } from "./data.js";
-import {
-  distance, normalise, dot, forward, knockback, basis, atBasis, clamp,
-} from "./util.js";
+import { distance, normalise, dot, forward, knockback } from "./util.js";
 
 // ---------------------------------------------------------------------------
 //  ワールド設定（企画書 §09 初期値 OFF）

@@ -9,9 +9,9 @@
 //   移動コース   見た目の追従を確認     / 段差・狭い入口・坂・ジャンプ・水際
 //
 // 建築は1tickにまとめて流すと確実に固まるので、小分けにして順に置く。
-import { system } from "@minecraft/server";
+
 import { MOB, TRAINING } from "./data.js";
-import { tr, tell, later, clamp } from "./util.js";
+import { tr, tell, later } from "./util.js";
 
 const AIR = "minecraft:air";
 const SAND = "minecraft:sand";
