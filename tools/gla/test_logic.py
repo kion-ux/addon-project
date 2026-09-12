@@ -157,6 +157,19 @@ class Target {
   remove() { this.removed = true; }
 }
 
+class DroppedItem {
+  constructor(id, typeId, x, y, z) {
+    this.id = id; this.typeId = "minecraft:item";
+    this.stackType = typeId;
+    this.location = { x, y, z }; this.removed = false;
+  }
+  getComponent(n) {
+    if (n === "minecraft:item") return { itemStack: { typeId: this.stackType } };
+    return undefined;
+  }
+  remove() { this.removed = true; }
+}
+
 class Dimension {
   constructor() { this.entities = []; }
   getEntities(opt) {
@@ -165,6 +178,7 @@ class Dimension {
     return this.entities.filter((e) => {
       if (e.removed) return false;
       if (opt?.families) return false;             // vfx/target family は使わない
+      if (opt?.type && e.typeId !== opt.type) return false;
       if (!c) return true;
       return Math.hypot(e.location.x - c.x, e.location.y - c.y,
                         e.location.z - c.z) <= r;
@@ -360,6 +374,47 @@ eq(player.head?.typeId, "minecraft:diamond_helmet", "revert puts the helmet back
 eq(player.container.count("minecraft:diamond_helmet"), 0, "the helmet is not duplicated");
 player.head = undefined;
 for (let i = 0; i < player.container.size; i++) player.container.setItem(i, undefined);
+
+// --- 形態表示体は世界に残らない（企画書 §14 / QA-03）-------------------------
+// 頭に被ったまま変身していない = 自分の体＋もう一体の二重表示。掃除で外す。
+state.safeReset(player, true);
+player.head = { typeId: data.FORM_ITEMS[0], amount: 1 };
+state.sweepFormItems(player);
+eq(player.head, undefined, "a form body worn without a form is taken off");
+
+// 変身中でも、いま選んでいる形態と食い違う表示体は外す
+state.setEnergy(player, data.ENERGY_MAX);
+state.transform(player, "normal");
+advance(20);
+player.head = { typeId: data.FORM_ITEMS[5], amount: 1 };   // 別の形態の表示体
+state.sweepFormItems(player);
+eq(player.head, undefined, "a mismatched form body is taken off while transformed");
+state.safeReset(player, true);
+
+// 地面に落ちていたら拾って消す
+const dropped = new DroppedItem("d1", data.FORM_ITEMS[2], 0, 64, 2);
+const other = new DroppedItem("d2", "minecraft:dirt", 0, 64, 2);
+dim.entities = [dropped, other];
+state.sweepDroppedForms();
+eq(dropped.removed, true, "a dropped form body is removed from the ground");
+eq(other.removed, false, "an ordinary dropped item is left alone");
+dim.entities = [];
+
+// --- 形態を切り替えても、自分で被り直した兜は消えない -------------------------
+state.safeReset(player, true);
+state.setEnergy(player, data.ENERGY_MAX);
+state.transform(player, "normal");
+advance(20);
+player.head = { typeId: "minecraft:iron_helmet", amount: 1 };   // 手で被り直した
+state.setEnergy(player, data.ENERGY_MAX);
+state.transform(player, "gear2");
+advance(20);
+eq(player.container.count("minecraft:iron_helmet"), 1,
+   "switching forms stashes a helmet the player put back on");
+eq(player.head?.typeId, data.FORM_BY_KEY.gear2.item, "the new form body is worn");
+state.safeReset(player, true);
+for (let i = 0; i < player.container.size; i++) player.container.setItem(i, undefined);
+player.head = undefined;
 
 // --- §09: しゃがみ＋使用は技を出さない -------------------------------------
 state.safeReset(player, true);

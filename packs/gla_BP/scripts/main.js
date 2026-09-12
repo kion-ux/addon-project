@@ -16,7 +16,8 @@ import { ITEM, PROP, ENERGY_MAX, FORM_ORDER } from "./data.js";
 import { tr, tell, allPlayers, forget, setProp } from "./util.js";
 import {
   hasPower, grantPower, transform, revert, safeReset, restore, tick as tickState,
-  formKey, sweepFormItems, isTransformed, markFight, preferredForm,
+  formKey, sweepFormItems, sweepDroppedForms, isTransformed, markFight,
+  preferredForm,
   inShowpiece, skipShowpiece,
 } from "./state.js";
 import { useSelected, cycleTech, forgetPlayer, forgetImpact } from "./skills.js";
@@ -152,10 +153,12 @@ system.runInterval(() => {
   second++;
   try { tickState(); } catch (e) { console.warn(`[gla] tick: ${e}`); }
   if (second % 5 === 0) {
-    // 変身していないのに形態アイテムを持っていたら捨てる（増殖・持ち出し防止）
+    // 形態表示体が持ち物・頭スロット・地面に残っていたら消す。
+    // 1つでも世界に残ると、変身するたびに増えていく（企画書 §14 / QA-03）。
     for (const player of allPlayers()) {
       try { sweepFormItems(player); } catch (_) { }
     }
+    try { sweepDroppedForms(); } catch (_) { }
   }
 }, 20);
 

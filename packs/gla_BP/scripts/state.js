@@ -313,14 +313,56 @@ export function consumeHeld(player, typeId) {
   return true;
 }
 
-/** 落ちている／持っている形態アイテムを掃除する。変身していなければ持てない。 */
+/**
+ * 形態表示体の後始末。
+ *
+ * 表示体は頭スロットに載っているだけで全身が描かれるので、変身していない
+ * プレイヤーが被っていると「自分の体＋もう一体」の二重表示になる
+ * （企画書 §14 が禁じているもの）。持ち物だけでなく **頭スロットも** 見る。
+ * 変身中でも、いま選んでいる形態と食い違う表示体なら外す。
+ */
 export function sweepFormItems(player) {
-  if (isTransformed(player)) return;
+  const form = currentForm(player);
+  const eq = equippable(player);
+  if (eq) {
+    try {
+      const head = eq.getEquipment(EquipmentSlot.Head);
+      if (head && FORM_ITEMS.includes(head.typeId)
+          && (!form || head.typeId !== form.item)) {
+        eq.setEquipment(EquipmentSlot.Head, undefined);
+      }
+    } catch (_) { }
+  }
+  if (form) return;               // 変身中は持ち物の掃除まではしない
   const inv = container(player);
   if (!inv) return;
   for (let i = 0; i < inv.size; i++) {
     const it = inv.getItem(i);
     if (it && FORM_ITEMS.includes(it.typeId)) inv.setItem(i, undefined);
+  }
+}
+
+/**
+ * 地面に落ちた形態表示体を拾って消す。
+ *
+ * keep_on_death と上の掃除で漏れ口はほぼ塞がっているが、他のパックや
+ * コマンドで世界に出ることはありうる。1つでも残ると変身のたびに増えるので、
+ * プレイヤーの近くだけを定期的に見る（全ディメンション走査はしない）。
+ */
+export function sweepDroppedForms() {
+  for (const player of allPlayers()) {
+    let items = [];
+    try {
+      items = player.dimension.getEntities({
+        location: player.location, maxDistance: 24, type: "minecraft:item",
+      });
+    } catch (_) { continue; }
+    for (const e of items) {
+      try {
+        const stack = e.getComponent("minecraft:item")?.itemStack;
+        if (stack && FORM_ITEMS.includes(stack.typeId)) e.remove();
+      } catch (_) { }
+    }
   }
 }
 
@@ -421,7 +463,10 @@ export function transform(player, key) {
 
   stopShowpiece(player);
   rt(player).cast = null;        // 形態を変えたら、前の形態の技は続けない
-  if (!already && !stashArmor(player)) {
+  // 形態を変えるときも必ず通す。stashArmor は頭が空か形態表示体のときは
+  // 何もしないので、形態切替は素通りする。プレイヤーが自分で表示体を外して
+  // 兜をかぶり直していた場合だけ、その兜をしまう（上書きして消さない）。
+  if (!stashArmor(player)) {
     tell(player, tr("gla.msg.no_room"));
     return false;
   }

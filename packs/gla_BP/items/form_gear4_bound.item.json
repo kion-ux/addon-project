@@ -16,6 +16,7 @@
         "value": "item.gla:form_gear4_bound"
       },
       "minecraft:should_despawn": false,
+      "minecraft:keep_on_death": {},
       "minecraft:wearable": {
         "slot": "slot.armor.head",
         "protection": 0
