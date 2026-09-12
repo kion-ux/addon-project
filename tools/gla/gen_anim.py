@@ -763,12 +763,28 @@ def state(animations=None, transitions=None, blend=None):
 
 #  アタッチャブルの animation controller。
 #  企画書 §07「コントローラの分離」— 優先順位は 復旧・解除 ＞ 変身 ＞ 攻撃 ＞
-#  移動 ＞ 待機。ここで観測できるのは組み込みのクエリだけなので、移動系の
-#  出し分けだけを担当し、技ごとの専用クリップはスクリプト側から再生する。
+#  移動 ＞ 待機。
+#
+#  変身中の見える体はアタッチャブルなので、そこで再生できるのは
+#  このコントローラが名指ししたクリップだけ。看板演出（企画書 §08）を
+#  スクリプトの playAnimation に頼ると、対象版で動く保証が無いまま
+#  目玉の演出が消える。
+#
+#  そこで initial_state を "arrive" にしてある。アタッチャブルは形態アイテムを
+#  装備した瞬間に作られるので、変身するたびに登場演出が必ず1回再生される。
+#  組み込みの query.all_animations_finished だけで終われるので、版に依存しない。
+#  演出中にプレイヤーが動き出したら、その場で移動へ抜ける（「演出短縮」を
+#  選んだときは、スクリプト側が先に操作を返すので自然に短くなる）。
 CONTROLLERS = {
     f"controller.animation.{NS}.form": {
-        "initial_state": "idle",
+        "initial_state": "arrive",
         "states": {
+            "arrive": state(["laugh"], [
+                {"crouch": "query.is_sneaking"},
+                {"air": "!query.is_on_ground"},
+                {"move": f"{SPD} > 0.06"},
+                {"idle": "query.all_animations_finished"},
+            ], blend=0.2),
             "idle": state(["idle"], [
                 {"crouch": "query.is_sneaking"},
                 {"air": "!query.is_on_ground"},

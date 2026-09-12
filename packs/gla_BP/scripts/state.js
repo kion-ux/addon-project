@@ -484,8 +484,11 @@ export function transform(player, key) {
   const ctx = makeContext(player, quality(player));
   spawn(player.dimension, "gla:transform_burst", ctx.chest);
   playSfx(player.dimension, player.location, { id: "mob.slime.big", v: 0.8, p: 0.7 });
-  // 形態ごとの登場ポーズ。ギア5だけは看板演出（下の startShowpiece）が担当する。
-  if (key !== "gear5") playAnim(player, `animation.gla.${key}.laugh`);
+  // 登場ポーズと看板演出の「身体の動き」は、アタッチャブル側の
+  // animation controller が initial_state で必ず1回再生する。
+  // 表示体は装備した瞬間に作られるので、ここから鳴らす必要はない
+  // （スクリプトの playAnimation に頼ると、対象版次第で目玉の演出が消える）。
+  // ここで面倒を見るのは、時間表に沿った粒子・音・操作の戻しだけ。
   if (cameraFx(player)) shake(player, 0.22, 0.4);
   title(player, { rawtext: [{ translate: form.name }] },
         { fadeInDuration: 4, stayDuration: 22, fadeOutDuration: 10 });

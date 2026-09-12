@@ -2,8 +2,28 @@
   "format_version": "1.10.0",
   "animation_controllers": {
     "controller.animation.gla.form": {
-      "initial_state": "idle",
+      "initial_state": "arrive",
       "states": {
+        "arrive": {
+          "animations": [
+            "laugh"
+          ],
+          "transitions": [
+            {
+              "crouch": "query.is_sneaking"
+            },
+            {
+              "air": "!query.is_on_ground"
+            },
+            {
+              "move": "query.modified_move_speed > 0.06"
+            },
+            {
+              "idle": "query.all_animations_finished"
+            }
+          ],
+          "blend_transition": 0.2
+        },
         "idle": {
           "animations": [
             "idle"
