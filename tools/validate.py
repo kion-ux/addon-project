@@ -396,6 +396,15 @@ def check(BP: str, RP: str, NS: str) -> int:
                 if "=" in row:
                     k, v = row.split("=", 1)
                     en[k.strip()] = v.strip()
+    # ja と en でキーの集合が違うと、片方の言語だけ生の識別子が出る。
+    if en:
+        only_ja = sorted(set(lang) - set(en))
+        only_en = sorted(set(en) - set(lang))
+        for k in only_ja[:8]:
+            errors.append(f"texts: {k} is in ja_JP but not en_US")
+        for k in only_en[:8]:
+            errors.append(f"texts: {k} is in en_US but not ja_JP")
+
     key_ref = re.compile(r'"(' + NS + r'\.[a-z][a-z0-9_.]*)"')
     for path in walk(script_dir, ".js") if os.path.isdir(script_dir) else ():
         rel = os.path.basename(path)
