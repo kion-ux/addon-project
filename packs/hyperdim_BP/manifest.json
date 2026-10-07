@@ -1,0 +1,65 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "6f1d2a4e-8c3b-4f7a-9e21-3b5c7d9e1a01",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      30
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "6f1d2a4e-8c3b-4f7a-9e21-3b5c7d9e1a02",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "6f1d2a4e-8c3b-4f7a-9e21-3b5c7d9e1a03",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "6f1d2a4e-8c3b-4f7a-9e21-3b5c7d9e1a04",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.13.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.2.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Hyper Dimension Arts Project"
+    ],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

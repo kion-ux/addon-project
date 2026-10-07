@@ -1,0 +1,71 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "hd:flame",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/particle/hd_atlas"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": "v.count ?? 6"
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0
+      },
+      "minecraft:emitter_shape_sphere": {
+        "radius": "v.spread ?? 0.4",
+        "direction": "outwards",
+        "surface_only": false
+      },
+      "minecraft:particle_initial_speed": "(v.speed ?? 1.5) * v.particle_random_1",
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          0,
+          3.0,
+          0
+        ],
+        "linear_drag_coefficient": 2.0
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(v.life ?? 0.6) * (0.6 + v.particle_random_2 * 0.6)"
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "(v.size ?? 1.0) * 0.35 * (1.0 - (v.particle_age / v.particle_lifetime) * 0.4)",
+          "(v.size ?? 1.0) * 0.35 * (1.0 - (v.particle_age / v.particle_lifetime) * 0.4)"
+        ],
+        "facing_camera_mode": "rotate_y",
+        "uv": {
+          "texture_width": 512,
+          "texture_height": 512,
+          "flipbook": {
+            "base_UV": [
+              0,
+              192
+            ],
+            "size_UV": [
+              32,
+              32
+            ],
+            "step_UV": [
+              32,
+              0
+            ],
+            "frames_per_second": 14,
+            "max_frame": 8,
+            "stretch_to_lifetime": true
+          }
+        }
+      },
+      "color": [
+        "math.lerp(v.cr ?? 1.0, 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 2.5, 0.0, 1.0))",
+        "math.lerp(v.cg ?? 1.0, 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 2.5, 0.0, 1.0))",
+        "math.lerp(v.cb ?? 1.0, 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 2.5, 0.0, 1.0))",
+        "math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 1.6, 0.0, 1.0)"
+      ]
+    }
+  }
+}

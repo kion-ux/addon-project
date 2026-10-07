@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 import sys
 import zipfile
@@ -52,8 +51,11 @@ def main():
     if subprocess.run([sys.executable, os.path.join(TOOLS, "validate.py")], cwd=ROOT).returncode:
         sys.exit(1)
 
-    shutil.rmtree(DIST, ignore_errors=True)
+    # dist/ には別アドオン（超次元バトルアーツ）の成果物も同居するので、自分の分だけ消す
     os.makedirs(DIST, exist_ok=True)
+    for f in os.listdir(DIST):
+        if f.startswith(NAME):
+            os.remove(os.path.join(DIST, f))
     bp = os.path.join(ROOT, "packs", "kaiju8_BP")
     rp = os.path.join(ROOT, "packs", "kaiju8_RP")
 

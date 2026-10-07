@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "hd:bow"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " CG",
+      "C G",
+      " CG"
+    ],
+    "key": {
+      "C": {
+        "item": "hd:dimension_crystal"
+      },
+      "G": {
+        "item": "minecraft:gold_ingot"
+      }
+    },
+    "result": {
+      "item": "hd:bow",
+      "count": 1
+    }
+  }
+}

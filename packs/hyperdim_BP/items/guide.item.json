@@ -1,0 +1,25 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "hd:guide",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "hd_guide"
+      },
+      "minecraft:display_name": {
+        "value": "item.hd.guide.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:use_modifiers": {
+        "use_duration": 0.2,
+        "movement_modifier": 1.0
+      },
+      "minecraft:glint": true
+    }
+  }
+}

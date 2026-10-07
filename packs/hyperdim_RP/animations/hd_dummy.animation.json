@@ -1,0 +1,17 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.hd.dummy.wobble": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "math.sin(q.hurt_time * 95.0) * q.hurt_time * 2.4",
+            0,
+            "math.cos(q.hurt_time * 70.0) * q.hurt_time * 1.2"
+          ]
+        }
+      }
+    }
+  }
+}

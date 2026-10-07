@@ -1,0 +1,36 @@
+{
+  "resource_pack_name": "hyperdim",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "hd_greatsword": {
+      "textures": "textures/items/hd/greatsword"
+    },
+    "hd_twinblades": {
+      "textures": "textures/items/hd/twinblades"
+    },
+    "hd_greataxe": {
+      "textures": "textures/items/hd/greataxe"
+    },
+    "hd_dagger": {
+      "textures": "textures/items/hd/dagger"
+    },
+    "hd_bow": {
+      "textures": "textures/items/hd/bow"
+    },
+    "hd_shield": {
+      "textures": "textures/items/hd/shield"
+    },
+    "hd_whip": {
+      "textures": "textures/items/hd/whip"
+    },
+    "hd_claws": {
+      "textures": "textures/items/hd/claws"
+    },
+    "hd_dimension_crystal": {
+      "textures": "textures/items/hd/dimension_crystal"
+    },
+    "hd_guide": {
+      "textures": "textures/items/hd/guide"
+    }
+  }
+}

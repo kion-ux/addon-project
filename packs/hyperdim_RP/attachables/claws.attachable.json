@@ -1,0 +1,45 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "hd:claws",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/entity/hd/claws",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.hd.claws"
+      },
+      "animations": {
+        "tp": "animation.hd.claws.tp",
+        "fp": "animation.hd.claws.fp",
+        "use": "animation.hd.claws.use"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.hd_sw = math.clamp(v.attack_time ?? 0.0, 0.0, 1.0);",
+          "v.hd_use = q.is_using_item ? 1.0 : 0.0;",
+          "v.hd_draw = q.is_using_item ? math.clamp((q.main_hand_item_max_duration - q.main_hand_item_use_duration) / 20.0, 0.0, 1.0) : 0.0;"
+        ],
+        "animate": [
+          {
+            "tp": "!c.is_first_person"
+          },
+          {
+            "fp": "c.is_first_person"
+          },
+          {
+            "use": "v.hd_use > 0.0"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.item_default"
+      ]
+    }
+  }
+}

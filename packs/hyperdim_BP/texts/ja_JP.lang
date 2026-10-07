@@ -1,0 +1,15 @@
+pack.name=超次元バトルアーツ
+pack.description=超次元武器 8 種・必殺技・アクション機動の PvP アドオン
+item.hd.greatsword.name=次元断剣 ディメンション・ブレイカー
+item.hd.twinblades.name=疾風双刃 ゼファー＆ガスト
+item.hd.greataxe.name=紅蓮戦斧 ヴォルカニクス
+item.hd.dagger.name=影刃 ノクス
+item.hd.bow.name=聖光弓 アストライア
+item.hd.shield.name=氷晶盾 グレイシャル・イージス
+item.hd.whip.name=薔薇鞭 ローゼンケッテ
+item.hd.claws.name=獣王爪 ベヒモス
+item.hd.dimension_crystal.name=次元結晶
+item.hd.guide.name=超次元指南書
+entity.hd:training_dummy.name=訓練用カカシ
+item.spawn_egg.entity.hd:training_dummy.name=訓練用カカシ
+entity.hd:dmg_text.name=ダメージ表示

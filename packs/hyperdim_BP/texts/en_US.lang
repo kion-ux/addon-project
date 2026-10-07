@@ -1,0 +1,15 @@
+pack.name=Hyper Dimension Arts
+pack.description=8 hyper-dimensional weapons, ultimates and action mobility for PvP
+item.hd.greatsword.name=Dimension Breaker
+item.hd.twinblades.name=Zephyr & Gust
+item.hd.greataxe.name=Volcanix
+item.hd.dagger.name=Nox
+item.hd.bow.name=Astraea
+item.hd.shield.name=Glacial Aegis
+item.hd.whip.name=Rosenkette
+item.hd.claws.name=Behemoth Fangs
+item.hd.dimension_crystal.name=Dimension Crystal
+item.hd.guide.name=Hyper Dimension Codex
+entity.hd:training_dummy.name=Training Dummy
+item.spawn_egg.entity.hd:training_dummy.name=Spawn Training Dummy
+entity.hd:dmg_text.name=Damage Text

@@ -1,0 +1,305 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "hd.swing": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/swing_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/swing_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/swing_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.swing_heavy": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/swing_heavy_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/swing_heavy_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/swing_heavy_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.hit_slash": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/hit_slash_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/hit_slash_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/hit_slash_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.hit_heavy": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/hit_heavy_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/hit_heavy_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/hit_heavy_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.dash": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/dash_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/dash_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.jump": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/jump_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/jump_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.step": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/step_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/step_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.charge": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/charge_0",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.cutin": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/cutin_0",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.boom": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/boom_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/boom_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.beam": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/beam_0",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.arrow": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/arrow_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/arrow_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.guard": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/guard_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/guard_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.parry": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/parry_0",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.zap": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/zap_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/zap_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.fire": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/fire_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/fire_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.wind": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/wind_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/wind_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.shadow": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/shadow_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/shadow_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.crack": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/crack_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/crack_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.roar": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/roar_0",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.ice": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/ice_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/hd/ice_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "hd.ding": {
+      "category": "player",
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/hd/ding_0",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

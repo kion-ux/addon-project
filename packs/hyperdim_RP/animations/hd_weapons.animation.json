@@ -1,0 +1,970 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.hd.greatsword.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -18,
+            0,
+            0
+          ],
+          "scale": 0.72
+        }
+      }
+    },
+    "animation.hd.greatsword.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -8,
+            0,
+            0
+          ],
+          "scale": 0.55
+        }
+      }
+    },
+    "animation.hd.greatsword.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "ring": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 90.0"
+          ]
+        },
+        "tassel": {
+          "rotation": [
+            "math.sin(q.anim_time * 120.0) * 6.0",
+            0,
+            "math.sin(q.anim_time * 90.0) * 5.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.greatsword.swing": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-math.sin(v.hd_sw * 180.0) * 34.0",
+            "math.sin(v.hd_sw * 360.0) * 14.0",
+            "math.sin(v.hd_sw * 180.0) * 10.0"
+          ],
+          "position": [
+            0,
+            "math.sin(v.hd_sw * 180.0) * 1.2",
+            "-math.sin(v.hd_sw * 180.0) * 2.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.greatsword.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-v.hd_use * 22.0",
+            "v.hd_use * 8.0",
+            0
+          ],
+          "position": [
+            0,
+            "v.hd_use * 1.0",
+            0
+          ]
+        },
+        "ring": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 540.0"
+          ],
+          "scale": "1.0 + v.hd_use * 0.35"
+        }
+      }
+    },
+    "animation.hd.twinblades.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -12,
+            0,
+            0
+          ],
+          "scale": 0.78
+        },
+        "left": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -12,
+            0,
+            0
+          ],
+          "scale": 0.78
+        }
+      }
+    },
+    "animation.hd.twinblades.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -6,
+            0,
+            0
+          ],
+          "scale": 0.66
+        },
+        "left": {
+          "scale": 0.0
+        }
+      }
+    },
+    "animation.hd.twinblades.swing": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-math.sin(v.hd_sw * 180.0) * 26.0",
+            "math.sin(v.hd_sw * 360.0) * 22.0",
+            "math.sin(v.hd_sw * 180.0) * 18.0"
+          ]
+        },
+        "left": {
+          "rotation": [
+            "math.sin(v.hd_sw * 180.0) * 24.0",
+            "-math.sin(v.hd_sw * 360.0) * 20.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.hd.twinblades.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-v.hd_use * 22.0",
+            "v.hd_use * 8.0",
+            0
+          ],
+          "position": [
+            0,
+            "v.hd_use * 1.0",
+            0
+          ]
+        },
+        "left": {
+          "rotation": [
+            "-v.hd_use * 22.0",
+            "-v.hd_use * 8.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.hd.greataxe.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            2
+          ],
+          "rotation": [
+            -22,
+            0,
+            0
+          ],
+          "scale": 0.7
+        }
+      }
+    },
+    "animation.hd.greataxe.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            2
+          ],
+          "rotation": [
+            -10,
+            0,
+            0
+          ],
+          "scale": 0.52
+        }
+      }
+    },
+    "animation.hd.greataxe.swing": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-math.sin(v.hd_sw * 180.0) * 34.0",
+            "math.sin(v.hd_sw * 360.0) * 14.0",
+            "math.sin(v.hd_sw * 180.0) * 10.0"
+          ],
+          "position": [
+            0,
+            "math.sin(v.hd_sw * 180.0) * 1.2",
+            "-math.sin(v.hd_sw * 180.0) * 2.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.greataxe.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-v.hd_use * 22.0",
+            "v.hd_use * 8.0",
+            0
+          ],
+          "position": [
+            0,
+            "v.hd_use * 1.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.hd.dagger.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            10,
+            180,
+            0
+          ],
+          "scale": 0.66
+        }
+      }
+    },
+    "animation.hd.dagger.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            180,
+            0
+          ],
+          "scale": 0.62
+        }
+      }
+    },
+    "animation.hd.dagger.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "tassel": {
+          "rotation": [
+            "math.sin(q.anim_time * 140.0) * 7.0",
+            0,
+            "math.cos(q.anim_time * 100.0) * 6.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.dagger.swing": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            "-math.sin(v.hd_sw * 180.0) * 3.0"
+          ],
+          "rotation": [
+            "math.sin(v.hd_sw * 180.0) * 20.0",
+            0,
+            "math.sin(v.hd_sw * 360.0) * 15.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.dagger.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-v.hd_use * 22.0",
+            "v.hd_use * 8.0",
+            0
+          ],
+          "position": [
+            0,
+            "v.hd_use * 1.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.hd.bow.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": 0.62
+        }
+      }
+    },
+    "animation.hd.bow.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": 0.5
+        }
+      }
+    },
+    "animation.hd.bow.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "arrow": {
+          "scale": "v.hd_draw > 0.02 ? 1.0 : 0.0"
+        }
+      }
+    },
+    "animation.hd.bow.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "rotation": [
+            "v.hd_use * 90.0",
+            0,
+            0
+          ]
+        },
+        "limb_u": {
+          "rotation": [
+            "-v.hd_draw * 9.0",
+            0,
+            0
+          ]
+        },
+        "limb_l": {
+          "rotation": [
+            "v.hd_draw * 9.0",
+            0,
+            0
+          ]
+        },
+        "str_u": {
+          "rotation": [
+            "v.hd_draw * 23.7",
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            "1.0 + v.hd_draw * 0.092",
+            1
+          ]
+        },
+        "str_l": {
+          "rotation": [
+            "-v.hd_draw * 23.7",
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            "1.0 + v.hd_draw * 0.092",
+            1
+          ]
+        },
+        "arrow": {
+          "position": [
+            0,
+            0,
+            "v.hd_draw * 8.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.shield.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            -1,
+            4,
+            0
+          ],
+          "rotation": [
+            0,
+            -90,
+            0
+          ],
+          "scale": 0.72
+        }
+      }
+    },
+    "animation.hd.shield.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            3,
+            0
+          ],
+          "rotation": [
+            0,
+            -70,
+            0
+          ],
+          "scale": 0.6
+        }
+      }
+    },
+    "animation.hd.shield.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "core": {
+          "scale": "1.0 + math.sin(q.anim_time * 180.0) * 0.06",
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 30.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.shield.swing": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            "math.sin(v.hd_sw * 180.0) * 2.0",
+            0,
+            "-math.sin(v.hd_sw * 180.0) * 3.0"
+          ],
+          "rotation": [
+            0,
+            "math.sin(v.hd_sw * 180.0) * 60.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.hd.shield.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "rotation": [
+            "v.hd_use * 65.0",
+            "v.hd_use * 90.0",
+            0
+          ],
+          "position": [
+            "v.hd_use * 2.0",
+            "-v.hd_use * 2.0",
+            0
+          ]
+        },
+        "core": {
+          "scale": "1.0 + v.hd_use * 0.25"
+        }
+      }
+    },
+    "animation.hd.whip.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": 0.8
+        }
+      }
+    },
+    "animation.hd.whip.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            -10,
+            0,
+            0
+          ],
+          "scale": 0.7
+        }
+      }
+    },
+    "animation.hd.whip.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "seg0": {
+          "rotation": [
+            "40 + math.sin(q.anim_time * 160.0 - 0) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 0) * 2.5"
+          ]
+        },
+        "seg1": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 26) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 20) * 2.5"
+          ]
+        },
+        "seg2": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 52) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 40) * 2.5"
+          ]
+        },
+        "seg3": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 78) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 60) * 2.5"
+          ]
+        },
+        "seg4": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 104) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 80) * 2.5"
+          ]
+        },
+        "seg5": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 130) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 100) * 2.5"
+          ]
+        },
+        "seg6": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 156) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 120) * 2.5"
+          ]
+        },
+        "seg7": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 182) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 140) * 2.5"
+          ]
+        },
+        "seg8": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 208) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 160) * 2.5"
+          ]
+        },
+        "seg9": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 234) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 180) * 2.5"
+          ]
+        },
+        "seg10": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 260) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 200) * 2.5"
+          ]
+        },
+        "seg11": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 286) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 220) * 2.5"
+          ]
+        },
+        "seg12": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 312) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 240) * 2.5"
+          ]
+        },
+        "seg13": {
+          "rotation": [
+            "22 + math.sin(q.anim_time * 160.0 - 338) * 4.0",
+            0,
+            "math.sin(q.anim_time * 110.0 - 260) * 2.5"
+          ]
+        }
+      }
+    },
+    "animation.hd.whip.swing": {
+      "loop": true,
+      "bones": {
+        "seg0": {
+          "rotation": [
+            "-40 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 0) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 0) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg1": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 34) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 24) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg2": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 68) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 48) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg3": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 102) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 72) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg4": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 136) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 96) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg5": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 170) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 120) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg6": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 204) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 144) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg7": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 238) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 168) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg8": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 272) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 192) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg9": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 306) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 216) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg10": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 340) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 240) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg11": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 374) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 264) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg12": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 408) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 288) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        },
+        "seg13": {
+          "rotation": [
+            "-22 * math.sin(v.hd_sw * 180.0) + math.sin(v.hd_sw * 540.0 - 442) * 18.0 * math.sin(v.hd_sw * 180.0)",
+            0,
+            "math.sin(v.hd_sw * 360.0 - 312) * 6.0 * math.sin(v.hd_sw * 180.0)"
+          ]
+        }
+      }
+    },
+    "animation.hd.whip.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "seg0": {
+          "rotation": [
+            "-40 * v.hd_use + math.sin(q.anim_time * 900.0 - 0) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 0) * 10.0"
+          ]
+        },
+        "seg1": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 36) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 30) * 10.0"
+          ]
+        },
+        "seg2": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 72) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 60) * 10.0"
+          ]
+        },
+        "seg3": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 108) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 90) * 10.0"
+          ]
+        },
+        "seg4": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 144) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 120) * 10.0"
+          ]
+        },
+        "seg5": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 180) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 150) * 10.0"
+          ]
+        },
+        "seg6": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 216) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 180) * 10.0"
+          ]
+        },
+        "seg7": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 252) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 210) * 10.0"
+          ]
+        },
+        "seg8": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 288) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 240) * 10.0"
+          ]
+        },
+        "seg9": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 324) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 270) * 10.0"
+          ]
+        },
+        "seg10": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 360) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 300) * 10.0"
+          ]
+        },
+        "seg11": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 396) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 330) * 10.0"
+          ]
+        },
+        "seg12": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 432) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 360) * 10.0"
+          ]
+        },
+        "seg13": {
+          "rotation": [
+            "-22 * v.hd_use + math.sin(q.anim_time * 900.0 - 468) * 14.0",
+            0,
+            "math.cos(q.anim_time * 700.0 - 390) * 10.0"
+          ]
+        }
+      }
+    },
+    "animation.hd.claws.tp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": 1.0
+        },
+        "left": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "animation.hd.claws.fp": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": 0.9
+        },
+        "left": {
+          "scale": 0.0
+        }
+      }
+    },
+    "animation.hd.claws.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-v.hd_use * 22.0",
+            "v.hd_use * 8.0",
+            0
+          ],
+          "position": [
+            0,
+            "v.hd_use * 1.0",
+            0
+          ]
+        },
+        "left": {
+          "rotation": [
+            "-v.hd_use * 22.0",
+            "-v.hd_use * 8.0",
+            0
+          ]
+        }
+      }
+    }
+  }
+}

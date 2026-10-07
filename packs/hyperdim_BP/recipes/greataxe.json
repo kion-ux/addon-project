@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "hd:greataxe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "CDC",
+      "CS ",
+      " S "
+    ],
+    "key": {
+      "C": {
+        "item": "hd:dimension_crystal"
+      },
+      "D": {
+        "item": "minecraft:magma"
+      },
+      "S": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "result": {
+      "item": "hd:greataxe",
+      "count": 1
+    }
+  }
+}

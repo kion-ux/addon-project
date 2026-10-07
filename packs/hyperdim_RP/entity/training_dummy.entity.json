@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "hd:training_dummy",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/hd/training_dummy"
+      },
+      "geometry": {
+        "default": "geometry.hd.training_dummy"
+      },
+      "animations": {
+        "wobble": "animation.hd.dummy.wobble"
+      },
+      "scripts": {
+        "animate": [
+          "wobble"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#C9A15E",
+        "overlay_color": "#3FA9FF"
+      }
+    }
+  }
+}
