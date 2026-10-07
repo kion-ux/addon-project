@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """武器モデルのソフトレンダラ（Minecraft 無しで形と塗りを確認する / アイコンを焼く）。
 
-tools/preview.py のジオメトリ解釈（ボーン階層・キューブ回転の規約）をそのまま使い、
+ジオメトリの解釈（ボーン階層・キューブ回転・X の鏡映）は hd_scene / hd_space と同じ規則で、
 * 発光 texel（アルファが低い）を陰影なしで明るく描く
 * 背景透過・スーパーサンプリングでアイテムアイコンを書き出せる
 ようにしたもの。
@@ -16,7 +16,6 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 import hd_common  # noqa: F401  (sys.path 設定)
-from preview import Geo, rot_matrix  # noqa: E402
 
 
 def _pose_from_anim(anim_path, names, t=0.0):
@@ -44,14 +43,19 @@ def _pose_from_anim(anim_path, names, t=0.0):
 def render(geo_path, tex_path, size=320, yaw=30.0, pitch=-14.0, roll=0.0,
            margin=0.08, bg=(26, 28, 36, 255), pose=None, hide=(), ss=1,
            outline=None):
-    geo = Geo(geo_path, pose or {}, hide)
-    tex = np.array(Image.open(tex_path).convert("RGBA"), dtype=np.float32)
+    """武器だけを描く（統合版と同じ回転規則・X 鏡映）。pose: bone -> {rotation, position}。"""
+    from hd_scene import load_geo, weapon_quads
+    from hd_space import Rx, Ry, Rz
+    geo = load_geo(geo_path)
+    tex_img = Image.open(tex_path).convert("RGBA")
+    tex = np.array(tex_img, dtype=np.float32)
     th, tw = tex.shape[:2]
-    quads = geo.quads()
+    quads = weapon_quads(geo, tex_img, None, pose or {}, hide=hide)
     S = size * ss
-    view = rot_matrix(pitch, yaw, roll)
+    view = Rz(roll) @ Rx(pitch) @ Ry(yaw)
     verts = np.array([p for q in quads for p in q[0]])
     vv = verts @ view.T
+    vv[:, 0] *= -1                      # 統合版の画面は X が鏡映
     lo, hi = vv.min(axis=0), vv.max(axis=0)
     span = max(hi[0] - lo[0], hi[1] - lo[1]) or 1.0
     scale = S * (1 - 2 * margin) / span
@@ -63,15 +67,16 @@ def render(geo_path, tex_path, size=320, yaw=30.0, pitch=-14.0, roll=0.0,
     light = np.array([0.40, 0.80, -0.45])
     light /= np.linalg.norm(light)
 
-    for pts, uvs, normal in quads:
-        n = view @ normal
-        if n[2] > 0.05:
-            continue
-        lit = 0.42 + 0.58 * max(0.0, float(np.dot(n, light)))
-        scr = []
-        for p in pts:
-            q = view @ p
-            scr.append(((q[0] - cx) * scale + S / 2, S / 2 - (q[1] - cy) * scale, q[2]))
+    for pts, uvs, _col in quads:
+        P = [view @ np.asarray(p) for p in pts]
+        for q in P:
+            q[0] *= -1
+        e1, e2 = P[1] - P[0], P[3] - P[0]
+        n = np.cross(e1, e2)
+        nl = np.linalg.norm(n) or 1.0
+        n = n / nl
+        lit = 0.42 + 0.58 * abs(float(np.dot(n, light)))
+        scr = [((q[0] - cx) * scale + S / 2, S / 2 - (q[1] - cy) * scale, q[2]) for q in P]
         for tri in ((0, 1, 2), (0, 2, 3)):
             p0, p1, p2 = (scr[i] for i in tri)
             t0, t1, t2 = (uvs[i] for i in tri)
@@ -103,7 +108,6 @@ def render(geo_path, tex_path, size=320, yaw=30.0, pitch=-14.0, roll=0.0,
             ui = np.clip(u.astype(int), 0, tw - 1)
             vi = np.clip(v.astype(int), 0, th - 1)
             texel = tex[vi, ui]
-            # entity_emissive_alpha: アルファが低いほど自己発光
             emit = 1.0 - texel[..., 3:4] / 255.0
             k = lit * (1 - emit) + 1.12 * emit
             col = np.clip(texel[..., :3] * k, 0, 255)

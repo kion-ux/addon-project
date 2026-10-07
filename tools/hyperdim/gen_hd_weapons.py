@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from hd_common import (ELEMENTS, NS, RP, SCRATCH, WEAPONS, arc_points, beam,  # noqa: E402
-                       box, cbox, fill_tri_yz, lerp, polyline, write_json)
+                       cbox, fill_tri_yz, lerp, polyline)
 from hd_paint import HDPainter, mix, shade  # noqa: E402
 from mcmodel import Model  # noqa: E402
 
@@ -41,12 +41,15 @@ def styles_for(element, **over):
         "blade_tint": {"kind": "blade", "base": mix((170, 180, 198), g, 0.18),
                        "light": mix((240, 246, 255), lt, 0.4),
                        "dark": mix((92, 100, 124), dp, 0.35), "line": shade(dp, 0.6)},
+        # 段を重ねて面を作る部品（切先・斧の刃）用。段ごとの帯や縁が縞に見えないよう、
+        # 面取り・輪郭・刃文・映り込みを切って一枚の面に見せる
         "blade_flat": {"kind": "blade", "base": mix((170, 180, 198), g, 0.18),
                        "light": mix((240, 246, 255), lt, 0.4),
                        "dark": mix((92, 100, 124), dp, 0.35), "outline": False,
-                       "hi": 0.0, "lo": 1.1},
-        "edge": {"kind": "edge", "glow": g, "emit": 60, "outline": False},
-        "edge_hot": {"kind": "edge", "glow": g, "emit": 12, "outline": False,
+                       "bevel": False, "fuller": False, "hamon_off": True,
+                       "glint_period": 9999, "hi": 0.0, "lo": 1.1},
+        "edge": {"kind": "edge", "glow": g, "emit": 60, "outline": False, "bevel": False},
+        "edge_hot": {"kind": "edge", "glow": g, "emit": 12, "outline": False, "bevel": False,
                      "sat": 0.5},
         "metal": {"kind": "metal", "base": (62, 66, 84), "light": (120, 128, 150),
                   "dark": (34, 36, 48), "line": (16, 16, 24), "panel": 7},
@@ -59,11 +62,12 @@ def styles_for(element, **over):
                    "dark": (122, 128, 148), "line": (60, 64, 80)},
         "wrap": {"kind": "wrap", "base": (28, 26, 34), "strap": shade(dp, 1.25),
                  "skin": (222, 220, 210), "period": 6, "outline": False},
-        "gem": {"kind": "gem", "glow": g, "deep": dp, "outline": False},
-        "energy": {"kind": "energy", "glow": g, "light": lt, "outline": False},
-        "void": {"kind": "void", "base": shade(dp, 0.35), "glow": g, "outline": False},
+        "gem": {"kind": "gem", "glow": g, "deep": dp, "outline": False, "bevel": False},
+        "energy": {"kind": "energy", "glow": g, "light": lt, "outline": False, "bevel": False},
+        "void": {"kind": "void", "base": shade(dp, 0.35), "glow": g, "outline": False,
+                 "bevel": False, "nebula": mix(g, (190, 80, 255), 0.6)},
         "rune": {"kind": "rune", "base": (40, 42, 58), "glow": g},
-        "crystal": {"kind": "crystal", "base": mix(g, (255, 255, 255), 0.25),
+        "crystal": {"kind": "crystal", "base": mix(g, (255, 255, 255), 0.25), "glow": g,
                     "line": shade(dp, 0.8)},
         "cloth": {"kind": "cloth", "base": shade(dp, 1.15), "hem": g, "hem_emit": 60,
                   "outline": False},
@@ -246,7 +250,8 @@ def _twin_blade(m, bone, mirror=1.0, accent="gold"):
 
 def build_twinblades(m: Model, root):
     _twin_blade(m, root, 1.0, "gold")
-    left = m.bone("left", (0, 0, 0), binding=BIND_OFF)
+    m.bone("hold_l", (0, 0, 0), binding=BIND_OFF)
+    left = m.bone("left", (0, 0, 0), parent="hold_l")
     _twin_blade(m, left, -1.0, "silver")
 
 
@@ -604,7 +609,8 @@ def _claw(m, b, out=-1.0):
 
 def build_claws(m: Model, root):
     _claw(m, root, -1.0)
-    left = m.bone("left", (0, 0, 0), binding=BIND_OFF)
+    m.bone("hold_l", (0, 0, 0), binding=BIND_OFF)
+    left = m.bone("left", (0, 0, 0), parent="hold_l")
     _claw(m, left, 1.0)
 
 
@@ -624,7 +630,7 @@ STYLE_OVERRIDES = {
     "twinblades": {"wrap": {"base": (20, 40, 32)}},
     "greataxe": {"edge": {"sat": 0.6}, "edge_hot": {"sat": 0.85},
                  "blade_flat": {"base": (120, 104, 108), "light": (200, 176, 170),
-                                "dark": (70, 52, 56), "glint_period": 9},
+                                "dark": (70, 52, 56)},
                  "metal": {"base": (58, 44, 44), "light": (124, 96, 90),
                            "dark": (30, 22, 22)},
                  "wrap": {"base": (40, 14, 12)}},
@@ -645,13 +651,42 @@ STYLE_OVERRIDES = {
 }
 
 
+def to_bedrock_rotations(m: Model) -> None:
+    """形は「旧プレビューの回転規則」で設計してあるので、書き出す前に統合版の規則
+    （hd_space.rot: X→Y→Z、X/Z 反転）のオイラー角へ変換する。行列ごと変換するので
+    見た目の形はそのまま保たれる。"""
+    from hd_space import euler
+    from preview import rot_matrix as designed
+    for c in m.all_cubes():
+        if c.rotation:
+            c.rotation = list(euler(designed(*c.rotation)))
+
+
 def build_model(name: str) -> Model:
-    m = Model(f"geometry.{NS}.{name}", uv_scale=4, visible_bounds=(5, 5),
-              vb_offset=(0, 0.5, 0), max_atlas=(1024, 1024))
-    root = m.bone("root", (0, 0, 0), binding=BIND_MAIN)
+    m = Model(f"geometry.{NS}.{name}", uv_scale=4, visible_bounds=(6, 6),
+              vb_offset=(0, 1.0, 0), max_atlas=(1024, 1024))
+    # hold: 手に bind し、三人称／一人称／構えの「持ち方」を受け持つ
+    # root: 握りが原点。振り・溜め・待機の揺れを武器自身の向きで足す
+    m.bone("hold", (0, 0, 0), binding=BIND_MAIN)
+    root = m.bone("root", (0, 0, 0), parent="hold")
     BUILDERS[name](m, root)
-    m.pack()
-    return m
+    to_bedrock_rotations(m)
+    # テクセル密度: できるだけ上げ、1024x1024 に収まる最大の倍率を選ぶ
+    base = {id(c): c.uv_scale for c in m.all_cubes()}
+    for k in (1.75, 1.5, 1.25, 1.0):
+        for c in m.all_cubes():
+            s0 = base[id(c)] or 4
+            c.uv_scale = max(1, int(round(s0 * k)))
+            c._scale = c.uv_scale
+            c.uv = None
+        m.uv_scale = max(1, int(round(4 * k)))
+        try:
+            m.pack()
+            m.texel_k = k
+            return m
+        except ValueError:
+            continue
+    raise ValueError(f"{name}: does not fit")
 
 
 # アイコンの撮り方: (yaw, pitch, 画面上の回転)。刃が右上を向く斜めの構図
@@ -669,7 +704,7 @@ def make_icon(name, geo, tex):
     from PIL import Image, ImageFilter
     from hd_preview import render
     yaw, pitch, turn = ICON_VIEW[name]
-    hide = ("fp_left", "left", "arrow")
+    hide = ("hold_l", "left", "arrow")
     big = render(geo, tex, 256, yaw, pitch, 0, margin=0.02, bg=(0, 0, 0, 0), ss=2,
                  hide=hide, pose=ICON_POSE.get(name))
     big = big.rotate(turn, resample=Image.BICUBIC, expand=True)
@@ -707,7 +742,7 @@ def main() -> None:
         p.save(tex)
         make_icon(name, geo, tex)
         print(f"  {name:11s} {len(m.bones):3d} bones {len(m.all_cubes()):4d} cubes "
-              f"{m.tex_w}x{m.tex_h}")
+              f"{m.tex_w}x{m.tex_h}  texel x{m.texel_k}")
         if os.environ.get("HD_PREVIEW"):
             for yaw, pitch in ((90, -6), (35, -22), (160, -12), (0, -86)):
                 tiles.append(render(geo, tex, 300, yaw, pitch, ss=2,

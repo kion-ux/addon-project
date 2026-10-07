@@ -16,7 +16,7 @@ export const WEIGHT = {
 /**
  * 各武器:
  *  color   発光色 (0..1)      deep  影の色
- *  hold    持っている間の全身姿勢（playanimation）
+ *  （持ち姿勢は武器ごとに tools/hyperdim/hd_holds.py で設計し、playanimation で再生）
  *  combo   通常攻撃 1→2→3 段目の全身モーション
  *  moves   skill = 右クリック / dash = ダッシュ中に右クリック /
  *          air = 空中で右クリック / ult = スニーク＋右クリック（ゲージ 100%）
@@ -26,7 +26,7 @@ export const WEAPONS = {
   "hd:greatsword": {
     key: "greatsword", name: "次元断剣 ディメンション・ブレイカー", short: "次元断剣",
     color: [0.27, 0.69, 1.0], deep: [0.07, 0.2, 0.55], tc: "§b",
-    weight: "heavy", hold: "hold_2h", combo: ["combo1", "combo2", "combo3"],
+    weight: "heavy", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.hit_heavy", swing: "hd.swing_heavy", kanji: 0,
     moves: {
       skill: { name: "次元断", en: "DIMENSION CUT", cd: 110 },
@@ -38,7 +38,7 @@ export const WEAPONS = {
   "hd:twinblades": {
     key: "twinblades", name: "疾風双刃 ゼファー＆ガスト", short: "疾風双刃",
     color: [0.25, 1.0, 0.63], deep: [0.04, 0.38, 0.25], tc: "§a",
-    weight: "light", hold: "hold_dual", combo: ["combo1", "combo2", "rapid"],
+    weight: "light", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.hit_slash", swing: "hd.swing", kanji: 0,
     moves: {
       skill: { name: "疾風連刃", en: "GALE RUSH", cd: 90 },
@@ -50,7 +50,7 @@ export const WEAPONS = {
   "hd:greataxe": {
     key: "greataxe", name: "紅蓮戦斧 ヴォルカニクス", short: "紅蓮戦斧",
     color: [1.0, 0.34, 0.16], deep: [0.5, 0.05, 0.04], tc: "§c",
-    weight: "heavy", hold: "hold_2h", combo: ["combo2", "combo1", "combo3"],
+    weight: "heavy", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.hit_heavy", swing: "hd.swing_heavy", kanji: 2,
     moves: {
       skill: { name: "爆炎断", en: "BURNING CREST", cd: 120 },
@@ -62,7 +62,7 @@ export const WEAPONS = {
   "hd:dagger": {
     key: "dagger", name: "影刃 ノクス", short: "影刃",
     color: [0.7, 0.36, 1.0], deep: [0.2, 0.06, 0.4], tc: "§d",
-    weight: "light", hold: null, combo: ["stab", "combo2", "thrust"],
+    weight: "light", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.hit_slash", swing: "hd.swing", kanji: 3,
     moves: {
       skill: { name: "影縫い", en: "SHADOW STITCH", cd: 70 },
@@ -74,7 +74,7 @@ export const WEAPONS = {
   "hd:bow": {
     key: "bow", name: "聖光弓 アストライア", short: "聖光弓",
     color: [1.0, 0.84, 0.36], deep: [0.59, 0.36, 0.04], tc: "§e",
-    weight: "mid", hold: null, combo: ["thrust", "combo1", "combo2"],
+    weight: "mid", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.hit_slash", swing: "hd.swing", kanji: 1, charge: true,
     moves: {
       skill: { name: "聖光矢", en: "HOLY ARROW", cd: 8 },
@@ -86,7 +86,7 @@ export const WEAPONS = {
   "hd:shield": {
     key: "shield", name: "氷晶盾 グレイシャル・イージス", short: "氷晶盾",
     color: [0.51, 0.96, 1.0], deep: [0.11, 0.43, 0.59], tc: "§3",
-    weight: "mid", hold: null, combo: ["bash", "combo1", "bash"],
+    weight: "mid", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.guard", swing: "hd.swing_heavy", kanji: 4, guard: true,
     moves: {
       skill: { name: "氷撃反射", en: "FROST REVENGE", cd: 20 },
@@ -98,7 +98,7 @@ export const WEAPONS = {
   "hd:whip": {
     key: "whip", name: "薔薇鞭 ローゼンケッテ", short: "薔薇鞭",
     color: [1.0, 0.31, 0.7], deep: [0.47, 0.04, 0.28], tc: "§d",
-    weight: "mid", hold: null, combo: ["crack", "combo1", "crack"],
+    weight: "mid", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.crack", swing: "hd.swing", kanji: 3,
     moves: {
       skill: { name: "茨の鞭", en: "THORN LASH", cd: 70 },
@@ -110,7 +110,7 @@ export const WEAPONS = {
   "hd:claws": {
     key: "claws", name: "獣王爪 ベヒモス", short: "獣王爪",
     color: [1.0, 0.61, 0.14], deep: [0.47, 0.2, 0.02], tc: "§6",
-    weight: "light", hold: "hold_claw", combo: ["clawx", "combo1", "uppercut"],
+    weight: "light", combo: ["combo1", "combo2", "combo3"],
     hitSound: "hd.hit_slash", swing: "hd.swing", kanji: 1,
     moves: {
       skill: { name: "獣王連爪", en: "BEAST FANG", cd: 90 },

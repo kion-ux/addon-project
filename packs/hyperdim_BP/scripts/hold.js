@@ -33,14 +33,14 @@ export function startUse(player, w) {
     if (!player.isOnGround) { perform(player, w, "air"); return; }
     if (player.isSprinting) { perform(player, w, "dash"); return; }
     guarding.set(player.id, { player, w, start: now(), absorbed: 0, parries: 0 });
-    body(player, "guard");
+    body(player, "use");
     sound(player.dimension, "hd.guard", player.location, 1.3, 0.6);
     return;
   }
   if (w.charge) {
     if (player.isSprinting && player.isOnGround) { perform(player, w, "dash"); return; }
     drawing.set(player.id, { player, w, start: now(), maxed: false });
-    body(player, "aim");
+    body(player, "use");
     sound(player.dimension, "hd.charge", player.location, 1.5, 0.4);
   }
 }

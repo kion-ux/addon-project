@@ -17,23 +17,31 @@
       "animations": {
         "tp": "animation.hd.claws.tp",
         "fp": "animation.hd.claws.fp",
+        "idle": "animation.hd.claws.idle",
+        "swing": "animation.hd.claws.swing",
         "use": "animation.hd.claws.use"
       },
       "scripts": {
         "pre_animation": [
-          "v.hd_sw = math.clamp(v.attack_time ?? 0.0, 0.0, 1.0);",
+          "v.hd_sw = math.clamp(c.owning_entity->v.attack_time, 0.0, 1.0);",
           "v.hd_use = q.is_using_item ? 1.0 : 0.0;",
-          "v.hd_draw = q.is_using_item ? math.clamp((q.main_hand_item_max_duration - q.main_hand_item_use_duration) / 20.0, 0.0, 1.0) : 0.0;"
+          "v.hd_usew = (v.hd_usew ?? 0.0) + (v.hd_use - (v.hd_usew ?? 0.0)) * math.min(1.0, q.delta_time * 14.0);",
+          "v.hd_draw = q.is_using_item ? math.clamp((q.main_hand_item_max_duration - q.main_hand_item_use_duration) / 20.0, 0.0, 1.0) : 0.0;",
+          "v.hd_fp = c.is_first_person ? 1.0 : 0.0;"
         ],
         "animate": [
           {
-            "tp": "!c.is_first_person"
+            "tp": "1.0 - v.hd_fp"
           },
           {
-            "fp": "c.is_first_person"
+            "fp": "v.hd_fp"
+          },
+          "idle",
+          {
+            "swing": "v.hd_sw > 0.0"
           },
           {
-            "use": "v.hd_use > 0.0"
+            "use": "v.hd_usew > 0.01"
           }
         ]
       },

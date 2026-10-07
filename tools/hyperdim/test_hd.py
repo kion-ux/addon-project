@@ -268,12 +268,19 @@ clear();
 const p = makePlayer("hd:dagger");
 ground(p, false); p.isJumping = false; G.__advance(6);
 p.isJumping = true; G.__advance(2);
-if (!(G.__log.anims.get("animation.hd.p.airjump") > 0)) fail("double jump did not trigger");
+if (!(G.__log.anims.get("animation.hd.p.dagger.airjump") > 0)) fail("double jump did not trigger");
 p.isSneaking = true; G.__advance(2); p.isSneaking = false; G.__advance(2);
-if (!(G.__log.anims.get("animation.hd.p.dash") > 0)) fail("air dash did not trigger");
+if (!(G.__log.anims.get("animation.hd.p.dagger.dash") > 0)) fail("air dash did not trigger");
 ground(p, true); G.__advance(4);
 p.isSneaking = true; G.__advance(2); p.isSneaking = false; G.__advance(2); p.isSneaking = true; G.__advance(2);
-if (!(G.__log.anims.get("animation.hd.p.step") > 0)) fail("step did not trigger");
+if (!(G.__log.anims.get("animation.hd.p.dagger.step") > 0)) fail("step did not trigger");
+// ジャスト回避: 回避の無敵中に殴られる
+{
+  const foe = new FakeEntity(G.__dim, "minecraft:zombie", { x: 1, y: 64, z: 1 }, 20);
+  p.effects.length = 0;
+  H.entityHitEntity({ damagingEntity: foe, hitEntity: p });
+  if (!p.effects.includes("speed") || !String(p.title ?? "").length) fail("just dodge did not trigger");
+}
 
 // 弓の溜めの段階
 for (const [hold, lv] of [[3, 0], [12, 1], [25, 2]]) {
@@ -328,6 +335,9 @@ def main() -> int:
         if res.returncode:
             print(res.stderr[-3000:])
             return 1
+        if os.environ.get("HD_USED_JSON") and used:
+            # check_hd_clip.py --used が「実際に再生される全身モーション」だけを調べるのに使う
+            json.dump(used, open(os.environ["HD_USED_JSON"], "w"))
         # 参照の実在チェック
         errs = []
         particles = set()

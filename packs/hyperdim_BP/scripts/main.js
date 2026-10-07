@@ -11,11 +11,12 @@ import {
 } from "./combat.js";
 import { onMeleeHit, forgetCombo } from "./combo.js";
 import { chooseKind, perform } from "./engine.js";
-import { body, bodyStop, setTickSource } from "./fx.js";
+import { holdPose, setTickSource } from "./fx.js";
 import { openGuide } from "./guide.js";
 import { startUse, stopUse, tickHold, onGuardHurt, forgetHold } from "./hold.js";
 import { showHud } from "./hud.js";
-import { tickMobility, cancelFall, forget } from "./mobility.js";
+import { tickMobility, cancelFall, forget, tryJustDodge } from "./mobility.js";
+import { tickAmbient } from "./ambient.js";
 import { tickShots } from "./projectiles.js";
 import { allPlayers, heldItem, health, cmd, valid } from "./util.js";
 import "./moves_sword.js";
@@ -59,8 +60,11 @@ world.afterEvents.itemStopUse?.subscribe(onStop);
 world.afterEvents.itemReleaseUse?.subscribe(onStop);
 world.afterEvents.itemCompleteUse?.subscribe(onStop);
 
-// 通常攻撃が当たった
+// 通常攻撃が当たった（殴られた側の回避中ならジャスト回避）
 world.afterEvents.entityHitEntity.subscribe((ev) => {
+  if (ev.hitEntity?.typeId === "minecraft:player") {
+    try { tryJustDodge(ev.hitEntity, ev.damagingEntity, addGauge); } catch (_) { }
+  }
   const p = ev.damagingEntity;
   if (p?.typeId !== "minecraft:player") return;
   const w = heldWeapon(p);
@@ -103,9 +107,16 @@ function dummyHurt(e, dmg) {
 //  持ち替え: 両手持ちの構え・獣の構え
 // ---------------------------------------------------------------------------
 function onHoldChange(p, w) {
-  if (w?.hold) body(p, w.hold, "hd.hold", 0.2);
-  else bodyStop(p, "hd.hold");
+  holdPose(p, w);
 }
+
+// 後から来たプレイヤーにも構えが見えるよう、ときどき掛け直す
+system.runInterval(() => {
+  for (const p of allPlayers()) {
+    const w = heldWeapon(p);
+    if (w) holdPose(p, w);
+  }
+}, 200);
 
 // ---------------------------------------------------------------------------
 //  ループ
@@ -120,6 +131,10 @@ system.runInterval(() => {
 system.runInterval(() => {
   try { tickMobility(onHoldChange); } catch (e) { console.warn(`[hd] mobility: ${e}`); }
 }, 2);
+
+system.runInterval(() => {
+  try { tickAmbient(heldWeapon); } catch (e) { console.warn(`[hd] ambient: ${e}`); }
+}, 8);
 
 system.runInterval(() => {
   for (const p of allPlayers()) {

@@ -17,25 +17,39 @@
       "animations": {
         "tp": "animation.hd.bow.tp",
         "fp": "animation.hd.bow.fp",
+        "idle": "animation.hd.bow.idle",
+        "swing": "animation.hd.bow.swing",
         "use": "animation.hd.bow.use",
-        "idle": "animation.hd.bow.idle"
+        "tp_use": "animation.hd.bow.tp_use",
+        "fp_use": "animation.hd.bow.fp_use"
       },
       "scripts": {
         "pre_animation": [
-          "v.hd_sw = math.clamp(v.attack_time ?? 0.0, 0.0, 1.0);",
+          "v.hd_sw = math.clamp(c.owning_entity->v.attack_time, 0.0, 1.0);",
           "v.hd_use = q.is_using_item ? 1.0 : 0.0;",
-          "v.hd_draw = q.is_using_item ? math.clamp((q.main_hand_item_max_duration - q.main_hand_item_use_duration) / 20.0, 0.0, 1.0) : 0.0;"
+          "v.hd_usew = (v.hd_usew ?? 0.0) + (v.hd_use - (v.hd_usew ?? 0.0)) * math.min(1.0, q.delta_time * 14.0);",
+          "v.hd_draw = q.is_using_item ? math.clamp((q.main_hand_item_max_duration - q.main_hand_item_use_duration) / 20.0, 0.0, 1.0) : 0.0;",
+          "v.hd_fp = c.is_first_person ? 1.0 : 0.0;"
         ],
         "animate": [
           {
-            "tp": "!c.is_first_person"
+            "tp": "(1.0 - v.hd_fp) * (1.0 - v.hd_usew)"
           },
           {
-            "fp": "c.is_first_person"
+            "tp_use": "(1.0 - v.hd_fp) * v.hd_usew"
+          },
+          {
+            "fp": "v.hd_fp * (1.0 - v.hd_usew)"
+          },
+          {
+            "fp_use": "v.hd_fp * v.hd_usew"
           },
           "idle",
           {
-            "use": "v.hd_use"
+            "swing": "v.hd_sw > 0.0"
+          },
+          {
+            "use": "v.hd_usew > 0.01"
           }
         ]
       },

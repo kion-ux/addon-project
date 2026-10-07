@@ -7,9 +7,11 @@
 //                  跳ぶ。跳んだ直後は無敵
 //   疾走          ダッシュ中は武器の重さに応じて加速し、足元に属性色の風
 //   着地          高所から落ちると片膝をつくヒーロー着地。落下ダメージは無効
+//   ジャスト回避  回避ステップの無敵中に攻撃されると発動。周りの敵が鈍り、
+//                  ゲージが溜まり、短いあいだ加速する
 // ===========================================================================
 import { WEIGHT, weaponOf } from "./config.js";
-import { P, afterimage, body, sound, white, ring } from "./fx.js";
+import { P, afterimage, body, sound, white, ring, kanji } from "./fx.js";
 import {
   allPlayers, heldItem, knock, effect, flatDir, health, valid, now,
 } from "./util.js";
@@ -33,7 +35,8 @@ function state(p) {
   let s = st.get(p.id);
   if (!s) {
     s = { sneak: false, jump: false, ground: true, airT: 0, jumps: 0, dashes: 0,
-          lastSneak: -99, stepCd: 0, noFall: false, minVy: 0, holdKey: null };
+          lastSneak: -99, stepCd: 0, noFall: false, minVy: 0, holdKey: null,
+          dodgeUntil: -1, justCd: 0 };
     st.set(p.id, s);
   }
   return s;
@@ -141,6 +144,7 @@ export function tickMobility(onHoldChange) {
         const dir = hv > 0.04 ? { x: vel.x / hv, y: 0, z: vel.z / hv } : { x: -f.x, y: 0, z: -f.z };
         knock(p, dir.x, dir.z, TUNE.step, TUNE.stepUp);
         effect(p, "resistance", TUNE.iframes, 4);
+        s.dodgeUntil = t + TUNE.iframes + 2;
         s.noFall = true;
         dashFx(p, w, dir);
         sound(p.dimension, "hd.step", p.location, 1.2, 0.9);
@@ -173,6 +177,41 @@ function heroLanding(p, w, vy) {
   P(p.dimension, "dust", { x: l.x, y: l.y + 0.1, z: l.z }, { count: Math.round(10 + k * 6), spread: 0.4, speed: 4 + k * 2, size: 1.2 });
   ring(p.dimension, "spark", l, 0.8, 6, { color: w.color, count: 2, speed: 3 });
   sound(p.dimension, "hd.hit_heavy", l, 1.2, 0.5 + k * 0.2);
+}
+
+/** 回避の無敵中に殴られたか（entityHitEntity から呼ぶ）。発動したら true。 */
+export function tryJustDodge(p, attacker, onGauge) {
+  const s = st.get(p.id);
+  const w = weaponOf(heldItem(p));
+  if (!s || !w || now() > s.dodgeUntil || now() < s.justCd) return false;
+  s.justCd = now() + 30;
+  s.dodgeUntil = -1;
+  const l = p.location;
+  const c = { x: l.x, y: l.y + 1.0, z: l.z };
+  sound(p.dimension, "hd.parry", l, 1.5, 1.0);
+  sound(p.dimension, "hd.dash", l, 0.7, 0.8);
+  P(p.dimension, "ring", c, { color: white(w.color, 0.4), size: 2.6, life: 0.4 });
+  P(p.dimension, "circle", { x: l.x, y: l.y + 0.05, z: l.z }, { color: w.color, size: 2.2, life: 0.9, spin: 180 });
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3;
+    afterimage(p.dimension, { x: l.x + Math.cos(a) * 0.9, y: l.y, z: l.z + Math.sin(a) * 0.9 }, w.color, 0.5);
+  }
+  P(p.dimension, "speedline", c, { color: w.color, count: 14, speed: 14, spread: 1.2 });
+  kanji(p.dimension, { x: l.x, y: l.y + 2.6, z: l.z }, 4, w.color, 1.6);
+  try {
+    p.onScreenDisplay.setTitle(" ", { subtitle: `${w.tc}§l— JUST DODGE —`, fadeInDuration: 0, stayDuration: 14, fadeOutDuration: 6 });
+  } catch (_) { }
+  // 周りの敵の時間が遅れる（ウィッチタイム風）、自分は加速
+  let near = [];
+  try { near = p.dimension.getEntities({ location: l, maxDistance: 7 }); } catch (_) { }
+  for (const e of near) {
+    if (e.id === p.id || e.typeId === "hd:dmg_text") continue;
+    effect(e, "slowness", 50, 4);
+  }
+  if (attacker && valid(attacker)) effect(attacker, "weakness", 60, 1);
+  effect(p, "speed", 60, 2);
+  onGauge?.(p, 15);
+  return true;
 }
 
 /** 落下ダメージを打ち消す（entityHurt から呼ぶ）。 */

@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .DS_Store
 build_preview/
+
+# 生成の途中結果（超次元: 解いた姿勢のキャッシュ）
+tools/hyperdim/.cache/

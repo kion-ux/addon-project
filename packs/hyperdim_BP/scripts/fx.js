@@ -5,7 +5,9 @@
 //  MolangVariableMap に色・大きさ・寿命・回転を詰めて渡す。
 // ===========================================================================
 import { MolangVariableMap } from "@minecraft/server";
-import { cmd, add, scale, basis, norm, rand, valid, allPlayers, dist } from "./util.js";
+import { ANIM_META } from "./anim_meta.js";
+import { weaponOf } from "./config.js";
+import { cmd, add, scale, basis, norm, rand, valid, allPlayers, dist, heldItem } from "./util.js";
 
 const VARS = ["size", "life", "rot", "count", "speed", "spread", "vx", "vy", "vz", "var",
               "height", "spin", "rate", "grav"];
@@ -177,10 +179,11 @@ export function cutin(player, tc, name, en) {
 
 // ---------------------------------------------------------------------------
 //  全身モーション（playanimation）
+//  モーションは武器ごとに「持ち姿勢からの差分」で書き出してあるので、持っている武器の
+//  版を選んで再生する（animation.hd.p.<武器>.<名前>）。
 // ---------------------------------------------------------------------------
-export function body(player, anim, controller = "hd.act", blendOut = 0.12) {
+function play(player, name, controller, blendOut) {
   if (!valid(player)) return;
-  const name = `animation.hd.p.${anim}`;
   try {
     if (typeof player.playAnimation === "function") {
       player.playAnimation(name, { blendOutTime: blendOut, controller, stopExpression: "0" });
@@ -190,9 +193,25 @@ export function body(player, anim, controller = "hd.act", blendOut = 0.12) {
   cmd(player, `playanimation @s ${name} none ${blendOut} "0" ${controller}`);
 }
 
+export function body(player, anim, controller = "hd.act", blendOut) {
+  const w = weaponOf(heldItem(player));
+  if (!w) return;
+  const key = `${w.key}.${anim}`;
+  const meta = ANIM_META[key];
+  if (!meta) return;
+  // 一回転して終わるモーションはブレンドすると逆回転して見えるので切る
+  play(player, `animation.hd.p.${key}`, controller, blendOut ?? (meta[1] ? 0.12 : 0.0));
+}
+
 /** ループする全身モーションを止める（同じコントローラに空のモーションを流す）。 */
 export function bodyStop(player, controller = "hd.act") {
-  body(player, "none", controller, 0.15);
+  play(player, "animation.hd.p.none", controller, 0.15);
+}
+
+/** 武器ごとの持ち姿勢（両手持ち・逆手・獣の構え…）。武器が無ければ解除。 */
+export function holdPose(player, w) {
+  if (w && ANIM_META[`hold.${w.key}`]) play(player, `animation.hd.p.hold.${w.key}`, "hd.hold", 0.2);
+  else play(player, "animation.hd.p.none", "hd.hold", 0.2);
 }
 
 export function dirToYawDeg(d) {

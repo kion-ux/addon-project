@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""超次元バトルアーツ: 全アセットを生成 → 挙動テスト → 参照検証 → dist/ に書き出し。"""
+"""超次元バトルアーツ: 全アセットを生成 → 挙動テスト → めり込み検査 → 参照検証 → dist/ に書き出し。"""
 from __future__ import annotations
 
 import os
@@ -39,6 +39,7 @@ def main():
     for s in STEPS:
         run(s)
     run("test_hd.py")
+    run("check_hd_clip.py")     # 武器が体にめり込むモーションが無いこと
     run("validate_hd.py")
     os.makedirs(DIST, exist_ok=True)
     for f in os.listdir(DIST):
