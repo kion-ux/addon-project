@@ -11,7 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from hd_common import BP, ROOT, RP  # noqa: E402
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 NAME = "HyperDimensionArts"
 DIST = os.path.join(ROOT, "dist")
 

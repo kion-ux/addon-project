@@ -18,7 +18,7 @@ from hd_common import BP, ELEMENTS, NS, RP, WEAPONS, cbox, write_json  # noqa: E
 from hd_paint import HDPainter  # noqa: E402
 from mcmodel import Model  # noqa: E402
 
-VERSION = [1, 0, 0]
+VERSION = [1, 1, 0]
 MIN_ENGINE = [1, 21, 30]
 UUID = {
     "bp": "6f1d2a4e-8c3b-4f7a-9e21-3b5c7d9e1a01",
