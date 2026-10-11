@@ -1,0 +1,45 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "aot:sasha_blouse",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/aot/sasha_blouse"
+      },
+      "geometry": {
+        "default": "geometry.aot.sasha_blouse"
+      },
+      "animations": {
+        "look": "animation.aot.human.look",
+        "idle": "animation.aot.human.idle",
+        "walk": "animation.aot.human.walk",
+        "run": "animation.aot.human.run",
+        "attack": "animation.aot.human.attack",
+        "hurt": "animation.aot.human.hurt",
+        "death": "animation.aot.human.death",
+        "fly": "animation.aot.human.fly",
+        "slash": "animation.aot.human.slash",
+        "general": "controller.animation.aot.human.general",
+        "action": "controller.animation.aot.human.action",
+        "hair": "animation.aot.human.ponytail"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action",
+          "hair"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.aot.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#8a5634",
+        "overlay_color": "#7a5232"
+      }
+    }
+  }
+}

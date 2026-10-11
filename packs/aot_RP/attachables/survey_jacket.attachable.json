@@ -1,0 +1,31 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "aot:survey_jacket",
+      "materials": {
+        "default": "entity_alphatest",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/entity/aot/wear_jacket",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.aot.wear_jacket"
+      },
+      "scripts": {
+        "parent_setup": "variable.chest_layer_visible = 0.0; variable.leg_layer_visible = 0.0; variable.boot_layer_visible = 0.0;",
+        "animate": [
+          "flutter"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.aot.attachable"
+      ],
+      "animations": {
+        "flutter": "animation.aot.cloak.flutter"
+      }
+    }
+  }
+}

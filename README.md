@@ -1,6 +1,8 @@
 # 怪獣8号 アドオン (Kaiju No.8 Add-on)
 
 > このリポジトリには、オリジナルのアニメ風 PvP アドオン **超次元バトルアーツ** も入っています → [README_HYPERDIM.md](README_HYPERDIM.md)
+>
+> 立体機動装置で巨人のうなじを削ぐ **進撃の巨人アドオン** も入っています → [README_AOT.md](README_AOT.md)
 
 Minecraft **統合版 (Bedrock Edition)** 用の非公式ファンメイド・アドオンです。
 アニメ『怪獣8号』の世界 —— 日本防衛隊、識別怪獣、解放戦力、原作の技、そして

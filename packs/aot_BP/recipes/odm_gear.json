@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "aot:odm_gear"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "S S",
+      "WPW",
+      "S S"
+    ],
+    "key": {
+      "S": {
+        "item": "aot:hardened_steel"
+      },
+      "W": {
+        "item": "minecraft:lead"
+      },
+      "P": {
+        "item": "minecraft:piston"
+      }
+    },
+    "result": {
+      "item": "aot:odm_gear",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "975c2174-72ed-49f1-a1a3-f8a44773beb5",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      30
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "e10850df-0dd0-46a8-b84d-2e8a4cbf279b",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "3a5768ee-7a68-43c8-b121-012fccfba24f",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "209aeeab-4ffe-4c2b-9c77-f02c03d74d60",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.13.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.2.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Attack on Titan Fan Add-on Project"
+    ],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

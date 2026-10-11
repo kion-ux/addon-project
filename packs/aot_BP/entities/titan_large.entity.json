@@ -1,0 +1,492 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "aot:titan_large",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false,
+      "properties": {
+        "aot:state": {
+          "type": "enum",
+          "values": [
+            "idle",
+            "grab",
+            "eat",
+            "kneel",
+            "sleep",
+            "dying",
+            "leap",
+            "swat",
+            "blind"
+          ],
+          "default": "idle",
+          "client_sync": true
+        }
+      }
+    },
+    "component_groups": {
+      "aot:hunter": {
+        "minecraft:behavior.hurt_by_target": {
+          "priority": 1
+        },
+        "minecraft:behavior.delayed_attack": {
+          "priority": 2,
+          "attack_once": false,
+          "track_target": true,
+          "require_complete_path": false,
+          "random_stop_interval": 0,
+          "reach_multiplier": 2.13,
+          "speed_multiplier": 1.1,
+          "attack_duration": 1.0,
+          "hit_delay_pct": 0.55
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 3,
+          "must_see": true,
+          "reselect_targets": true,
+          "must_see_forget_duration": 10.0,
+          "within_radius": 40,
+          "entity_types": [
+            {
+              "filters": {
+                "any_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "player"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "villager"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "wandering_trader"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "aot_soldier"
+                  }
+                ]
+              },
+              "max_dist": 40
+            }
+          ]
+        },
+        "minecraft:behavior.move_towards_target": {
+          "priority": 4,
+          "speed_multiplier": 1.0,
+          "within_radius": 40
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 6,
+          "speed_multiplier": 0.7,
+          "xz_dist": 16,
+          "y_dist": 4
+        },
+        "minecraft:behavior.look_at_player": {
+          "priority": 7,
+          "look_distance": 24,
+          "probability": 0.04
+        },
+        "minecraft:behavior.random_look_around": {
+          "priority": 8
+        }
+      },
+      "aot:dying": {
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "all",
+              "deals_damage": false
+            }
+          ]
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 4.5,
+          "time_down_event": {
+            "event": "aot:evaporate"
+          }
+        }
+      },
+      "aot:despawn": {
+        "minecraft:instant_despawn": {}
+      },
+      "aot:body0": {
+        "minecraft:variant": {
+          "value": 0
+        }
+      },
+      "aot:body1": {
+        "minecraft:variant": {
+          "value": 1
+        }
+      },
+      "aot:body2": {
+        "minecraft:variant": {
+          "value": 2
+        }
+      },
+      "aot:body3": {
+        "minecraft:variant": {
+          "value": 3
+        }
+      },
+      "aot:skin0": {
+        "minecraft:skin_id": {
+          "value": 0
+        }
+      },
+      "aot:skin1": {
+        "minecraft:skin_id": {
+          "value": 1
+        }
+      },
+      "aot:skin2": {
+        "minecraft:skin_id": {
+          "value": 2
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "titan",
+          "pure_titan",
+          "monster",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 2.4,
+        "height": 4.8
+      },
+      "minecraft:custom_hit_test": {
+        "hitboxes": [
+          {
+            "width": 3.4,
+            "height": 13.0,
+            "pivot": [
+              0,
+              6.5,
+              0
+            ]
+          }
+        ]
+      },
+      "minecraft:health": {
+        "value": 220,
+        "max": 220
+      },
+      "minecraft:attack": {
+        "damage": 16
+      },
+      "minecraft:movement": {
+        "value": 0.24
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "avoid_water": false,
+        "can_walk_in_lava": false,
+        "can_break_doors": true,
+        "avoid_damage_blocks": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:follow_range": {
+        "value": 48,
+        "max": 48
+      },
+      "minecraft:nameable": {},
+      "minecraft:variant": {
+        "value": 0
+      },
+      "minecraft:skin_id": {
+        "value": 0
+      },
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_water": true,
+        "breathes_air": true
+      },
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "min_distance": 64,
+          "max_distance": 128
+        }
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:experience_reward": {
+        "on_death": "0"
+      },
+      "minecraft:break_blocks": {
+        "breakable_blocks": [
+          "minecraft:oak_leaves",
+          "minecraft:spruce_leaves",
+          "minecraft:birch_leaves",
+          "minecraft:jungle_leaves",
+          "minecraft:acacia_leaves",
+          "minecraft:dark_oak_leaves",
+          "minecraft:azalea_leaves",
+          "minecraft:azalea_leaves_flowered",
+          "minecraft:mangrove_leaves",
+          "minecraft:cherry_leaves",
+          "minecraft:vine"
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": false
+          },
+          {
+            "cause": "fly_into_wall",
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "titan"
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "entity_attack",
+            "damage_multiplier": 0.25
+          },
+          {
+            "cause": "projectile",
+            "damage_multiplier": 0.25
+          },
+          {
+            "cause": "thorns",
+            "damage_multiplier": 0.25
+          },
+          {
+            "cause": "entity_explosion",
+            "damage_multiplier": 0.5
+          },
+          {
+            "cause": "block_explosion",
+            "damage_multiplier": 0.5
+          },
+          {
+            "cause": "fire",
+            "damage_multiplier": 0.4
+          },
+          {
+            "cause": "fire_tick",
+            "damage_multiplier": 0.4
+          },
+          {
+            "cause": "lava",
+            "damage_multiplier": 0.4
+          },
+          {
+            "cause": "magic",
+            "damage_multiplier": 0.5
+          }
+        ]
+      },
+      "minecraft:behavior.float": {
+        "priority": 0
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "sequence": [
+          {
+            "add": {
+              "component_groups": [
+                "aot:hunter"
+              ]
+            }
+          },
+          {
+            "randomize": [
+              {
+                "weight": 1,
+                "add": {
+                  "component_groups": [
+                    "aot:body0"
+                  ]
+                }
+              },
+              {
+                "weight": 1,
+                "add": {
+                  "component_groups": [
+                    "aot:body1"
+                  ]
+                }
+              },
+              {
+                "weight": 1,
+                "add": {
+                  "component_groups": [
+                    "aot:body2"
+                  ]
+                }
+              },
+              {
+                "weight": 1,
+                "add": {
+                  "component_groups": [
+                    "aot:body3"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "randomize": [
+              {
+                "weight": 1,
+                "add": {
+                  "component_groups": [
+                    "aot:skin0"
+                  ]
+                }
+              },
+              {
+                "weight": 1,
+                "add": {
+                  "component_groups": [
+                    "aot:skin1"
+                  ]
+                }
+              },
+              {
+                "weight": 1,
+                "add": {
+                  "component_groups": [
+                    "aot:skin2"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "aot:sleep": {
+        "remove": {
+          "component_groups": [
+            "aot:hunter"
+          ]
+        },
+        "set_property": {
+          "aot:state": "sleep"
+        }
+      },
+      "aot:wake": {
+        "add": {
+          "component_groups": [
+            "aot:hunter"
+          ]
+        },
+        "set_property": {
+          "aot:state": "idle"
+        }
+      },
+      "aot:blind": {
+        "remove": {
+          "component_groups": [
+            "aot:hunter"
+          ]
+        },
+        "set_property": {
+          "aot:state": "blind"
+        }
+      },
+      "aot:unblind": {
+        "add": {
+          "component_groups": [
+            "aot:hunter"
+          ]
+        },
+        "set_property": {
+          "aot:state": "idle"
+        }
+      },
+      "aot:die": {
+        "remove": {
+          "component_groups": [
+            "aot:hunter"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "aot:dying"
+          ]
+        },
+        "set_property": {
+          "aot:state": "dying"
+        }
+      },
+      "aot:evaporate": {
+        "add": {
+          "component_groups": [
+            "aot:despawn"
+          ]
+        }
+      },
+      "aot:st_idle": {
+        "set_property": {
+          "aot:state": "idle"
+        }
+      },
+      "aot:st_grab": {
+        "set_property": {
+          "aot:state": "grab"
+        }
+      },
+      "aot:st_eat": {
+        "set_property": {
+          "aot:state": "eat"
+        }
+      },
+      "aot:st_kneel": {
+        "set_property": {
+          "aot:state": "kneel"
+        }
+      },
+      "aot:st_leap": {
+        "set_property": {
+          "aot:state": "leap"
+        }
+      },
+      "aot:st_swat": {
+        "set_property": {
+          "aot:state": "swat"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.aot.titan": {
+      "arrays": {
+        "geometries": {
+          "Array.geos": [
+            "Geometry.lanky",
+            "Geometry.chubby",
+            "Geometry.muscular",
+            "Geometry.bighead"
+          ]
+        },
+        "textures": {
+          "Array.skins": [
+            "Texture.lanky_0",
+            "Texture.lanky_1",
+            "Texture.lanky_2",
+            "Texture.chubby_0",
+            "Texture.chubby_1",
+            "Texture.chubby_2",
+            "Texture.muscular_0",
+            "Texture.muscular_1",
+            "Texture.muscular_2",
+            "Texture.bighead_0",
+            "Texture.bighead_1",
+            "Texture.bighead_2"
+          ]
+        }
+      },
+      "geometry": "Array.geos[q.variant]",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.skins[q.variant * 3 + q.skin_id]"
+      ]
+    },
+    "controller.render.aot.default": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ]
+    },
+    "controller.render.aot.attachable": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ]
+    }
+  }
+}

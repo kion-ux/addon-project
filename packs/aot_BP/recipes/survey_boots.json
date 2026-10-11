@@ -1,0 +1,27 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "aot:survey_boots"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "LBL",
+      "L L"
+    ],
+    "key": {
+      "L": {
+        "item": "minecraft:leather"
+      },
+      "B": {
+        "item": "minecraft:brown_dye"
+      }
+    },
+    "result": {
+      "item": "aot:survey_boots",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "aot:odm_blades",
+      "materials": {
+        "default": "entity_alphatest",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/entity/aot/blades",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.aot.blades"
+      },
+      "animations": {
+        "tp": "animation.aot.blades.tp",
+        "fp": "animation.aot.blades.fp",
+        "idle": "animation.aot.blades.idle",
+        "swing": "animation.aot.blades.swing"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.aot_sw = math.clamp(c.owning_entity->v.attack_time, 0.0, 1.0);",
+          "v.aot_fp = c.is_first_person ? 1.0 : 0.0;"
+        ],
+        "animate": [
+          {
+            "tp": "1.0 - v.aot_fp"
+          },
+          {
+            "fp": "v.aot_fp"
+          },
+          "idle",
+          {
+            "swing": "v.aot_sw > 0.0"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.item_default"
+      ]
+    }
+  }
+}

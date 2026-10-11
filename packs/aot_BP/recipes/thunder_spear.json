@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "aot:thunder_spear"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "  T",
+      " S ",
+      "S  "
+    ],
+    "key": {
+      "T": {
+        "item": "minecraft:tnt"
+      },
+      "S": {
+        "item": "aot:hardened_steel"
+      }
+    },
+    "result": {
+      "item": "aot:thunder_spear",
+      "count": 2
+    }
+  }
+}

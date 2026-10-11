@@ -1,0 +1,43 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "aot:armin_arlert",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/aot/armin_arlert"
+      },
+      "geometry": {
+        "default": "geometry.aot.armin_arlert"
+      },
+      "animations": {
+        "look": "animation.aot.human.look",
+        "idle": "animation.aot.human.idle",
+        "walk": "animation.aot.human.walk",
+        "run": "animation.aot.human.run",
+        "attack": "animation.aot.human.attack",
+        "hurt": "animation.aot.human.hurt",
+        "death": "animation.aot.human.death",
+        "fly": "animation.aot.human.fly",
+        "slash": "animation.aot.human.slash",
+        "general": "controller.animation.aot.human.general",
+        "action": "controller.animation.aot.human.action"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.aot.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#8a5634",
+        "overlay_color": "#e9cf7c"
+      }
+    }
+  }
+}

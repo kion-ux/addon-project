@@ -1,0 +1,46 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "209aeeab-4ffe-4c2b-9c77-f02c03d74d60",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      30
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "1353fd0e-d72b-497d-abb5-34c71f4f30dd",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "975c2174-72ed-49f1-a1a3-f8a44773beb5",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Attack on Titan Fan Add-on Project"
+    ],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

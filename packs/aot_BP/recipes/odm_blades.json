@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "aot:odm_blades"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "S S",
+      "S S",
+      "T T"
+    ],
+    "key": {
+      "S": {
+        "item": "aot:hardened_steel"
+      },
+      "T": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "aot:odm_blades",
+      "count": 1
+    }
+  }
+}

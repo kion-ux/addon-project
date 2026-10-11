@@ -1,0 +1,78 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "aot:titan_medium",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "lanky_0": "textures/entity/aot/titan_lanky_0",
+        "lanky_1": "textures/entity/aot/titan_lanky_1",
+        "lanky_2": "textures/entity/aot/titan_lanky_2",
+        "chubby_0": "textures/entity/aot/titan_chubby_0",
+        "chubby_1": "textures/entity/aot/titan_chubby_1",
+        "chubby_2": "textures/entity/aot/titan_chubby_2",
+        "muscular_0": "textures/entity/aot/titan_muscular_0",
+        "muscular_1": "textures/entity/aot/titan_muscular_1",
+        "muscular_2": "textures/entity/aot/titan_muscular_2",
+        "bighead_0": "textures/entity/aot/titan_bighead_0",
+        "bighead_1": "textures/entity/aot/titan_bighead_1",
+        "bighead_2": "textures/entity/aot/titan_bighead_2"
+      },
+      "geometry": {
+        "lanky": "geometry.aot.titan_lanky",
+        "chubby": "geometry.aot.titan_chubby",
+        "muscular": "geometry.aot.titan_muscular",
+        "bighead": "geometry.aot.titan_bighead"
+      },
+      "animations": {
+        "look": "animation.aot.titan.look",
+        "idle": "animation.aot.titan.idle",
+        "walk": "animation.aot.titan.walk",
+        "run": "animation.aot.titan.run",
+        "attack": "animation.aot.titan.attack",
+        "swat": "animation.aot.titan.swat",
+        "grab": "animation.aot.titan.grab",
+        "eat": "animation.aot.titan.eat",
+        "kneel": "animation.aot.titan.kneel",
+        "sleep": "animation.aot.titan.sleep",
+        "dying": "animation.aot.titan.dying",
+        "leap": "animation.aot.titan.leap",
+        "blind": "animation.aot.titan.blind",
+        "hurt": "animation.aot.titan.hurt",
+        "general": "controller.animation.aot.titan.general",
+        "action": "controller.animation.aot.titan.action"
+      },
+      "scripts": {
+        "scale": "2.100",
+        "pre_animation": [
+          "v.hip = (q.variant == 0 ? 28.80 : (q.variant == 1 ? 23.47 : (q.variant == 2 ? 26.67 : 21.33)));",
+          "v.knee = (q.variant == 0 ? 15.20 : (q.variant == 1 ? 15.20 : (q.variant == 2 ? 15.20 : 15.20)));",
+          "v.thigh = (q.variant == 0 ? 3.03 : (q.variant == 1 ? 5.39 : (q.variant == 2 ? 4.97 : 4.21)));",
+          "v.stride = 0.476;",
+          "v.runner = 0;",
+          "v.eat_x = (q.variant == 0 ? -66.20 : (q.variant == 1 ? -64.40 : (q.variant == 2 ? -55.80 : -67.70)));",
+          "v.eat_y = (q.variant == 0 ? -63.00 : (q.variant == 1 ? -36.40 : (q.variant == 2 ? -47.00 : -28.80)));",
+          "v.eat_z = (q.variant == 0 ? 4.20 : (q.variant == 1 ? 5.60 : (q.variant == 2 ? 3.60 : -4.80)));",
+          "v.eat_f = (q.variant == 0 ? -137.30 : (q.variant == 1 ? -100.20 : (q.variant == 2 ? -115.60 : -88.00)));",
+          "v.bl_x = (q.variant == 0 ? -132.00 : (q.variant == 1 ? -102.00 : (q.variant == 2 ? -87.50 : -113.30)));",
+          "v.bl_y = (q.variant == 0 ? 56.20 : (q.variant == 1 ? -44.40 : (q.variant == 2 ? -68.10 : -28.80)));",
+          "v.bl_z = (q.variant == 0 ? 7.20 : (q.variant == 1 ? 8.90 : (q.variant == 2 ? 7.80 : 0.00)));",
+          "v.bl_f = (q.variant == 0 ? -130.60 : (q.variant == 1 ? -93.90 : (q.variant == 2 ? -113.10 : -71.70)));"
+        ],
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.aot.titan"
+      ],
+      "spawn_egg": {
+        "base_color": "#d9987a",
+        "overlay_color": "#5a2a1e"
+      }
+    }
+  }
+}

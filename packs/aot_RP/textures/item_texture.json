@@ -1,0 +1,36 @@
+{
+  "resource_pack_name": "aot",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "aot_odm_blades": {
+      "textures": "textures/items/aot/odm_blades"
+    },
+    "aot_thunder_spear": {
+      "textures": "textures/items/aot/thunder_spear"
+    },
+    "aot_gas_canister": {
+      "textures": "textures/items/aot/gas_canister"
+    },
+    "aot_spare_blades": {
+      "textures": "textures/items/aot/spare_blades"
+    },
+    "aot_hardened_steel": {
+      "textures": "textures/items/aot/hardened_steel"
+    },
+    "aot_survey_journal": {
+      "textures": "textures/items/aot/survey_journal"
+    },
+    "aot_flare_gun": {
+      "textures": "textures/items/aot/flare_gun"
+    },
+    "aot_odm_gear": {
+      "textures": "textures/items/aot/odm_gear"
+    },
+    "aot_survey_jacket": {
+      "textures": "textures/items/aot/survey_jacket"
+    },
+    "aot_survey_boots": {
+      "textures": "textures/items/aot/survey_boots"
+    }
+  }
+}

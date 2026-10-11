@@ -1,0 +1,64 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "aot:fire",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/particle/aot_atlas"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": "v.count ?? 10"
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0
+      },
+      "minecraft:emitter_shape_sphere": {
+        "radius": "v.spread ?? 0.6",
+        "direction": "outwards",
+        "surface_only": false
+      },
+      "minecraft:particle_initial_speed": "(v.speed ?? 3.0) * v.particle_random_1",
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          0,
+          2.0,
+          0
+        ],
+        "linear_drag_coefficient": 2.4
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(v.life ?? 0.6) * (0.6 + v.particle_random_2 * 0.6)"
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "(v.size ?? 1.0) * (0.7 - (v.particle_age / v.particle_lifetime) * 0.4)",
+          "(v.size ?? 1.0) * (0.7 - (v.particle_age / v.particle_lifetime) * 0.4)"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 256,
+          "texture_height": 256,
+          "uv": [
+            0,
+            0
+          ],
+          "uv_size": [
+            64,
+            64
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "1.0",
+          "math.lerp(0.85, 0.25, (v.particle_age / v.particle_lifetime))",
+          "math.lerp(0.4, 0.05, (v.particle_age / v.particle_lifetime))",
+          "math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 1.6, 0.0, 1.0)"
+        ]
+      }
+    }
+  }
+}

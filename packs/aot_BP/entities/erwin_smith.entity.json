@@ -1,0 +1,257 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "aot:erwin_smith",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false,
+      "properties": {
+        "aot:state": {
+          "type": "enum",
+          "values": [
+            "idle",
+            "fly",
+            "slash",
+            "grabbed"
+          ],
+          "default": "idle",
+          "client_sync": true
+        }
+      }
+    },
+    "component_groups": {
+      "aot:wild": {
+        "minecraft:behavior.delayed_attack": {
+          "priority": 2,
+          "attack_once": false,
+          "track_target": true,
+          "require_complete_path": false,
+          "reach_multiplier": 2.2,
+          "speed_multiplier": 1.15,
+          "attack_duration": 0.5,
+          "hit_delay_pct": 0.3
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 3,
+          "must_see": true,
+          "reselect_targets": true,
+          "within_radius": 32,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "titan"
+              },
+              "max_dist": 32
+            }
+          ]
+        },
+        "minecraft:behavior.look_at_player": {
+          "priority": 8,
+          "look_distance": 8
+        },
+        "minecraft:behavior.random_look_around": {
+          "priority": 9
+        },
+        "minecraft:behavior.hurt_by_target": {
+          "priority": 1
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.8
+        },
+        "minecraft:tameable": {
+          "probability": 1.0,
+          "tame_items": [
+            "minecraft:bread",
+            "minecraft:baked_potato"
+          ],
+          "tame_event": {
+            "event": "aot:recruited",
+            "target": "self"
+          }
+        }
+      },
+      "aot:squad": {
+        "minecraft:behavior.delayed_attack": {
+          "priority": 2,
+          "attack_once": false,
+          "track_target": true,
+          "require_complete_path": false,
+          "reach_multiplier": 2.2,
+          "speed_multiplier": 1.15,
+          "attack_duration": 0.5,
+          "hit_delay_pct": 0.3
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 3,
+          "must_see": true,
+          "reselect_targets": true,
+          "within_radius": 32,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "titan"
+              },
+              "max_dist": 32
+            }
+          ]
+        },
+        "minecraft:behavior.look_at_player": {
+          "priority": 8,
+          "look_distance": 8
+        },
+        "minecraft:behavior.random_look_around": {
+          "priority": 9
+        },
+        "minecraft:is_tamed": {},
+        "minecraft:sittable": {},
+        "minecraft:behavior.stay_while_sitting": {
+          "priority": 0
+        },
+        "minecraft:behavior.owner_hurt_by_target": {
+          "priority": 1
+        },
+        "minecraft:behavior.owner_hurt_target": {
+          "priority": 2
+        },
+        "minecraft:behavior.follow_owner": {
+          "priority": 5,
+          "speed_multiplier": 1.2,
+          "start_distance": 8,
+          "stop_distance": 3
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "aot_soldier",
+          "survey_corps",
+          "human",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.95
+      },
+      "minecraft:health": {
+        "value": 56,
+        "max": 56
+      },
+      "minecraft:attack": {
+        "damage": 8
+      },
+      "minecraft:movement": {
+        "value": 0.33
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "avoid_water": true,
+        "can_open_doors": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:follow_range": {
+        "value": 48,
+        "max": 48
+      },
+      "minecraft:knockback_resistance": {
+        "value": 0.3
+      },
+      "minecraft:experience_reward": {
+        "on_death": "0"
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "fly_into_wall",
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "aot_soldier"
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              }
+            },
+            "deals_damage": false
+          }
+        ]
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "aot:wild"
+          ]
+        }
+      },
+      "aot:recruited": {
+        "remove": {
+          "component_groups": [
+            "aot:wild"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "aot:squad"
+          ]
+        }
+      },
+      "aot:st_idle": {
+        "set_property": {
+          "aot:state": "idle"
+        }
+      },
+      "aot:st_fly": {
+        "set_property": {
+          "aot:state": "fly"
+        }
+      },
+      "aot:st_slash": {
+        "set_property": {
+          "aot:state": "slash"
+        }
+      },
+      "aot:st_grabbed": {
+        "set_property": {
+          "aot:state": "grabbed"
+        }
+      }
+    }
+  }
+}

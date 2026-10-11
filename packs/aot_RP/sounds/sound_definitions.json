@@ -1,0 +1,301 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "aot.anchor": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/anchor_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/anchor_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/anchor_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.hook": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/hook_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/hook_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.reel": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/reel_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/reel_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.gas": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/gas_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/gas_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/gas_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.boost": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/boost_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/boost_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.swing": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/swing_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/swing_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/swing_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.cut": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/cut_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/cut_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/cut_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.nape": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/nape_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/nape_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.swap": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/swap_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/swap_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.break": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/break_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/break_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.titan_step": {
+      "category": "hostile",
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/titan_step_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/titan_step_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/titan_step_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.titan_groan": {
+      "category": "hostile",
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/titan_groan_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/titan_groan_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/titan_groan_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.titan_bite": {
+      "category": "hostile",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/titan_bite_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/titan_bite_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.titan_fall": {
+      "category": "hostile",
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/titan_fall_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/titan_fall_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.steam": {
+      "category": "hostile",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/steam_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/steam_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.spear_fire": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/spear_fire_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/spear_fire_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.fuse": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/fuse_0",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.boom": {
+      "category": "player",
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/boom_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/boom_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.flare": {
+      "category": "player",
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/flare_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/aot/flare_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "aot.kill": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/aot/kill_0",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

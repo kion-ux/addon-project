@@ -1,0 +1,1686 @@
+{
+ "format_version": "1.10.0",
+ "animations": {
+  "animation.aot.p.hold": {
+   "loop": true,
+   "animation_length": 2.0,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (3)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (3.8)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (3)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30 + -0.75 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (-13.6)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30 + -0.75 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (-13.6)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30 + -0.75 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (-13.6)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30 + 18.0 + 0.375 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (13.6)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30 + 18.0 + 0.375 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (13.6)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30 + 18.0 + 0.375 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (13.6)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.hold_spear": {
+   "loop": true,
+   "animation_length": 2.0,
+   "bones": {
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-10 + -0.75 * (v.tcos0 ?? 0.0))",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-10 + -0.75 * (v.tcos0 ?? 0.0))",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-29 + 18.0 + 0.375 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (13.2)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-29 + 18.0 + 0.375 * (v.tcos0 ?? 0.0))",
+        "v.is_first_person ? 0.0 : (13.2)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.fly": {
+   "loop": true,
+   "animation_length": 0.8,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "head": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-48)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-52)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-48)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 20.5 : (82)",
+        "v.is_first_person ? -0.1 : (-0.4)",
+        "v.is_first_person ? -6 : (-24)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 21.5 : (86)",
+        "v.is_first_person ? -0.6 : (-2.4)",
+        "v.is_first_person ? -7 : (-28)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        "v.is_first_person ? 20.5 : (82)",
+        "v.is_first_person ? -0.1 : (-0.4)",
+        "v.is_first_person ? -6 : (-24)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (26)",
+        0,
+        "v.is_first_person ? 0.0 : (-3)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0.0 : (30)",
+        0,
+        "v.is_first_person ? 0.0 : (-3)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        "v.is_first_person ? 0.0 : (26)",
+        0,
+        "v.is_first_person ? 0.0 : (-3)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 20.5 : (82)",
+        "v.is_first_person ? 0.1 : (0.4)",
+        "v.is_first_person ? 6 : (24)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 22 : (88)",
+        "v.is_first_person ? 0.6 : (2.4)",
+        "v.is_first_person ? 7 : (28)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        "v.is_first_person ? 20.5 : (82)",
+        "v.is_first_person ? 0.1 : (0.4)",
+        "v.is_first_person ? 6 : (24)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (12)",
+        0,
+        "v.is_first_person ? 0.0 : (3)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0.0 : (16)",
+        0,
+        "v.is_first_person ? 0.0 : (3)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        "v.is_first_person ? 0.0 : (12)",
+        0,
+        "v.is_first_person ? 0.0 : (3)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "root": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (58)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0.0 : (62)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        "v.is_first_person ? 0.0 : (58)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     },
+     "position": {
+      "0.0": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 6.58",
+        "v.is_first_person ? 0.0 : 11.87"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 7.43",
+        "v.is_first_person ? 0.0 : 12.36"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.8": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 6.58",
+        "v.is_first_person ? 0.0 : 11.87"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.spin": {
+   "loop": false,
+   "animation_length": 0.5,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.15": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.25": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.3": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.45": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.15": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.25": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.3": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.45": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 20 : (80)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.15": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.25": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.3": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.45": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-50)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.15": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.25": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.3": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.45": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? -15 : (-60 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -20 : (-80)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.15": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.25": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.3": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.45": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "root": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        "v.is_first_person ? 0.0 : (12.36)",
+        "v.is_first_person ? 0.0 : (17.62)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (23.51)",
+        "v.is_first_person ? 0.0 : (68.75)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.15": {
+       "post": [
+        "v.is_first_person ? 0.0 : (32.36)",
+        "v.is_first_person ? 0.0 : (148.4)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        "v.is_first_person ? 0.0 : (38.04)",
+        "v.is_first_person ? 0.0 : (248.75)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.25": {
+       "post": [
+        "v.is_first_person ? 0.0 : (40)",
+        "v.is_first_person ? 0.0 : (360)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.3": {
+       "post": [
+        "v.is_first_person ? 0.0 : (38.04)",
+        "v.is_first_person ? 0.0 : (471.25)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        "v.is_first_person ? 0.0 : (32.36)",
+        "v.is_first_person ? 0.0 : (571.6)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0.0 : (23.51)",
+        "v.is_first_person ? 0.0 : (651.25)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.45": {
+       "post": [
+        "v.is_first_person ? 0.0 : (12.36)",
+        "v.is_first_person ? 0.0 : (702.38)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (720)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     },
+     "position": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 0.32",
+        "v.is_first_person ? 0.0 : 3"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 1.16",
+        "v.is_first_person ? 0.0 : 5.59"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.15": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 2.17",
+        "v.is_first_person ? 0.0 : 7.49"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 2.97",
+        "v.is_first_person ? 0.0 : 8.63"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.25": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 3.28",
+        "v.is_first_person ? 0.0 : 9"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.3": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 2.97",
+        "v.is_first_person ? 0.0 : 8.63"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 2.17",
+        "v.is_first_person ? 0.0 : 7.49"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 1.16",
+        "v.is_first_person ? 0.0 : 5.59"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.45": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 0.32",
+        "v.is_first_person ? 0.0 : 3"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.slash": {
+   "loop": false,
+   "animation_length": 0.4,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-13)",
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.22": {
+       "post": [
+        "v.is_first_person ? 0.0 : (21)",
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? -35 : (-140 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 8.4 : (33.6)",
+        "v.is_first_person ? 2.5 : (10)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.22": {
+       "post": [
+        "v.is_first_person ? 2.5 : (10 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? -4.1 : (-16.4)",
+        "v.is_first_person ? -2.5 : (-10)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? -35 : (-140 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -8.4 : (-33.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -2.5 : (-10)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.22": {
+       "post": [
+        "v.is_first_person ? 2.5 : (10 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? 4.1 : (16.4 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? 2.5 : (10)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.boost": {
+   "loop": false,
+   "animation_length": 0.35,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 22.5 : (90)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? -5 : (-20)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (30)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 22.5 : (90)",
+        "v.is_first_person ? -3.4 : (-13.6)",
+        "v.is_first_person ? 5 : (20)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (20)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "root": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (40)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     },
+     "position": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.1": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : 3.28",
+        "v.is_first_person ? 0.0 : 9"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.35": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.grabbed": {
+   "loop": true,
+   "animation_length": 1.0,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        0,
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 6 : (24)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 1.5 : (6)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 6.5 : (26)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 2 : (8)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        "v.is_first_person ? 6 : (24)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 1.5 : (6)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (14)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-12)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (14)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 6 : (24)",
+        "v.is_first_person ? -3.4 : (-13.6)",
+        "v.is_first_person ? -1.5 : (-6)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 5 : (20)",
+        "v.is_first_person ? -3.4 : (-13.6)",
+        "v.is_first_person ? -2 : (-8)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        "v.is_first_person ? 6 : (24)",
+        "v.is_first_person ? -3.4 : (-13.6)",
+        "v.is_first_person ? -1.5 : (-6)"
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightLeg": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-10)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 0.0 : (16)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "1": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-10)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.reload": {
+   "loop": false,
+   "animation_length": 0.5,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        "v.is_first_person ? 12.5 : (50 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        "v.is_first_person ? 3.4 : (13.6)",
+        "v.is_first_person ? 5 : (20)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.2": {
+       "post": [
+        "v.is_first_person ? 12.5 : (50 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -3.4 : (-13.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        "v.is_first_person ? -5 : (-20)"
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.5": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.fire": {
+   "loop": false,
+   "animation_length": 0.4,
+   "bones": {
+    "body": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.14": {
+       "post": [
+        "v.is_first_person ? 0.0 : (-6)",
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        0,
+        "v.is_first_person ? 0.0 : (0 + -math.sin(360.0 * math.sqrt(v.attack_time)) * 5.0)",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "leftArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.14": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+        0,
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    },
+    "rightArm": {
+     "rotation": {
+      "0.0": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.05": {
+       "post": [
+        "v.is_first_person ? -15.75 : (-63 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -4.3 : (-17.2 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.14": {
+       "post": [
+        "v.is_first_person ? -20.25 : (-81 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? -4.3 : (-17.2 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      },
+      "0.4": {
+       "post": [
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+        "v.is_first_person ? 0 : (0 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+        0
+       ],
+       "lerp_mode": "catmullrom"
+      }
+     }
+    }
+   }
+  },
+  "animation.aot.p.none": {
+   "loop": false,
+   "animation_length": 0.05,
+   "bones": {}
+  }
+ }
+}

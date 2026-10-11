@@ -1,0 +1,30 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "aot:flare_gun"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "IIF",
+      " G "
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "F": {
+        "item": "minecraft:flint_and_steel"
+      },
+      "G": {
+        "item": "minecraft:gunpowder"
+      }
+    },
+    "result": {
+      "item": "aot:flare_gun",
+      "count": 1
+    }
+  }
+}

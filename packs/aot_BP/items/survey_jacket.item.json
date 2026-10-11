@@ -1,0 +1,42 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "aot:survey_jacket",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.chestplate"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "aot_survey_jacket"
+      },
+      "minecraft:display_name": {
+        "value": "item.aot:survey_jacket"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:wearable": {
+        "slot": "slot.armor.chest",
+        "protection": 5
+      },
+      "minecraft:durability": {
+        "max_durability": 520
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:leather"
+            ],
+            "repair_amount": 173
+          }
+        ]
+      },
+      "minecraft:enchantable": {
+        "slot": "armor_torso",
+        "value": 12
+      }
+    }
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.aot.titan.general": {
+      "initial_state": "stand",
+      "states": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "sleep": "q.property('aot:state') == 'sleep'"
+            },
+            {
+              "kneel": "q.property('aot:state') == 'kneel'"
+            },
+            {
+              "grab": "q.property('aot:state') == 'grab'"
+            },
+            {
+              "eat": "q.property('aot:state') == 'eat'"
+            },
+            {
+              "leap": "q.property('aot:state') == 'leap'"
+            },
+            {
+              "blind": "q.property('aot:state') == 'blind'"
+            },
+            {
+              "run": "q.modified_move_speed > 0.02 && (v.runner ?? 0) > 0.5"
+            },
+            {
+              "walk": "q.modified_move_speed > 0.02"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "look",
+            "idle",
+            "walk"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "sleep": "q.property('aot:state') == 'sleep'"
+            },
+            {
+              "kneel": "q.property('aot:state') == 'kneel'"
+            },
+            {
+              "grab": "q.property('aot:state') == 'grab'"
+            },
+            {
+              "eat": "q.property('aot:state') == 'eat'"
+            },
+            {
+              "leap": "q.property('aot:state') == 'leap'"
+            },
+            {
+              "blind": "q.property('aot:state') == 'blind'"
+            },
+            {
+              "run": "(v.runner ?? 0) > 0.5 && q.modified_move_speed > 0.4"
+            },
+            {
+              "stand": "q.modified_move_speed <= 0.02"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "run"
+          ],
+          "blend_transition": 0.25,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "leap": "q.property('aot:state') == 'leap'"
+            },
+            {
+              "kneel": "q.property('aot:state') == 'kneel'"
+            },
+            {
+              "grab": "q.property('aot:state') == 'grab'"
+            },
+            {
+              "eat": "q.property('aot:state') == 'eat'"
+            },
+            {
+              "blind": "q.property('aot:state') == 'blind'"
+            },
+            {
+              "sleep": "q.property('aot:state') == 'sleep'"
+            },
+            {
+              "walk": "q.modified_move_speed <= 0.4"
+            }
+          ]
+        },
+        "sleep": {
+          "animations": [
+            "sleep"
+          ],
+          "blend_transition": 0.35,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "stand": "q.property('aot:state') != 'sleep'"
+            }
+          ]
+        },
+        "kneel": {
+          "animations": [
+            "kneel"
+          ],
+          "blend_transition": 0.35,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "stand": "q.property('aot:state') != 'kneel'"
+            }
+          ]
+        },
+        "grab": {
+          "animations": [
+            "walk",
+            "grab"
+          ],
+          "blend_transition": 0.35,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "stand": "q.property('aot:state') != 'grab'"
+            }
+          ]
+        },
+        "eat": {
+          "animations": [
+            "walk",
+            "eat"
+          ],
+          "blend_transition": 0.35,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "stand": "q.property('aot:state') != 'eat'"
+            }
+          ]
+        },
+        "leap": {
+          "animations": [
+            "leap"
+          ],
+          "blend_transition": 0.35,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "stand": "q.property('aot:state') != 'leap'"
+            }
+          ]
+        },
+        "blind": {
+          "animations": [
+            "walk",
+            "blind"
+          ],
+          "blend_transition": 0.35,
+          "transitions": [
+            {
+              "dying": "q.property('aot:state') == 'dying' || q.health <= 0"
+            },
+            {
+              "stand": "q.property('aot:state') != 'blind'"
+            }
+          ]
+        },
+        "dying": {
+          "animations": [
+            "dying"
+          ],
+          "blend_transition": 0.2,
+          "transitions": []
+        }
+      }
+    },
+    "controller.animation.aot.titan.action": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "transitions": [
+            {
+              "swat": "q.property('aot:state') == 'swat'"
+            },
+            {
+              "attack": "q.is_delayed_attacking && q.property('aot:state') == 'idle' && q.health > 0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.12,
+          "transitions": [
+            {
+              "idle": "q.all_animations_finished || q.health <= 0"
+            }
+          ]
+        },
+        "swat": {
+          "animations": [
+            "swat"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "idle": "q.all_animations_finished || q.health <= 0"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.aot.human.general": {
+      "initial_state": "stand",
+      "states": {
+        "stand": {
+          "animations": [
+            "look",
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "fly": "q.property('aot:state') == 'fly'"
+            },
+            {
+              "walk": "q.modified_move_speed > 0.02"
+            },
+            {
+              "death": "q.health <= 0"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "look",
+            "walk"
+          ],
+          "blend_transition": 0.15,
+          "transitions": [
+            {
+              "fly": "q.property('aot:state') == 'fly'"
+            },
+            {
+              "run": "q.modified_move_speed > 0.7"
+            },
+            {
+              "stand": "q.modified_move_speed <= 0.02"
+            },
+            {
+              "death": "q.health <= 0"
+            }
+          ]
+        },
+        "run": {
+          "animations": [
+            "look",
+            "run"
+          ],
+          "blend_transition": 0.15,
+          "transitions": [
+            {
+              "fly": "q.property('aot:state') == 'fly'"
+            },
+            {
+              "walk": "q.modified_move_speed <= 0.7"
+            },
+            {
+              "death": "q.health <= 0"
+            }
+          ]
+        },
+        "fly": {
+          "animations": [
+            "fly"
+          ],
+          "blend_transition": 0.18,
+          "transitions": [
+            {
+              "stand": "q.property('aot:state') != 'fly'"
+            },
+            {
+              "death": "q.health <= 0"
+            }
+          ]
+        },
+        "death": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    },
+    "controller.animation.aot.human.action": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "transitions": [
+            {
+              "slash": "q.property('aot:state') == 'slash'"
+            },
+            {
+              "attack": "q.is_delayed_attacking && q.health > 0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.06,
+          "transitions": [
+            {
+              "idle": "q.all_animations_finished || q.health <= 0"
+            }
+          ]
+        },
+        "slash": {
+          "animations": [
+            "slash"
+          ],
+          "blend_transition": 0.05,
+          "transitions": [
+            {
+              "idle": "q.all_animations_finished || q.property('aot:state') != 'slash'"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

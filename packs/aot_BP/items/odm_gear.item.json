@@ -1,0 +1,41 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "aot:odm_gear",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "aot_odm_gear"
+      },
+      "minecraft:display_name": {
+        "value": "item.aot:odm_gear"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:wearable": {
+        "slot": "slot.armor.legs",
+        "protection": 4
+      },
+      "minecraft:durability": {
+        "max_durability": 640
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "aot:hardened_steel"
+            ],
+            "repair_amount": 213
+          }
+        ]
+      },
+      "minecraft:enchantable": {
+        "slot": "armor_legs",
+        "value": 12
+      }
+    }
+  }
+}

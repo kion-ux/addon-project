@@ -1,0 +1,2051 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.aot.titan.look": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": [
+            "math.clamp(q.target_x_rotation, -40, 40) * 0.8",
+            "math.clamp(q.target_y_rotation, -60, 60) * 0.8",
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            "math.clamp(q.target_x_rotation, -40, 40) * 0.2",
+            "math.clamp(q.target_y_rotation, -60, 60) * 0.2",
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.titan.idle": {
+      "loop": true,
+      "bones": {
+        "chest": {
+          "rotation": [
+            "math.cos(q.anim_time * 40) * 1.2",
+            0,
+            "math.cos(q.anim_time * 23) * 0.8"
+          ]
+        },
+        "head": {
+          "rotation": [
+            "math.cos(q.anim_time * 31 + 40) * 2.0",
+            "math.cos(q.anim_time * 13) * 3.0",
+            "6 * math.sin(q.anim_time * 17)"
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            "4 + math.max(0, math.sin(q.anim_time * 25)) * 7",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(q.anim_time * 35) * 2.4",
+            0,
+            "4 + math.cos(q.anim_time * 35) * 1.4"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(q.anim_time * 35 + 180) * 2.4",
+            0,
+            "-4 - math.cos(q.anim_time * 35 + 180) * 1.4"
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "-6 + math.cos(q.anim_time * 35 + 60) * 2.0",
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            "-6 + math.cos(q.anim_time * 35 + 240) * 2.0",
+            0,
+            0
+          ]
+        },
+        "rightFingers": {
+          "rotation": [
+            "10 + math.cos(q.anim_time * 21) * 6",
+            0,
+            0
+          ]
+        },
+        "leftFingers": {
+          "rotation": [
+            "10 + math.cos(q.anim_time * 21 + 90) * 6",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.titan.walk": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            3,
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 6 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 4 * math.min(q.modified_move_speed * 1.4, 1.0)"
+          ],
+          "position": [
+            0,
+            "math.abs(math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 0.9 * math.min(q.modified_move_speed * 1.4, 1.0))",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            4,
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 180) * 5 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 180) * 3 * math.min(q.modified_move_speed * 1.4, 1.0)"
+          ]
+        },
+        "head": {
+          "rotation": [
+            0,
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 4 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 5 * math.min(q.modified_move_speed * 1.4, 1.0)"
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 34 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            6
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 180) * 34 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            -6
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "-10 - math.max(0, math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 90) * 20 * math.min(q.modified_move_speed * 1.4, 1.0))",
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            "-10 - math.max(0, math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 270) * 20 * math.min(q.modified_move_speed * 1.4, 1.0))",
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 180) * 36 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 36 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 250) * 40 * math.min(q.modified_move_speed * 1.4, 1.0), 0, 70)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 70) * 40 * math.min(q.modified_move_speed * 1.4, 1.0), 0, 70)",
+            0,
+            0
+          ]
+        },
+        "rightFoot": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 190) * 14 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            0
+          ]
+        },
+        "leftFoot": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 10) * 14 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.titan.run": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            24,
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 8 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0
+          ],
+          "position": [
+            0,
+            "math.abs(math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 1.4 * math.min(q.modified_move_speed * 1.4, 1.0))",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            10,
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 180) * 8 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            -26,
+            0,
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            -10,
+            0,
+            24
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "60 + math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 20 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            18
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "60 + math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 180) * 20 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            -18
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            -10,
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            -10,
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 180) * 62 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0))) * 62 * math.min(q.modified_move_speed * 1.4, 1.0)",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 250) * 70 * math.min(q.modified_move_speed * 1.4, 1.0), 0, 100)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos((q.modified_distance_moved * 38.17 * (v.stride ?? 1.0)) + 70) * 70 * math.min(q.modified_move_speed * 1.4, 1.0), 0, 100)",
+            0,
+            0
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            "16 + math.cos(q.anim_time * 120) * 6",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.titan.attack": {
+      "loop": false,
+      "bones": {
+        "chest": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -6,
+              0,
+              0
+            ],
+            "0.55": [
+              34,
+              0,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "neck": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.55": [
+              -14,
+              0,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "jaw": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              34,
+              0,
+              0
+            ],
+            "0.55": [
+              34,
+              0,
+              0
+            ],
+            "0.62": [
+              0,
+              0,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              -70,
+              10,
+              0
+            ],
+            "0.55": [
+              -96,
+              -8,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              -70,
+              -10,
+              0
+            ],
+            "0.55": [
+              -96,
+              8,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "rightFingers": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.5": [
+              10,
+              0,
+              0
+            ],
+            "0.6": [
+              70,
+              0,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "leftFingers": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.5": [
+              10,
+              0,
+              0
+            ],
+            "0.6": [
+              70,
+              0,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "animation_length": 1.0
+    },
+    "animation.aot.titan.swat": {
+      "loop": false,
+      "bones": {
+        "chest": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              0,
+              -40,
+              0
+            ],
+            "0.5": [
+              6,
+              50,
+              0
+            ],
+            "0.9": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -100,
+              -70,
+              -20
+            ],
+            "0.5": [
+              -100,
+              70,
+              -10
+            ],
+            "0.9": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "rightForearm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -20,
+              0,
+              0
+            ],
+            "0.5": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              0,
+              -20,
+              0
+            ],
+            "0.5": [
+              0,
+              30,
+              0
+            ],
+            "0.9": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "animation_length": 0.9
+    },
+    "animation.aot.titan.grab": {
+      "loop": true,
+      "bones": {
+        "chest": {
+          "rotation": [
+            8,
+            -10,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -74,
+            -14,
+            0
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            -34,
+            0,
+            0
+          ]
+        },
+        "rightFingers": {
+          "rotation": [
+            72,
+            0,
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            14,
+            -10,
+            0
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            "10 + math.cos(q.anim_time * 90) * 4",
+            0,
+            0
+          ]
+        }
+      },
+      "animation_length": 2.0
+    },
+    "animation.aot.titan.eat": {
+      "loop": true,
+      "bones": {
+        "chest": {
+          "rotation": [
+            -4,
+            -6,
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            -6,
+            0,
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            -10,
+            -6,
+            0
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            "30 + math.sin(q.anim_time * 240) * 6",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "v.eat_x ?? -60",
+            "v.eat_y ?? -45",
+            "v.eat_z ?? 0"
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "v.eat_f ?? -110",
+            0,
+            0
+          ]
+        },
+        "rightFingers": {
+          "rotation": [
+            72,
+            0,
+            0
+          ]
+        }
+      },
+      "animation_length": 2.0
+    },
+    "animation.aot.titan.kneel": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            8,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            "-(v.knee ?? 15) + 1.5",
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            -6,
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -6,
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            92,
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            92,
+            0,
+            0
+          ]
+        },
+        "rightFoot": {
+          "rotation": [
+            -60,
+            0,
+            0
+          ]
+        },
+        "leftFoot": {
+          "rotation": [
+            -60,
+            0,
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            26,
+            0,
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            -20,
+            0,
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            -10,
+            0,
+            "8 * math.sin(q.anim_time * 30)"
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -30,
+            0,
+            10
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -60,
+            0,
+            -10
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            -10,
+            0,
+            0
+          ]
+        }
+      },
+      "animation_length": 2.0
+    },
+    "animation.aot.titan.sleep": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            -6,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            "-(v.hip ?? 25) + (v.thigh ?? 4) * 0.5",
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            -84,
+            6,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -84,
+            -6,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            10,
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            10,
+            0,
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            24,
+            0,
+            0
+          ]
+        },
+        "neck": {
+          "rotation": [
+            16,
+            0,
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            "18 + math.cos(q.anim_time * 18) * 2",
+            0,
+            12
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            12,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -28,
+            0,
+            14
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -28,
+            0,
+            -14
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            -20,
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            -20,
+            0,
+            0
+          ]
+        }
+      },
+      "animation_length": 4.0
+    },
+    "animation.aot.titan.dying": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              14,
+              0,
+              4
+            ],
+            "1.3": [
+              86,
+              0,
+              6
+            ]
+          },
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              "-(v.hip ?? 25) * 0.18",
+              0,
+              0
+            ],
+            "1.3": [
+              0,
+              "-(v.hip ?? 25) * 0.86",
+              0
+            ]
+          }
+        },
+        "rightShin": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              40,
+              0,
+              0
+            ],
+            "1.3": [
+              8,
+              0,
+              0
+            ]
+          }
+        },
+        "leftShin": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              34,
+              0,
+              0
+            ],
+            "1.3": [
+              6,
+              0,
+              0
+            ]
+          }
+        },
+        "neck": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              20,
+              0,
+              0
+            ],
+            "1.3": [
+              -30,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              -20,
+              30,
+              0
+            ]
+          }
+        },
+        "jaw": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              22,
+              0,
+              0
+            ]
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              -160,
+              0,
+              20
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              -20,
+              0,
+              -30
+            ]
+          }
+        }
+      },
+      "animation_length": 1.3
+    },
+    "animation.aot.titan.leap": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            30,
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            -50,
+            0,
+            10
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -30,
+            0,
+            -10
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            70,
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            60,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -150,
+            0,
+            30
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -150,
+            0,
+            -30
+          ]
+        },
+        "neck": {
+          "rotation": [
+            -30,
+            0,
+            0
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            28,
+            0,
+            0
+          ]
+        }
+      },
+      "animation_length": 1.0
+    },
+    "animation.aot.titan.blind": {
+      "loop": true,
+      "bones": {
+        "chest": {
+          "rotation": [
+            "10 + math.cos(q.anim_time * 60) * 3",
+            0,
+            "math.cos(q.anim_time * 40) * 5"
+          ]
+        },
+        "head": {
+          "rotation": [
+            4,
+            "math.cos(q.anim_time * 90) * 10",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "v.bl_x ?? -100",
+            "v.bl_y ?? -50",
+            "v.bl_z ?? 6"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "v.bl_x ?? -100",
+            "-(v.bl_y ?? -50)",
+            "-(v.bl_z ?? 6)"
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "v.bl_f ?? -100",
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            "v.bl_f ?? -100",
+            0,
+            0
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            "20 + math.cos(q.anim_time * 120) * 8",
+            0,
+            0
+          ]
+        }
+      },
+      "animation_length": 2.0
+    },
+    "animation.aot.titan.hurt": {
+      "loop": false,
+      "bones": {
+        "chest": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              -10,
+              0,
+              6
+            ],
+            "0.4": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              14,
+              0,
+              -8
+            ],
+            "0.4": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "animation_length": 0.4
+    },
+    "animation.aot.titan.death": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              14,
+              0,
+              4
+            ],
+            "1.3": [
+              86,
+              0,
+              6
+            ]
+          },
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              "-(v.hip ?? 25) * 0.18",
+              0,
+              0
+            ],
+            "1.3": [
+              0,
+              "-(v.hip ?? 25) * 0.86",
+              0
+            ]
+          }
+        },
+        "rightShin": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              40,
+              0,
+              0
+            ],
+            "1.3": [
+              8,
+              0,
+              0
+            ]
+          }
+        },
+        "leftShin": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              34,
+              0,
+              0
+            ],
+            "1.3": [
+              6,
+              0,
+              0
+            ]
+          }
+        },
+        "neck": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.45": [
+              20,
+              0,
+              0
+            ],
+            "1.3": [
+              -30,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              -20,
+              30,
+              0
+            ]
+          }
+        },
+        "jaw": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              22,
+              0,
+              0
+            ]
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              -160,
+              0,
+              20
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.3": [
+              -20,
+              0,
+              -30
+            ]
+          }
+        }
+      },
+      "animation_length": 1.3
+    },
+    "animation.aot.human.look": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": [
+            "math.clamp(q.target_x_rotation, -42, 42)",
+            "math.clamp(q.target_y_rotation, -68, 68)",
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.human.idle": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "math.cos(q.anim_time * 62) * 0.6",
+            0,
+            "math.cos(q.anim_time * 31) * 0.4"
+          ]
+        },
+        "chest": {
+          "rotation": [
+            "math.cos(q.anim_time * 62 + 40) * 0.8",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "-24 + math.cos(q.anim_time * 58) * 2.0",
+            0,
+            "-6 - math.cos(q.anim_time * 58) * 1.0"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-24 + math.cos(q.anim_time * 58 + 180) * 2.0",
+            0,
+            "6 + math.cos(q.anim_time * 58 + 180) * 1.0"
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            "-30 + math.cos(q.anim_time * 58 + 40) * 1.4",
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            "-30 + math.cos(q.anim_time * 58 + 220) * 1.4",
+            0,
+            0
+          ]
+        },
+        "cloak": {
+          "rotation": [
+            "math.cos(q.anim_time * 40) * 2",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.human.walk": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            2,
+            0,
+            "math.cos(q.modified_distance_moved * 38.17) * 1.6 * q.modified_move_speed"
+          ],
+          "position": [
+            0,
+            "math.cos(q.modified_distance_moved * 38.17) * 0.3 * q.modified_move_speed",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            0,
+            "math.cos(q.modified_distance_moved * 38.17 + 180) * 3.2 * q.modified_move_speed",
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "-16 + math.cos(q.modified_distance_moved * 38.17) * 28 * q.modified_move_speed",
+            0,
+            -6
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-16 + math.cos(q.modified_distance_moved * 38.17 + 180) * 28 * q.modified_move_speed",
+            0,
+            6
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos(q.modified_distance_moved * 38.17 + 180) * 46 * q.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(q.modified_distance_moved * 38.17) * 46 * q.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos(q.modified_distance_moved * 38.17 + 250) * 40 * q.modified_move_speed, 0, 62)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos(q.modified_distance_moved * 38.17 + 70) * 40 * q.modified_move_speed, 0, 62)",
+            0,
+            0
+          ]
+        },
+        "cloak": {
+          "rotation": [
+            "6 + q.modified_move_speed * 22",
+            0,
+            0
+          ]
+        },
+        "cloak_low": {
+          "rotation": [
+            "q.modified_move_speed * 10 + math.cos(q.modified_distance_moved * 38.17) * 4 * q.modified_move_speed",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.human.run": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            14,
+            0,
+            "math.cos(q.modified_distance_moved * 38.17) * 2.4 * q.modified_move_speed"
+          ],
+          "position": [
+            0,
+            "math.cos(q.modified_distance_moved * 38.17) * 0.5 * q.modified_move_speed",
+            0
+          ]
+        },
+        "chest": {
+          "rotation": [
+            4,
+            "math.cos(q.modified_distance_moved * 38.17 + 180) * 6.0 * q.modified_move_speed",
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            -12,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "40 + math.cos(q.modified_distance_moved * 38.17) * 30 * q.modified_move_speed",
+            0,
+            -14
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "40 + math.cos(q.modified_distance_moved * 38.17 + 180) * 30 * q.modified_move_speed",
+            0,
+            14
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            -30,
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            -30,
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "math.cos(q.modified_distance_moved * 38.17 + 180) * 62 * q.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(q.modified_distance_moved * 38.17) * 62 * q.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            "math.clamp(math.cos(q.modified_distance_moved * 38.17 + 250) * 66 * q.modified_move_speed, 0, 92)",
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            "math.clamp(math.cos(q.modified_distance_moved * 38.17 + 70) * 66 * q.modified_move_speed, 0, 92)",
+            0,
+            0
+          ]
+        },
+        "cloak": {
+          "rotation": [
+            "20 + q.modified_move_speed * 20",
+            0,
+            0
+          ]
+        },
+        "cloak_low": {
+          "rotation": [
+            "16 + math.cos(q.modified_distance_moved * 38.17) * 6 * q.modified_move_speed",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.human.attack": {
+      "loop": false,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.12": [
+              -4,
+              26,
+              0
+            ],
+            "0.3": [
+              8,
+              -26,
+              0
+            ],
+            "0.5": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.12": [
+              -150,
+              -20,
+              -10
+            ],
+            "0.3": [
+              20,
+              30,
+              10
+            ],
+            "0.5": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.2": [
+              -130,
+              20,
+              10
+            ],
+            "0.4": [
+              10,
+              -30,
+              -10
+            ],
+            "0.5": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "animation_length": 0.5
+    },
+    "animation.aot.human.hurt": {
+      "loop": false,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.08": [
+              -14,
+              0,
+              6
+            ],
+            "0.3": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "animation_length": 0.3
+    },
+    "animation.aot.human.death": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.35": [
+              -24,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              88
+            ]
+          },
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              -7,
+              0
+            ]
+          }
+        }
+      },
+      "animation_length": 1.2
+    },
+    "animation.aot.human.fly": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "62 + math.cos(q.anim_time * 120) * 4",
+            0,
+            "math.cos(q.anim_time * 70) * 6"
+          ]
+        },
+        "head": {
+          "rotation": [
+            -50,
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            48,
+            10,
+            -26
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            48,
+            -10,
+            26
+          ]
+        },
+        "rightForearm": {
+          "rotation": [
+            -10,
+            0,
+            0
+          ]
+        },
+        "leftForearm": {
+          "rotation": [
+            -10,
+            0,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            10,
+            0,
+            4
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            24,
+            0,
+            -4
+          ]
+        },
+        "rightShin": {
+          "rotation": [
+            26,
+            0,
+            0
+          ]
+        },
+        "leftShin": {
+          "rotation": [
+            40,
+            0,
+            0
+          ]
+        },
+        "cloak": {
+          "rotation": [
+            "70 + math.cos(q.anim_time * 400) * 10",
+            0,
+            0
+          ]
+        },
+        "cloak_low": {
+          "rotation": [
+            "20 + math.cos(q.anim_time * 400 + 60) * 14",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.human.slash": {
+      "loop": false,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0": [
+              50,
+              0,
+              0
+            ],
+            "0.5": [
+              40,
+              720,
+              0
+            ]
+          }
+        },
+        "rightArm": {
+          "rotation": [
+            -90,
+            0,
+            -70
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -90,
+            0,
+            70
+          ]
+        },
+        "cloak": {
+          "rotation": [
+            80,
+            0,
+            0
+          ]
+        }
+      },
+      "animation_length": 0.5
+    },
+    "animation.aot.human.ponytail": {
+      "loop": true,
+      "bones": {
+        "tail0": {
+          "rotation": [
+            "14 + q.modified_move_speed * 20 + math.cos(q.anim_time * 80) * 4",
+            0,
+            "math.cos(q.anim_time * 50) * 5"
+          ]
+        },
+        "tail1": {
+          "rotation": [
+            "6 + math.cos(q.anim_time * 80 + 40) * 6",
+            0,
+            0
+          ]
+        },
+        "tail2": {
+          "rotation": [
+            "4 + math.cos(q.anim_time * 80 + 80) * 6",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.human.scarf": {
+      "loop": true,
+      "bones": {
+        "scarf_tail": {
+          "rotation": [
+            "-8 - q.modified_move_speed * 30 + math.cos(q.anim_time * 90) * 4",
+            0,
+            6
+          ]
+        }
+      }
+    },
+    "animation.aot.blades.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            51.12,
+            1.79,
+            -2.88
+          ],
+          "position": [
+            -0.01,
+            22.36,
+            0.8
+          ],
+          "scale": 0.84
+        },
+        "hold_l": {
+          "rotation": [
+            51.12,
+            -1.79,
+            2.88
+          ],
+          "position": [
+            0.01,
+            22.36,
+            0.8
+          ],
+          "scale": 0.84
+        }
+      }
+    },
+    "animation.aot.blades.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -36.85,
+            25.49,
+            -170.43
+          ],
+          "position": [
+            -1.14,
+            25.99,
+            1.59
+          ],
+          "scale": 0.62
+        },
+        "hold_l": {
+          "scale": 0.0
+        }
+      }
+    },
+    "animation.aot.blades.swing": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": [
+            "-math.sin(v.aot_sw * 180.0) * 26.0",
+            "math.sin(v.aot_sw * 360.0) * 14.0",
+            0
+          ]
+        },
+        "left": {
+          "rotation": [
+            "-math.sin(v.aot_sw * 180.0) * 26.0",
+            "-math.sin(v.aot_sw * 360.0) * 14.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.aot.blades.idle": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 90.0) * 0.1",
+            0
+          ]
+        },
+        "left": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 90.0 + 60.0) * 0.1",
+            0
+          ]
+        }
+      },
+      "animation_length": 4.0
+    },
+    "animation.aot.spear.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            35.02,
+            -7.5,
+            -4.18
+          ],
+          "position": [
+            -0.03,
+            23.04,
+            0.79
+          ],
+          "scale": 0.62
+        }
+      }
+    },
+    "animation.aot.spear.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -55.23,
+            35.57,
+            164.72
+          ],
+          "position": [
+            -1.64,
+            25.7,
+            1.47
+          ],
+          "scale": 0.6
+        }
+      }
+    },
+    "animation.aot.cloak.flutter": {
+      "loop": true,
+      "bones": {
+        "cloak": {
+          "rotation": [
+            "7 + math.min(q.modified_move_speed, 1.0) * 26 + (q.is_on_ground ? 0 : 32 + math.sin(q.anim_time * 520) * 8)",
+            0,
+            0
+          ]
+        },
+        "cloak_low": {
+          "rotation": [
+            "math.min(q.modified_move_speed, 1.0) * 14 + (q.is_on_ground ? math.sin(q.anim_time * 140) * 2 : 18 + math.sin(q.anim_time * 520 + 70) * 12)",
+            0,
+            0
+          ]
+        }
+      }
+    }
+  }
+}
