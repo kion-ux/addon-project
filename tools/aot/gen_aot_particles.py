@@ -127,7 +127,7 @@ def particles():
     # ---- ワイヤー: 1 本の線分を 1 粒で描く（中点に置き、向きを速度で与える） --------
     E["wire"] = effect("wire", "particles_blend", merge(
         instant(1), P_point(["v.vx ?? 0", "v.vy ?? 1", "v.vz ?? 0"]), speed("0.05"),
-        life("v.life ?? 0.1"),
+        motion(), life("v.life ?? 0.1"),
         bb([f"{S} * 0.035", "(v.len ?? 1.0) * 0.5"], "wire", "lookat_direction"),
         tint("1.0", default=(0.16, 0.16, 0.17))))
     # ---- 蒸気（巨人の再生・討伐の蒸発） ---------------------------------------

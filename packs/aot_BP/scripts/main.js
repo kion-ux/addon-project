@@ -9,15 +9,15 @@ import {
   swingAt, tickODM,
 } from "./odm.js";
 import {
-  forgetTitan, forgetVictim, isGrabbed, isTitan, kneel, onTitanDie, onTitanHurt, struggle,
-  tickTitans, tickTitansFast, tryGrab, GRAB,
+  forgetVictim, isGrabbed, isTitan, kneel, onTitanDie, onTitanHurt, struggle, tickTitans,
+  tickTitansFast, tryGrab,
 } from "./titans.js";
 import { cycleFlare, fireFlare, fireSpear, tickSpears } from "./spear.js";
 import { forgetSoldier, isSoldier, tickRally, tickSoldiers } from "./soldiers.js";
 import { giveKit, hud, openJournal } from "./ui.js";
 import {
-  allPlayers, boolProp, consume, container, dist, health, isCreative, now, numProp, rt, selectedSlot,
-  setProp, tell, valid,
+  allPlayers, boolProp, consume, container, dist, health, isCreative, now, rt, selectedSlot, setProp,
+  tell, valid,
 } from "./util.js";
 import { sound } from "./fx.js";
 
@@ -240,5 +240,3 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
     default:
   }
 }, { namespaces: ["aot"] });
-
-export { GRAB, numProp, forgetTitan };

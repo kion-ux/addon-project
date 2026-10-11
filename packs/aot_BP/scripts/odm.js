@@ -262,7 +262,7 @@ export function tickODM(p) {
   }
 
   // ---- 着地の直前にガスを噴いて衝撃を殺す ----
-  if (gear && !ground && v.y < -0.75 && gas(p) > 0) {
+  if (gear && !ground && !s.anchor && v.y < -0.75 && gas(p) > 0) {
     let below = 99;
     try {
       const b = dim.getBlockFromRay(p.location, { x: 0, y: -1, z: 0 },
