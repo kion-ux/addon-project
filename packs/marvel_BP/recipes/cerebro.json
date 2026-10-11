@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:cerebro_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AAA",
+      "GCG",
+      "   "
+    ],
+    "key": {
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      },
+      "G": {
+        "item": "minecraft:glass"
+      },
+      "C": {
+        "item": "marvel:sentinel_core"
+      }
+    },
+    "result": {
+      "item": "marvel:cerebro",
+      "count": 1
+    }
+  }
+}

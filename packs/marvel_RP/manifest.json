@@ -1,0 +1,28 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "85f75096-3d34-4160-b139-fbc534b9546a",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 30]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "81ea9397-e83c-40ad-9d59-480a799f3727",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "3571cefc-5380-472e-8172-e05354cb8b44",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Marvel Mutant Addon Project"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

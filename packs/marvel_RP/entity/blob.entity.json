@@ -1,0 +1,47 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:blob",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/blob"
+      },
+      "geometry": {
+        "default": "geometry.marvel.blob"
+      },
+      "animations": {
+        "look": "animation.marvel.look_at_target",
+        "idle": "animation.marvel.humanoid.idle",
+        "walk": "animation.marvel.humanoid.walk",
+        "run": "animation.marvel.humanoid.run",
+        "air": "animation.marvel.humanoid.air",
+        "attack": "animation.marvel.humanoid.attack",
+        "hurt": "animation.marvel.humanoid.hurt",
+        "death": "animation.marvel.humanoid.death",
+        "general": "controller.animation.marvel.humanoid.general",
+        "action": "controller.animation.marvel.humanoid.action",
+        "tech": "animation.marvel.ally.body_slam"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "slam": "marvel:slam_ring"
+      },
+      "spawn_egg": {
+        "base_color": "#C4A05A",
+        "overlay_color": "#3E4A2A"
+      }
+    }
+  }
+}

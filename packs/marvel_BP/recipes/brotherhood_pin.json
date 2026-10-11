@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:brotherhood_pin_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "  A",
+      " A ",
+      "R  "
+    ],
+    "key": {
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      }
+    },
+    "result": {
+      "item": "marvel:brotherhood_pin",
+      "count": 1
+    }
+  }
+}

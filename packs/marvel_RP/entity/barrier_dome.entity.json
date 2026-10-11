@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:barrier_dome",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/barrier_dome"
+      },
+      "geometry": {
+        "default": "geometry.marvel.barrier_dome"
+      },
+      "animations": {
+        "spin": "animation.marvel.prop.drift",
+        "controller": "controller.animation.marvel.prop.spin"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.hologram"
+      ],
+      "particle_effects": {
+        "hex": "marvel:barrier_hex"
+      }
+    }
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "resource_pack_name": "marvel",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "adamantium_ingot": {
+      "textures": "textures/items/adamantium_ingot"
+    },
+    "avalanche_form": {
+      "textures": "textures/items/avalanche_form"
+    },
+    "avalanche_form_fissure": {
+      "textures": "textures/items/avalanche_form_fissure"
+    },
+    "avalanche_form_rockfall": {
+      "textures": "textures/items/avalanche_form_rockfall"
+    },
+    "avalanche_form_tremor": {
+      "textures": "textures/items/avalanche_form_tremor"
+    },
+    "blob_form": {
+      "textures": "textures/items/blob_form"
+    },
+    "blob_form_belly_bounce": {
+      "textures": "textures/items/blob_form_belly_bounce"
+    },
+    "blob_form_body_slam": {
+      "textures": "textures/items/blob_form_body_slam"
+    },
+    "blob_form_immovable": {
+      "textures": "textures/items/blob_form_immovable"
+    },
+    "brotherhood_beacon": {
+      "textures": "textures/items/brotherhood_beacon"
+    },
+    "brotherhood_pin": {
+      "textures": "textures/items/brotherhood_pin"
+    },
+    "cerebro": {
+      "textures": "textures/items/cerebro"
+    },
+    "juggernaut_form": {
+      "textures": "textures/items/juggernaut_form"
+    },
+    "juggernaut_form_hurl": {
+      "textures": "textures/items/juggernaut_form_hurl"
+    },
+    "juggernaut_form_quake_stomp": {
+      "textures": "textures/items/juggernaut_form_quake_stomp"
+    },
+    "juggernaut_form_unstoppable": {
+      "textures": "textures/items/juggernaut_form_unstoppable"
+    },
+    "magnetic_alloy": {
+      "textures": "textures/items/magnetic_alloy"
+    },
+    "magneto_form": {
+      "textures": "textures/items/magneto_form"
+    },
+    "magneto_form_attract": {
+      "textures": "textures/items/magneto_form_attract"
+    },
+    "magneto_form_barrier": {
+      "textures": "textures/items/magneto_form_barrier"
+    },
+    "magneto_form_crush": {
+      "textures": "textures/items/magneto_form_crush"
+    },
+    "magneto_form_disarm": {
+      "textures": "textures/items/magneto_form_disarm"
+    },
+    "magneto_form_emp": {
+      "textures": "textures/items/magneto_form_emp"
+    },
+    "magneto_form_flight": {
+      "textures": "textures/items/magneto_form_flight"
+    },
+    "magneto_form_iron_bind": {
+      "textures": "textures/items/magneto_form_iron_bind"
+    },
+    "magneto_form_lance": {
+      "textures": "textures/items/magneto_form_lance"
+    },
+    "magneto_form_polarity": {
+      "textures": "textures/items/magneto_form_polarity"
+    },
+    "magneto_form_repulse": {
+      "textures": "textures/items/magneto_form_repulse"
+    },
+    "magneto_form_shard_storm": {
+      "textures": "textures/items/magneto_form_shard_storm"
+    },
+    "magneto_form_sight": {
+      "textures": "textures/items/magneto_form_sight"
+    },
+    "magneto_form_sphere": {
+      "textures": "textures/items/magneto_form_sphere"
+    },
+    "magneto_form_throne": {
+      "textures": "textures/items/magneto_form_throne"
+    },
+    "magneto_form_uprising": {
+      "textures": "textures/items/magneto_form_uprising"
+    },
+    "magneto_helmet": {
+      "textures": "textures/items/magneto_helmet"
+    },
+    "metal_scrap": {
+      "textures": "textures/items/metal_scrap"
+    },
+    "mystique_form": {
+      "textures": "textures/items/mystique_form"
+    },
+    "mystique_form_shapeshift": {
+      "textures": "textures/items/mystique_form_shapeshift"
+    },
+    "mystique_form_vanish": {
+      "textures": "textures/items/mystique_form_vanish"
+    },
+    "mystique_form_venom_strike": {
+      "textures": "textures/items/mystique_form_venom_strike"
+    },
+    "pyro_form": {
+      "textures": "textures/items/pyro_form"
+    },
+    "pyro_form_fire_serpent": {
+      "textures": "textures/items/pyro_form_fire_serpent"
+    },
+    "pyro_form_flame_wave": {
+      "textures": "textures/items/pyro_form_flame_wave"
+    },
+    "pyro_form_ignite": {
+      "textures": "textures/items/pyro_form_ignite"
+    },
+    "quicksilver_form": {
+      "textures": "textures/items/quicksilver_form"
+    },
+    "quicksilver_form_afterimage": {
+      "textures": "textures/items/quicksilver_form_afterimage"
+    },
+    "quicksilver_form_blitz": {
+      "textures": "textures/items/quicksilver_form_blitz"
+    },
+    "quicksilver_form_sonic_dash": {
+      "textures": "textures/items/quicksilver_form_sonic_dash"
+    },
+    "sabretooth_form": {
+      "textures": "textures/items/sabretooth_form"
+    },
+    "sabretooth_form_feral_roar": {
+      "textures": "textures/items/sabretooth_form_feral_roar"
+    },
+    "sabretooth_form_regenerate": {
+      "textures": "textures/items/sabretooth_form_regenerate"
+    },
+    "sabretooth_form_rend": {
+      "textures": "textures/items/sabretooth_form_rend"
+    },
+    "scarlet_witch_form": {
+      "textures": "textures/items/scarlet_witch_form"
+    },
+    "scarlet_witch_form_chaos_field": {
+      "textures": "textures/items/scarlet_witch_form_chaos_field"
+    },
+    "scarlet_witch_form_hex_bolt": {
+      "textures": "textures/items/scarlet_witch_form_hex_bolt"
+    },
+    "scarlet_witch_form_telekinesis": {
+      "textures": "textures/items/scarlet_witch_form_telekinesis"
+    },
+    "sentinel_core": {
+      "textures": "textures/items/sentinel_core"
+    },
+    "tech_attract": {
+      "textures": "textures/items/tech_attract"
+    },
+    "tech_barrier": {
+      "textures": "textures/items/tech_barrier"
+    },
+    "tech_crush": {
+      "textures": "textures/items/tech_crush"
+    },
+    "tech_disarm": {
+      "textures": "textures/items/tech_disarm"
+    },
+    "tech_emp": {
+      "textures": "textures/items/tech_emp"
+    },
+    "tech_flight": {
+      "textures": "textures/items/tech_flight"
+    },
+    "tech_iron_bind": {
+      "textures": "textures/items/tech_iron_bind"
+    },
+    "tech_lance": {
+      "textures": "textures/items/tech_lance"
+    },
+    "tech_polarity": {
+      "textures": "textures/items/tech_polarity"
+    },
+    "tech_repulse": {
+      "textures": "textures/items/tech_repulse"
+    },
+    "tech_shard_storm": {
+      "textures": "textures/items/tech_shard_storm"
+    },
+    "tech_sight": {
+      "textures": "textures/items/tech_sight"
+    },
+    "tech_sphere": {
+      "textures": "textures/items/tech_sphere"
+    },
+    "tech_throne": {
+      "textures": "textures/items/tech_throne"
+    },
+    "tech_uprising": {
+      "textures": "textures/items/tech_uprising"
+    },
+    "toad_form": {
+      "textures": "textures/items/toad_form"
+    },
+    "toad_form_leap": {
+      "textures": "textures/items/toad_form_leap"
+    },
+    "toad_form_slime_spit": {
+      "textures": "textures/items/toad_form_slime_spit"
+    },
+    "toad_form_tongue_lash": {
+      "textures": "textures/items/toad_form_tongue_lash"
+    },
+    "x_gene": {
+      "textures": "textures/items/x_gene"
+    }
+  }
+}

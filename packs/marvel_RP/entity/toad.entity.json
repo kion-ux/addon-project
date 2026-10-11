@@ -1,0 +1,47 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:toad",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/toad"
+      },
+      "geometry": {
+        "default": "geometry.marvel.toad"
+      },
+      "animations": {
+        "look": "animation.marvel.look_at_target",
+        "idle": "animation.marvel.humanoid.idle",
+        "walk": "animation.marvel.humanoid.walk",
+        "run": "animation.marvel.humanoid.run",
+        "air": "animation.marvel.humanoid.air",
+        "attack": "animation.marvel.humanoid.attack",
+        "hurt": "animation.marvel.humanoid.hurt",
+        "death": "animation.marvel.humanoid.death",
+        "general": "controller.animation.marvel.humanoid.general",
+        "action": "controller.animation.marvel.humanoid.action",
+        "tech": "animation.marvel.ally.tongue_lash"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "slime": "marvel:tongue_slime"
+      },
+      "spawn_egg": {
+        "base_color": "#4A6B2A",
+        "overlay_color": "#2E4419"
+      }
+    }
+  }
+}

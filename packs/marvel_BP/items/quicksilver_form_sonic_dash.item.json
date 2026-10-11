@@ -1,0 +1,23 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:quicksilver_form_sonic_dash"
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "quicksilver_form_sonic_dash"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:quicksilver_form_sonic_dash"
+      },
+      "minecraft:wearable": {
+        "slot": "slot.armor.head",
+        "protection": 0
+      },
+      "minecraft:allow_off_hand": false
+    }
+  }
+}

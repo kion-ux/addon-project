@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:brotherhood_pin",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.helmet"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "brotherhood_pin"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:brotherhood_pin"
+      },
+      "minecraft:glint": true,
+      "minecraft:hand_equipped": true
+    }
+  }
+}

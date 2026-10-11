@@ -1,0 +1,47 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:pyro",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/pyro"
+      },
+      "geometry": {
+        "default": "geometry.marvel.pyro"
+      },
+      "animations": {
+        "look": "animation.marvel.look_at_target",
+        "idle": "animation.marvel.humanoid.idle",
+        "walk": "animation.marvel.humanoid.walk",
+        "run": "animation.marvel.humanoid.run",
+        "air": "animation.marvel.humanoid.air",
+        "attack": "animation.marvel.humanoid.attack",
+        "hurt": "animation.marvel.humanoid.hurt",
+        "death": "animation.marvel.humanoid.death",
+        "general": "controller.animation.marvel.humanoid.general",
+        "action": "controller.animation.marvel.humanoid.action",
+        "tech": "animation.marvel.ally.flame_wave"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "flame": "marvel:flame_wave"
+      },
+      "spawn_egg": {
+        "base_color": "#D8621E",
+        "overlay_color": "#2A2A30"
+      }
+    }
+  }
+}

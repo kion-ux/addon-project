@@ -1,0 +1,43 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "3571cefc-5380-472e-8172-e05354cb8b44",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 30]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "8df60387-169e-4ace-9fe3-9352351c92fe",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "1287c934-c850-4818-a4e1-4b807bcf0055",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "85f75096-3d34-4160-b139-fbc534b9546a",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.13.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.2.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Marvel Mutant Addon Project"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

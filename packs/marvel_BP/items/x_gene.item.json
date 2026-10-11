@@ -1,0 +1,32 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:x_gene",
+      "menu_category": {
+        "category": "items",
+        "group": "itemGroup.name.miscFood"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "x_gene"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:x_gene"
+      },
+      "minecraft:glint": true,
+      "minecraft:hand_equipped": true,
+      "minecraft:food": {
+        "nutrition": 0,
+        "can_always_eat": true
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 1.6,
+        "movement_modifier": 0.35
+      }
+    }
+  }
+}

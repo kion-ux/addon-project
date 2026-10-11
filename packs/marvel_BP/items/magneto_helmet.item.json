@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "marvel:magneto_helmet",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.helmet"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "magneto_helmet"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:display_name": {
+        "value": "item.marvel:magneto_helmet"
+      },
+      "minecraft:glint": true,
+      "minecraft:hand_equipped": true
+    }
+  }
+}

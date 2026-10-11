@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:iron_cage",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/iron_cage"
+      },
+      "geometry": {
+        "default": "geometry.marvel.iron_cage"
+      },
+      "animations": {
+        "spin": "animation.marvel.prop.drift",
+        "controller": "controller.animation.marvel.prop.spin"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.default"
+      ],
+      "particle_effects": {
+        "weld": "marvel:bind_weld"
+      }
+    }
+  }
+}

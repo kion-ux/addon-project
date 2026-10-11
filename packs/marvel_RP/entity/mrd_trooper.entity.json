@@ -1,0 +1,47 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:mrd_trooper",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/mrd_trooper"
+      },
+      "geometry": {
+        "default": "geometry.marvel.mrd_trooper"
+      },
+      "animations": {
+        "look": "animation.marvel.look_at_target",
+        "idle": "animation.marvel.humanoid.idle",
+        "walk": "animation.marvel.humanoid.walk",
+        "run": "animation.marvel.humanoid.run",
+        "air": "animation.marvel.humanoid.air",
+        "attack": "animation.marvel.humanoid.attack",
+        "hurt": "animation.marvel.humanoid.hurt",
+        "death": "animation.marvel.humanoid.death",
+        "general": "controller.animation.marvel.humanoid.general",
+        "action": "controller.animation.marvel.humanoid.action",
+        "tech": "animation.marvel.humanoid.attack"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "muzzle": "marvel:mrd_muzzle"
+      },
+      "spawn_egg": {
+        "base_color": "#2A2E38",
+        "overlay_color": "#8E1F1F"
+      }
+    }
+  }
+}

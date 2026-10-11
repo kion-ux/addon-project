@@ -1,0 +1,54 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:magneto",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/magneto"
+      },
+      "geometry": {
+        "default": "geometry.marvel.magneto"
+      },
+      "animations": {
+        "look": "animation.marvel.look_at_target",
+        "idle": "animation.marvel.magneto.idle",
+        "walk": "animation.marvel.magneto.walk",
+        "run": "animation.marvel.magneto.run",
+        "air": "animation.marvel.magneto.air",
+        "hover": "animation.marvel.magneto.hover",
+        "cape_idle": "animation.marvel.magneto.cape_idle",
+        "cape_move": "animation.marvel.magneto.cape_move",
+        "cape": "controller.animation.marvel.cape",
+        "attack": "animation.marvel.humanoid.attack",
+        "hurt": "animation.marvel.humanoid.hurt",
+        "death": "animation.marvel.humanoid.death",
+        "tech": "animation.marvel.tech.repulse",
+        "ult": "animation.marvel.tech.sphere",
+        "general": "controller.animation.marvel.magneto.general",
+        "action": "controller.animation.marvel.magneto.action"
+      },
+      "scripts": {
+        "animate": [
+          "general",
+          "action"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.glow"
+      ],
+      "particle_effects": {
+        "aura": "marvel:mag_aura",
+        "field": "marvel:mag_field",
+        "hit": "marvel:hurt_spark"
+      },
+      "spawn_egg": {
+        "base_color": "#5B1A6E",
+        "overlay_color": "#B0141E"
+      }
+    }
+  }
+}

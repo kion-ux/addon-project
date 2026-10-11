@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "marvel:metal_shard",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/metal_shard"
+      },
+      "geometry": {
+        "default": "geometry.marvel.metal_shard"
+      },
+      "animations": {
+        "spin": "animation.marvel.prop.spin",
+        "controller": "controller.animation.marvel.prop.spin"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.marvel.default"
+      ],
+      "particle_effects": {
+        "trail": "marvel:shard_trail"
+      }
+    }
+  }
+}

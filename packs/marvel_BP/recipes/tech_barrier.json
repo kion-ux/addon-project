@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:tech_barrier_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " A ",
+      "ACA",
+      " A "
+    ],
+    "key": {
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      },
+      "C": {
+        "item": "minecraft:shield"
+      }
+    },
+    "result": {
+      "item": "marvel:tech_barrier",
+      "count": 1
+    }
+  }
+}

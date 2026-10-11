@@ -1,0 +1,30 @@
+{
+  "pools": [
+    {
+      "rolls": {
+        "min": 1,
+        "max": 1
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "marvel:magneto_helmet",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "min": 2,
+        "max": 5
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "marvel:magnetic_alloy",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

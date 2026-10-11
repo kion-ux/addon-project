@@ -1,0 +1,39 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "marvel:magneto_form_repulse",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/entity/marvel/magneto",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.marvel.magneto"
+      },
+      "animations": {
+        "idle": "animation.marvel.form.idle",
+        "walk": "animation.marvel.form.walk",
+        "run": "animation.marvel.form.run",
+        "sprint": "animation.marvel.form.sprint",
+        "crouch": "animation.marvel.form.crouch",
+        "air": "animation.marvel.form.air",
+        "swim": "animation.marvel.form.swim",
+        "pose": "animation.marvel.tech.repulse",
+        "controller": "controller.animation.marvel.form.magneto_form_repulse"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ],
+        "parent_setup": "variable.helmet_layer_visible = 0.0;"
+      },
+      "render_controllers": [
+        "controller.render.marvel.default"
+      ]
+    }
+  }
+}

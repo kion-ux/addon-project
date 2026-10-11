@@ -1,0 +1,67 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.marvel.default": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ]
+    },
+    "controller.render.marvel.glow": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "overlay_color": {
+        "r": 1.0,
+        "g": 1.0,
+        "b": 1.0,
+        "a": "math.clamp(variable.hurt_flash, 0.0, 0.6)"
+      }
+    },
+    "controller.render.marvel.phase": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "overlay_color": {
+        "r": 0.3,
+        "g": 0.66,
+        "b": 1.0,
+        "a": "math.clamp(math.sin(query.life_time * 260) * 0.35 + 0.1, 0.0, 0.45) * query.mark_variant"
+      }
+    },
+    "controller.render.marvel.hologram": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "overlay_color": {
+        "r": 0.7,
+        "g": 0.48,
+        "b": 1.0,
+        "a": "0.22 + math.sin(query.life_time * 180) * 0.10"
+      }
+    }
+  }
+}

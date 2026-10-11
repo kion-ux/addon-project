@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "marvel:adamantium_ingot_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "ANA",
+      "NCN",
+      "ANA"
+    ],
+    "key": {
+      "A": {
+        "item": "marvel:magnetic_alloy"
+      },
+      "N": {
+        "item": "minecraft:netherite_scrap"
+      },
+      "C": {
+        "item": "marvel:sentinel_core"
+      }
+    },
+    "result": {
+      "item": "marvel:adamantium_ingot",
+      "count": 1
+    }
+  }
+}
