@@ -22,8 +22,8 @@ from astro_paint import core_styles, weapon_styles
 KIND = "scepter"
 
 Z_STAR = -22.6          # 星の頭の中心
-R_LONG, R_SHORT = 5.0, 3.6      # 光条の長さ（中心から）
-R_CLOUD = 6.0           # 雲の輪の半径
+R_LONG, R_SHORT = 6.2, 4.3      # 光条の長さ（中心から）
+R_CLOUD = 7.0           # 雲の輪の半径
 
 STAR = (255, 240, 150)  # 明けの明星の白金の光
 SULFUR = (226, 255, 96)
@@ -45,12 +45,12 @@ def build_weapon(m, root):
     for z, ln in ((-3.15, 0.7), (3.15, 0.7)):                                  # 握りの口金
         W.octa(sh, (0, 0, z), 2.0, ln, "gold", uv_scale=8)
     # 石突き: 金の柄 → クリームの象嵌 → 金の台 → 薔薇色の宝玉 → 小さな四芒星
-    W.octa(sh, (0, 0, 5.6), 1.35, 4.2, "plate", uv_scale=8)
-    W.octa(sh, (0, 0, 5.4), 1.45, 1.2, "plate2", uv_scale=8)
-    W.octa(sh, (0, 0, 8.1), 2.1, 0.9, "gold", uv_scale=8)
-    W.cbox(sh, (0, 0, 9.0), (1.3, 1.3, 1.3), "gem_accent", rotation=(45, 0, 0), uv_scale=12)
+    W.octa(sh, (0, 0, 5.1), 1.35, 3.4, "plate", uv_scale=8)
+    W.octa(sh, (0, 0, 5.0), 1.45, 1.1, "plate2", uv_scale=8)
+    W.octa(sh, (0, 0, 7.15), 2.1, 0.9, "gold", uv_scale=8)
+    W.cbox(sh, (0, 0, 8.05), (1.3, 1.3, 1.3), "gem_accent", rotation=(45, 0, 0), uv_scale=12)
     for a in (0, 90):
-        W.rbox(sh, (0, 0, 9.0), (0.3, 3.2, 0.3), "gold", rot=(a, 0, 0), uv_scale=12)
+        W.rbox(sh, (0, 0, 8.05), (0.3, 3.2, 0.3), "gold", rot=(a, 0, 0), uv_scale=12)
     # 上の柄: 金の柄にクリームの象嵌の帯と金の口金を交互に。平（±X）に硫黄色の光の筋
     W.octa(sh, (0, 0, -9.6), 1.3, 12.6, "plate", uv_scale=7)
     for z in (-6.2, -11.6):
@@ -67,9 +67,9 @@ def build_weapon(m, root):
     W.bevel(cr, (0, 0, -15.0), (2.0, 2.4, 2.0), "gold", cut=0.5, axis="x", uv_scale=8)
     for s in (-1, 1):
         # 横木（クリームの腕に金の縁、先が少し星の側へ反る）
-        W.beam(cr, (0, s * 1.0, -15.0), (0, s * 3.4, -15.3), 1.1, 1.1, "plate2", uv_scale=8)
-        W.beam(cr, (0, s * 3.3, -15.3), (0, s * 4.4, -16.2), 0.9, 0.9, "gold", uv_scale=10, extend=0.2)
-        W.cbox(cr, (0, s * 4.55, -16.45), (0.8, 0.8, 0.8), "gem_accent", rotation=(45, 0, 0),
+        W.beam(cr, (0, s * 1.0, -15.0), (0, s * 3.8, -15.3), 1.3, 1.3, "plate2", uv_scale=8)
+        W.beam(cr, (0, s * 3.7, -15.3), (0, s * 4.9, -16.4), 1.05, 1.05, "gold", uv_scale=10, extend=0.2)
+        W.cbox(cr, (0, s * 5.1, -16.7), (1.0, 1.0, 1.0), "gem_accent", rotation=(45, 0, 0),
                uv_scale=12)
         W.cbox(cr, (0, s * 2.2, -15.05), (1.16, 0.3, 1.16), "gold", uv_scale=10)        # 腕の金の帯
         # 萼（星を受ける金の花弁。上外へ開く）
@@ -83,9 +83,9 @@ def build_weapon(m, root):
     st = W.form(m, root, 2, "star", (0, 0, -18.0))
     sp = W.spin(m, st, "star", (0, 0, Z_STAR))
     S = (0, 0, Z_STAR)
-    W.octa(sp, S, 3.6, 0.55, "gold", axis="x", uv_scale=10)                    # 金の円盤（平 ±X）
-    W.sphere(sp, S, 1.55, "globe", uv_scale=16)                               # 金星の球
-    W.ring(sp, S, 3.05, 12, (0, 0.26, 0.34), "gold", axis="x", uv_scale=10)   # ♀ の輪
+    W.octa(sp, S, 4.2, 0.6, "gold", axis="x", uv_scale=10)                     # 金の円盤（平 ±X）
+    W.sphere(sp, S, 1.85, "globe", uv_scale=16)                               # 金星の球
+    W.ring(sp, S, 3.55, 12, (0, 0.3, 0.38), "gold", axis="x", uv_scale=10)    # ♀ の輪
     for k in range(8):
         a = math.radians(k * 45)
         d = (0.0, math.sin(a), -math.cos(a))
@@ -95,21 +95,23 @@ def build_weapon(m, root):
         p1 = tuple(S[i] + d[i] * L for i in range(3))
         if k % 2 == 0:
             # 長い光条: 金の縁（太い）+ 白金に光る芯
-            W.polyline(sp, [p0, pm, p1], [0.62, 0.58], [1.5, 0.6], "gold", uv_scale=10)
-            W.polyline(sp, [p0, pm, p1], [0.72, 0.68], [0.8, 0.28], "star", uv_scale=10)
+            W.polyline(sp, [p0, pm, p1], [0.66, 0.6], [1.8, 0.7], "gold", uv_scale=10)
+            W.polyline(sp, [p0, pm, p1], [0.76, 0.7], [0.95, 0.32], "star", uv_scale=10)
         else:
-            W.polyline(sp, [p0, pm, p1], [0.5, 0.46], [1.1, 0.4], "gold", uv_scale=10)
+            W.polyline(sp, [p0, pm, p1], [0.54, 0.5], [1.3, 0.45], "gold", uv_scale=10)
 
     # =====================================================================
     #  form_3_clouds — 頭を包んで回る雲の輪（静止の傾き 24°）
     # =====================================================================
     cl = W.form(m, root, 3, "clouds", (0, 0, Z_STAR))
     rg = W.spin(m, cl, "clouds", (0, 0, Z_STAR), rotation=(24, 0, 0))
-    W.ring(rg, S, R_CLOUD, 14, (0, 0.22, 0.26), "gold", axis="z", uv_scale=10)
-    for k in range(5):
-        a = math.radians(k * 72 + 18)
+    W.ring(rg, S, R_CLOUD, 14, (0, 0.34, 0.4), "gold", axis="z", uv_scale=10)
+    for k in range(4):
+        a = math.radians(k * 90 + 45)
         c = (-R_CLOUD * math.sin(a), R_CLOUD * math.cos(a), Z_STAR)
-        _puff(rg, c, 0.62 + 0.12 * (k % 2), "cloud")
+        W.sphere(rg, c, 1.25, "cloud", uv_scale=10)                            # 雲の玉
+        t_ = (math.cos(a), math.sin(a), 0.0)                                  # 輪に沿って少し後ろに小さな玉
+        _puff(rg, (c[0] + t_[0] * 1.35, c[1] + t_[1] * 1.35, c[2] + 0.3), 0.62, "cloud")
 
 
 def build_core(m, root):
@@ -118,7 +120,7 @@ def build_core(m, root):
     gs = W.spin(m, globe, "globe", (0, 0, 0))
     W.sphere(gs, (0, 0, 0), 1.75, "globe", uv_scale=16)
     cage = W.form(m, root, 1, "cage", (0, 0, 0))
-    W.ring(cage, (0, 0, 0), 3.2, 16, (0, 0.42, 0.6), "gold", axis="z", styles=["gold", "gold", "plate2"],
+    W.ring(cage, (0, 0, 0), 3.2, 12, (0, 0.42, 0.6), "gold", axis="z", styles=["gold", "plate2"],
            uv_scale=8)
     for s in (-1, 1):
         y = s * 3.3
@@ -132,9 +134,9 @@ def build_core(m, root):
     clouds = W.form(m, root, 2, "clouds", (0, 0, 0))
     rc = W.spin(m, clouds, "clouds", (0, 0, 0), rotation=(22, 0, 12))
     W.ring(rc, (0, 0, 0), 2.45, 12, (0, 0.2, 0.24), "gold", axis="y", uv_scale=10)
-    for k in range(5):
-        a = math.radians(k * 72)
-        _puff(rc, (-2.45 * math.sin(a), 0, -2.45 * math.cos(a)), 0.38 + 0.08 * (k % 2), "cloud", uv=14)
+    for k in range(4):
+        a = math.radians(k * 90 + 45)
+        W.sphere(rc, (-2.45 * math.sin(a), 0, -2.45 * math.cos(a)), 0.62, "cloud", uv_scale=14)
 
 
 # ---------------------------------------------------------------------------
@@ -156,13 +158,13 @@ def WEAPON_STYLES(key):
         plate={"panel": 0},
         wrap={"base": (60, 36, 26), "strap": (236, 186, 90), "skin": (255, 236, 206)},
         energy={"glow": SULFUR},
-        globe=W.globe_style("venus", emit=40),
+        globe=W.globe_style("venus", emit=110, shade=0.35),
     )
 
 
 def CORE_STYLES(key):
     return core_styles(key, gold=dict(_GOLD), cloud=dict(_CLOUD), star=dict(_STAR),
-                       globe=W.globe_style("venus", emit=34))
+                       globe=W.globe_style("venus", emit=96, shade=0.35))
 
 
 # ---------------------------------------------------------------------------
