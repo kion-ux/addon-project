@@ -1,0 +1,65 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "14dd5439-958f-4b19-b75d-2c837106e231",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      30
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "ef9b672e-34a0-4ef4-9f37-dcd59df09326",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "c4db21f0-4351-4e88-9ab8-256833196077",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "5edff4c1-24c6-4359-89b0-834d74773e7e",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.13.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.2.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Astro Nanogear Project"
+    ],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

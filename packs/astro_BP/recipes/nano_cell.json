@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "astro:nano_cell"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "IRI",
+      "RAR",
+      "IRI"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      }
+    },
+    "result": {
+      "item": "astro:nano_cell",
+      "count": 2
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "astro:void_signal"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "NEN",
+      "EXE",
+      "NEN"
+    ],
+    "key": {
+      "N": {
+        "item": "astro:nano_cell"
+      },
+      "E": {
+        "item": "minecraft:ender_eye"
+      },
+      "X": {
+        "item": "minecraft:diamond_block"
+      }
+    },
+    "result": {
+      "item": "astro:void_signal",
+      "count": 1
+    }
+  }
+}

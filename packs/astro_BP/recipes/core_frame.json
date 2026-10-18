@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "astro:core_frame"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "CGC",
+      "GDG",
+      "CGC"
+    ],
+    "key": {
+      "C": {
+        "item": "astro:nano_cell"
+      },
+      "G": {
+        "item": "minecraft:glass"
+      },
+      "D": {
+        "item": "minecraft:diamond"
+      }
+    },
+    "result": {
+      "item": "astro:core_frame",
+      "count": 1
+    }
+  }
+}

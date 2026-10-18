@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "astro:core_venus",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "astro_core_venus"
+      },
+      "minecraft:display_name": {
+        "value": "item.astro.core_venus.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:use_modifiers": {
+        "use_duration": 0.2,
+        "movement_modifier": 1.0
+      },
+      "minecraft:should_despawn": false,
+      "minecraft:glint": false
+    }
+  }
+}

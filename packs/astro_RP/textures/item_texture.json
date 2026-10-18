@@ -1,0 +1,102 @@
+{
+  "resource_pack_name": "astro_nanogear",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "astro_core_mercury": {
+      "textures": "textures/items/astro/core_mercury"
+    },
+    "astro_weapon_mercury": {
+      "textures": "textures/items/astro/weapon_mercury"
+    },
+    "astro_suit_mercury": {
+      "textures": "textures/items/astro/suit_mercury"
+    },
+    "astro_core_venus": {
+      "textures": "textures/items/astro/core_venus"
+    },
+    "astro_weapon_venus": {
+      "textures": "textures/items/astro/weapon_venus"
+    },
+    "astro_suit_venus": {
+      "textures": "textures/items/astro/suit_venus"
+    },
+    "astro_core_earth": {
+      "textures": "textures/items/astro/core_earth"
+    },
+    "astro_weapon_earth": {
+      "textures": "textures/items/astro/weapon_earth"
+    },
+    "astro_suit_earth": {
+      "textures": "textures/items/astro/suit_earth"
+    },
+    "astro_core_mars": {
+      "textures": "textures/items/astro/core_mars"
+    },
+    "astro_weapon_mars": {
+      "textures": "textures/items/astro/weapon_mars"
+    },
+    "astro_suit_mars": {
+      "textures": "textures/items/astro/suit_mars"
+    },
+    "astro_core_jupiter": {
+      "textures": "textures/items/astro/core_jupiter"
+    },
+    "astro_weapon_jupiter": {
+      "textures": "textures/items/astro/weapon_jupiter"
+    },
+    "astro_suit_jupiter": {
+      "textures": "textures/items/astro/suit_jupiter"
+    },
+    "astro_core_saturn": {
+      "textures": "textures/items/astro/core_saturn"
+    },
+    "astro_weapon_saturn": {
+      "textures": "textures/items/astro/weapon_saturn"
+    },
+    "astro_suit_saturn": {
+      "textures": "textures/items/astro/suit_saturn"
+    },
+    "astro_core_uranus": {
+      "textures": "textures/items/astro/core_uranus"
+    },
+    "astro_weapon_uranus": {
+      "textures": "textures/items/astro/weapon_uranus"
+    },
+    "astro_suit_uranus": {
+      "textures": "textures/items/astro/suit_uranus"
+    },
+    "astro_core_neptune": {
+      "textures": "textures/items/astro/core_neptune"
+    },
+    "astro_weapon_neptune": {
+      "textures": "textures/items/astro/weapon_neptune"
+    },
+    "astro_suit_neptune": {
+      "textures": "textures/items/astro/suit_neptune"
+    },
+    "astro_core_sol": {
+      "textures": "textures/items/astro/core_sol"
+    },
+    "astro_weapon_sol": {
+      "textures": "textures/items/astro/weapon_sol"
+    },
+    "astro_suit_sol": {
+      "textures": "textures/items/astro/suit_sol"
+    },
+    "astro_nano_cell": {
+      "textures": "textures/items/astro/nano_cell"
+    },
+    "astro_core_frame": {
+      "textures": "textures/items/astro/core_frame"
+    },
+    "astro_solar_fragment": {
+      "textures": "textures/items/astro/solar_fragment"
+    },
+    "astro_terminal": {
+      "textures": "textures/items/astro/terminal"
+    },
+    "astro_void_signal": {
+      "textures": "textures/items/astro/void_signal"
+    }
+  }
+}

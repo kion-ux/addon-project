@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "astro:terminal"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "III",
+      "ICI",
+      "IGI"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "C": {
+        "item": "astro:nano_cell"
+      },
+      "G": {
+        "item": "minecraft:glass_pane"
+      }
+    },
+    "result": {
+      "item": "astro:terminal",
+      "count": 1
+    }
+  }
+}

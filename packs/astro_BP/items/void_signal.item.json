@@ -1,0 +1,25 @@
+{
+  "format_version": "1.21.20",
+  "minecraft:item": {
+    "description": {
+      "identifier": "astro:void_signal",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "astro_void_signal"
+      },
+      "minecraft:display_name": {
+        "value": "item.astro.void_signal.name"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:glint": true,
+      "minecraft:use_modifiers": {
+        "use_duration": 0.6,
+        "movement_modifier": 0.5
+      }
+    }
+  }
+}
