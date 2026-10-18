@@ -27,6 +27,7 @@
   chamfer(bone, centre, size, style, cut, axis)    角を落とした箱（2 個の箱で段々の面取り）
   bevel(bone, centre, size, style, cut, axis)      本当の 45° 面取り（6 個: 十字＋4 本の稜）
   ring(bone, centre, radius, n, seg, style, axis)  輪をセグメントで（axis 方向が輪の軸）
+  taper(bone, p0, p1, w0, w1, n, style)            先細りの段（炎・トゲ・角。45° の段も重ねて丸く）
   fill_tri_yz(bone, apex, a, b, x_w, layer_h, style) YZ 平面の三角形を角柱で埋める
 """
 from __future__ import annotations
@@ -349,6 +350,26 @@ def ring(bone, centre, radius, n, seg, style, axis="y", phase=0.0, a0=0.0, a1=36
         else:                # 側面の輪（YZ 平面）。a=0 で上、a=90 で -Z
             p = (centre[0], centre[1] + radius * math.cos(t), centre[2] - radius * math.sin(t))
             out.append(rbox(bone, p, (seg[2], seg[1], tl), st, rot=(a, 0, 0), **kw))
+    return out
+
+
+def taper(bone, p0, p1, w0, w1, n, style, round_=True, style_r=None, **kw):
+    """p0 から p1 へ先細りする角柱の段（炎・トゲ・角）。n 段、根元の幅 w0 → 先の幅 w1。
+    round_=True で 45° 回した段も重ねて丸く見せる。"""
+    p0, p1 = np.asarray(p0, float), np.asarray(p1, float)
+    out = []
+    R = frame_to(p1 - p0)
+    R45 = R @ _Rz(45)
+    L = float(np.linalg.norm(p1 - p0))
+    for i in range(n):
+        t0, t1 = i / n, (i + 1) / n
+        w = w0 + (w1 - w0) * (t0 + t1) / 2
+        seg = L / n * 1.15
+        cen = p0 + (p1 - p0) * (t0 + t1) / 2
+        out.append(mat_cube(bone, cen, (w, w, seg), style, R, **kw))
+        if round_:
+            out.append(mat_cube(bone, cen, (w * 0.92, w * 0.92, seg * 0.96), style_r or style,
+                                R45, **kw))
     return out
 
 

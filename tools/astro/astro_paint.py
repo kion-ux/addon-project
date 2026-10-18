@@ -307,18 +307,10 @@ class AstroPainter(HDPainter):
             c["panels"].append(("rect", ins, ins, w - 1 - ins, h - 1 - ins,
                                 max(1, min(w, h) // 7)))
             # 長い面は継ぎ目で 2〜3 枚に割る
-            if w >= 2.2 * h and w >= 20:
-                n = 2 + (w >= 40)
-                for k in range(1, n):
-                    c["panels"].append(("vseam", int(w * k / n) + rng.randint(-1, 1)))
-            elif h >= 2.2 * w and h >= 20:
-                n = 2 + (h >= 40)
-                for k in range(1, n):
-                    c["panels"].append(("hseam", int(h * k / n) + rng.randint(-1, 1)))
-        elif w >= 14 and h >= 5:
-            c["panels"].append(("vseam", w // 2 + rng.randint(-2, 2)))
-        elif h >= 14 and w >= 5:
-            c["panels"].append(("hseam", h // 2 + rng.randint(-2, 2)))
+            if w >= 2.4 * h and w >= 28 and h >= 12:
+                c["panels"].append(("vseam", w // 2 + rng.randint(-1, 1)))
+            elif h >= 2.4 * w and h >= 28 and w >= 12:
+                c["panels"].append(("hseam", h // 2 + rng.randint(-1, 1)))
 
     p_armor2 = p_armor
     p_decal = None
@@ -681,44 +673,51 @@ class AstroPainter(HDPainter):
     #  布（マント）
     # ==================================================================
     def k_cloth(self, x, y, st, c):
+        """マント。2 階調のひだ（明るい山・青みの谷）、下へ行くほど少し影、上端の金の縁、
+        下端の雲の縁取り（ふくらみの連続。cloud=True）。"""
         base = hexc(st["base"])
-        sh = hexc(st.get("shadow", mix(shade(base, 0.72), (90, 120, 200), 0.25)))
+        sh = hexc(st.get("shadow", mix(shade(base, 0.8), (110, 140, 210), 0.3)))
         w, h = c["w"], c["h"]
         face = c["face"]
         if face in ("up", "down", "east", "west") and min(w, h) < 4:
-            return mix(base, sh, 0.3), 255
-        fold = math.sin(x * 0.9 + c["key"] * 1.3 + math.sin(y * 0.15) * 1.5)
-        col = base if fold > -0.35 else mix(base, sh, 0.55)
-        if fold > 0.8:
-            col = mix(col, WHITE, 0.35)
+            return mix(base, sh, 0.25), 255
+        per = st.get("fold", 9.0)
+        ph = (c["key"] * 2.3) % per
+        f = math.sin((x + ph + math.sin(y * 0.12 + c["key"]) * 1.6) / per * 2 * math.pi)
+        if f < -0.45:
+            col = mix(base, sh, 0.42)
+        elif f < -0.25:
+            col = mix(base, sh, 0.2)
+        else:
+            col = base
+        if f > 0.9:
+            col = mix(col, WHITE, 0.5)
         v = y / max(1, h - 1)
-        col = mix(col, sh, smooth(0.3, 1.0, v) * 0.25)
+        col = mix(col, sh, smooth(0.35, 1.0, v) * 0.18)
         hem = st.get("hem")
-        if hem and y <= 1:
-            return mix(hexc(hem), WHITE, 0.2 if y == 0 else 0.0), st.get("hem_emit", 255)
+        if hem and y <= 1 and h >= 6:
+            return mix(hexc(hem), WHITE, 0.25 if y == 0 else 0.0), st.get("hem_emit", 255)
         if st.get("cloud", True) and h >= 12:
-            # 下端の雲の縁取り: ふくらみ（半円）の連続
-            band = max(4, h // 4)
+            band = max(5, h // 4)
             top = h - band
-            if y >= top - 2:
-                pw = max(5, band + 1)
-                k = (x + c["key"] * 3) // pw
-                cx = k * pw + pw / 2 - c["key"] * 3
-                rr = pw / 2 + 0.3
-                dy = y - (top + rr * 0.6)
-                inside = (x - cx) ** 2 + dy ** 2 <= rr * rr or y >= top + rr * 0.6
+            pw = max(6, band + 1)
+            k = math.floor((x + c["key"] * 3) / pw)
+            cx = k * pw + pw / 2 - c["key"] * 3
+            rr = pw / 2 + 0.4
+            cy = top + rr * 0.55
+            dx, dy = x - cx, y - cy
+            if y >= top - rr:
+                inside = dx * dx + dy * dy <= rr * rr or y >= cy
                 if inside:
-                    puff = mix(WHITE, base, 0.15)
-                    if dy > rr * 0.35 or (x - cx) > rr * 0.55:
-                        puff = mix(puff, sh, 0.45)
-                    if (x - cx) ** 2 + dy ** 2 > (rr - 1.1) ** 2 and dy < 0:
-                        puff = mix(puff, sh, 0.6)
+                    puff = mix(WHITE, base, 0.1)
+                    if dx * dx + dy * dy > (rr - 1.2) ** 2 and dy < 0:
+                        puff = mix(puff, sh, 0.55)            # ふくらみの輪郭
+                    elif dy > rr * 0.2 and dx > -rr * 0.2:
+                        puff = mix(puff, sh, 0.3)             # ふくらみの影
                     acc = st.get("cloud_glow")
                     if acc and y >= h - 2:
                         return mix(hexc(acc), WHITE, 0.3), st.get("hem_emit", 60)
                     return puff, 255
-                if y >= top - 2:
-                    return mix(col, sh, 0.35), 255
         return col, 255
 
     def k_luna(self, x, y, st, c):

@@ -452,7 +452,156 @@ def build_drone():
 
 
 # ===========================================================================
+#  ヴォイド・センチネル（HP 44、全高 2.6 ブロック）
+#  逆関節（鳥脚）の二足機兵。猫背の胴・巨大な肩・横一文字の単眼スリット・前腕の刃。
+#  ボーン: root / hips → torso → head, shoulder_* → arm_* → forearm_* → blade_* /
+#          thigh_* → shin_* → ankle_* → foot_*（_r = 右 = -X、_l = 左 = +X）
+# ===========================================================================
+SENT_HIP = (5.0, 22.5, 0.6)
+SENT_KNEE = (5.6, 14.0, -4.2)
+SENT_ANKLE = (5.6, 6.2, 3.2)
+SENT_BALL = (5.6, 1.7, 0.2)
+SENT_TORSO_LEAN = 12.0
+
+
+def build_sentinel():
+    m = Model(f"geometry.{NS}.void_sentinel", uv_scale=3, visible_bounds=(3.6, 3.6), vb_offset=(0, 1.4, 0),
+              max_atlas=(1024, 1024))
+    m.bone("root", (0, 0, 0))
+    # ---- 脚 ---------------------------------------------------------------
+    for side, s in (("r", -1), ("l", 1)):
+        H = V(s * SENT_HIP[0], *SENT_HIP[1:])
+        K = V(s * SENT_KNEE[0], *SENT_KNEE[1:])
+        A = V(s * SENT_ANKLE[0], *SENT_ANKLE[1:])
+        F = V(s * SENT_BALL[0], *SENT_BALL[1:])
+        out = V(s, 0, 0)
+        th = m.bone(f"thigh_{side}", tuple(H), parent="root")
+        beam(th, H + V(0, 0.8, 0), K, 4.4, 5.0, "hull", extend=1.0)
+        d = unit(K - H)
+        slab(th, H + d * 1.5 + out * 2.4, K - d * 1.2 + out * 2.4, 3.8, 0.8, out, "hull2")
+        slab(th, H + d * 2.2 + out * 2.9, K - d * 2.5 + out * 2.9, 0.6, 0.3, out, "glow_soft")
+        beam(th, H + V(0, -1, 2.4) - out * 1.0, K + V(0, 1.4, 1.6) - out * 1.0, 1.0, 1.0, "chrome")
+        octa(th, tuple(H), 4.6, 3.2, "frame", axis="x")
+        octa(th, tuple(H + out * 1.9), 3.2, 0.8, "trim", axis="x")
+        sh = m.bone(f"shin_{side}", tuple(K), parent=f"thigh_{side}")
+        beam(sh, K, A, 2.8, 3.2, "frame", extend=1.0)
+        dk = unit(A - K)
+        fwd = unit(np.cross(V(1, 0, 0), dk)) * -1
+        if fwd[2] > 0:
+            fwd = -fwd
+        slab(sh, K + dk * 0.4 + fwd * 1.8, K + dk * 5.2 + fwd * 1.9, 3.6, 0.9, fwd, "hull2")
+        slab(sh, K + dk * 5.0 + fwd * 1.6, A - dk * 0.8 + fwd * 1.5, 2.8, 0.8, fwd, "hull")
+        bevel(sh, tuple(K + V(0, 0.2, -0.6)), (4.0, 4.0, 4.0), "hull2", cut=1.2, axis="x")
+        beam(sh, K + V(0, -1.6, 1.6), A + V(0, 1.0, -0.6), 0.9, 0.9, "chrome")
+        an = m.bone(f"ankle_{side}", tuple(A), parent=f"shin_{side}")
+        beam(an, A, F, 2.6, 2.8, "hull", extend=0.8)
+        octa(an, tuple(A), 3.2, 3.6, "frame", axis="x")
+        da = unit(F - A)
+        slab(an, A + da * 0.8 + V(0, 0, 1.45), F - da * 0.6 + V(0, 0, 1.4), 0.5, 0.3, V(0, 0, 1), "glow")
+        ft = m.bone(f"foot_{side}", tuple(F), parent=f"ankle_{side}")
+        cbox(ft, tuple(F + V(0, -0.5, -0.6)), (4.2, 1.8, 4.4), "hull")
+        cbox(ft, tuple(F + V(0, 0.55, -0.8)), (3.2, 0.6, 3.0), "hull2_p")
+        for t in (-1, 1):
+            p0 = F + V(t * 1.3, -0.6, -2.2)
+            p1 = F + V(t * 2.1, -1.2, -6.4)
+            beam(ft, p0, p1, 1.5, 1.3, "hull2", extend=0.4)
+            beam(ft, p1, p1 + V(t * 0.2, -0.3, -1.4), 0.9, 0.8, "chrome", extend=0.2)
+        beam(ft, F + V(0, -0.4, 1.4), F + V(0, -1.2, 4.8), 1.2, 1.1, "frame", extend=0.3)
+    # ---- 腰 ---------------------------------------------------------------
+    hips = m.bone("hips", (0, 23.0, 0.4), parent="root")
+    bevel(hips, (0, 23.8, 0.6), (9.6, 4.6, 6.6), "hull", cut=1.4, axis="z")
+    rbox(hips, (0, 22.6, -3.0), (5.2, 4.4, 1.2), "hazard", rot=(-14, 0, 0))     # 前垂れ
+    for t in (-1, 1):
+        rbox(hips, (t * 3.6, 23.0, -2.8), (2.6, 3.6, 1.0), "hull2", rot=(-12, t * 18, 0))
+    rbox(hips, (0, 22.8, 4.0), (7.0, 3.6, 1.0), "hull2", rot=(14, 0, 0))
+    cbox(hips, (0, 27.0, 0.8), (6.2, 3.4, 4.6), "inner")                       # 腹のインナー
+    cbox(hips, (0, 27.0, 3.4), (2.6, 4.4, 1.6), "frame")                       # 背骨
+    # ---- 胴（猫背: 前へ 12° 倒す） -----------------------------------------
+    torso = m.bone("torso", (0, 27.5, 0.6), parent="hips", rotation=(SENT_TORSO_LEAN, 0, 0))
+    bevel(torso, (0, 31.6, 0.4), (12.4, 7.6, 8.2), "hull", cut=2.0, axis="z")
+    chamfer(torso, (0, 35.9, 0.6), (15.4, 3.6, 8.8), "hull2", cut=0.8, axis="z")
+    for k, y in enumerate((29.0, 30.6)):
+        cbox(torso, (0, y, -3.95), (6.4 - k * 0.8, 1.2, 0.8), "hull2_p")
+    rbox(torso, (0, 27.9, -3.2), (5.0, 1.2, 1.0), "hull_p", rot=(-20, 0, 0))
+    # 胸の虚空炉（マゼンタの眼）
+    ring(torso, (0, 33.2, -4.25), 2.35, 8, (0, 0.9, 1.0), "trim", axis="z", phase=22.5)
+    cbox(torso, (0, 33.2, -4.35), (3.4, 3.4, 0.4), "eye", uv_scale=8)
+    cbox(torso, (0, 33.2, -4.6), (1.3, 1.3, 0.3), "pupil", uv_scale=10)
+    for t in (-1, 1):
+        rbox(torso, (t * 4.8, 33.0, -3.6), (3.2, 5.2, 1.0), "hull2", rot=(0, t * -22, 0))
+        cbox(torso, (t * 6.55, 31.5, 0.4), (0.8, 4.6, 5.6), "vent")
+        rbox(torso, (t * 2.8, 37.7, -2.2), (3.2, 1.2, 3.0), "hull_p", rot=(18, 0, t * -10))  # 襟
+    # 背中: 炉の箱と二本の排気筒
+    cbox(torso, (0, 32.6, 5.6), (8.6, 8.0, 3.6), "hull")
+    cbox(torso, (0, 32.6, 7.5), (5.0, 5.4, 0.4), "vent_v")
+    for t in (-1, 1):
+        octa(torso, (t * 2.8, 37.8, 6.4), 2.4, 4.6, "frame", axis="y")
+        cbox(torso, (t * 2.8, 40.2, 6.4), (1.5, 0.3, 1.5), "thruster", rotation=(0, 45, 0))
+    # ---- 頭（胴の傾きを打ち消して前を見る） ---------------------------------
+    head = m.bone("head", (0, 37.0, -2.0), parent="torso", rotation=(-SENT_TORSO_LEAN + 2, 0, 0))
+    bevel(head, (0, 39.0, -3.6), (7.2, 5.0, 7.6), "hull", cut=1.6, axis="z")
+    cbox(head, (0, 39.3, -7.45), (6.4, 1.8, 0.3), "black")
+    cbox(head, (0, 39.3, -7.6), (5.8, 0.8, 0.3), "visor", uv_scale=8)
+    rbox(head, (0, 41.0, -6.6), (6.0, 1.0, 2.4), "hull2", rot=(28, 0, 0))     # 眉庇
+    for t in (-1, 1):
+        rbox(head, (t * 2.0, 37.2, -6.6), (3.4, 1.6, 2.4), "hull2", rot=(-10, t * 24, 0))   # 顎
+        slab(head, V(t * 3.2, 40.2, -3.0), V(t * 4.6, 41.4, 3.6), 1.8, 0.5, V(1, 0, 0), "hull2")  # 耳のヒレ
+        cbox(head, (t * 3.75, 38.2, -4.4), (0.4, 1.2, 2.4), "vent")
+    slab(head, V(0, 41.2, -5.2), V(0, 42.6, 2.6), 1.2, 1.6, V(1, 0, 0), "hull2")             # トサカ
+    slab(head, V(0, 41.8, -4.6), V(0, 43.2, 1.8), 0.4, 0.5, V(1, 0, 0), "glow")
+    # ---- 肩と腕 -------------------------------------------------------------
+    for side, s in (("r", -1), ("l", 1)):
+        sp = V(s * 9.4, 35.4, 0.6)
+        sh = m.bone(f"shoulder_{side}", tuple(sp), parent="torso")
+        chamfer(sh, (s * 11.2, 37.4, 0.6), (7.4, 4.6, 8.8), "hull2", cut=0.9, axis="z",
+                rot=(0, 0, s * 14))
+        rbox(sh, (s * 11.4, 39.9, 0.6), (6.2, 1.2, 7.6), "hull", rot=(0, 0, s * 14))
+        for k in range(2):
+            rbox(sh, (s * (13.6 + k * 0.7), 34.2 - k * 2.2, 0.6), (2.8, 2.6, 7.4 - k * 1.2), "hull",
+                 rot=(0, 0, s * (24 + k * 8)))
+        for k, z in enumerate((-1.6, 2.8)):           # 肩の角（後ろ外へ反る）
+            tip = V(s * (15.2 + k * 1.2), 46.2 - k * 1.8, z + 3.4)
+            spike(sh, (s * 11.4, 40.0, z), tuple(tip), 2.0, 0.6, 3, "hull2")
+            cbox(sh, tuple(tip), (0.6, 0.6, 0.6), "glow", rotation=(45, 0, 45))
+        rbox(sh, (s * 14.4, 37.2, -3.8), (0.5, 3.6, 0.5), "glow", rot=(0, 0, s * 14))
+        rbox(sh, (s * 11.2, 37.4, -3.85), (5.0, 2.8, 0.6), "serial" if s < 0 else "lights",
+             rot=(0, 0, s * 14))
+        ap = V(s * 10.6, 34.0, 0.6)
+        arm = m.bone(f"arm_{side}", tuple(ap), parent=f"shoulder_{side}")
+        octa(arm, (s * 11.6, 30.2, 0.6), 3.0, 7.6, "frame", axis="y")
+        rbox(arm, (s * 13.1, 30.6, 0.6), (1.0, 5.4, 3.6), "hull", rot=(0, 0, s * 4))
+        octa(arm, (s * 11.9, 26.4, 0.6), 3.4, 3.8, "frame", axis="x")
+        octa(arm, (s * 11.9, 26.4, 0.6), 2.4, 4.2, "trim", axis="x")
+        ep = V(s * 11.9, 26.4, 0.6)
+        fa = m.bone(f"forearm_{side}", tuple(ep), parent=f"arm_{side}", rotation=(-14, 0, 0))
+        bevel(fa, (s * 12.0, 21.8, 0.2), (4.6, 8.6, 5.0), "hull", cut=1.2, axis="y")
+        cbox(fa, (s * (12.0 + 2.35), 21.6, -0.6), (0.3, 6.0, 0.6), "glow")
+        cbox(fa, (s * 12.0, 21.0, -2.55), (3.0, 4.6, 0.3), "hull2_p")
+        octa(fa, (s * 12.0, 17.0, 0.2), 3.0, 1.6, "frame", axis="y")
+        for t in (-1, 0, 1):
+            beam(fa, V(s * 12.0 + t * 1.0, 16.4, -0.4), V(s * 12.0 + t * 1.1, 13.4, -1.6), 0.8, 0.8,
+                 "chrome", extend=0.3)
+        bp = V(s * 14.5, 20.8, -1.0)
+        bl = m.bone(f"blade_{side}", tuple(bp), parent=f"forearm_{side}")
+        cbox(bl, tuple(bp + V(0, 1.4, 0.6)), (1.4, 5.0, 2.6), "frame")
+        q0, q1, q2 = bp + V(0, 3.4, 1.4), bp + V(0, -6.0, -3.2), bp + V(0, -12.0, -8.4)
+        slab(bl, q0, q1, 3.2, 0.7, V(1, 0, 0), "blade", extend=0.4)
+        slab(bl, q1, q2, 2.2, 0.6, V(1, 0, 0), "blade", extend=0.4)
+        e0 = unit(np.cross(V(1, 0, 0), unit(q1 - q0)))
+        if e0[2] > 0:
+            e0 = -e0
+        slab(bl, q0 + e0 * 1.6, q1 + e0 * 1.6, 0.5, 0.8, V(1, 0, 0), "edge")
+        e1 = unit(np.cross(V(1, 0, 0), unit(q2 - q1)))
+        if e1[2] > 0:
+            e1 = -e1
+        slab(bl, q1 + e1 * 1.1, q2 + e1 * 0.2, 0.45, 0.7, V(1, 0, 0), "edge")
+    fit_density(m, 3, (1024, 1024))
+    return m
+
+
+# ===========================================================================
 #  プレビュー（hd_scene の規則でボーンを組み、X を鏡映して描く。holo_* は加算合成）
+#  ※ hd_preview.render は x をもう一度反転しているので鏡像になる。ここは hd_scene.ortho と同じ向き
 # ===========================================================================
 def render(geo, tex_img, yaw=0.0, pitch=-12.0, size=360, pose=None, additive=("holo",),
            bg=(22, 20, 30), fit=None):
@@ -462,8 +611,9 @@ def render(geo, tex_img, yaw=0.0, pitch=-12.0, size=360, pose=None, additive=("h
     th, tw = tex.shape[:2]
     quads = weapon_quads(geo, tex_img, None, pose or {}, tag=True)
     view = Rx(pitch) @ Ry(yaw)
+    # 統合版の画面: +Z を向いて見るとき画面の右 = +X（右手系の素直な投影の鏡映。hd_scene.ortho / fp と同じ）。
+    # yaw 0 で正面（-Z 側）から見て、右腕（-X）が画面の左に来る。
     pts = np.array([p for q in quads for p in q[0]]) @ view.T
-    pts[:, 0] *= -1
     if fit is None:
         lo, hi = pts.min(axis=0), pts.max(axis=0)
         span = max(hi[0] - lo[0], hi[1] - lo[1]) or 1.0
@@ -481,8 +631,6 @@ def render(geo, tex_img, yaw=0.0, pitch=-12.0, size=360, pose=None, additive=("h
     for pts3, uvs, _c, tag in quads:
         bone = tag.split("#")[0]
         P = [view @ np.asarray(p) for p in pts3]
-        for q in P:
-            q[0] *= -1
         n = np.cross(P[1] - P[0], P[3] - P[0])
         nl = np.linalg.norm(n) or 1.0
         lit = 0.42 + 0.58 * abs(float(np.dot(n / nl, light)))

@@ -44,10 +44,10 @@ def build_weapon(m, root):
     W.cbox(grip, (0, 0, 6.6), (1.2, 1.2, 0.8), "gem", rotation=(0, 0, 45), uv_scale=10)
     for s in (-1, 1):                                         # 柄頭の小さな翼（刃の幅の向き）
         W.beam(grip, (0, s * 1.2, 4.5), (0, s * 2.3, 5.9), 0.7, 0.8, "plate2", uv_scale=8)
-    # 月の軌道（細い光の輪）と、そこを回る月の子機
-    W.ring(grip, (0, 0, 5.0), 2.55, 14, (0, 0.16, 0.16), "glow_soft", axis="z")
-    moon = W.spin(m, grip, "moon", (0, 0, 5.0))
-    W.sphere(moon, (0, 2.55, 5.0), 0.62, "moon", uv_scale=12)
+    # 月の軌道（細い光の輪）と、そこを回る月の子機（柄頭の先。篭手や腰に当たらない小ささ）
+    W.ring(grip, (0, 0, 6.2), 1.85, 12, (0, 0.16, 0.16), "glow_soft", axis="z")
+    moon = W.spin(m, grip, "moon", (0, 0, 6.2))
+    W.sphere(moon, (0, 1.85, 6.2), 0.55, "moon", uv_scale=12)
 
     # =====================================================================
     #  form_1_guard — 重ねた十字の鍔と、中央の地球儀

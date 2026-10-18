@@ -12,6 +12,7 @@
 import { MolangVariableMap } from "@minecraft/server";
 import { ANIM_META } from "./anim_meta.js";
 import { PLANETS } from "./data.js";
+import { S } from "./state.js";
 import { G } from "./glyphs.js";
 import {
   cmd, add, scale, basis, rand, valid, allPlayers, dist, now, fmt, report, yawDeg,
@@ -369,14 +370,28 @@ export function bodyTicks(name, fallback = 10) {
 }
 
 /**
+ * 名前を実際に再生するモーションに解決する。"cast" のように惑星の付かない名前は、変身中の形態の版
+ * （"earth.cast"）があればそちらを使う（gen_astro_anim の約束）。無ければ null。
+ */
+export function resolveBody(player, name) {
+  if (!name.includes(".")) {
+    let key = null;
+    try { const st = S(player); key = st.form ?? st.last; } catch (_) { }
+    if (key && ANIM_META[`${key}.${name}`]) return `${key}.${name}`;
+  }
+  return ANIM_META[name] ? name : null;
+}
+
+/**
  * 全身モーションを再生する。name は "henshin" や "earth.tidal_slash"（animation.astro.p. を除く）。
- * 無いモーションは何もしない（false）。
+ * 共通の名前は形態の版を優先する（resolveBody）。無いモーションは何もしない（false）。
  */
 export function body(player, name, controller = "astro.act", blendOut) {
-  const meta = ANIM_META[name];
-  if (!meta) return false;
   try {
-    return play(player, `animation.astro.p.${name}`, controller, blendOut ?? (meta[1] ? 0.12 : 0.0));
+    const n = resolveBody(player, name);
+    if (!n) return false;
+    const meta = ANIM_META[n];
+    return play(player, `animation.astro.p.${n}`, controller, blendOut ?? (meta[1] ? 0.12 : 0.0));
   } catch (e) { report("fx.body", e); return false; }
 }
 

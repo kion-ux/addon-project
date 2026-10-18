@@ -501,12 +501,12 @@ def raster(quads, textures, size, project, bg=None, ss=2, bloom=True, ink=True,
         if any(s is None for s in scr):
             continue
         n = q["n"]
+        # Minecraft の実体の陰影（面の向きで決まる: 上 1.0 / 前後 0.88 / 左右 0.76 / 下 0.6）に
+        # 斜めの光を少しだけ足す。前から見ても後ろから見ても同じ明るさになる
+        nx, ny, nz = (float(v) for v in n)
+        lit = nx * nx * 0.76 + nz * nz * 0.88 + ny * ny * (1.0 if ny > 0 else 0.6)
         d = float(np.dot(n, LIGHT))
-        if q.get("two_sided"):
-            d = abs(d)
-        # 統合版の実体の陰影に近い、上から強めで裏も暗くなりすぎない当て方
-        lit = 0.74 + 0.26 * d + 0.08 * float(n[1])
-        lit = max(0.55, min(1.06, lit))
+        lit += 0.08 * (abs(d) if q.get("two_sided") else d)
         uvs = q["uvs"]
         tx = tpx.get(q["tex"]) if q["tex"] is not None else None
         for tri in ((0, 1, 2), (0, 2, 3)):

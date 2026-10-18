@@ -1762,6 +1762,611 @@ def compose_line(text, glyphs, S=4, shadow=True, title=1):
 
 
 # ===========================================================================
+#  テクスチャ: ターミナルの惑星紋章（128x128）
+# ===========================================================================
+SYMBOL = {k: D.PLANETS[k]["symbol"] for k in KEYS}
+
+
+def _font(path, size):
+    return ImageFont.truetype(path, size)
+
+
+def text_mask(cv, text, font_path, size, cx, cy, anchor="mm"):
+    im = Image.new("L", (cv.W, cv.H), 0)
+    ImageDraw.Draw(im).text((cx * cv.ss, cy * cv.ss), text, font=_font(font_path, int(size * cv.ss)), fill=255,
+                            anchor=anchor)
+    return np.asarray(im, np.float32) / 255.0
+
+
+def metal_ring_colour(cv, cx, cy, dark=(54, 62, 80), light=(226, 234, 246), light_ang=-135.0):
+    X, Y = cv.coords()
+    ang = np.degrees(np.arctan2(Y - cy, X - cx))
+    k = 0.5 + 0.5 * np.cos(np.radians(ang - light_ang))
+    k = k ** 1.4
+    # 帯状の映り込み
+    k = np.clip(k + 0.12 * np.cos(np.radians(ang * 3 + 40)), 0, 1)
+    return _ramp(k, [(0.0, dark), (0.55, mix(dark, light, 0.55)), (1.0, light)])
+
+
+def ui_emblem(key):
+    c = HUD_COL[key]
+    cv = Canvas(128, ss=4)
+    cx = cy = 64.0
+    cv.glow(cv.ellipse(cx, cy, 50), c, 5, 0.45)
+    # 四隅の留め具（輪の下）
+    for ang in (45, 135, 225, 315):
+        a = math.radians(ang)
+
+        def pt(r, t, a=a):
+            return (cx + math.cos(a) * r - math.sin(a) * t, cy + math.sin(a) * r + math.cos(a) * t)
+        tab = [pt(47, -10), pt(61.5, -6.5), pt(61.5, 6.5), pt(47, 10)]
+        cv.fill(cv.poly(tab), metal_ring_colour(cv, cx, cy, (44, 50, 66), (190, 200, 218)))
+        cv.fill(cv.line([pt(52, -7.5), pt(52, 7.5)], 1.0), (24, 28, 40))
+        cv.fill(cv.poly([pt(56, -3.2), pt(60, -2.4), pt(60, 2.4), pt(56, 3.2)]), c)
+        cv.fill(cv.poly([pt(56.6, -2.2), pt(58.4, -1.8), pt(58.4, 0), pt(56.6, 0)]), WHITE, 0.8)
+    # 外の金属の輪
+    ring = cv.ring(cx, cy, 48.5, 57.5)
+    cv.fill(ring, metal_ring_colour(cv, cx, cy))
+    cv.fill(cv.ring(cx, cy, 56.6, 57.6), (20, 24, 36))                      # 外縁の溝
+    cv.fill(cv.ring(cx, cy, 48.5, 49.6), (30, 34, 48))                      # 内縁の溝
+    cv.fill(cv.ring(cx, cy, 52.4, 53.0), (40, 46, 62), 0.8)                 # 中央の溝
+    X, Y = cv.coords()
+    ang = (np.degrees(np.arctan2(Y - cy, X - cx)) + 360) % 360
+    rr = np.sqrt((X - cx) ** 2 + (Y - cy) ** 2)
+    # 目盛り（5° ごとに細かく、30° ごとに太く）
+    fine = (np.abs(((ang + 2.5) % 5) - 2.5) < 0.45) & (rr > 53.4) & (rr < 56.0)
+    cv.fill(fine.astype(np.float32), (30, 36, 50), 0.85)
+    major = (np.abs(((ang + 15) % 30) - 15) < 1.1) & (rr > 49.8) & (rr < 56.4)
+    cv.fill(major.astype(np.float32), (20, 24, 34))
+    # 惑星色の発光の輪
+    cv.glow(cv.ring(cx, cy, 45.4, 47.8), c, 2.0, 0.9)
+    cv.fill(cv.ring(cx, cy, 45.6, 47.6), c)
+    cv.fill(cv.ring(cx, cy, 46.3, 46.9), lighten(c, 0.7), 0.9)
+    # 内側の暗い地と照準の格子
+    disc = cv.ellipse(cx, cy, 45.6)
+    cv.fill(disc, cv.radial(cx - 8, cy - 10, 60, [(0.0, mix((10, 16, 34), c, 0.18)), (1.0, (4, 6, 14))]))
+    grid = np.zeros_like(disc)
+    for r0 in (22.0, 34.0, 41.5):
+        grid = np.maximum(grid, cv.ring(cx, cy, r0, r0 + 0.5))
+    for a0 in (0, 90):
+        a = math.radians(a0)
+        grid = np.maximum(grid, cv.line([(cx - math.cos(a) * 44, cy - math.sin(a) * 44),
+                                         (cx + math.cos(a) * 44, cy + math.sin(a) * 44)], 0.5))
+    cv.fill(grid * disc, c, 0.16)
+    # 星
+    rng = np.random.default_rng(D.PLANETS[key]["order"] * 101)
+    for _ in range(26):
+        sx, sy = rng.uniform(22, 106, 2)
+        if (sx - cx) ** 2 + (sy - cy) ** 2 < 42 ** 2:
+            cv.fill(cv.ellipse(sx, sy, rng.uniform(0.3, 0.7)), (220, 230, 255), rng.uniform(0.4, 0.9))
+    # 惑星
+    rad = {"saturn": 22.5, "sol": 25.0, "uranus": 27.0, "jupiter": 31.0}.get(key, 29.5)
+    pl = render_planet(key, 128, rad, ss=3, detail=1.0)
+    cv.paste(pl, 0, 0)
+    # 下の記号の札
+    tab = [(48, 107), (80, 107), (85, 113), (80, 121), (48, 121), (43, 113)]
+    cv.fill(cv.poly([(x, y + 0.8) for x, y in tab]), (0, 0, 0), 0.5)
+    cv.fill(cv.poly(tab), cv.grad((43, 107), (85, 121), (210, 220, 236), (70, 80, 102)))
+    inner = [(50, 109), (78, 109), (81.5, 113), (78, 119), (50, 119), (46.5, 113)]
+    cv.fill(cv.poly(inner), (8, 12, 24))
+    cv.fill(text_mask(cv, SYMBOL[key], FONT_SYM_B, 10.5, 56, 114), c)
+    cv.fill(text_mask(cv, f"{D.PLANETS[key]['order']:02d}", FONT_SYM_B, 7.0, 71, 114.2), lighten(c, 0.4), 0.9)
+    return soft_outlined(cv.result(), INK, 190)
+
+
+# ===========================================================================
+#  テクスチャ: ターミナルのメニューアイコン（64x64）
+# ===========================================================================
+MENU_ACCENT = {
+    "status": (110, 230, 255), "codex": (150, 170, 255), "revert": (255, 96, 96), "settings": (200, 214, 232),
+    "guide": (110, 255, 160), "records": (255, 206, 72), "back": (220, 230, 245),
+}
+
+
+def menu_badge(cv, acc):
+    """暗い六角の札と細い縁（全部のアイコンで共通）。"""
+    outer = cv.poly(hex_pts(32, 32, 29.5, 29.5 * 1.0, flat=False))
+    inner = cv.poly(hex_pts(32, 32, 26.6, 26.6, flat=False))
+    cv.fill(outer, cv.grad((8, 4), (56, 60), (214, 224, 240), (70, 80, 104)))
+    cv.fill(inner, cv.radial(26, 22, 40, [(0.0, mix((14, 22, 44), acc, 0.20)), (1.0, (6, 9, 20))]))
+    cv.fill(np.clip(inner - cv.poly(hex_pts(32, 32, 25.4, 25.4, flat=False)), 0, 1), acc, 0.65)
+
+
+def menu_icon(name):
+    acc = MENU_ACCENT[name]
+    cv = Canvas(64, ss=4)
+    menu_badge(cv, acc)
+    hi = lighten(acc, 0.65)
+
+    def stroke(m, col=None, glow=True):
+        if glow:
+            cv.glow(m, acc, 1.2, 0.8)
+        cv.fill(m, col or hi)
+    if name == "status":
+        arc = cv.arc(32, 35, 15, 150, 390, 4.0)
+        stroke(arc, acc)
+        X, Y = cv.coords()
+        ang = (np.degrees(np.arctan2(Y - 35, X - 32)) + 360) % 360
+        rr = np.sqrt((X - 32) ** 2 + (Y - 35) ** 2)
+        ticks = ((np.abs(((ang + 7.5) % 15) - 7.5) < 1.4) & (rr > 12.5) & (rr < 17.5)).astype(np.float32)
+        cv.fill(ticks * arc, (10, 16, 30))
+        a = math.radians(300)
+        stroke(cv.line([(32, 35), (32 + math.cos(a) * 13, 35 + math.sin(a) * 13)], 2.4), WHITE)
+        cv.fill(cv.ellipse(32, 35, 3.4), hi)
+        for i, h in enumerate((5, 8, 11)):
+            stroke(cv.poly([(24 + i * 6, 49 - h * 0.45), (28 + i * 6, 49 - h * 0.45), (28 + i * 6, 49),
+                            (24 + i * 6, 49)]), acc, glow=False)
+    elif name == "codex":
+        cv.fill(cv.ellipse(32, 32, 10), cv.radial(28, 28, 14, [(0.0, (230, 236, 255)), (0.6, acc),
+                                                                (1.0, (40, 50, 120))]))
+        for yy in (29, 34):
+            cv.fill(cv.line([(23, yy), (41, yy + 1)], 1.0), (60, 70, 150), 0.6)
+        orbit = np.clip(cv.ellipse(32, 32, 20, 7) - cv.ellipse(32, 32, 18.2, 5.6), 0, 1)
+        X, Y = cv.coords()
+        front = (Y > 32).astype(np.float32)
+        back = orbit * (1 - front) * (1 - cv.ellipse(32, 32, 10))
+        stroke(orbit * front + back, hi)
+        cv.fill(cv.ellipse(49, 36, 3.0), WHITE)
+        cv.fill(cv.ellipse(16, 27, 1.6), hi)
+    elif name == "revert":
+        stroke(cv.arc(32, 33.5, 13, -55, 235, 4.2), acc)
+        stroke(cv.line([(32, 14), (32, 31)], 4.2), WHITE)
+    elif name == "settings":
+        X, Y = cv.coords()
+        ang = np.arctan2(Y - 32, X - 32)
+        rr = np.sqrt((X - 32) ** 2 + (Y - 32) ** 2)
+        teeth = np.clip((np.cos(ang * 8) - 0.15) * 6, 0, 1)
+        gear = ((rr < 13.5) | ((rr < 18) & (teeth > 0.5))).astype(np.float32)
+        gear *= (rr > 6.0)
+        cv.glow(gear, acc, 1.2, 0.6)
+        cv.fill(gear, cv.grad((16, 14), (48, 50), (250, 252, 255), (130, 144, 170)))
+        cv.fill(cv.ring(32, 32, 9.0, 10.0), (60, 70, 92))
+        cv.fill(cv.ellipse(32, 32, 3.2), (110, 230, 255))
+    elif name == "guide":
+        body = cv.poly([(15, 27), (22, 22), (42, 22), (49, 27), (51, 40), (46, 44), (41, 41), (23, 41), (18, 44),
+                        (13, 40)])
+        cv.glow(body, acc, 1.2, 0.6)
+        cv.fill(body, cv.grad((14, 22), (50, 44), (236, 244, 252), (120, 134, 160)))
+        cv.fill(cv.poly([(19, 30), (22, 30), (22, 27), (25, 27), (25, 30), (28, 30), (28, 33), (25, 33), (25, 36),
+                         (22, 36), (22, 33), (19, 33)]), (30, 36, 52))
+        for (x, y, col) in ((41, 28, acc), (45, 31.5, (255, 110, 110)), (37, 31.5, (255, 214, 80)),
+                            (41, 35, (120, 190, 255))):
+            cv.fill(cv.ellipse(x, y, 2.0), col)
+        cv.fill(cv.line([(28, 23.5), (36, 23.5)], 1.0), WHITE, 0.6)
+    elif name == "records":
+        cup = cv.poly([(21, 16), (43, 16), (41, 29), (36, 34), (28, 34), (23, 29)])
+        cv.glow(cup, acc, 1.2, 0.6)
+        handles = np.clip(cv.ring(21, 22, 4.0, 6.4) + cv.ring(43, 22, 4.0, 6.4), 0, 1) * \
+            (1 - cv.poly([(20, 14), (44, 14), (44, 32), (20, 32)]) * 0)
+        cv.fill(handles * (1 - cv.poly([(21, 15), (43, 15), (41, 29), (23, 29)])), (220, 160, 40))
+        cv.fill(cup, cv.grad((21, 16), (43, 34), (255, 246, 180), (214, 140, 30)))
+        cv.fill(cv.poly([(29, 34), (35, 34), (35, 40), (29, 40)]), (200, 132, 30))
+        cv.fill(cv.poly([(23, 40), (41, 40), (43, 46), (21, 46)]), cv.grad((21, 40), (43, 46),
+                                                                          (255, 230, 140), (170, 104, 20)))
+        star = []
+        for i in range(10):
+            a = math.radians(i * 36 - 90)
+            r = 5.2 if i % 2 == 0 else 2.2
+            star.append((32 + math.cos(a) * r, 23.5 + math.sin(a) * r))
+        cv.fill(cv.poly(star), WHITE)
+        cv.fill(cv.line([(25, 18), (24.5, 25)], 1.2), WHITE, 0.6)
+    elif name == "back":
+        arrow = cv.poly([(14, 32), (29, 18), (29, 26), (48, 26), (48, 38), (29, 38), (29, 46)])
+        stroke(arrow, cv.grad((14, 20), (48, 44), (255, 255, 255), (150, 164, 190)))
+    return soft_outlined(cv.result(), INK, 200)
+
+
+# ===========================================================================
+#  テクスチャ: 素材・道具のアイテムアイコン（64x64、2 値のアルファ＋暗い縁取り）
+# ===========================================================================
+ICON_OUTLINE = (14, 12, 20)
+
+
+def _rot_fit(arr, deg, size=64, margin=1):
+    im = Image.fromarray(np.clip(arr + 0.5, 0, 255).astype(np.uint8), "RGBA")
+    if deg:
+        im = im.rotate(deg, resample=Image.BICUBIC, expand=True)
+    bb = im.getbbox()
+    im = im.crop(bb)
+    side = max(im.size)
+    sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    sq.alpha_composite(im, ((side - im.size[0]) // 2, (side - im.size[1]) // 2))
+    inner = size - 2 * margin
+    sq = sq.resize((inner, inner), Image.LANCZOS)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.alpha_composite(sq, (margin, margin))
+    return np.asarray(out, np.float32)
+
+
+def item_nano_cell():
+    cv = Canvas(64, ss=4)
+    cyan = (90, 236, 255)
+    # 胴（ガラス）
+    body = cv.poly([(22, 17), (42, 17), (42, 47), (22, 47)])
+    cv.fill(body, cv.grad((22, 0), (42, 0), None, None, [(0.0, (40, 120, 150)), (0.25, (120, 240, 255)),
+                                                          (0.6, (40, 170, 210)), (1.0, (16, 70, 100))]))
+    liquid = cv.poly([(23, 24), (41, 22.5), (41, 46), (23, 46)])
+    cv.fill(liquid, cv.grad((0, 22), (0, 46), (160, 250, 255), (20, 120, 180)), 0.85)
+    rng = np.random.default_rng(5)
+    for _ in range(16):
+        x, y = rng.uniform(24, 40), rng.uniform(25, 45)
+        sz = rng.uniform(0.7, 1.4)
+        cv.fill(cv.poly([(x, y - sz), (x + sz, y), (x, y + sz), (x - sz, y)]), (230, 255, 255), 0.95)
+    cv.fill(cv.poly([(25, 19), (27.5, 19), (27.5, 45), (25, 45)]), WHITE, 0.55)       # ガラスの照り
+    cv.fill(cv.line([(23, 31), (41, 31)], 0.6), (20, 60, 90), 0.6)
+    cv.fill(cv.line([(23, 38), (41, 38)], 0.6), (20, 60, 90), 0.6)
+    # 金属の蓋（上下）
+    for (y0, y1, flip) in ((9, 18, False), (46, 55, True)):
+        cap = cv.poly([(20, y0 + (0 if flip else 2)), (44, y0 + (0 if flip else 2)), (44, y1 - (2 if flip else 0)),
+                       (20, y1 - (2 if flip else 0))])
+        cv.fill(cap, cv.grad((20, 0), (44, 0), None, None, [(0.0, (90, 100, 124)), (0.3, (236, 242, 250)),
+                                                             (0.65, (140, 152, 176)), (1.0, (52, 60, 80))]))
+        yy = y0 + 4.5
+        cv.fill(cv.line([(20, yy), (44, yy)], 0.8), (40, 46, 62))
+        nub = (26, y0 - 3, 38, y0) if not flip else (26, y1, 38, y1 + 3)
+        cv.fill(cv.poly([(nub[0], nub[1]), (nub[2], nub[1]), (nub[2], nub[3]), (nub[0], nub[3])]),
+                cv.grad((26, 0), (38, 0), (220, 228, 240), (90, 100, 124)))
+    cv.fill(cv.poly([(30.5, 6), (33.5, 6), (33.5, 8), (30.5, 8)]), cyan)
+    return outlined(_rot_fit(cv.result(), -28), ICON_OUTLINE)
+
+
+def item_core_frame():
+    cv = Canvas(64, ss=4)
+    hx = hex_pts(32, 32, 28, 28, flat=False)
+    cv.fill(cv.poly(hx), cv.grad((6, 4), (58, 60), None, None, [(0.0, (236, 242, 252)), (0.45, (150, 164, 188)),
+                                                                 (1.0, (60, 70, 92))]))
+    cv.fill(cv.poly(hex_pts(32, 32, 24, 24, flat=False)), cv.grad((10, 8), (54, 56), (80, 90, 112), (170, 182, 204)))
+    # 中央の空の受け口
+    cv.fill(cv.ellipse(32, 32, 15.5), (24, 28, 40))
+    cv.fill(cv.ring(32, 32, 13.6, 15.5), metal_ring_colour(cv, 32, 32, (60, 68, 88), (230, 236, 248)))
+    cv.fill(cv.ellipse(32, 32, 13.6), cv.radial(32, 32, 13.6, [(0.0, (30, 60, 90)), (0.75, (12, 18, 34)),
+                                                               (1.0, (40, 120, 160))]))
+    cv.fill(cv.ring(32, 32, 9.5, 10.4), (110, 230, 255), 0.85)
+    cv.fill(cv.ellipse(32, 32, 2.0), (190, 250, 255))
+    # 4 つの爪
+    for a0 in (0, 90, 180, 270):
+        a = math.radians(a0)
+
+        def pt(r, t, a=a):
+            return (32 + math.cos(a) * r - math.sin(a) * t, 32 + math.sin(a) * r + math.cos(a) * t)
+        cl = [pt(11, -3), pt(19, -4.2), pt(19, 4.2), pt(11, 3)]
+        cv.fill(cv.poly(cl), cv.grad(pt(19, -4), pt(11, 3), (240, 244, 252), (100, 112, 136)))
+        cv.fill(cv.ellipse(*pt(16, 0), 1.1), (110, 230, 255))
+    for (x, y) in hx:
+        bx, by = 32 + (x - 32) * 0.8, 32 + (y - 32) * 0.8
+        cv.fill(cv.ellipse(bx, by, 1.6), (40, 46, 62))
+        cv.fill(cv.ellipse(bx - 0.4, by - 0.4, 0.8), (230, 236, 248))
+    return outlined(_rot_fit(cv.result(), 0), ICON_OUTLINE)
+
+
+def item_solar_fragment():
+    cv = Canvas(64, ss=4)
+    shard = [(31, 3), (41, 15), (40, 41), (30, 60), (21, 43), (22, 15)]
+    cv.glow(cv.poly(shard), (255, 170, 40), 2.0, 0.8)
+    cv.fill(cv.poly(shard), (255, 170, 40))
+    left = [(31, 3), (22, 15), (21, 43), (30, 60), (31, 30)]
+    right = [(31, 3), (41, 15), (40, 41), (30, 60), (31, 30)]
+    cv.fill(cv.poly(left), cv.grad((22, 5), (30, 58), (255, 250, 214), (255, 150, 30)))
+    cv.fill(cv.poly(right), cv.grad((40, 5), (32, 58), (255, 214, 100), (210, 70, 20)))
+    cv.fill(cv.poly([(31, 3), (41, 15), (31, 30), (22, 15)]), cv.grad((31, 3), (31, 30), (255, 255, 240),
+                                                                     (255, 200, 80)))
+    cv.fill(cv.line([(31, 6), (31, 54)], 1.2), (255, 255, 236), 0.9)
+    cv.fill(cv.ellipse(30.5, 30, 6.0), (255, 255, 220), 0.55)
+    # 小さな欠片
+    small = [(43, 36), (50, 42), (48, 55), (41, 58), (38, 47)]
+    cv.fill(cv.poly(small), cv.grad((43, 36), (44, 58), (255, 230, 140), (220, 90, 20)))
+    cv.fill(cv.line([(44, 39), (43, 55)], 0.8), (255, 250, 220), 0.8)
+    small2 = [(16, 44), (20, 47), (19, 56), (13, 55), (12, 49)]
+    cv.fill(cv.poly(small2), cv.grad((16, 44), (16, 56), (255, 214, 110), (200, 70, 20)))
+    for (x, y, r) in ((47, 11, 3.4), (14, 26, 2.6)):
+        st = [(x, y - r), (x + r * 0.28, y - r * 0.28), (x + r, y), (x + r * 0.28, y + r * 0.28), (x, y + r),
+              (x - r * 0.28, y + r * 0.28), (x - r, y), (x - r * 0.28, y - r * 0.28)]
+        cv.fill(cv.poly(st), (255, 250, 214))
+    return outlined(_rot_fit(cv.result(), -14), ICON_OUTLINE)
+
+
+def item_terminal():
+    cv = Canvas(64, ss=4)
+    body = cv.poly([(14, 10), (46, 10), (50, 14), (50, 54), (46, 58), (18, 58), (14, 54)])
+    cv.fill(body, cv.grad((14, 10), (50, 58), None, None, [(0.0, (190, 200, 220)), (0.3, (96, 108, 132)),
+                                                            (1.0, (40, 46, 62))]))
+    cv.fill(cv.poly([(16, 12), (45, 12), (48, 15), (48, 52), (16, 52)]), (34, 40, 56))
+    screen = cv.poly([(18, 15), (46, 15), (46, 40), (18, 40)])
+    cv.fill(screen, cv.grad((18, 15), (46, 40), (14, 40, 70), (6, 14, 30)))
+    cv.fill(cv.ellipse(28, 27, 6.5), cv.radial(26, 25, 8, [(0.0, (180, 250, 255)), (0.7, (60, 190, 255)),
+                                                          (1.0, (20, 80, 160))]))
+    orbit = np.clip(cv.ellipse(28, 27, 10.5, 3.6) - cv.ellipse(28, 27, 9.4, 2.7), 0, 1)
+    cv.fill(orbit, (140, 240, 255), 0.95)
+    for i, w in enumerate((8, 6, 7)):
+        cv.fill(cv.line([(37, 20 + i * 4), (37 + w, 20 + i * 4)], 1.2), (120, 230, 255), 0.9)
+    cv.fill(cv.line([(19.5, 37.5), (44.5, 37.5)], 0.8), (90, 200, 255), 0.7)
+    cv.fill(cv.line([(19, 16), (30, 16)], 0.8), WHITE, 0.35)
+    for (x, col) in ((22, (110, 236, 255)), (29, (255, 110, 160)), (36, (255, 214, 80))):
+        cv.fill(cv.ellipse(x, 46, 2.4), col)
+        cv.fill(cv.ellipse(x - 0.6, 45.4, 0.9), WHITE, 0.8)
+    for i in range(3):
+        cv.fill(cv.line([(41, 44 + i * 2.2), (46, 44 + i * 2.2)], 0.9), (20, 24, 34))
+    cv.fill(cv.poly([(40, 4), (43, 4), (43, 10), (40, 10)]), cv.grad((40, 0), (43, 0), (220, 228, 240),
+                                                                     (90, 100, 124)))
+    cv.fill(cv.ellipse(41.5, 4, 2.0), (110, 236, 255))
+    return outlined(_rot_fit(cv.result(), 0), ICON_OUTLINE)
+
+
+def item_void_signal():
+    cv = Canvas(64, ss=4)
+    vio = (176, 90, 255)
+    # 信号の弧
+    for r in (9.5, 14, 18.5):
+        cv.fill(cv.arc(32, 30, r, 215, 325, 1.8), lighten(vio, 0.35) if r < 15 else vio)
+    # 台座の爪
+    base = cv.poly([(18, 56), (46, 56), (42, 50), (22, 50)])
+    cv.fill(base, cv.grad((18, 50), (46, 56), (110, 104, 130), (30, 26, 40)))
+    for sgn in (-1, 1):
+        claw = cv.poly([(32 + sgn * 6, 51), (32 + sgn * 14, 40), (32 + sgn * 12, 30), (32 + sgn * 9, 31),
+                        (32 + sgn * 10, 40), (32 + sgn * 3, 50)])
+        cv.fill(claw, cv.grad((32 + sgn * 14, 30), (32, 52), (150, 140, 170), (34, 30, 46)))
+    # 暗い結晶（八面体）
+    top, left, right, bot, mid = (32, 22), (23, 38), (41, 38), (32, 54), (32, 40)
+    cv.glow(cv.poly([top, right, bot, left]), vio, 2.2, 0.9)
+    cv.fill(cv.poly([top, left, mid]), cv.grad(top, left, (220, 170, 255), (90, 30, 160)))
+    cv.fill(cv.poly([top, right, mid]), cv.grad(top, right, (130, 60, 210), (40, 10, 80)))
+    cv.fill(cv.poly([left, bot, mid]), cv.grad(left, bot, (70, 20, 120), (20, 6, 40)))
+    cv.fill(cv.poly([right, bot, mid]), cv.grad(right, bot, (40, 10, 80), (14, 4, 30)))
+    cv.fill(cv.ellipse(32, 38, 3.2), (240, 214, 255))
+    cv.fill(cv.ellipse(32, 38, 1.4), WHITE)
+    cv.fill(cv.line([top, (24.5, 37)], 0.7), (250, 230, 255), 0.8)
+    return outlined(_rot_fit(cv.result(), 0), ICON_OUTLINE)
+
+
+ITEM_ICONS = {
+    "nano_cell": item_nano_cell, "core_frame": item_core_frame, "solar_fragment": item_solar_fragment,
+    "terminal": item_terminal, "void_signal": item_void_signal,
+}
+
+
+# ===========================================================================
+#  テクスチャ: スーツのアイコン（モデルがあれば兜と胸を描く。無ければ紋章付きの兜の絵）
+# ===========================================================================
+def suit_paths(key):
+    geo = os.path.join(RP, "models", "entity", f"astro_suit_{key}.geo.json")
+    tex = os.path.join(RP, "textures", "entity", "astro", f"suit_{key}.png")
+    return geo, tex
+
+
+def render_bust(geo_path, tex_path, size=64, yaw=-26.0, pitch=-8.0):
+    """スーツのジオメトリ（プレイヤーと同じボーン名）を休みの姿勢で描き、脚を隠して頭と胴を切り出す。"""
+    hyper = os.path.join(TOOLS, "hyperdim")
+    if hyper not in sys.path:
+        sys.path.insert(0, hyper)
+    from hd_preview import render   # noqa: E402
+    geo = json.load(open(geo_path, encoding="utf-8"))["minecraft:geometry"][0]
+    bones = geo.get("bones", [])
+    parent = {b["name"]: b.get("parent") for b in bones}
+
+    def under(name, roots):
+        seen = set()
+        while name and name not in seen:
+            if name in roots:
+                return True
+            seen.add(name)
+            name = parent.get(name)
+        return False
+    roots = {"rightLeg", "leftLeg"}
+    hide = {b["name"] for b in bones if under(b["name"], roots) or b["name"].startswith("fx_thrust")}
+    big = render(geo_path, tex_path, 256, yaw, pitch, 0, margin=0.02, bg=(0, 0, 0, 0), ss=2, hide=tuple(hide))
+    bb = big.getbbox()
+    if not bb:
+        return None
+    big = big.crop(bb)
+    # 上の 8 割（兜・胸・肩）を残す
+    w, h = big.size
+    big = big.crop((0, 0, w, int(h * 0.86)))
+    side = max(big.size)
+    sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    sq.alpha_composite(big, ((side - big.size[0]) // 2, (side - big.size[1]) // 2))
+    im = sq.resize((size - 2, size - 2), Image.LANCZOS)
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    canvas.alpha_composite(im, (1, 1))
+    return outlined(np.asarray(canvas, np.float32), ICON_OUTLINE, thr=90)
+
+
+def suit_icon_fallback(key):
+    """紋章付きの兜の絵（スーツのモデルが無い時の代わり）。"""
+    col = D.PLANETS[key]["colors"]
+    plate, plate2, glow = col["plate"], col["plate2"], col["glow"]
+    cv = Canvas(64, ss=4)
+    # 肩と胸
+    chest = cv.poly([(8, 60), (12, 46), (22, 40), (42, 40), (52, 46), (56, 60)])
+    cv.fill(chest, cv.grad((8, 40), (56, 60), lighten(plate2, 0.2), shade(plate2, 0.45)))
+    cv.fill(cv.poly([(24, 44), (40, 44), (36, 56), (28, 56)]), shade(plate, 0.9))
+    cv.fill(cv.ellipse(32, 50, 3.6), glow)
+    cv.fill(cv.ellipse(31.2, 49.2, 1.4), WHITE, 0.8)
+    # 兜
+    helm = cv.poly([(32, 5), (44, 9), (49, 20), (48, 33), (42, 42), (32, 45), (22, 42), (16, 33), (15, 20), (20, 9)])
+    cv.fill(helm, cv.grad((16, 6), (48, 44), None, None, [(0.0, lighten(plate, 0.45)), (0.45, plate),
+                                                           (1.0, shade(plate, 0.45))]))
+    cv.fill(cv.poly([(16, 26), (24, 27), (24, 38), (19, 36)]), shade(plate2, 0.8))
+    cv.fill(cv.poly([(48, 26), (40, 27), (40, 38), (45, 36)]), shade(plate2, 0.6))
+    visor = cv.poly([(19, 22), (32, 26), (45, 22), (43, 29), (32, 32), (21, 29)])
+    cv.glow(visor, glow, 1.0, 0.7)
+    cv.fill(visor, cv.grad((19, 22), (45, 32), lighten(glow, 0.6), shade(glow, 0.6)))
+    cv.fill(cv.line([(22, 24), (30, 26.4)], 0.8), WHITE, 0.8)
+    cv.fill(cv.poly([(29, 34), (35, 34), (34, 41), (30, 41)]), shade(plate, 0.6))
+    # 額の紋章
+    em = render_planet(key, 14, {"saturn": 3.4, "sol": 4.0}.get(key, 4.6), ss=4, detail=0.6)
+    cv.fill(cv.poly(hex_pts(32, 15.5, 6.6, 5.8)), (20, 26, 40))
+    cv.fill(np.clip(cv.poly(hex_pts(32, 15.5, 6.6, 5.8)) - cv.poly(hex_pts(32, 15.5, 5.6, 4.8)), 0, 1),
+            HUD_COL[key])
+    cv.paste(em, 25, 8.5)
+    return outlined(_rot_fit(cv.result(), 0), ICON_OUTLINE)
+
+
+def suit_icon(key):
+    geo, tex = suit_paths(key)
+    if os.path.exists(geo) and os.path.exists(tex):
+        try:
+            img = render_bust(geo, tex)
+            if img is not None:
+                return img, "model"
+        except Exception as e:  # noqa: BLE001  モデルの書式が想定外でも代わりの絵で続ける
+            print(f"  ui: suit_{key} の描画に失敗（{e}）→ 代わりの絵")
+    return suit_icon_fallback(key), "fallback"
+
+
+# ===========================================================================
+#  パックアイコン（256x256）: 深宇宙・軌道の弧に 8 惑星と太陽・中央の星核とナノマシンの奔流・題字
+# ===========================================================================
+# 面取りしたメカ文字（5x7 の升目。外形と穴の多角形）
+LOGO = {
+    "A": ([(0, 7), (0, 1.3), (1.3, 0), (5, 0), (5, 7), (3.5, 7), (3.5, 4.4), (1.5, 4.4), (1.5, 7)],
+          [[(1.5, 1.4), (3.5, 1.4), (3.5, 3.0), (1.5, 3.0)]]),
+    "S": ([(1.3, 0), (5, 0), (5, 1.4), (1.5, 1.4), (1.5, 2.8), (3.7, 2.8), (5, 4.1), (5, 5.7), (3.7, 7), (0, 7),
+           (0, 5.6), (3.5, 5.6), (3.5, 4.2), (1.3, 4.2), (0, 2.9), (0, 1.3)], []),
+    "T": ([(0, 0), (5, 0), (5, 1.4), (3.25, 1.4), (3.25, 7), (1.75, 7), (1.75, 1.4), (0, 1.4)], []),
+    "R": ([(0, 0), (3.7, 0), (5, 1.3), (5, 3.3), (4.1, 4.1), (5, 5.0), (5, 7), (3.5, 7), (3.5, 5.3), (2.9, 4.7),
+           (1.5, 4.7), (1.5, 7), (0, 7)], [[(1.5, 1.4), (3.5, 1.4), (3.5, 3.3), (1.5, 3.3)]]),
+    "O": ([(1.3, 0), (5, 0), (5, 5.7), (3.7, 7), (0, 7), (0, 1.3)], [[(1.5, 1.4), (3.5, 1.4), (3.5, 5.6), (1.5, 5.6)]]),
+    "N": ([(0, 7), (0, 0), (1.5, 0), (3.5, 3.9), (3.5, 0), (5, 0), (5, 7), (3.5, 7), (1.5, 3.1), (1.5, 7)], []),
+    "G": ([(1.3, 0), (5, 0), (5, 1.4), (1.5, 1.4), (1.5, 5.6), (3.5, 5.6), (3.5, 4.4), (2.5, 4.4), (2.5, 3.0), (5, 3.0),
+           (5, 5.7), (3.7, 7), (0, 7), (0, 1.3)], []),
+    "E": ([(1.3, 0), (5, 0), (5, 1.4), (1.5, 1.4), (1.5, 2.8), (4.2, 2.8), (4.2, 4.2), (1.5, 4.2), (1.5, 5.6),
+           (5, 5.6), (5, 7), (0, 7), (0, 1.3)], []),
+}
+
+
+def logo_mask(cv, text, x0, y0, unit, gap=1.15, skew=0.22):
+    """文字列のマスクと全体の幅（px）。"""
+    m = np.zeros((cv.H, cv.W), np.float32)
+    x = x0
+    for ch in text:
+        if ch == " ":
+            x += unit * 2.6
+            continue
+        outer, holes = LOGO[ch]
+
+        def tr(pts, x=x):
+            return [(x + (px + (7 - py) * skew) * unit, y0 + py * unit) for px, py in pts]
+        lm = cv.poly(tr(outer))
+        for h in holes:
+            lm = np.clip(lm - cv.poly(tr(h)), 0, 1)
+        m = np.maximum(m, lm)
+        x += (5 + gap) * unit
+    return m, x - gap * unit - x0
+
+
+def logo_width(text, unit, gap=1.15):
+    n = len(text.replace(" ", ""))
+    return n * 5 * unit + (n - 1) * gap * unit + text.count(" ") * (2.6 + gap) * unit
+
+
+def draw_logo(cv, text, cy, unit, stops, glow_col):
+    w = logo_width(text, unit) + 7 * 0.22 * unit
+    x0 = (cv.w - w) / 2
+    m, _ = logo_mask(cv, text, x0, cy - 3.5 * unit, unit)
+    # 縁（暗い太線）→ 発光 → 本体のグラデーション → 上の照り
+    hard = Image.fromarray((m * 255).astype(np.uint8), "L")
+    thick = np.asarray(hard.filter(ImageFilter.MaxFilter(1 + 2 * int(unit * 0.55 * cv.ss) | 1)), np.float32) / 255
+    cv.glow(thick, glow_col, unit * 0.9, 0.9)
+    cv.fill(thick, (6, 8, 20))
+    cv.fill(m, cv.grad((0, cy - 3.5 * unit), (0, cy + 3.5 * unit), None, None, stops))
+    top, _ = logo_mask(cv, text, x0, cy - 3.5 * unit - unit * 0.18, unit)
+    shine = np.clip(m - top, 0, 1)
+    cv.fill(shine, WHITE, 0.0)
+    band = cv.poly([(0, cy - 3.5 * unit), (cv.w, cy - 3.5 * unit), (cv.w, cy - 1.9 * unit), (0, cy - 1.4 * unit)])
+    cv.fill(m * band, WHITE, 0.35)
+
+
+def pack_icon():
+    S = 256
+    cv = Canvas(S, ss=3)
+    X, Y = cv.coords()
+    # 深宇宙のグラデーション
+    sky = _ramp(Y / S, [(0.0, (6, 8, 26)), (0.5, (12, 10, 40)), (1.0, (24, 8, 44))])
+    cv.fill(np.ones((cv.H, cv.W), np.float32), sky)
+    # 星雲（値ノイズ）
+    n1 = fbm3(X / 70, Y / 70, np.full_like(X, 0.3), 301, 5)
+    n2 = fbm3(X / 50 + 5, Y / 50, np.full_like(X, 1.7), 302, 4)
+    neb = np.clip((n1 - 0.45) * 2.6, 0, 1) ** 1.5
+    band = np.exp(-((Y - (0.55 * X + 40)) / 70) ** 2)
+    cv.fill(neb * band * 0.75, _ramp(n2, [(0.0, (60, 30, 140)), (0.5, (150, 60, 200)), (1.0, (40, 140, 220))]))
+    cv.fill(np.clip((n2 - 0.55) * 3, 0, 1) * band * 0.35, (255, 140, 200))
+    rng = np.random.default_rng(42)
+    for _ in range(170):
+        x, y = rng.uniform(0, S, 2)
+        r = rng.choice([0.35, 0.5, 0.7, 1.0], p=[0.45, 0.3, 0.17, 0.08])
+        cv.fill(cv.ellipse(x, y, r), (230, 236, 255), rng.uniform(0.35, 1.0))
+    for _ in range(7):
+        x, y = rng.uniform(10, S - 10), rng.uniform(10, 150)
+        r = rng.uniform(3, 6)
+        cv.fill(cv.line([(x - r, y), (x + r, y)], 0.5), (220, 230, 255), 0.8)
+        cv.fill(cv.line([(x, y - r), (x, y + r)], 0.5), (220, 230, 255), 0.8)
+    # 星核の後光とナノマシンの奔流
+    cx, cy = 128.0, 96.0
+    cv.fill(np.ones((cv.H, cv.W), np.float32), (255, 236, 200),
+            np.clip(1 - np.sqrt((X - cx) ** 2 + (Y - cy) ** 2) / 90, 0, 1) ** 2.4 * 0.55)
+    for i in range(28):
+        a = rng.uniform(0, 2 * math.pi)
+        r0, r1 = rng.uniform(12, 20), rng.uniform(46, 118)
+        col = HUD_COL[KEYS[i % 9]]
+        pts = [(cx + math.cos(a + t * 0.25) * (r0 + (r1 - r0) * t), cy + math.sin(a + t * 0.25) * (r0 + (r1 - r0) * t)
+                * 0.62) for t in np.linspace(0, 1, 16)]
+        cv.fill(cv.line(pts, rng.uniform(0.5, 1.1)), lighten(col, 0.3), rng.uniform(0.25, 0.6))
+        for t in np.linspace(0.2, 1.0, 5):
+            j = int(t * 15)
+            x, y = pts[j]
+            sz = rng.uniform(0.7, 1.5)
+            cv.fill(cv.poly([(x - sz, y - sz), (x + sz, y - sz), (x + sz, y + sz), (x - sz, y + sz)]),
+                    lighten(col, 0.6), rng.uniform(0.5, 1.0))
+    # 軌道（傾いた楕円）と惑星
+    ocx, ocy, orx, ory, tilt = 128.0, 104.0, 118.0, 46.0, math.radians(-8)
+
+    def opt(th):
+        x, y = math.cos(th) * orx, math.sin(th) * ory
+        return (ocx + x * math.cos(tilt) - y * math.sin(tilt), ocy + x * math.sin(tilt) + y * math.cos(tilt))
+    ring_pts = [opt(t) for t in np.linspace(0, 2 * math.pi, 200)]
+    cv.fill(cv.line(ring_pts, 1.2), (150, 220, 255), 0.55)
+    cv.fill(cv.line(ring_pts, 0.5), WHITE, 0.6)
+    # 星核
+    cv.glow(cv.ellipse(cx, cy, 16), (255, 210, 120), 10, 1.0)
+    cv.fill(cv.ellipse(cx, cy, 15), cv.radial(cx, cy, 15, [(0.0, (255, 255, 255)), (0.45, (255, 246, 210)),
+                                                          (1.0, (255, 196, 90))]))
+    for k in range(4):
+        a = math.radians(k * 90 + 45)
+        L = 40 if k % 2 == 0 else 34
+        cv.fill(cv.line([(cx - math.cos(a) * L, cy - math.sin(a) * L), (cx + math.cos(a) * L, cy + math.sin(a) * L)],
+                        1.0), (255, 250, 230), 0.5)
+    cv.fill(cv.line([(cx - 70, cy), (cx + 70, cy)], 1.4), (255, 250, 230), 0.75)
+    cv.fill(cv.line([(cx, cy - 52), (cx, cy + 52)], 1.2), (255, 250, 230), 0.6)
+    # 惑星を軌道の上に（奥 → 手前の順）
+    order = ["sol", "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"]
+    angs = np.radians(np.linspace(196, 344, 9))
+    place = []
+    for key, th in zip(order, angs):
+        x, y = opt(th)
+        depth = (math.sin(th) + 1) / 2
+        r = {"sol": 15, "jupiter": 13, "saturn": 10, "uranus": 9, "neptune": 9, "earth": 9, "venus": 8.5,
+             "mars": 7.5, "mercury": 6.5}[key] * (0.9 + 0.2 * depth)
+        place.append((y, key, x, r))
+    # 太陽は左端の奥に大きく
+    for _, key, x, r in sorted(place):
+        size = int(r * 5.2) + 4
+        pl = render_planet(key, size, r, ss=3, detail=1.0)
+        cv.paste(soft_outlined(pl, (4, 6, 16), 160), x - size / 2, (_ + 0) - size / 2)
+    # 題字の帯
+    cv.fill(np.clip((Y - 150) / 40, 0, 1) * 0.75, (4, 4, 14))
+    draw_logo(cv, "ASTRO", 186, 6.2, [(0.0, (255, 255, 255)), (0.45, (200, 244, 255)), (0.55, (110, 210, 255)),
+                                       (1.0, (40, 110, 220))], (60, 170, 255))
+    draw_logo(cv, "NANOGEAR", 230, 3.6, [(0.0, (255, 252, 226)), (0.45, (255, 224, 120)), (0.55, (255, 176, 50)),
+                                          (1.0, (220, 96, 20))], (255, 150, 40))
+    # 区切りの細い線
+    cv.fill(cv.line([(30, 210.5), (226, 210.5)], 0.8), (150, 220, 255), 0.6)
+    cv.fill(cv.poly([(128, 207), (131.5, 210.5), (128, 214), (124.5, 210.5)]), (220, 246, 255))
+    out = cv.result()
+    out[..., 3] = 255
+    return out
+
+
+# ===========================================================================
 #  glyphs.js
 # ===========================================================================
 G_ORDER = ["emblem", "emblemBig", "energy", "energyLow", "nova", "move", "icon", "iconBig", "sync", "progress",

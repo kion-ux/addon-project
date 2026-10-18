@@ -241,6 +241,7 @@ class Resolved:
         self.tracks = tracks
         self.mats = mats
         self.wkind = wkind
+        self.keys = []          # 書いたキーの時刻（足したキーを除く）
 
 
 def _parent_R(pose):
@@ -347,7 +348,9 @@ def resolve(spec, wkind="sword", name="", hold=None) -> Resolved:
             vals = np.array(list(rt.values()))
             span = float(np.max(np.abs(vals.max(axis=0) - vals.min(axis=0))))
         blend = span < 300.0
-    return Resolved(name, spec["length"], spec["kind"], spec["loop"], blend, tracks, mats, wkind)
+    res = Resolved(name, spec["length"], spec["kind"], spec["loop"], blend, tracks, mats, wkind)
+    res.keys = list(times)
+    return res
 
 
 def _quat(R):
@@ -391,6 +394,8 @@ MAX_STEP = 32.0      # 武器で解いた腕のキーの間がこれ以上回る
 
 
 def _densify_arms(tracks, mats):
+    """武器で解いた腕（行列から出したキー）の間が大きく回る所に、回転のまま補間したキーを足す。
+    行列から出したキーは、直前のキーに最も近いオイラー角の表し方に揃え直す（補間で一回転しない）。"""
     for k in ARMS:
         if k not in tracks:
             continue
@@ -402,6 +407,8 @@ def _densify_arms(tracks, mats):
         for a, b in zip(ts, ts[1:]):
             Ra = mats[k].get(a) if mats[k].get(a) is not None else rot(*tr[a])
             Rb = mats[k].get(b) if mats[k].get(b) is not None else rot(*tr[b])
+            if mats[k].get(b) is not None:
+                tr[b] = tuple(float(x) for x in euler_near(Rb, np.array(tr[a])))
             ang = math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(Ra.T @ Rb) - 1) / 2))))
             n = int(math.ceil(ang / MAX_STEP))
             if n <= 1:
@@ -413,8 +420,8 @@ def _densify_arms(tracks, mats):
                 e = euler_near(_mat(_slerp(qa, qb, s)), ref)
                 ref = e
                 add[round(a + (b - a) * s, 3)] = tuple(float(x) for x in e)
-            # 終わりのキーを、足したキーの続きの表し方に揃える
-            tr[b] = tuple(float(x) for x in euler_near(rot(*tr[b]), ref))
+            if mats[k].get(b) is not None:
+                tr[b] = tuple(float(x) for x in euler_near(Rb, ref))
         tr.update(add)
 
 
@@ -552,11 +559,11 @@ def library() -> dict:
     # ---- 変身（3.0 秒。TRANSFORM と同期: コアが浮く 0 / 奔流 0.4 / スーツ 0.7 / ウェポン 2.0 /
     #      バイザー 2.3 / 惑星の力 2.5 / カメラ 3.0） -------------------------------------------
     wf = TR["weapon_form"]
-    raise_core = P(rA=aim(dirv(f=1.0, u=0.55, r=-0.12)), lA=(-12, 0, -14), b=(-6, 0, 0), h=(-24, 0, 0))
-    cross = P(rA=aim(dirv(f=1.0, u=0.25, r=-0.62), twist=-30), lA=aim(dirv(f=1.0, u=0.38, r=0.55), twist=30),
-              b=(16, 0, 0), h=(24, 0, 0), rL=(-26, 0, 9), lL=(18, 0, -9), ground=True)
-    cross2 = P(cross, b=(20, 0, 0), h=(28, 0, 0), rA=aim(dirv(f=1.0, u=0.28, r=-0.66), twist=-30),
-               lA=aim(dirv(f=1.0, u=0.42, r=0.6), twist=30), rL=(-30, 0, 10), lL=(22, 0, -10))
+    raise_core = P(rA=aim(dirv(f=1.0, u=0.4, r=-0.12)), lA=(-12, 0, -14), b=(-6, 0, 0), h=(-18, 0, 0))
+    cross = P(rA=aim(dirv(f=1.0, u=-0.12, r=-0.72), twist=-35), lA=aim(dirv(f=1.0, u=0.02, r=0.68), twist=35),
+              b=(14, 0, 0), h=(12, 0, 0), rL=(-26, 0, 9), lL=(18, 0, -9), ground=True)
+    cross2 = P(cross, b=(18, 0, 0), h=(16, 0, 0), rA=aim(dirv(f=1.0, u=-0.08, r=-0.76), twist=-35),
+               lA=aim(dirv(f=1.0, u=0.06, r=0.72), twist=35), rL=(-30, 0, 10), lL=(22, 0, -10))
     spread = P(rA=aim(dirv(r=1.0, u=-0.25, f=0.15)), lA=aim(dirv(r=-1.0, u=-0.25, f=0.15)),
                b=(-12, 0, 0), h=(-22, 0, 0), rL=(0, 0, 11), lL=(0, 0, -11), ground=True)
     hero = P(rA=wield(blade=dirv(f=0.55, u=-0.55, r=0.62), arm=dirv(r=0.75, u=-0.7, f=0.1)),
@@ -565,7 +572,7 @@ def library() -> dict:
     L["henshin"] = anim(3.0, {
         0.0: H,
         0.18: P(raise_core, h=(-20, 0, 0)),
-        TR["swarm_start"]: P(raise_core, rA=aim(dirv(f=1.0, u=0.75, r=-0.1)), h=(-28, 0, 0), b=(-9, 0, 0)),
+        TR["swarm_start"]: P(raise_core, rA=aim(dirv(f=1.0, u=0.62, r=-0.1)), h=(-26, 0, 0), b=(-9, 0, 0)),
         0.58: cross,
         1.05: cross2,
         1.5: P(cross, b=(18, 0, 0)),
@@ -599,12 +606,12 @@ def library() -> dict:
                       kind="move")
 
     # ---- ホバー（ループ 2.0 秒）: 膝を曲げたように脚を前後に、腕は少し開く ----------------------
-    hov = P(rA=(-22, 0, 14), lA=(-6, 0, -16), rL=(-16, 0, 4), lL=(14, 0, -4), b=(4, 0, 0))
+    hov = P(rA=(-24, 0, 16), lA=(-8, 0, -18), rL=(-24, 0, 5), lL=(20, 0, -5), b=(5, 0, 0), h=(-4, 0, 0))
     L["hover"] = anim(2.0, {
         0.0: P(hov, root_pos=(0, 0, 0)),
-        0.5: P(hov, root_pos=(0, 0.5, 0), rL=(-19, 0, 4), lL=(11, 0, -4), lA=(-6, 0, -19)),
+        0.5: P(hov, root_pos=(0, 0.6, 0), rL=(-28, 0, 5), lL=(16, 0, -5), lA=(-8, 0, -22)),
         1.0: P(hov, root_pos=(0, 0.1, 0)),
-        1.5: P(hov, root_pos=(0, -0.35, 0), rL=(-13, 0, 4), lL=(17, 0, -4), lA=(-6, 0, -13)),
+        1.5: P(hov, root_pos=(0, -0.4, 0), rL=(-20, 0, 5), lL=(24, 0, -5), lA=(-8, 0, -14)),
         2.0: P(hov, root_pos=(0, 0, 0)),
     }, kind="move", loop=True)
 
@@ -616,7 +623,8 @@ def library() -> dict:
     # ---- 着地（ヒーロー着地 0.8 秒）: 片膝をつき、左の拳を地面へ ---------------------------------
     kneel = P(w=(32, 0, 0), h=(-34, 0, 0), b=(4, 0, 0),
               rL=(62, 0, 6), lL=(-58, 0, -6),
-              lA=aim(dirv(f=0.55, u=-1.0, r=-0.2)), rA=aim(dirv(r=0.8, u=-0.55, f=-0.35)), ground=True)
+              lA=aim(dirv(f=0.55, u=-1.0, r=-0.2)),
+              rA=wield(blade=dirv(r=0.55, f=-0.8, u=-0.12), arm=dirv(r=0.8, u=-0.6, f=-0.25)), ground=True)
     L["land"] = anim(0.8, {
         0.0: P(kneel, w=(14, 0, 0), rL=(30, 0, 6), lL=(-30, 0, -6), ground=True),
         0.06: kneel,

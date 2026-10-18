@@ -397,7 +397,11 @@ ID（`astro:` を付けて spawnParticle）。★ は流れや形のある特別
 | `warning` | 敵の攻撃予告（地面の赤い円と縞） |
 | `afterimage` | 人型の残像（スーツの輪郭） |
 | `lens` | 光のにじみ（大きく淡い、必殺技の締め） |
-同時に出す粒の上限は fx.js の予算（1 tick 260 発、設定の倍率を掛ける）。
+**事実（調査済み）**: format_version は全て "1.10.0"。`lookat_direction` / `direction_x` ではサイズの **[0] が向きに沿う長さ**。
+速度の無い粒の向きは `"direction": {"mode": "custom", "custom_direction": [...]}`。光は particles_add（lighting なし）、
+暗い煙・虚無は particles_blend。spawnParticle は 1 回ごとに全クライアントへ 1 パケットなので、fx.js の予算は
+「回数 × 粒数の重み」で数え、1 tick あたり 100 回前後を上限にする（演出の量の設定で倍率）。輪・線は 1 回で描ける
+形状エミッタ（PARTICLES.md の *_n）を使う。
 
 ### 4.8 HUD グリフ（gen_astro_ui → glyphs.js）
 `font/glyph_<XX>.png`（ページ番号は gen_astro_ui の冒頭で決め、glyphs.js に書く）。§4 の HUD に必要なもの:

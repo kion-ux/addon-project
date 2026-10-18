@@ -118,6 +118,35 @@ export function nearestEnemy(src, loc, radius, dir, deg = 180) {
   return best;
 }
 
+/** 侵略者・ホログラム標的（自動で狙ってよい相手）。 */
+export const HOSTILE_TYPES = new Set([
+  "astro:void_drone", "astro:void_sentinel", "astro:nemesis", "astro:hologram_target",
+]);
+
+/** 敵対的な相手か（monster の家族か侵略者）。自動で狙う技（パッシブ・追尾）はこれで絞る。 */
+export function isHostile(e) {
+  try {
+    if (HOSTILE_TYPES.has(e.typeId)) return true;
+    if (typeof e.matches === "function") return e.matches({ families: ["monster"] });
+  } catch (_) { }
+  return false;
+}
+
+/** 周りの敵対的な相手だけ（村人・動物・他のプレイヤーを自動で撃たないように）。 */
+export function hostilesNear(src, loc, radius, dim) {
+  return enemiesNear(src, loc, radius, dim).filter(isHostile);
+}
+
+/** 一番近い敵対的な相手。 */
+export function nearestHostile(src, loc, radius) {
+  let best, bd = Infinity;
+  for (const e of hostilesNear(src, loc, radius)) {
+    const d = dist(e.location, loc);
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+
 // ---------------------------------------------------------------------------
 //  ダメージ
 // ---------------------------------------------------------------------------
