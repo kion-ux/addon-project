@@ -1801,7 +1801,15 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.1": {
+            "0.05": {
+              "post": [
+                "v.is_first_person ? 0.0 : (12)",
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
               "post": [
                 "v.is_first_person ? 0.0 : (26)",
                 0,
@@ -1853,7 +1861,15 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.1": {
+            "0.05": {
+              "post": [
+                "v.is_first_person ? 0.0 : (-10)",
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
               "post": [
                 "v.is_first_person ? 0.0 : (-28)",
                 0,
@@ -1905,115 +1921,115 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.02": {
+            "0.025": {
               "post": [
-                "v.is_first_person ? -0.12 : (-0.46 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 4.86 : (19.43 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? 1.45 : (5.78)"
+                "v.is_first_person ? 2.33 : (9.31 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 5.98 : (23.91 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 4.79 : (19.17)"
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.04": {
+            "0.05": {
               "post": [
-                "v.is_first_person ? 1.18 : (4.73 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 8.4 : (33.6 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? 3.05 : (12.19)"
+                "v.is_first_person ? 7.73 : (30.91 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 10.54 : (42.17 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 12.1 : (48.4)"
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.06": {
+            "0.068": {
               "post": [
-                "v.is_first_person ? -24.52 : (-98.09 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 10.14 : (40.56 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -26.96 : (-107.84)"
+                "v.is_first_person ? 10.18 : (40.72 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 17.76 : (71.03 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 12.8 : (51.19)"
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.08": {
+            "0.085": {
               "post": [
-                "v.is_first_person ? -31.34 : (-125.36 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 11.88 : (47.52 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -33.51 : (-134.03)"
+                "v.is_first_person ? 18.3 : (73.21 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 15.39 : (61.56 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 18.42 : (73.68)"
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.1": {
+            "0.102": {
               "post": [
-                "v.is_first_person ? -35.27 : (-141.09 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 5.38 : (21.5 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -37.99 : (-151.98)"
+                "v.is_first_person ? 9.91 : (39.65 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 37.41 : (149.66 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 9.72 : (38.89)"
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
+              "post": [
+                "v.is_first_person ? 9.73 : (38.91 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 39.62 : (158.5 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 7.01 : (28.02)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.45": {
               "post": [
-                "v.is_first_person ? -35.27 : (-141.09 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 5.38 : (21.5 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -37.99 : (-151.98)"
+                "v.is_first_person ? 9.73 : (38.91 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 39.62 : (158.5 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 7.01 : (28.02)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.72": {
               "post": [
-                "v.is_first_person ? -35.27 : (-141.09 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 5.38 : (21.5 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -37.99 : (-151.98)"
+                "v.is_first_person ? 9.73 : (38.91 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 39.62 : (158.5 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 7.01 : (28.02)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.742": {
               "post": [
-                "v.is_first_person ? -35.06 : (-140.25 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 7.33 : (29.31 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -35.21 : (-140.85)"
+                "v.is_first_person ? 9.94 : (39.75 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 37.67 : (150.69 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 9.79 : (39.15)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.765": {
               "post": [
-                "v.is_first_person ? -25.87 : (-103.46 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 29.73 : (118.94 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -25.99 : (-103.95)"
+                "v.is_first_person ? 19.13 : (76.54 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 15.27 : (61.06 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 19.01 : (76.05)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.775": {
               "post": [
-                "v.is_first_person ? -28.56 : (-114.26 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 29.97 : (119.89 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -27.71 : (-110.83)"
+                "v.is_first_person ? 16.44 : (65.74 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 15.03 : (60.11 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 17.29 : (69.17)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.788": {
               "post": [
-                "v.is_first_person ? -34.18 : (-136.71 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 27.51 : (110.05 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -31.74 : (-126.98)"
+                "v.is_first_person ? 10.82 : (43.29 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 17.49 : (69.95 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 13.26 : (53.02)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.81": {
               "post": [
-                "v.is_first_person ? -36.84 : (-147.34 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 34.78 : (139.13 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -32.7 : (-130.79)"
+                "v.is_first_person ? 8.16 : (32.66 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 10.22 : (40.87 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 12.3 : (49.21)"
               ],
               "lerp_mode": "catmullrom"
             },
             "0.855": {
               "post": [
-                "v.is_first_person ? -42.43 : (-169.72 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 39.12 : (156.49 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -40.1 : (-160.41)"
-              ],
-              "lerp_mode": "catmullrom"
-            },
-            "0.88": {
-              "post": [
-                "v.is_first_person ? -27.15 : (-108.59 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
-                "v.is_first_person ? 10.27 : (41.08 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
-                "v.is_first_person ? -26.45 : (-105.78)"
+                "v.is_first_person ? 2.57 : (10.28 + 0.375 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 30.0)",
+                "v.is_first_person ? 5.88 : (23.51 + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) != 0.0 ? 30.0 - 90.0 * math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) : 0.0))",
+                "v.is_first_person ? 4.9 : (19.59)"
               ],
               "lerp_mode": "catmullrom"
             },
@@ -2037,7 +2053,15 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.02": {
+            "0.05": {
+              "post": [
+                "v.is_first_person ? 0 : (-0.75 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.064": {
               "post": [
                 "v.is_first_person ? -6.1 : (-24.41 + -0.75 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
                 "v.is_first_person ? -0.72 : (-2.9)",
@@ -2045,7 +2069,7 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.04": {
+            "0.078": {
               "post": [
                 "v.is_first_person ? -12.25 : (-49 + -0.75 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
                 "v.is_first_person ? -0.56 : (-2.25)",
@@ -2053,7 +2077,7 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.06": {
+            "0.092": {
               "post": [
                 "v.is_first_person ? -18.31 : (-73.24 + -0.75 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
                 "v.is_first_person ? 0.46 : (1.83)",
@@ -2061,7 +2085,7 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.08": {
+            "0.106": {
               "post": [
                 "v.is_first_person ? -24.25 : (-96.98 + -0.75 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
                 "v.is_first_person ? 2.14 : (8.56)",
@@ -2069,7 +2093,7 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.1": {
+            "0.12": {
               "post": [
                 "v.is_first_person ? -30.19 : (-120.75 + -0.75 * (v.tcos0 ?? 0.0) + (math.sin((1.0 - math.pow(1.0 - v.attack_time, 4.0)) * 180.0) * 1.2 + math.sin(v.attack_time * 180.0)) * 10.0)",
                 "v.is_first_person ? 4.19 : (16.77)",
@@ -2153,7 +2177,15 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.1": {
+            "0.05": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
               "post": [
                 "v.is_first_person ? 0.0 : (-34)",
                 0,
@@ -2205,7 +2237,15 @@
               ],
               "lerp_mode": "catmullrom"
             },
-            "0.1": {
+            "0.05": {
+              "post": [
+                0,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.12": {
               "post": [
                 "v.is_first_person ? 0.0 : (30)",
                 0,
