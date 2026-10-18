@@ -1077,10 +1077,33 @@ def drone_anims():
     return A
 
 
+# 歩行の位相の進み（度 / q.modified_distance_moved の 1）。バニラの歩く mob・プレイヤー（cos(距離 × 38.17)）と
+# 同じにすると、脚の振れ（SENT_SWING）と脚の長さで足の速さが体の進みに合う（足が滑らない。stride_check）
+SENT_STEP_RATE = 38.17
+SENT_SWING = 24.0       # 太ももの振れ幅（度、v.ms = 1 の時）
+SENT_MS = 1.8           # v.ms = min(q.modified_move_speed × SENT_MS, 1)
+
+
+def stride_check(geo):
+    """足が地面を滑らないか: 足の速さ（脚の長さ × 振れ幅 × 位相の進み、距離 1 あたり）を、同じ式で見た
+    バニラのプレイヤー（脚 12 px、振れ幅 1.4 rad × 速さ、38.17°）と比べる（v.ms がちょうど 1 になる速さで）。
+    ±25% を超えたらエラー。"""
+    b = {x["name"]: x for x in geo["bones"]}
+    hip = b["thigh_r"]["pivot"][1]
+    sole = min(c["origin"][1] for n in ("thigh_r", "shin_r", "ankle_r", "foot_r") for c in b[n].get("cubes", []))
+    ms = 1.0 / SENT_MS
+    mine = (hip - sole) * math.radians(SENT_SWING) * math.radians(SENT_STEP_RATE)
+    vanilla = 12.0 * 1.4 * ms * math.radians(38.17)
+    r = mine / vanilla
+    return [] if 0.75 <= r <= 1.25 else [
+        f"void_sentinel: feet move {r:.2f}x the body (leg {hip - sole:.1f}px, swing {SENT_SWING}deg, "
+        f"{SENT_STEP_RATE}deg per unit walked) — they skate"]
+
+
 def sentinel_anims():
     A = {}
-    # 歩行: 位相 v.ph（歩いた距離）、振れ幅 v.ms（速さ）。足は常に水平を保つ
-    s_th = "math.sin(v.ph) * 24.0 * v.ms"
+    # 歩行: 位相 v.ph（歩いた距離 × SENT_STEP_RATE）、振れ幅 v.ms（速さ）。足は常に水平を保つ
+    s_th = f"math.sin(v.ph) * {SENT_SWING:g} * v.ms"
     lift_r = "math.max(0.0, math.cos(v.ph))"
     lift_l = "math.max(0.0, -math.cos(v.ph))"
     bones = {
@@ -1160,6 +1183,11 @@ def sentinel_anims():
     return A
 
 
+NEM_DEATH = 0.9         # 普通の死のアニメ（秒）。死んだ mob が消えるまでの 1 秒より短く
+NEM_DYING = 2.6         # スクリプトで死なせる時のアニメ（秒）= invaders.bossDeath の最後の大爆発（52 tick）
+NEM_MODE_DYING = 8      # astro:mode の値（スクリプトが致命傷を止めて生きたまま入れる）
+
+
 def nemesis_anims():
     A = {}
     T = "q.life_time"
@@ -1237,20 +1265,31 @@ def nemesis_anims():
         "fx_mandible_r": {"rotation": [0, -28, 30]},
         "fx_mandible_l": {"rotation": [0, 28, -30]},
     }, **{f"fx_spine_{i}": {"scale": 1.25, "rotation": [-16, 0, 0]} for i in range(NEM_SPINES)}))
-    A["death"] = anim("nemesis.death", {
-        "body": keys(position={0: [0, 0, 0], 2.0: [0, -10, 0]}, rotation={0: [0, 0, 0], 2.0: [30, 0, 20]}),
-        "ring_a": keys(scale={0: [1, 1, 1], 2.0: [1.8, 1.8, 1.8]}),
-        "ring_b": keys(scale={0: [1, 1, 1], 2.0: [2.2, 2.2, 2.2]}),
-        "fx_shards": keys(scale={0: [1, 1, 1], 2.0: [2.4, 1.6, 2.4]}),
-        "eye": keys(scale={0: [1.2, 1.2, 1], 2.0: [0.3, 0.3, 1]}),
-    }, loop="hold_on_last_frame", length=2.0)
+    def fall(t1):
+        """崩れ落ちる（沈み・傾き・輪と破片が広がり・目が閉じる）を t1 秒で。"""
+        return {
+            "body": keys(position={0: [0, 0, 0], t1: [0, -10, 0]}, rotation={0: [0, 0, 0], t1: [30, 0, 20]}),
+            "ring_a": keys(scale={0: [1, 1, 1], t1: [1.8, 1.8, 1.8]}),
+            "ring_b": keys(scale={0: [1, 1, 1], t1: [2.2, 2.2, 2.2]}),
+            "fx_shards": keys(scale={0: [1, 1, 1], t1: [2.4, 1.6, 2.4]}),
+            "eye": keys(scale={0: [1.2, 1.2, 1], t1: [0.3, 0.3, 1]}),
+        }
+    # 普通の死（!q.is_alive）: 死んだ mob は 20 tick（1 秒）で煙になって消えるので、その前に終わる長さ
+    A["death"] = anim("nemesis.death", fall(NEM_DEATH), loop="hold_on_last_frame", length=NEM_DEATH)
+    # スクリプトで死なせる時（astro:mode = 8。生きたまま）: 2 秒かけて崩れ、invaders.bossDeath の最後の大爆発
+    # （52 tick = 2.6 秒）で膨らんでから消える（全身 scale 0 のまま。スクリプトが entity.remove() する）
+    dying = fall(2.0)
+    dying["root"] = keys(scale={0: [1, 1, 1], 2.3: [1, 1, 1], 2.48: [1.15, 1.15, 1.15], NEM_DYING: [0, 0, 0]})
+    A["dying"] = anim("nemesis.dying", dying, loop="hold_on_last_frame", length=NEM_DYING)
     modes = [("charge", 1), ("beam", 2), ("summon", 3), ("meteor", 4), ("blackhole", 5), ("dash", 6), ("roar", 7)]
-    states = {"default": ([], [("dead", "!q.is_alive")] + [(n, f"v.mode == {k}") for n, k in modes], 0)}
+    to_dying = [("dying", f"v.mode == {NEM_MODE_DYING}")]
+    states = {"default": ([], [("dead", "!q.is_alive")] + to_dying + [(n, f"v.mode == {k}") for n, k in modes], 0)}
     for n, k in modes:
-        tr = [("dead", "!q.is_alive")] + [(o, f"v.mode == {j}") for o, j in modes if o != n]
+        tr = [("dead", "!q.is_alive")] + to_dying + [(o, f"v.mode == {j}") for o, j in modes if o != n]
         tr.append(("default", "v.mode == 0"))
         states[n] = ([n], tr, 0.2 if n != "dash" else 0.12)
     states["dead"] = (["death"], [], 0.2)
+    states["dying"] = (["dying"], [], 0.2)      # 終わり（消えたまま。remove されるまで）
     A["ctrl"] = controller("nemesis", states)
     return A
 
@@ -1275,8 +1314,9 @@ def hologram_anims():
 
 
 def bolt_anims():
+    # 飛ぶ向き: バニラの矢・ロケット花火と同じ符号（ピッチも -q.target_x_rotation。+ だと下へ撃つ弾が上を向く）
     return {"move": anim("void_bolt.move", {"body": {"rotation": [
-        "q.target_x_rotation", "-q.target_y_rotation", "math.mod(q.life_time * 720.0, 360.0)"]}})}
+        "-q.target_x_rotation", "-q.target_y_rotation", "math.mod(q.life_time * 720.0, 360.0)"]}})}
 
 
 # ===========================================================================
@@ -1423,7 +1463,7 @@ def bp_nemesis():
             {"cause": "magma", "deals_damage": False},
             {"cause": "lightning", "damage_multiplier": 0.3}]},
     })
-    props = _mode_prop(7)
+    props = _mode_prop(NEM_MODE_DYING)
     props["astro:phase"] = {"type": "int", "range": [1, 2], "default": 1, "client_sync": True}
     return entity_doc("nemesis", c, props=props)
 
@@ -1589,8 +1629,8 @@ def clients():
     A = sentinel_anims()
     out["void_sentinel"] = client_doc("void_sentinel", inv_mat, A, ["walk", "ctrl"], [
         "v.mode = q.property('astro:mode');",
-        "v.ph = q.modified_distance_moved * 13.0;",
-        "v.ms = math.min(q.modified_move_speed * 1.8, 1.0);",
+        f"v.ph = q.modified_distance_moved * {SENT_STEP_RATE:g};",
+        f"v.ms = math.min(q.modified_move_speed * {SENT_MS:g}, 1.0);",
         "v.overlay = v.mode == 1 ? 0.12 + math.sin(q.life_time * 1800.0) * 0.1 : 0.0;",
     ], f"controller.render.{NS}.invader", ("#3A2E52", "#C24CFF"))
     A = nemesis_anims()
@@ -1816,6 +1856,12 @@ def check():
         for sx in _strings(a):
             if not _molang_ok(sx):
                 errs.append(f"{name}: unbalanced molang {sx[:60]}")
+    import astro_animcheck as AK
+    errs += AK.seam_errors(anims)
+    errs += stride_check(load(os.path.join(GEO_DIR, f"{NS}_void_sentinel.geo.json"))["minecraft:geometry"][0])
+    d = anims.get(f"animation.{NS}.nemesis.death", {}).get("animation_length", 0)
+    if d > 0.95:
+        errs.append(f"nemesis.death is {d}s: a dead mob vanishes after 1.0s")
     for name, c in ctrls.items():
         for sx in _strings(c):
             if not _molang_ok(sx):

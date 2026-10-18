@@ -10,6 +10,9 @@
               "dead": "!q.is_alive"
             },
             {
+              "dying": "v.mode == 8"
+            },
+            {
               "charge": "v.mode == 1"
             },
             {
@@ -39,6 +42,9 @@
           "transitions": [
             {
               "dead": "!q.is_alive"
+            },
+            {
+              "dying": "v.mode == 8"
             },
             {
               "beam": "v.mode == 2"
@@ -73,6 +79,9 @@
               "dead": "!q.is_alive"
             },
             {
+              "dying": "v.mode == 8"
+            },
+            {
               "charge": "v.mode == 1"
             },
             {
@@ -103,6 +112,9 @@
           "transitions": [
             {
               "dead": "!q.is_alive"
+            },
+            {
+              "dying": "v.mode == 8"
             },
             {
               "charge": "v.mode == 1"
@@ -137,6 +149,9 @@
               "dead": "!q.is_alive"
             },
             {
+              "dying": "v.mode == 8"
+            },
+            {
               "charge": "v.mode == 1"
             },
             {
@@ -167,6 +182,9 @@
           "transitions": [
             {
               "dead": "!q.is_alive"
+            },
+            {
+              "dying": "v.mode == 8"
             },
             {
               "charge": "v.mode == 1"
@@ -201,6 +219,9 @@
               "dead": "!q.is_alive"
             },
             {
+              "dying": "v.mode == 8"
+            },
+            {
               "charge": "v.mode == 1"
             },
             {
@@ -233,6 +254,9 @@
               "dead": "!q.is_alive"
             },
             {
+              "dying": "v.mode == 8"
+            },
+            {
               "charge": "v.mode == 1"
             },
             {
@@ -259,6 +283,12 @@
         "dead": {
           "animations": [
             "death"
+          ],
+          "blend_transition": 0.2
+        },
+        "dying": {
+          "animations": [
+            "dying"
           ],
           "blend_transition": 0.2
         }

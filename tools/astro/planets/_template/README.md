@@ -261,6 +261,9 @@ SUIT_ANIMS = {
 * `math.sin/cos` は **度**。ループは 12 秒なので、`q.anim_time` に掛ける周波数は **30°/秒の倍数**（30, 60, 90, 120,
   180, 360, 720, 900…）。**検査が継ぎ目を調べる**（`gen_astro_suits.loop_errors`。100 などは NG）。
   `animation_length` を変えたら周波数 × 長さが 360 の整数倍になるように。
+* **回転の速さを変数で掛けない**（`v.astro_air * q.anim_time * 360.0` は v が 0..1 の途中の間ループの切れ目で跳ぶ。
+  検査の警告）。空中で速く回したい時は、一定の速さの回転に `v.astro_air * math.sin(q.anim_time * 720.0) * 20.0`
+  のような揺れを足すか、別の fx_spin ボーンを thrust 側で回す。
 * 変数: `q.anim_time`、`v.astro_air`、`v.astro_run`、`v.astro_fp`。アタッチャブルの中の素の `q.*` は装着者を指す。
 * `_r` のトラックは左（`_l`）へ自動で鏡映（rotation は (rx,-ry,-rz)、position は (-x,y,z)）。
 * **部位ボーン（`<群>_<名前>`）の scale は書かない**（組み上がり・解除が使う）。トップレベルも動かさない。

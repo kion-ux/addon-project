@@ -24,7 +24,7 @@
       "scripts": {
         "pre_animation": [
           "v.mode = q.property('astro:mode');",
-          "v.ph = q.modified_distance_moved * 13.0;",
+          "v.ph = q.modified_distance_moved * 38.17;",
           "v.ms = math.min(q.modified_move_speed * 1.8, 1.0);",
           "v.overlay = v.mode == 1 ? 0.12 + math.sin(q.life_time * 1800.0) * 0.1 : 0.0;"
         ],

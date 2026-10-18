@@ -24,6 +24,7 @@
         "dash": "animation.astro.nemesis.dash",
         "roar": "animation.astro.nemesis.roar",
         "death": "animation.astro.nemesis.death",
+        "dying": "animation.astro.nemesis.dying",
         "ctrl": "controller.animation.astro.nemesis"
       },
       "scripts": {

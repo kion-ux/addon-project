@@ -456,6 +456,94 @@
               0,
               0
             ],
+            "0.90": [
+              0,
+              -10,
+              0
+            ]
+          },
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.90": [
+              30,
+              0,
+              20
+            ]
+          }
+        },
+        "ring_a": {
+          "scale": {
+            "0.00": [
+              1,
+              1,
+              1
+            ],
+            "0.90": [
+              1.8,
+              1.8,
+              1.8
+            ]
+          }
+        },
+        "ring_b": {
+          "scale": {
+            "0.00": [
+              1,
+              1,
+              1
+            ],
+            "0.90": [
+              2.2,
+              2.2,
+              2.2
+            ]
+          }
+        },
+        "fx_shards": {
+          "scale": {
+            "0.00": [
+              1,
+              1,
+              1
+            ],
+            "0.90": [
+              2.4,
+              1.6,
+              2.4
+            ]
+          }
+        },
+        "eye": {
+          "scale": {
+            "0.00": [
+              1.2,
+              1.2,
+              1
+            ],
+            "0.90": [
+              0.3,
+              0.3,
+              1
+            ]
+          }
+        }
+      },
+      "animation_length": 0.9
+    },
+    "animation.astro.nemesis.dying": {
+      "loop": "hold_on_last_frame",
+      "bones": {
+        "body": {
+          "position": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
             "2.00": [
               0,
               -10,
@@ -530,9 +618,33 @@
               1
             ]
           }
+        },
+        "root": {
+          "scale": {
+            "0.00": [
+              1,
+              1,
+              1
+            ],
+            "2.30": [
+              1,
+              1,
+              1
+            ],
+            "2.48": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "2.60": [
+              0,
+              0,
+              0
+            ]
+          }
         }
       },
-      "animation_length": 2.0
+      "animation_length": 2.6
     },
     "animation.astro.nemesis.idle": {
       "loop": true,
@@ -1266,7 +1378,7 @@
       "bones": {
         "body": {
           "rotation": [
-            "q.target_x_rotation",
+            "-q.target_x_rotation",
             "-q.target_y_rotation",
             "math.mod(q.life_time * 720.0, 360.0)"
           ]
@@ -2144,28 +2256,28 @@
         },
         "arm_r": {
           "rotation": [
-            "-(math.sin(v.ph) * 24.0 * v.ms) * 0.5",
+            "-(math.sin(v.ph) * 24 * v.ms) * 0.5",
             0,
             0
           ]
         },
         "arm_l": {
           "rotation": [
-            "(math.sin(v.ph) * 24.0 * v.ms) * 0.5",
+            "(math.sin(v.ph) * 24 * v.ms) * 0.5",
             0,
             0
           ]
         },
         "thigh_r": {
           "rotation": [
-            "-math.sin(v.ph) * 24.0 * v.ms",
+            "-math.sin(v.ph) * 24 * v.ms",
             0,
             0
           ]
         },
         "thigh_l": {
           "rotation": [
-            "math.sin(v.ph) * 24.0 * v.ms",
+            "math.sin(v.ph) * 24 * v.ms",
             0,
             0
           ]
@@ -2200,14 +2312,14 @@
         },
         "foot_r": {
           "rotation": [
-            "(math.sin(v.ph) * 24.0 * v.ms) - math.max(0.0, math.cos(v.ph)) * 12.0 * v.ms",
+            "(math.sin(v.ph) * 24 * v.ms) - math.max(0.0, math.cos(v.ph)) * 12.0 * v.ms",
             0,
             0
           ]
         },
         "foot_l": {
           "rotation": [
-            "-(math.sin(v.ph) * 24.0 * v.ms) - math.max(0.0, -math.cos(v.ph)) * 12.0 * v.ms",
+            "-(math.sin(v.ph) * 24 * v.ms) - math.max(0.0, -math.cos(v.ph)) * 12.0 * v.ms",
             0,
             0
           ]

@@ -175,6 +175,8 @@ def check_model(key, verbose=False) -> Report:
         for name, a in G.suit_animations(s).items():
             for e in G.loop_errors(name.split(".")[-1], a):
                 r.err(f"loop: {e}")
+            for w in G.loop_warnings(name.split(".")[-1], a):
+                r.warn(f"loop: {w}")
     except Exception as e:  # noqa: BLE001
         r.err(f"animations failed: {type(e).__name__}: {e}")
     return r

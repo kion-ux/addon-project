@@ -351,6 +351,25 @@ def loop_errors(name: str, anim: dict) -> list:
     return out
 
 
+_SCALED_T = re.compile(r"v\.\w+\s*\*\s*\(?\s*(?:q|query)\.anim_time|"
+                       r"(?:q|query)\.anim_time\s*\*\s*[\d.]+\s*\*\s*v\.\w+")
+
+
+def loop_warnings(name: str, anim: dict) -> list:
+    """ループの継ぎ目の注意（エラーにはしない）: 回転の速さそのものを v.*（v.astro_air など 0..1 で
+    なめらかに変わる値）で掛けると、v が半端な間はループの切れ目で角度が跳ぶ。速さは一定にして、
+    振れ幅や別の項を v で掛けること。"""
+    if anim.get("loop") is not True:
+        return []
+    out = []
+    for bone, tr in (anim.get("bones") or {}).items():
+        for expr in _strings(tr):
+            if _SCALED_T.search(expr):
+                out.append(f"{name}: '{bone}' scales the speed of q.anim_time by a variable "
+                           f"({expr[:50]!r}) — it jumps at the loop while the variable is between 0 and 1")
+    return out
+
+
 def controllers() -> dict:
     return {
         CTRL_ON: {
