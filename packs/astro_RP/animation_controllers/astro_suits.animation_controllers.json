@@ -1,0 +1,43 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.astro.suit": {
+      "initial_state": "assemble",
+      "states": {
+        "assemble": {
+          "animations": [
+            "assemble"
+          ],
+          "transitions": [
+            {
+              "ready": "q.all_animations_finished || q.is_in_ui"
+            }
+          ]
+        },
+        "ready": {
+          "animations": []
+        }
+      }
+    },
+    "controller.animation.astro.suit_off": {
+      "initial_state": "release",
+      "states": {
+        "release": {
+          "animations": [
+            "release"
+          ],
+          "transitions": [
+            {
+              "gone": "q.all_animations_finished"
+            }
+          ]
+        },
+        "gone": {
+          "animations": [
+            "gone"
+          ]
+        }
+      }
+    }
+  }
+}

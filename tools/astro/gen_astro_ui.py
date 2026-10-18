@@ -75,14 +75,14 @@ FAINT_A = 20
 # HUD の惑星色（テキスト色コード tc と揃えた見分けやすい色。発光色 glow は水色が多いので HUD 用に分ける）
 HUD_COL = {
     "mercury": (120, 232, 255),
-    "venus": (255, 226, 84),
+    "venus": (255, 238, 120),
     "earth": (88, 255, 146),
     "mars": (255, 84, 60),
-    "jupiter": (255, 160, 70),
-    "saturn": (238, 214, 150),
+    "jupiter": (240, 150, 88),
+    "saturn": (232, 206, 168),
     "uranus": (80, 240, 214),
     "neptune": (84, 128, 255),
-    "sol": (255, 204, 56),
+    "sol": (255, 192, 36),
 }
 
 
@@ -522,6 +522,9 @@ class Page:
         c = self.cell
         a = px.a.copy()
         assert a.shape == (c, c, 4)
+        if span == "tight":
+            cols = np.nonzero(a[..., 3].max(axis=0) >= 0.5)[0]
+            span = (int(cols.min()), int(cols.max()) + 1)
         x0, x1 = span or (0, c)
         a[:, :x0] = 0
         a[:, x1:] = 0
@@ -1519,15 +1522,16 @@ def build_art_page():
     pg = Page(PAGE_ART, 32)
     G = {"emblemBig": {}, "banner": {}, "iconBig": {}}
     for key in KEYS:
-        G["emblemBig"][key] = pg.put(D.PLANETS[key]["order"] - 1, _px_from(emblem_big(key)), f"emblemBig.{key}")
-    G["banner"]["wingL"] = pg.put(0x10, _px_from(wing("L")), "banner.wingL")
-    G["banner"]["wingR"] = pg.put(0x11, _px_from(wing("R")), "banner.wingR")
-    G["banner"]["divider"] = pg.put(0x12, _px_from(divider("mid")), "banner.divider")
-    G["banner"]["lineL"] = pg.put(0x13, _px_from(divider("L")), "banner.lineL")
-    G["banner"]["lineR"] = pg.put(0x14, _px_from(divider("R")), "banner.lineR")
+        G["emblemBig"][key] = pg.put(D.PLANETS[key]["order"] - 1, _px_from(emblem_big(key)), f"emblemBig.{key}",
+                                     "tight")
+    G["banner"]["wingL"] = pg.put(0x10, _px_from(wing("L")), "banner.wingL", "tight")
+    G["banner"]["wingR"] = pg.put(0x11, _px_from(wing("R")), "banner.wingR", "tight")
+    G["banner"]["divider"] = pg.put(0x12, _px_from(divider("mid")), "banner.divider", "tight")
+    G["banner"]["lineL"] = pg.put(0x13, _px_from(divider("L")), "banner.lineL", "tight")
+    G["banner"]["lineR"] = pg.put(0x14, _px_from(divider("R")), "banner.lineR", "tight")
     for i, name in enumerate(["energy", "nova", "revert", "overheat", "barrier", "sync", "check", "lock",
                               "warn"]):
-        G["iconBig"][name] = pg.put(0x20 + i, _px_from(big_icon(name)), f"iconBig.{name}")
+        G["iconBig"][name] = pg.put(0x20 + i, _px_from(big_icon(name)), f"iconBig.{name}", "tight")
     return pg, G
 
 
@@ -1745,7 +1749,8 @@ def compose_line(text, glyphs, S=4, shadow=True, title=1):
         rows = _MCFONT.get(ch)
         if rows is not None:
             w = len(rows[0])
-            for sh in ((1, (0.25, 0.25, 0.25)), (0, None)) if shadow else ((0, None),):
+            dark = sum(colour) < 150
+            for sh in ((1, (0.25, 0.25, 0.25)), (0, None)) if shadow and not dark else ((0, None),):
                 off, k = sh
                 col = colour if k is None else tuple(c * k[0] for c in colour)
                 for r, row in enumerate(rows):
@@ -1761,7 +1766,7 @@ def compose_line(text, glyphs, S=4, shadow=True, title=1):
         if a is not None:
             # 16 px の字を 8 GUI px に（S/2 倍）
             k = U / 2.0
-            for off, kk in (((1, 0.25), (0, 1.0)) if shadow else ((0, 1.0),)):
+            for off, kk in (((1, 0.25), (0, 1.0)) if shadow and sum(colour) >= 150 else ((0, 1.0),)):
                 col = tuple(c * kk for c in colour)
                 ys, xs = np.nonzero(a)
                 for yy, xx in zip(ys, xs):
@@ -2053,30 +2058,41 @@ def item_core_frame():
     return outlined(_rot_fit(cv.result(), 0), ICON_OUTLINE)
 
 
+def crystal(cv, bx, by, length, width, ang, tip_col, body_col, deep_col):
+    """結晶の柱（左の面は明るく、右の面は暗く、芯は白く光る）。ang = 傾き（度、0 = 真上）。"""
+    a = math.radians(ang)
+    d = (math.sin(a), -math.cos(a))
+    n = (math.cos(a), math.sin(a))
+
+    def P(t, u):
+        return (bx + d[0] * t + n[0] * u, by + d[1] * t + n[1] * u)
+    sh = length - width * 0.95
+    bl, br, cb = P(0, -width / 2), P(0, width / 2), P(0, width * 0.08)
+    sl, sr, cs = P(sh, -width / 2), P(sh, width / 2), P(sh + width * 0.1, width * 0.08)
+    tip = P(length, -width * 0.05)
+    cv.fill(cv.poly([bl, sl, tip, cs, cb]), cv.grad(P(length, 0), P(0, -width), tip_col, body_col))
+    cv.fill(cv.poly([cb, cs, tip, sr, br]), cv.grad(P(length, 0), P(0, width), body_col, deep_col))
+    cv.fill(cv.poly([sl, tip, cs]), lighten(tip_col, 0.5), 0.8)
+    cv.fill(cv.line([P(width * 0.3, -width * 0.32), P(sh, -width * 0.32)], max(0.5, width * 0.09)), WHITE, 0.75)
+    cv.fill(cv.line([cb, cs], max(0.4, width * 0.06)), (255, 255, 236), 0.7)
+
+
 def item_solar_fragment():
     cv = Canvas(64, ss=4)
-    shard = [(31, 3), (41, 15), (40, 41), (30, 60), (21, 43), (22, 15)]
-    cv.glow(cv.poly(shard), (255, 170, 40), 2.0, 0.8)
-    cv.fill(cv.poly(shard), (255, 170, 40))
-    left = [(31, 3), (22, 15), (21, 43), (30, 60), (31, 30)]
-    right = [(31, 3), (41, 15), (40, 41), (30, 60), (31, 30)]
-    cv.fill(cv.poly(left), cv.grad((22, 5), (30, 58), (255, 250, 214), (255, 150, 30)))
-    cv.fill(cv.poly(right), cv.grad((40, 5), (32, 58), (255, 214, 100), (210, 70, 20)))
-    cv.fill(cv.poly([(31, 3), (41, 15), (31, 30), (22, 15)]), cv.grad((31, 3), (31, 30), (255, 255, 240),
-                                                                     (255, 200, 80)))
-    cv.fill(cv.line([(31, 6), (31, 54)], 1.2), (255, 255, 236), 0.9)
-    cv.fill(cv.ellipse(30.5, 30, 6.0), (255, 255, 220), 0.55)
-    # 小さな欠片
-    small = [(43, 36), (50, 42), (48, 55), (41, 58), (38, 47)]
-    cv.fill(cv.poly(small), cv.grad((43, 36), (44, 58), (255, 230, 140), (220, 90, 20)))
-    cv.fill(cv.line([(44, 39), (43, 55)], 0.8), (255, 250, 220), 0.8)
-    small2 = [(16, 44), (20, 47), (19, 56), (13, 55), (12, 49)]
-    cv.fill(cv.poly(small2), cv.grad((16, 44), (16, 56), (255, 214, 110), (200, 70, 20)))
-    for (x, y, r) in ((47, 11, 3.4), (14, 26, 2.6)):
-        st = [(x, y - r), (x + r * 0.28, y - r * 0.28), (x + r, y), (x + r * 0.28, y + r * 0.28), (x, y + r),
-              (x - r * 0.28, y + r * 0.28), (x - r, y), (x - r * 0.28, y - r * 0.28)]
+    tip, body, deep = (255, 252, 226), (255, 196, 64), (214, 76, 18)
+    cv.glow(cv.ellipse(32, 36, 18, 24), (255, 160, 40), 3.0, 0.6)
+    crystal(cv, 22, 54, 30, 10, -28, tip, (255, 178, 52), deep)
+    crystal(cv, 43, 55, 26, 9.5, 30, tip, (255, 170, 48), deep)
+    crystal(cv, 32, 57, 50, 14, 4, tip, body, deep)
+    # 根元の岩と火の粉
+    cv.fill(cv.poly([(16, 56), (24, 51), (40, 51), (49, 56), (44, 61), (21, 61)]),
+            cv.grad((16, 51), (49, 61), (150, 80, 40), (60, 26, 14)))
+    cv.fill(cv.ellipse(33, 30, 4.0), (255, 255, 240), 0.8)
+    for (x, y, r) in ((48, 13, 4.2), (14, 27, 2.8), (52, 35, 2.0)):
+        st = [(x, y - r), (x + r * 0.26, y - r * 0.26), (x + r, y), (x + r * 0.26, y + r * 0.26), (x, y + r),
+              (x - r * 0.26, y + r * 0.26), (x - r, y), (x - r * 0.26, y - r * 0.26)]
         cv.fill(cv.poly(st), (255, 250, 214))
-    return outlined(_rot_fit(cv.result(), -14), ICON_OUTLINE)
+    return outlined(_rot_fit(cv.result(), 0), ICON_OUTLINE)
 
 
 def item_terminal():
@@ -2174,7 +2190,7 @@ def render_bust(geo_path, tex_path, size=64, yaw=-26.0, pitch=-8.0):
     big = big.crop(bb)
     # 上の 8 割（兜・胸・肩）を残す
     w, h = big.size
-    big = big.crop((0, 0, w, int(h * 0.86)))
+    big = big.crop((0, 0, w, int(h * 0.80)))
     side = max(big.size)
     sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     sq.alpha_composite(big, ((side - big.size[0]) // 2, (side - big.size[1]) // 2))
@@ -2185,32 +2201,91 @@ def render_bust(geo_path, tex_path, size=64, yaw=-26.0, pitch=-8.0):
 
 
 def suit_icon_fallback(key):
-    """紋章付きの兜の絵（スーツのモデルが無い時の代わり）。"""
+    """紋章付きの兜の絵（スーツのモデルが無い時の代わり）。惑星ごとの飾り（翼・冠・鶏冠・環・光輪）を付ける。"""
     col = D.PLANETS[key]["colors"]
-    plate, plate2, glow = col["plate"], col["plate2"], col["glow"]
+    plate, plate2, glow, accent = col["plate"], col["plate2"], col["glow"], col["accent"]
     cv = Canvas(64, ss=4)
-    # 肩と胸
-    chest = cv.poly([(8, 60), (12, 46), (22, 40), (42, 40), (52, 46), (56, 60)])
-    cv.fill(chest, cv.grad((8, 40), (56, 60), lighten(plate2, 0.2), shade(plate2, 0.45)))
-    cv.fill(cv.poly([(24, 44), (40, 44), (36, 56), (28, 56)]), shade(plate, 0.9))
-    cv.fill(cv.ellipse(32, 50, 3.6), glow)
-    cv.fill(cv.ellipse(31.2, 49.2, 1.4), WHITE, 0.8)
-    # 兜
-    helm = cv.poly([(32, 5), (44, 9), (49, 20), (48, 33), (42, 42), (32, 45), (22, 42), (16, 33), (15, 20), (20, 9)])
-    cv.fill(helm, cv.grad((16, 6), (48, 44), None, None, [(0.0, lighten(plate, 0.45)), (0.45, plate),
-                                                           (1.0, shade(plate, 0.45))]))
+    metal = lambda p0, p1, c: cv.grad(p0, p1, lighten(c, 0.45), shade(c, 0.55))  # noqa: E731
+    # --- 兜の後ろの飾り ---
+    if key == "sol":
+        for i in range(12):
+            a = math.radians(i * 30 + 15)
+            r0, r1 = 15, 29 if i % 2 == 0 else 24
+            cv.fill(cv.poly([(32 + math.cos(a - 0.16) * r0, 25 + math.sin(a - 0.16) * r0),
+                             (32 + math.cos(a) * r1, 25 + math.sin(a) * r1),
+                             (32 + math.cos(a + 0.16) * r0, 25 + math.sin(a + 0.16) * r0)]),
+                    cv.grad((32, 25), (32 + math.cos(a) * r1, 25 + math.sin(a) * r1), (255, 246, 190), accent))
+        cv.fill(cv.ring(32, 25, 17, 19.5), (255, 214, 90))
+    if key == "saturn":
+        cv.fill(np.clip(cv.ellipse(32, 24, 30, 8) - cv.ellipse(32, 24, 24, 5), 0, 1), metal((2, 16), (62, 32), plate))
+    if key == "mercury":
+        for sgn in (-1, 1):
+            for k in range(3):
+                y0 = 14 + k * 4.5
+                cv.fill(cv.poly([(32 + sgn * 14, y0 + 2), (32 + sgn * (27 - k * 3), y0 - 6 + k * 1.5),
+                                 (32 + sgn * (25 - k * 3), y0 - 3 + k * 1.5), (32 + sgn * 15, y0 + 5)]),
+                        metal((32, y0 - 6), (32 + sgn * 26, y0 + 5), (226, 234, 244)))
+    # --- 肩と胸 ---
+    chest = cv.poly([(6, 63), (10, 47), (22, 41), (42, 41), (54, 47), (58, 63)])
+    cv.fill(chest, cv.grad((6, 41), (58, 63), lighten(plate2, 0.2), shade(plate2, 0.45)))
+    for sgn in (-1, 1):
+        cv.fill(cv.poly([(32 + sgn * 12, 43), (32 + sgn * 25, 46), (32 + sgn * 27, 56), (32 + sgn * 15, 52)]),
+                metal((32 + sgn * 12, 43), (32 + sgn * 27, 56), plate))
+    cv.fill(cv.poly([(24, 45), (40, 45), (36, 58), (28, 58)]), shade(plate, 0.9))
+    cv.glow(cv.ellipse(32, 51, 3.8), glow, 1.2, 0.8)
+    cv.fill(cv.ellipse(32, 51, 3.8), glow)
+    cv.fill(cv.ellipse(31.2, 50.2, 1.5), WHITE, 0.85)
+    # --- 兜 ---
+    helm = cv.poly([(32, 6), (44, 10), (49, 21), (48, 33), (42, 42), (32, 45), (22, 42), (16, 33), (15, 21), (20, 10)])
+    cv.fill(helm, cv.grad((16, 6), (48, 44), None, None, [(0.0, lighten(plate, 0.5)), (0.45, plate),
+                                                           (1.0, shade(plate, 0.42))]))
     cv.fill(cv.poly([(16, 26), (24, 27), (24, 38), (19, 36)]), shade(plate2, 0.8))
     cv.fill(cv.poly([(48, 26), (40, 27), (40, 38), (45, 36)]), shade(plate2, 0.6))
-    visor = cv.poly([(19, 22), (32, 26), (45, 22), (43, 29), (32, 32), (21, 29)])
+    cv.fill(cv.line([(20, 11), (29, 7.5)], 0.9), WHITE, 0.55)
+    visor = cv.poly([(19, 22), (32, 26), (45, 22), (43, 29), (32, 32.5), (21, 29)])
     cv.glow(visor, glow, 1.0, 0.7)
     cv.fill(visor, cv.grad((19, 22), (45, 32), lighten(glow, 0.6), shade(glow, 0.6)))
     cv.fill(cv.line([(22, 24), (30, 26.4)], 0.8), WHITE, 0.8)
     cv.fill(cv.poly([(29, 34), (35, 34), (34, 41), (30, 41)]), shade(plate, 0.6))
+    # --- 兜の上の飾り ---
+    gold = (255, 210, 90)
+    if key == "venus":
+        st = []
+        for i in range(10):
+            a = math.radians(i * 36 - 90)
+            r = 7.5 if i % 2 == 0 else 3.2
+            st.append((32 + math.cos(a) * r, 6 + math.sin(a) * r))
+        cv.fill(cv.poly(st), cv.grad((26, 0), (38, 12), (255, 252, 220), (255, 190, 60)))
+    elif key == "earth":
+        cv.fill(cv.poly([(30, 9), (33, 0.5), (36, 2), (34.5, 10)]), metal((30, 0), (36, 10), (240, 246, 252)))
+        cv.fill(cv.ellipse(47, 9, 3.4), cv.radial(46, 8, 4, [(0.0, (250, 250, 255)), (1.0, (150, 160, 180))]))
+    elif key == "mars":
+        crest = [(20, 12), (24, 4), (32, 0.8), (40, 4), (44, 12), (40, 9), (32, 5), (24, 9)]
+        cv.fill(cv.poly(crest), cv.grad((20, 0), (44, 12), lighten(accent, 0.3), shade(plate, 0.7)))
+        for x in range(23, 42, 3):
+            cv.fill(cv.line([(x, 6 - 0.15 * abs(x - 32)), (x + 1, 9)], 0.5), shade(plate, 0.5), 0.8)
+    elif key == "jupiter":
+        crown = [(20, 13), (20, 4), (25, 9), (32, 1), (39, 9), (44, 4), (44, 13)]
+        cv.fill(cv.poly(crown), cv.grad((20, 1), (44, 13), (255, 246, 190), (200, 130, 40)))
+        cv.fill(cv.poly([(33, 5), (29.5, 10), (32, 10), (30.5, 13.5), (35, 8.5), (32.5, 8.5)]), (140, 236, 255))
+    elif key == "uranus":
+        dia = [(32, -0.5), (37, 5.5), (32, 13), (27, 5.5)]
+        cv.fill(cv.poly(dia), cv.grad((27, 0), (37, 13), (240, 255, 255), (80, 190, 210)))
+        cv.fill(cv.poly([(32, -0.5), (37, 5.5), (32, 7)]), (150, 230, 240))
+    elif key == "neptune":
+        for x, h in ((24, 6), (32, 0.5), (40, 6)):
+            cv.fill(cv.poly([(x - 1.6, 12), (x - 1.6, h + 3), (x, h), (x + 1.6, h + 3), (x + 1.6, 12)]),
+                    cv.grad((x, h), (x, 12), (234, 244, 255), (60, 120, 220)))
+        cv.fill(cv.line([(23, 11), (41, 11)], 1.4), (200, 230, 255))
+    elif key == "saturn":
+        cv.fill(np.clip(cv.ellipse(32, 24, 30, 8) - cv.ellipse(32, 24, 24, 5), 0, 1) * cv.poly(
+            [(0, 24), (64, 24), (64, 40), (0, 40)]), metal((2, 24), (62, 32), plate))
+    elif key == "sol":
+        cv.fill(cv.poly([(29, 9), (32, 1), (35, 9)]), gold)
     # 額の紋章
     em = render_planet(key, 14, {"saturn": 3.4, "sol": 4.0}.get(key, 4.6), ss=4, detail=0.6)
-    cv.fill(cv.poly(hex_pts(32, 15.5, 6.6, 5.8)), (20, 26, 40))
-    cv.fill(np.clip(cv.poly(hex_pts(32, 15.5, 6.6, 5.8)) - cv.poly(hex_pts(32, 15.5, 5.6, 4.8)), 0, 1),
-            HUD_COL[key])
+    cv.fill(cv.poly(hex_pts(32, 15.5, 6.8, 6.0)), (20, 26, 40))
+    cv.fill(np.clip(cv.poly(hex_pts(32, 15.5, 6.8, 6.0)) - cv.poly(hex_pts(32, 15.5, 5.7, 4.9)), 0, 1), HUD_COL[key])
     cv.paste(em, 25, 8.5)
     return outlined(_rot_fit(cv.result(), 0), ICON_OUTLINE)
 
@@ -2324,11 +2399,13 @@ def pack_icon():
         col = HUD_COL[KEYS[i % 9]]
         pts = [(cx + math.cos(a + t * 0.25) * (r0 + (r1 - r0) * t), cy + math.sin(a + t * 0.25) * (r0 + (r1 - r0) * t)
                 * 0.62) for t in np.linspace(0, 1, 16)]
-        cv.fill(cv.line(pts, rng.uniform(0.5, 1.1)), lighten(col, 0.3), rng.uniform(0.25, 0.6))
+        ln = cv.line(pts, rng.uniform(0.7, 1.4))
+        cv.glow(ln, col, 1.2, 0.5)
+        cv.fill(ln, lighten(col, 0.45), rng.uniform(0.45, 0.85))
         for t in np.linspace(0.2, 1.0, 5):
             j = int(t * 15)
             x, y = pts[j]
-            sz = rng.uniform(0.7, 1.5)
+            sz = rng.uniform(0.8, 1.7)
             cv.fill(cv.poly([(x - sz, y - sz), (x + sz, y - sz), (x + sz, y + sz), (x - sz, y + sz)]),
                     lighten(col, 0.6), rng.uniform(0.5, 1.0))
     # 軌道（傾いた楕円）と惑星
@@ -2362,10 +2439,10 @@ def pack_icon():
              "mars": 7.5, "mercury": 6.5}[key] * (0.9 + 0.2 * depth)
         place.append((y, key, x, r))
     # 太陽は左端の奥に大きく
-    for _, key, x, r in sorted(place):
+    for y, key, x, r in sorted(place):
         size = int(r * 5.2) + 4
         pl = render_planet(key, size, r, ss=3, detail=1.0)
-        cv.paste(soft_outlined(pl, (4, 6, 16), 160), x - size / 2, (_ + 0) - size / 2)
+        cv.paste(soft_outlined(pl, (4, 6, 16), 160), x - size / 2, y - size / 2)
     # 題字の帯
     cv.fill(np.clip((Y - 150) / 40, 0, 1) * 0.75, (4, 4, 14))
     draw_logo(cv, "ASTRO", 186, 6.2, [(0.0, (255, 255, 255)), (0.45, (200, 244, 255)), (0.55, (110, 210, 255)),
@@ -2795,7 +2872,7 @@ def hud_mock(pg, pg2, G):
              f"{J.energy_bar(key, 0.72, 16, t)} §f86 {G['icon']['sep']} {G['icon']['nova']}{J.nova_bar(0.64, 10, t)} §764%")
     line2 = (f"§r{J.move(key, 'skill', False)} §73.4s  {J.move(key, 'dash', True)} {G['icon']['check']}  "
              f"{J.move(key, 'air', True)} {G['icon']['check']}  {J.move(key, 'ult', False)} §764%")
-    widths = _draw_lines(screen, [line1, line2], W / 2, H - 58, from_hud)
+    widths = _draw_lines(screen, [line1, line2], W / 2, H - 68, from_hud)
     # タイトル（変身の締め）
     title = f"§r{G['banner']['wingL']}{G['emblemBig'][key]}{G['banner']['wingR']}"
     sub = f"§r{G['banner']['lineL']} {tc}{pl['form_ja']} §7| {tc}{pl['form_en']} §r{G['banner']['lineR']}"

@@ -398,13 +398,35 @@ def render_controllers() -> dict:
 
 
 # ===========================================================================
+def dump_geo(model) -> str:
+    """ジオメトリを「キューブ 1 個 = 1 行」の JSON に（indent=2 の 1/3 ほどの大きさで、差分も読める）。"""
+    import json
+    g = model.to_json()
+    out = ['{', '  "format_version": "1.12.0",', '  "minecraft:geometry": [', '    {',
+           '      "description": ' + json.dumps(g["description"], ensure_ascii=False) + ',',
+           '      "bones": [']
+    bones = g["bones"]
+    for i, b in enumerate(bones):
+        head = json.dumps({k: v for k, v in b.items() if k != "cubes"}, ensure_ascii=False)[:-1]
+        if b.get("cubes"):
+            cubes = ",\n".join("          " + json.dumps(c, separators=(",", ":"))
+                               for c in b["cubes"])
+            line = head + ', "cubes": [\n' + cubes + '\n        ]}'
+        else:
+            line = head + '}'
+        out.append('        ' + line + (',' if i < len(bones) - 1 else ''))
+    out += ['      ]', '    }', '  ]', '}', '']
+    return "\n".join(out)
+
+
 def write_suit(s: AS.Suit, quiet=False):
     key = s.key
     geo = os.path.join(AC.GEO_DIR, f"astro_suit_{key}.geo.json")
     tex = os.path.join(AC.TEX_DIR, f"suit_{key}.png")
     os.makedirs(AC.GEO_DIR, exist_ok=True)
     os.makedirs(AC.TEX_DIR, exist_ok=True)
-    s.m.write(geo)
+    with open(geo, "w", encoding="utf-8") as fh:
+        fh.write(dump_geo(s.m))
     p = paint(s)
     p.save(tex)
     extra = [n for n in (getattr(s.module, "SUIT_ANIMS", {}) or {})

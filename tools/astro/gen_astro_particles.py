@@ -2985,8 +2985,340 @@ def main():
     print("  self-check: OK (json, molang parse/eval, ?? defaults, uv in atlas, components, tinting)")
 
 
+# ===========================================================================
+#  プレビュー: JSON をそのまま Molang で動かす簡易シミュレーション（3/4 俯瞰の正射影）
+# ===========================================================================
+CAM_YAW, CAM_PITCH = 35.0, 24.0
+TILE = 190
+# 変数を渡した時の見本（particles_demo.png）
+DEMO = {
+    "beam": {"vx": 1.0, "vy": 0.15, "vz": -0.6, "len": 6.0, "cr": 1.0, "cg": 0.45, "cb": 0.15},
+    "bolt": {"len": 7.0, "vx": 0.3, "vy": 1.0},
+    "thrust": {"vx": 1.0, "vz": 1.0, "len": 4.0, "cr": 0.3, "cg": 1.0, "cb": 0.55},
+    "nano": {"vx": 0.0, "vy": 1.6, "vz": 1.2, "spread": 1.2},
+    "nano_stream": {"vx": 2.2, "vy": 1.4, "vz": 0.0, "cr": 1.0, "cg": 0.67, "cb": 0.16},
+    "meteor": {"speed": 10.0, "life": 0.6, "vx": 0.5, "vy": -1.0, "vz": 0.2},
+    "emblem": {"var": 4.0},
+    "circle_v": {"vx": 1.0, "vz": 1.0, "cr": 0.75, "cg": 0.5, "cb": 1.0},
+    "wave": {"vx": 1.0, "vz": 0.4},
+    "ring_n": {"vx": 1.0, "vy": 0.0, "vz": 0.0, "spread": 1.2, "var": 2.0},
+    "line_n": {"vx": 3.0, "vy": 1.0, "vz": -2.0, "var": 1.0, "count": 24.0},
+    "cloud": {"vx": 0.8, "life": 3.0},
+    "aurora": {"spread": 3.0, "cr": 0.5, "cg": 0.6, "cb": 1.0},
+    "vortex": {"cr": 1.0, "cg": 0.35, "cb": 0.2, "spread": 1.6},
+    "spark": {"vx": 1.0, "vy": 0.3},
+    "speedline": {"vx": 0.0, "vy": 0.0, "vz": 1.0},
+    "slash": {"rot": 30.0, "cr": 1.0, "cg": 0.3, "cb": 0.4},
+    "slash_flat": {"rot": 90.0},
+    "warning": {"size": 1.5, "life": 1.5},
+    "debris": {"speed": 9.0},
+}
+
+
+def _cam():
+    y, p = math.radians(CAM_YAW), math.radians(CAM_PITCH)
+    D = np.array([math.sin(y) * math.cos(p), math.sin(p), math.cos(y) * math.cos(p)])
+    F = -D
+    R = np.cross(F, [0, 1, 0])
+    R /= np.linalg.norm(R)
+    U = np.cross(R, F)
+    return R, U, F
+
+
+def _unit(v, fallback=(0, 1, 0)):
+    v = np.asarray(v, float)
+    n = np.linalg.norm(v)
+    return v / n if n > 1e-6 and np.isfinite(n) else np.asarray(fallback, float)
+
+
+def _rand_unit(rng):
+    while True:
+        v = np.array([rng.uniform(-1, 1) for _ in range(3)])
+        n = np.linalg.norm(v)
+        if 0.05 < n <= 1:
+            return v / n
+
+
+def simulate(doc, script, seed, snaps, dt, tmax=8.0):
+    """エミッタと粒を動かし、snaps の各時刻の描画項目を返す。戻り値 (frames, t_end)。"""
+    comps = doc["particle_effect"]["components"]
+    C = lambda e, c: molang_compile(e)(c)                       # noqa: E731
+    _Env.strict = False
+    rng = random.Random(seed)
+    _Env.rng = rng
+    ectx = {f"variable.{k}": float(v) for k, v in script.items()}
+    for i in range(1, 5):
+        ectx[f"variable.emitter_random_{i}"] = rng.random()
+    ectx["variable.emitter_age"] = 0.0
+    ectx["variable.emitter_lifetime"] = 1.0
+    init = comps.get("minecraft:emitter_initialization", {}).get("creation_expression")
+    if init:
+        C(init, ectx)
+    active = C(comps["minecraft:emitter_lifetime_once"]["active_time"], ectx)
+    ectx["variable.emitter_lifetime"] = active
+    inst = comps.get("minecraft:emitter_rate_instant")
+    steady = comps.get("minecraft:emitter_rate_steady")
+    shape_key = next(k for k in comps if k.startswith("minecraft:emitter_shape_"))
+    shape = comps[shape_key]
+    bb = comps["minecraft:particle_appearance_billboard"]
+    tint = comps["minecraft:particle_appearance_tinting"]["color"]
+    dyn = comps.get("minecraft:particle_motion_dynamic")
+    par = comps.get("minecraft:particle_motion_parametric")
+    col = comps.get("minecraft:particle_motion_collision")
+    spin = comps.get("minecraft:particle_initial_spin", {})
+    parts = []
+
+    def spawn():
+        pc = dict(ectx)
+        for i in range(1, 5):
+            pc[f"variable.particle_random_{i}"] = rng.random()
+        pc["variable.particle_age"] = 0.0
+        pc["variable.particle_lifetime"] = 1.0
+        off = np.array([C(e, pc) for e in shape.get("offset", [0, 0, 0])], float)
+        sp = np.zeros(3)
+        kind = shape_key.split("_")[-1]
+        if kind == "sphere":
+            r = C(shape.get("radius", 1), pc)
+            u = _rand_unit(rng)
+            sp = u * (r if shape.get("surface_only") else r * rng.random() ** (1 / 3))
+        elif kind == "disc":
+            r = C(shape.get("radius", 1), pc)
+            ang = rng.uniform(0, 2 * math.pi)
+            d = r * math.sqrt(rng.random())
+            sp = np.array([d * math.cos(ang), 0, d * math.sin(ang)])
+        dr = shape.get("direction", "outwards")
+        if isinstance(dr, list):
+            direction = _unit([C(e, pc) for e in dr])
+        elif kind == "point":
+            direction = _rand_unit(rng)
+        else:
+            direction = _unit(sp, _rand_unit(rng)) * (-1 if dr == "inwards" else 1)
+        pos = off + sp
+        s0 = comps.get("minecraft:particle_initial_speed", 0)
+        vel = np.array([C(e, pc) for e in s0]) if isinstance(s0, list) else direction * C(s0, pc)
+        life = C(comps["minecraft:particle_lifetime_expression"]["max_lifetime"], pc)
+        pc["variable.particle_lifetime"] = max(life, 1e-3)
+        parts.append({"c": pc, "pos": pos, "vel": vel, "age": 0.0, "life": life,
+                      "rot0": C(spin.get("rotation", 0), pc), "rate": C(spin.get("rotation_rate", 0), pc),
+                      "rot": 0.0, "dir": direction})
+
+    def update(p, step):
+        c = p["c"]
+        c["variable.particle_age"] = p["age"]
+        if par:
+            p["pos"] = np.array([C(e, c) for e in par["relative_position"]], float)
+            p["rot"] = C(par["rotation"], c) if "rotation" in par else p["rot0"]
+        elif dyn:
+            acc = np.array([C(e, c) for e in dyn.get("linear_acceleration", [0, 0, 0])], float)
+            drag = C(dyn.get("linear_drag_coefficient", 0), c)
+            p["vel"] = p["vel"] + (acc - drag * p["vel"]) * step
+            p["pos"] = p["pos"] + p["vel"] * step
+            p["rot"] = p["rot0"] + p["rate"] * p["age"]
+            if col and p["pos"][1] < 0:
+                if col.get("expire_on_contact"):
+                    p["age"] = 1e9
+                p["pos"][1] = 0
+                if p["vel"][1] < 0:
+                    p["vel"][1] *= -col.get("coefficient_of_restitution", 0)
+                p["vel"][[0, 2]] *= max(0.0, 1 - col.get("collision_drag", 0) * step * 0.3)
+        else:
+            p["rot"] = p["rot0"]
+
+    def items():
+        out = []
+        for p in parts:
+            c = p["c"]
+            c["variable.particle_age"] = p["age"]
+            size = [C(e, c) for e in bb["size"]]
+            u = bb["uv"]
+            if "flipbook" in u:
+                fb = u["flipbook"]
+                n = int(fb["max_frame"])
+                fr = min(n - 1, int(p["age"] / max(p["life"], 1e-3) * n))
+                uvr = (fb["base_UV"][0] + fb["step_UV"][0] * fr, fb["base_UV"][1] + fb["step_UV"][1] * fr,
+                       fb["size_UV"][0], fb["size_UV"][1])
+            else:
+                uvr = tuple(C(e, c) for e in u["uv"]) + tuple(C(e, c) for e in u["uv_size"])
+            rgba = [min(1.0, max(0.0, C(e, c))) for e in tint]
+            d = None
+            ds = bb.get("direction")
+            if ds and ds["mode"] == "custom":
+                d = _unit([C(e, c) for e in ds["custom_direction"]], (0, 0, 1))
+            elif ds:
+                v = p["vel"] if not par else None
+                d = _unit(v, p["dir"]) if v is not None and np.linalg.norm(v) > 0.05 else p["dir"]
+            out.append((p["pos"].copy(), size, uvr, rgba, bb["facing_camera_mode"], d, p["rot"]))
+        return out
+
+    if inst:
+        for _ in range(int(round(C(inst["num_particles"], ectx)))):
+            spawn()
+    frames, si, t, acc = {}, 0, 0.0, 0.0
+    rate = C(steady["spawn_rate"], ectx) if steady else 0
+    maxp = C(steady["max_particles"], ectx) if steady else 0
+    t_end = 0.0
+    while t <= tmax:
+        ectx["variable.emitter_age"] = t
+        if steady and t < active:
+            acc += rate * dt
+            while acc >= 1:
+                acc -= 1
+                if len(parts) < maxp:
+                    spawn()
+        for p in parts:
+            update(p, dt)
+        while si < len(snaps) and t >= snaps[si] - 1e-9:
+            frames[si] = items()
+            si += 1
+        for p in parts:
+            p["age"] += dt
+        parts = [p for p in parts if p["age"] <= p["life"]]
+        t += dt
+        if parts or (steady and t < active):
+            t_end = t
+        elif si >= len(snaps):
+            break
+    return frames, t_end
+
+
+def _quad_axes(mode, d, R, U, F, rot):
+    up = np.array([0.0, 1.0, 0.0])
+    if mode in ("rotate_y", "lookat_y"):
+        X, Y = R, up
+    elif mode == "emitter_transform_xz":
+        X, Y = np.array([1.0, 0, 0]), np.array([0, 0, -1.0])
+    elif mode == "emitter_transform_xy":
+        X, Y = np.array([1.0, 0, 0]), up
+    elif mode == "emitter_transform_yz":
+        X, Y = np.array([0, 0, 1.0]), up
+    elif mode == "direction_z" and d is not None:
+        X = _unit(np.cross(up, d), (1, 0, 0))
+        Y = np.cross(d, X)
+    elif mode == "direction_x" and d is not None:
+        X = d
+        Y = _unit(up - np.dot(up, d) * d, F)
+    elif mode == "direction_y" and d is not None:
+        Y = d
+        X = _unit(np.cross(d, up), R)
+    elif mode == "lookat_direction" and d is not None:
+        X = d
+        Y = np.cross(F, d)
+        if np.linalg.norm(Y) < 1e-4:
+            return None
+        Y = Y / np.linalg.norm(Y)
+    else:
+        X, Y = R, U
+    a = math.radians(rot)
+    return X * math.cos(a) + Y * math.sin(a), -X * math.sin(a) + Y * math.cos(a)
+
+
+def render_frames(frames, atlas, material, tile=TILE, bg=(14, 16, 24)):
+    R, U, F = _cam()
+    pts = []
+    for its in frames.values():
+        for pos, size, *_ in its:
+            r = 0.5 * max(abs(size[0]), abs(size[1]))
+            pts.append((pos @ R - r, pos @ U - r))
+            pts.append((pos @ R + r, pos @ U + r))
+    pts.append((0, 0))
+    pts = np.array(pts)
+    lo, hi = pts.min(0), pts.max(0)
+    ext = max(hi[0] - lo[0], hi[1] - lo[1], 0.6)
+    scale = tile * 0.9 / ext
+    mid = (lo + hi) / 2
+    S = lambda p: (tile / 2 + (p @ R - mid[0]) * scale, tile / 2 - (p @ U - mid[1]) * scale)  # noqa: E731
+    base = Image.new("RGB", (tile, tile), bg)
+    dr = ImageDraw.Draw(base)
+    k = int(min(12, ext * 1.2)) + 1
+    for i in range(-k, k + 1):
+        for a, b in (((i, 0, -k), (i, 0, k)), ((-k, 0, i), (k, 0, i))):
+            dr.line([S(np.array(a, float)), S(np.array(b, float))], fill=(30, 34, 46))
+    o = S(np.zeros(3))
+    dr.line([(o[0] - 4, o[1]), (o[0] + 4, o[1])], fill=(90, 96, 120))
+    dr.line([(o[0], o[1] - 4), (o[0], o[1] + 4)], fill=(90, 96, 120))
+    out = []
+    for fi in sorted(frames):
+        canvas = np.asarray(base, F32) / 255
+        its = sorted(frames[fi], key=lambda it: -(it[0] @ F)) if material != "add" else frames[fi]
+        for pos, size, uvr, rgba, mode, d, rot in its:
+            axes = _quad_axes(mode, d, R, U, F, rot)
+            if axes is None or size[0] <= 1e-4 or size[1] <= 1e-4 or rgba[3] <= 0.002:
+                continue
+            Xa, Ya = axes
+            u0, v0, uw, uh = (int(round(q)) for q in uvr)
+            if uw <= 0 or uh <= 0:
+                continue
+            spr = atlas.crop((u0, v0, u0 + uw, v0 + uh))
+            A, B = Xa * size[0] / 2, Ya * size[1] / 2
+            cx, cy = S(pos)
+            ax, ay = A @ R * scale, -(A @ U) * scale
+            bx, by = B @ R * scale, -(B @ U) * scale
+            M = np.array([[2 * ax / uw, -2 * bx / uh, cx - ax + bx], [2 * ay / uw, -2 * by / uh, cy - ay + by],
+                          [0, 0, 1.0]])
+            if abs(np.linalg.det(M[:2, :2])) < 1e-6:
+                continue
+            corners = [M @ np.array([px, py, 1.0]) for px in (0, uw) for py in (0, uh)]
+            xs = [q[0] for q in corners]
+            ys = [q[1] for q in corners]
+            x0, x1 = max(0, int(math.floor(min(xs)))), min(tile, int(math.ceil(max(xs))))
+            y0, y1 = max(0, int(math.floor(min(ys)))), min(tile, int(math.ceil(max(ys))))
+            if x1 <= x0 or y1 <= y0:
+                continue
+            Mi = np.linalg.inv(M)
+            coef = (Mi[0, 0], Mi[0, 1], Mi[0, 0] * x0 + Mi[0, 1] * y0 + Mi[0, 2],
+                    Mi[1, 0], Mi[1, 1], Mi[1, 0] * x0 + Mi[1, 1] * y0 + Mi[1, 2])
+            warped = spr.transform((x1 - x0, y1 - y0), Image.AFFINE, coef, resample=Image.BILINEAR)
+            w_ = np.asarray(warped, F32) / 255
+            src = w_[..., :3] * np.array(rgba[:3], F32)
+            a = w_[..., 3:4] * rgba[3]
+            reg = canvas[y0:y1, x0:x1]
+            if material == "add":
+                reg += src * a
+            else:
+                reg[...] = reg * (1 - a) + src * a
+        out.append(Image.fromarray((np.clip(canvas, 0, 1) * 255 + 0.5).astype(np.uint8), "RGB"))
+    return out, scale
+
+
 def preview_effects(E, docs):
-    pass
+    os.makedirs(SCRATCH, exist_ok=True)
+    atlas = Image.open(ATLAS_PNG).convert("RGBA")
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12)
+    small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
+
+    def cell(f, script, seed=7):
+        doc = docs[f.id]
+        _, t_end = simulate(doc, script, seed, [], 1 / 40)
+        t_end = max(t_end, 0.05)
+        snaps = [t_end * q for q in (0.12, 0.42, 0.78)]
+        frames, _ = simulate(doc, script, seed, snaps, min(1 / 60, t_end / 60))
+        for i in range(3):
+            frames.setdefault(i, [])
+        imgs, scale = render_frames(frames, atlas, f.material)
+        return imgs, snaps, scale
+
+    def sheet(entries, path, cols=3):
+        cw, ch = 3 * TILE + 12, TILE + 22
+        rows = (len(entries) + cols - 1) // cols
+        img = Image.new("RGB", (cols * cw, rows * ch), (8, 9, 14))
+        d = ImageDraw.Draw(img)
+        for k, (f, script) in enumerate(entries):
+            ox, oy = (k % cols) * cw, (k // cols) * ch
+            imgs, snaps, scale = cell(f, script)
+            for i, im in enumerate(imgs):
+                img.paste(im, (ox + i * TILE, oy + 20))
+                d.text((ox + i * TILE + 3, oy + 22), f"{snaps[i]:.2f}s", fill=(130, 136, 150), font=small)
+            label = f"{f.id}{' *' if f.star else ''}  [{f.material}]"
+            d.text((ox + 3, oy + 3), label, fill=(235, 238, 245), font=font)
+            info = "  ".join(f"{k2}={v}" for k2, v in script.items()) if script else "no variables"
+            d.text((ox + 200, oy + 5), f"{info}   1m={scale:.0f}px", fill=(140, 146, 160), font=small)
+        img.save(path)
+
+    per = 21
+    for s in range(0, len(E), per):
+        sheet([(f, {}) for f in E[s:s + per]], os.path.join(SCRATCH, f"particles_sim_{s // per + 1}.png"))
+    demo = [(f, DEMO[f.id]) for f in E if f.id in DEMO]
+    sheet(demo, os.path.join(SCRATCH, "particles_demo.png"))
 
 
 def preview_atlas(atlas):
