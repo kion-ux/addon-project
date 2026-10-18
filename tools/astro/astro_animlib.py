@@ -449,7 +449,7 @@ def _repair(res, cloud, hold, rounds=3, step=0.02):
             # 各時刻のねじった回転（a・b はねじらない）。区間の速さの上限は arm_speeds と同じ
             RT = [_key_R(tr, mk, a)] + base + [_key_R(tr, mk, b)]
             TW = [np.stack([_axis_angle(R0 @ blade_l, phi) @ R0 for phi in TWISTS]) for R0 in RT]
-            allow = 0.85 * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
+            allow = 0.75 * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
             nt = len(TWISTS)
 
             def edge(k):
@@ -482,7 +482,7 @@ def _repair(res, cloud, hold, rounds=3, step=0.02):
                 R = _axis_angle(R0 @ blade_l, TWISTS[i]) @ R0
                 tr[t] = tuple(float(x) for x in euler(R))
                 mk[t] = R
-        _finalize_arms(res.tracks, res.mats, res.plain, only=("rA",))
+        _finalize_arms(res.tracks, res.mats, res.plain, res.keys, only=("rA",))
 
 
 def _foot_min(pose):
@@ -550,7 +550,7 @@ def resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved:
                 rp[1] = -_foot_min(dict(pose, root_pos=tuple(rp)))
             tracks["root_pos"][t] = tuple(float(x) for x in rp)
     _densify_arms(tracks, mats)
-    _finalize_arms(tracks, mats, plains)
+    _finalize_arms(tracks, mats, plains, times)
     blend = spec["blend"]
     if blend is None:
         rt = tracks.get("root", {})
@@ -825,7 +825,20 @@ def _seg_badness(ts, E, Rs, plain, i, limit_speed=None):
     return max(dev / EULER_TOL, speed / allow)
 
 
-def _refine(tr, mk):
+def _speed_limits(tr, mk, keys, ts):
+    """区間ごと（ts[i]→ts[i+1]）の腕の速さの上限 = arm_speeds と同じ max(ARM_SPEED_MAX, 書いたキーの間 × 1.6)。"""
+    ak = sorted(set(keys) | {ts[0], ts[-1]})
+    ak = [t for t in ak if t in tr]
+    sp = [_rot_angle(_key_R(tr, mk, a), _key_R(tr, mk, b)) / max(b - a, 1e-3) for a, b in zip(ak, ak[1:])]
+    out = []
+    for a, b in zip(ts, ts[1:]):
+        m = (a + b) / 2
+        j = max([i for i in range(len(ak) - 1) if ak[i] <= m] or [0])
+        out.append(max(ARM_SPEED_MAX, 1.6 * (sp[j] if sp else 0.0)))
+    return out
+
+
+def _refine(tr, mk, keys=()):
     """統合版と同じ catmullrom で補間した腕が、意図した回転から EULER_TOL° 以上ずれる・速く回りすぎる区間に、
     回転のまま補間した中点のキーを足す（その区間か隣の区間の、いちばん良くなる方）。足すキーは MIN_DT 以上
     離す（近すぎるキーは、前後の長い区間に大きな接線を持ち込んで腕を振り回す）。"""
@@ -839,7 +852,8 @@ def _refine(tr, mk):
         E = [np.array(tr[t], float) for t in ts]
         Rs = [_key_R(tr, mk, t) for t in ts]
         plain = [mk.get(t) is None for t in ts]
-        bad = [(_seg_badness(ts, E, Rs, plain, i), i) for i in range(n - 1)]
+        lim = _speed_limits(tr, mk, keys, ts)
+        bad = [(_seg_badness(ts, E, Rs, plain, i, 0.95 * lim[i]), i) for i in range(n - 1)]
         cand = [(b, i) for b, i in bad if b > 1.0 and ts[i] not in stuck]
         if not cand:
             return
@@ -863,7 +877,9 @@ def _refine(tr, mk):
             E2 = E[:j + 1] + [em] + E[j + 1:]
             R2 = Rs[:j + 1] + [Rm] + Rs[j + 1:]
             p2 = plain[:j + 1] + [False] + plain[j + 1:]
-            new = max(_seg_badness(ts2, E2, R2, p2, k) for k in range(lo, min(len(ts2) - 2, hi + 1) + 1))
+            l2 = lim[:j + 1] + [lim[j]] + lim[j + 1:]
+            new = max(_seg_badness(ts2, E2, R2, p2, k, 0.95 * l2[k])
+                      for k in range(lo, min(len(ts2) - 2, hi + 1) + 1))
             if best is None or new < best[0]:
                 best = (new, tm, em, Rm)
         if best is None or best[0] >= cur - 1e-3:
@@ -875,7 +891,7 @@ def _refine(tr, mk):
         added += 1
 
 
-def _finalize_arms(tracks, mats, plains, only=ARMS):
+def _finalize_arms(tracks, mats, plains, keys, only=ARMS):
     """腕のトラックの表し方を選び直し（_relift）、補間を catmullrom で確かめて直す（_refine）。"""
     for k in only:
         if k not in tracks:
@@ -884,7 +900,7 @@ def _finalize_arms(tracks, mats, plains, only=ARMS):
         pv = plains.get(k, {})
         rest = np.array(REST.get(k, (0.0, 0.0, 0.0)), float)
         _relift(tracks[k], mk, rest, pv)
-        _refine(tracks[k], mk)
+        _refine(tracks[k], mk, keys)
         _relift(tracks[k], mk, rest, pv)
 
 
@@ -918,14 +934,14 @@ def arm_speed_report(res, step=1.0 / 120.0):
     return out
 
 
-FP_TAPER = 6         # 一人称の腕の角度 f(θ) = FPK·θ·(1 − (θ/180)^FP_TAPER)（θ = 自然体からの回転の角度）
+FP_FADE = (110.0, 170.0)   # 一人称の腕: 自然体からの回転 θ がこの間で 25% → 0 へなめらかに減る（真反対の近くで軸が飛ぶので）
 
 
 def fp_track(res, part) -> dict:
     """一人称の腕 {秒: (x, y, z)}: 自然体からの回転 D = R · R_rest⁻¹（最短の向き、角度 θ ≤ 180°）を、同じ軸
-    まわりに f(θ) = FPK·θ·(1 − (θ/180)^6)（≤ 28°）だけ回した物のオイラー角（隣のキーに最も近い表し方）。
+    まわりに f(θ) = FPK·θ·(1 − smoothstep(FP_FADE))（≤ 28°）だけ回した物のオイラー角（隣のキーに最も近い表し方）。
     成分を 25% にするのではない（±360° の巻きや分解の違いで一人称の腕が 90° ねじれないように）。θ が 180° に
-    近づくと f → 0 なので、軸が反対へ入れ替わる所（腕が自然体から真反対を通る時）でも一人称の腕は飛ばない。"""
+    近い所（腕が自然体の真反対の近く）では最短の軸が入れ替わるので f = 0 にして、一人称の腕が飛ばないようにする。"""
     tr = res.tracks.get(part)
     if not tr:
         return {}
@@ -941,7 +957,8 @@ def fp_track(res, part) -> dict:
             F = np.eye(3)
         else:
             th = 2.0 * math.degrees(math.atan2(s, float(q[0])))
-            F = _axis_angle(q[1:] / s, FPK * th * (1.0 - (th / 180.0) ** FP_TAPER))
+            x = min(1.0, max(0.0, (th - FP_FADE[0]) / (FP_FADE[1] - FP_FADE[0])))
+            F = _axis_angle(q[1:] / s, FPK * th * (1.0 - x * x * (3.0 - 2.0 * x)))
         e = euler_near(F, prev)
         out[t] = tuple(float(x) for x in e)
         prev = e

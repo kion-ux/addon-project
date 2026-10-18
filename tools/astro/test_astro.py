@@ -447,6 +447,7 @@ import { comboStep, MIN_GAP } from "./combo.js";
 import { TUNE } from "./mobility.js";
 import * as CB from "./combat.js";
 import * as EG from "./engine.js";
+import { ANIM_META } from "./anim_meta.js";
 
 const G = globalThis;
 const H = G.__handlers;
@@ -983,6 +984,249 @@ async function testCommon() {
 }
 
 // ---------------------------------------------------------------------------
+//  コードレビューの指摘の回帰テスト（RC-* / F* / ANIM-8・9）
+// ---------------------------------------------------------------------------
+async function testFixes() {
+  G.__log.warns.length = 0;
+  const snd = (id) => G.__log.sounds.get(id) ?? 0;
+  const wslot = (p, key) => p.inv.slots.findIndex((x) => x?.typeId === PLANETS[key].weaponId);
+  const fresh = (key) => {
+    clearAll();
+    const p = newPlayer();
+    ok(transformWith(p, key), `fixes: ${key} transform`);
+    p.selectedSlotIndex = wslot(p, key);
+    return p;
+  };
+  const ws = (p) => p.selectedSlotIndex;
+
+  // ---- RC-1: 変身の 0〜13 tick に頭へ着け直した防具は suit_equip で消えない -------------
+  {
+    clearAll();
+    const p = newPlayer();
+    reset(p);
+    p.equip.Head = new ItemStack("minecraft:diamond_helmet");
+    p.inv.setItem(4, new ItemStack(PLANETS.earth.core)); p.selectedSlotIndex = 4;
+    use(p);
+    const hs = p.inv.slots.findIndex((x) => x?.typeId === "minecraft:diamond_helmet");
+    ok(hs >= 0 && !p.equip.Head, "RC-1: helmet not stashed");
+    tick(5);
+    p.equip.Head = p.inv.slots[hs]; p.inv.slots[hs] = undefined;   // 右クリックで頭へ着け直した
+    tick(TRANSFORM.freeze + 10);
+    ok(ST.isReady(p) && p.equip.Head?.typeId === PLANETS.earth.suit, "RC-1: transform with a re-equipped helmet");
+    command(p, "astro:revert", ""); tick(30);
+    ok(count(p, "minecraft:diamond_helmet") === 1 && p.equip.Head?.typeId === "minecraft:diamond_helmet",
+       `RC-1: helmet destroyed by suit_equip (count ${count(p, "minecraft:diamond_helmet")}, head ${p.equip.Head?.typeId})`);
+  }
+
+  // ---- RC-9: 変身中に着け直した防具は外して保管（エリトラはそのまま）、解除で着せ直す ----
+  {
+    const p = fresh("mars");
+    const ci = p.inv.slots.findIndex((x) => x?.typeId === "minecraft:iron_chestplate");
+    p.equip.Chest = p.inv.slots[ci]; p.inv.slots[ci] = undefined;
+    p.equip.Feet = new ItemStack("minecraft:diamond_boots");
+    tick(21);
+    ok(!p.equip.Chest && !p.equip.Feet && count(p, "minecraft:iron_chestplate") === 1 && count(p, "minecraft:diamond_boots") === 1,
+       "RC-9: armor worn while transformed was not stowed");
+    p.equip.Chest = new ItemStack("minecraft:elytra"); tick(21);
+    ok(p.equip.Chest?.typeId === "minecraft:elytra", "RC-9: the elytra was taken off while transformed");
+    p.equip.Chest = undefined;
+    command(p, "astro:revert", ""); tick(30);
+    ok(p.equip.Chest?.typeId === "minecraft:iron_chestplate" && p.equip.Feet?.typeId === "minecraft:iron_boots" &&
+       count(p, "minecraft:diamond_boots") === 1, "RC-9: armor not restored / lost after revert");
+  }
+
+  // ---- RC-4: 連打しても段・追撃・超新星ゲージが進みすぎない --------------------------
+  {
+    const p = fresh("mars"); clearMobs();
+    const [foe] = foes(1);
+    const impl = MOVES.mars; let called = 0; const orig = impl.combo3;
+    impl.combo3 = (ctx, tgt) => { called++; return orig?.(ctx, tgt); };
+    ST.setNovaRaw(p, 0);
+    for (let i = 0; i < 14; i++) { H.entityHitEntity({ damagingEntity: p, hitEntity: foe }); tick(1); }
+    tick(12);
+    impl.combo3 = orig;
+    ok(called === 0 && ST.nova(p) <= 2 * COMMON.nova_on_hit + 0.01, `RC-4: spam-clicking for ${14} ticks: combo3 ${called}x, nova ${ST.nova(p)}`);
+    // ---- ANIM-8: 当たりの音・斬撃はモーションの当たりのキーに合わせて出る --------------
+    tick(40);
+    const h0 = snd("astro.hit");
+    H.entityHitEntity({ damagingEntity: p, hitEntity: foe });
+    ok(snd("astro.hit") === h0, "ANIM-8: the combo hit FX fired before the strike key of the body motion");
+    tick(6);
+    ok(snd("astro.hit") > h0, "ANIM-8: the combo hit FX never fired");
+    tick(40);
+
+    // ---- RC-5: 無敵時間に重なった多段は失われない -------------------------------------
+    clearMobs();
+    const z = new FakeEntity(D, "minecraft:zombie", { x: 0, y: 64, z: 3 }, 500);
+    for (let i = 0; i < 3; i++) { CB.hit(p, z, 6, { raw: true, quiet: true }); tick(4); }
+    tick(25);
+    ok(Math.abs((500 - z.hp) - 18) < 0.01, `RC-5: three 6-damage hits 4 ticks apart dealt ${500 - z.hp} (want 18)`);
+
+    // ---- RC-6: 必殺が再使用待ちならスニーク＋右クリックはバリア、HUD は残り時間 ----------
+    reset(p); clearMobs();
+    ST.setCd(p, "mars", "ult", 300); ST.setNovaRaw(p, COMMON.nova_max); ST.S(p).barrierCd = -1;
+    const b0 = snd("astro.barrier");
+    p.isSneaking = true; use(p, ws(p)); p.isSneaking = false;
+    ok(snd("astro.barrier") > b0 && ST.nova(p) >= COMMON.nova_max - 0.01, "RC-6: full nova + ult on cooldown did not fall back to the barrier");
+    tick(24);
+    const line2 = String(p.actionbar).split("\n")[1] ?? "";
+    ok(!/READY/.test(line2) && /\d+\.\ds/.test(line2), `RC-6: HUD shows READY while the ult is on cooldown (${line2.replace(/[-]/g, "#")})`);
+
+    // ---- RC-8: ジャスト回避は敵対的な相手・PvP の相手の攻撃だけ ----------------------
+    reset(p); clearMobs(); tick(20);
+    const cow = new FakeEntity(D, "minecraft:cow", { x: 0, y: 64, z: 1.5 }, 10);
+    const dodge = () => { p.isSneaking = true; tick(1); p.isSneaking = false; tick(2); p.isSneaking = true; tick(1); p.isSneaking = false; };
+    dodge();
+    const n0 = ST.nova(p);
+    H.entityHitEntity({ damagingEntity: cow, hitEntity: p });
+    H.projectileHitEntity?.({ getEntityHit: () => ({ entity: p }), source: p });
+    ok(ST.nova(p) < n0 + 1, "RC-8: a cow / the player's own projectile triggered a just dodge");
+    tick(20);
+    dodge();
+    const zz = foes(1, 20)[0];
+    const n1 = ST.nova(p);
+    H.entityHitEntity({ damagingEntity: zz, hitEntity: p });
+    ok(ST.nova(p) >= n1 + COMMON.nova_on_just_dodge - 0.01, "RC-8: a zombie no longer triggers the just dodge");
+
+    // ---- 透明化: 自分で飲んだ長い透明化の薬は掛け直しで短くならず、解除でも消えない --------
+    reset(p); clearMobs(); tick(21);
+    p.addEffect("invisibility", 3600, { amplifier: 0, showParticles: true });
+    tick(21);
+    ok((p.getEffect("invisibility")?.duration ?? 0) > 3000, "invisibility: the refresh shortened the player's own potion");
+    command(p, "astro:revert", ""); tick(30);
+    ok(!ST.formOf(p) && (p.getEffect("invisibility")?.duration ?? 0) > 3000, "invisibility: revert stripped the player's own invisibility potion");
+    p.addEffect("invisibility", 50, { amplifier: 0 }); tick(21);
+    ok(p.getEffect("invisibility"), "invisibility: a potion drunk while not transformed was removed");
+  }
+
+  // ---- F3: 自分の馬・乗っている相手・乗り手・自分の飛び道具は標的にしない ----------------
+  {
+    const p = fresh("earth"); clearMobs();
+    const horse = new FakeEntity(D, "minecraft:horse", { x: 2, y: 64, z: 0 }, 20);
+    horse.comps = { "minecraft:tamemount": { isTamed: true, tamedToPlayerId: p.id } };
+    const wild = new FakeEntity(D, "minecraft:horse", { x: -2, y: 64, z: 0 }, 20);
+    const mount = new FakeEntity(D, "minecraft:horse", { x: 0, y: 64, z: 0.2 }, 20);
+    p.comps = { "minecraft:riding": { entityRidingOn: mount } };
+    const rider = new FakeEntity(D, "minecraft:zombie", { x: 0, y: 65, z: 0 }, 20);
+    rider.comps = { "minecraft:riding": { entityRidingOn: p } };
+    const shot = new FakeEntity(D, "minecraft:zombie", { x: 0, y: 65, z: 2 }, 5);
+    shot.comps = { "minecraft:projectile": { owner: p } };
+    tick(1);
+    ok(!CB.isTarget(p, horse) && !CB.isTarget(p, mount) && !CB.isTarget(p, rider) && !CB.isTarget(p, shot) && CB.isTarget(p, wild),
+       "F3: own tamed horse / ridden mount / rider / own projectile is a valid target (or a wild horse is not)");
+    p.comps = undefined;
+    // ---- F4: 中立の mob は戦うまで自動で狙わない・村人やゴーレムは敵対的でない ----------
+    clearMobs(); reset(p); tick(2);
+    const golem = new FakeEntity(D, "minecraft:iron_golem", { x: 5, y: 64, z: -5 }, 100);
+    const pig = new FakeEntity(D, "minecraft:zombie_pigman", { x: 0, y: 64, z: 3 }, 100);
+    ok(!CB.isHostile(golem, p) && !CB.isHostile(pig, p) && CB.isHostile(foes(1, 20)[0], p), "F4: isHostile families");
+    clearMobs(); const pig2 = new FakeEntity(D, "minecraft:zombie_pigman", { x: 0, y: 64, z: 3 }, 100);
+    tick(90);
+    ok(pig2.hp === 100, "F4: Luna Bit shot a neutral zombified piglin");
+    H.entityHurt({ hurtEntity: p, damage: 1, damageSource: { cause: "entityAttack", damagingEntity: pig2 } });
+    tick(90);
+    ok(pig2.hp < 100, "F4: Luna Bit ignores a zombified piglin that attacked the player");
+    // ---- F5: 地球の必殺は他のプレイヤー（当てている相手）を癒やさない --------------------
+    clearMobs(); reset(p);
+    const other = new FakeEntity(D, "minecraft:player", { x: 3, y: 64, z: 3 }, 20);
+    other.hp = 10;
+    ST.setNovaRaw(p, COMMON.nova_max); p.isSneaking = true; use(p, ws(p)); p.isSneaking = false;
+    tick(90);
+    ok(!other.getEffect("regeneration") && other.hp <= 10, `F5: GAIA RESONANCE healed another player (hp ${other.hp})`);
+    other.remove();
+    // ---- F10: 潮汐斬の波は壁を抜けない -----------------------------------------------
+    clearMobs(); reset(p); tick(2);
+    G.__walls.push({ x0: -4, x1: 4, y0: 64, y1: 67, z0: 4, z1: 5 });
+    const zb = new FakeEntity(D, "minecraft:zombie", { x: 0, y: 64, z: 7.5 }, 200);
+    use(p, ws(p)); tick(40);
+    G.__walls.length = 0;
+    ok(zb.hp === 200, `F10: TIDAL EDGE hit a zombie behind a wall (hp ${zb.hp})`);
+  }
+
+  // ---- F1: 雷霆は前の敵から村人・動物へ連鎖しない（後ろの牛も狙わない） -----------------
+  {
+    const p = fresh("jupiter"); clearMobs(); reset(p);
+    p.viewHits = () => [];
+    const z = new FakeEntity(D, "minecraft:zombie", { x: 0, y: 64, z: 4 }, 200);
+    const cow = new FakeEntity(D, "minecraft:cow", { x: 2, y: 64, z: 5 }, 10);
+    const vil = new FakeEntity(D, "minecraft:villager_v2", { x: -2, y: 64, z: 5 }, 20);
+    const back = new FakeEntity(D, "minecraft:cow", { x: 0, y: 64, z: -3 }, 10);
+    use(p, ws(p)); tick(40);
+    ok(z.hp < 200, "F1: KERAUNOS missed the zombie in front");
+    ok(cow.hp === 10 && vil.hp === 20 && back.hp === 10, `F1: KERAUNOS chained to a cow/villager (${cow.hp} ${vil.hp} ${back.hp})`);
+    // ---- F8 + ANIM-9: 標的のいない必殺でも四衛星は落ちる / 審判の構えから雷霆へ切れ目なく ----
+    clearMobs(); reset(p);
+    const ice0 = snd("astro.ice_shatter");
+    ST.setNovaRaw(p, COMMON.nova_max); p.isSneaking = true; use(p, ws(p)); p.isSneaking = false;
+    tick(100);
+    ok(snd("astro.ice_shatter") > ice0, "F8: GALILEAN JUDGEMENT moons never land without a target");
+    const at = (n) => G.__log.animAt.filter(([, name, id]) => id === p.id && name === `animation.astro.p.jupiter.${n}`).map(([t]) => t).pop();
+    const j = at("judgement"), tf = at("thunderfall");
+    ok(j !== undefined && tf !== undefined && tf - j === Math.round(ANIM_META["jupiter.judgement"][0] * 20),
+       `ANIM-9: judgement at ${j} (${ANIM_META["jupiter.judgement"]?.[0]} s), thunderfall at ${tf}`);
+    delete p.viewHits;
+    // ---- F6: 高い所からの急降下（空中技）は着地の瞬間だけ無敵（落下死しない） --------------
+    reset(p); clearMobs();
+    p.location.y = 95; p.vel.y = 0; p.isOnGround = false; tick(2);
+    use(p, ws(p));
+    let guard = null;
+    for (let i = 0; i < 160 && guard === null; i++) { tick(1); if (p.isOnGround) guard = (p.getEffect("resistance")?.amplifier ?? -1) >= 4; }
+    ok(guard === true, `F6: the plunge from height landed without the fall guard (${guard})`);
+  }
+
+  // ---- RC-2: ホバー中に星力が切れて解除されても、落ちた先で死なない -----------------------
+  {
+    const p = fresh("venus"); clearMobs(); reset(p);
+    p.location.y = 80; p.vel.y = 0; p.isOnGround = false; tick(5);
+    ST.setEnergy(p, 6);
+    p.isJumping = true;
+    let guard = null;
+    for (let i = 0; i < 900 && guard === null; i++) {
+      tick(1);
+      if (!ST.formOf(p)) p.isJumping = false;
+      if (p.isOnGround) guard = (p.getEffect("resistance")?.amplifier ?? -1) >= 4;
+    }
+    ok(!ST.formOf(p) && guard === true, `RC-2: falling after a depleted revert mid-hover landed without the fall guard (${guard}, form ${ST.formOf(p)})`);
+    tick(30);
+  }
+
+  // ---- F7: 水星の翼は壁の向こうの敵へ跳ばない・虚空の上へ跳ばない -------------------------
+  {
+    const p = fresh("mercury"); clearMobs(); reset(p);
+    p.viewHits = () => [];
+    G.__walls.push({ x0: -4, x1: 4, y0: 64, y1: 70, z0: 3, z1: 4 });
+    const z = new FakeEntity(D, "minecraft:zombie", { x: 0, y: 64, z: 7.5 }, 200);
+    p.isSprinting = true; use(p, ws(p)); p.isSprinting = false; tick(30);
+    G.__walls.length = 0;
+    ok(z.hp === 200 && p.location.z < 3, `F7: HERMES WINGS went through a wall (player z ${p.location.z.toFixed(1)}, zombie hp ${z.hp})`);
+    G.__holes.push({ x0: 8, x1: 12, z0: 8, z1: 12 });
+    ok(EG.warp(p, { x: 10, y: 64, z: 10 }, undefined, { ground: true }) === false, "F7: warp({ground}) moved over the void");
+    G.__holes.length = 0;
+    ok(EG.warp(p, { x: 4, y: 64, z: 4 }, undefined, { ground: true }) === true, "F7: warp({ground}) refused solid ground");
+    delete p.viewHits;
+    // ---- F11: 水星閃の遅れた破裂は斬った全員の位置で弾ける --------------------------------
+    clearMobs(); reset(p); tick(2);
+    const list = [[1.85, 2.3], [-1.85, 3.9], [1.85, 5.4], [-1.85, 6.8]].map(([x, zz]) => new FakeEntity(D, "minecraft:zombie", { x, y: 64, z: zz }, 200));
+    use(p, ws(p)); tick(40);
+    const k = CB.damageMul(p, "mercury");
+    const lost = list.map((e) => 200 - e.hp);
+    ok(Math.min(...lost) > (8 + 2.5) * k, `F11: the delayed pop missed some cut enemies (${lost.map((v) => v.toFixed(1)).join(", ")})`);
+  }
+
+  // ---- F9: ハーフブロック・土の道の上（足元 y = 63.5 相当）でも前へ進める ----------------
+  {
+    const a = EG.safeAhead(D, { x: 0, y: 63.5, z: 0 }, { x: 0, y: 0, z: 1 }, 6);
+    ok(a.z > 5 && Math.abs(a.y - 63.5) < 0.01, `F9: safeAhead from a slab went to ${JSON.stringify(a)}`);
+    ok(EG.standable(D, { x: 0, y: 63.5, z: 0 }), "F9: standing on a slab counts as blocked");
+    G.__walls.push({ x0: -3, x1: 3, y0: 65.4, y1: 70, z0: -3, z1: 9 });   // 天井の低い通路
+    const b = EG.safeAhead(D, { x: 0, y: 63.5, z: 0 }, { x: 0, y: 0, z: 1 }, 6);
+    G.__walls.length = 0;
+    ok(b.z > 5, `F9: safeAhead in a low tunnel from a slab did not move (${JSON.stringify(b)})`);
+  }
+  flushWarns("fixes");
+}
+
+// ---------------------------------------------------------------------------
 async function testTemplate() {
   // 雛形をそのまま（KEY だけ変えて）読み込み、全部の技が動くか
   const fs = await import("node:fs");
@@ -1017,6 +1261,7 @@ for (const key of keys) {
   try { await testPlanet(key); } catch (e) { fail(`${key}: exception ${e?.stack ?? e}`); }
 }
 try { await testCommon(); } catch (e) { fail(`common: exception ${e?.stack ?? e}`); }
+try { await testFixes(); } catch (e) { fail(`fixes: exception ${e?.stack ?? e}`); }
 if (!ONLY) { try { await testTemplate(); } catch (e) { fail(`template: exception ${e?.stack ?? e}`); } }
 
 console.log("__USED__" + JSON.stringify({

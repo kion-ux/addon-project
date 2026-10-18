@@ -179,7 +179,37 @@ def validate(anims, res_all) -> list:
             if not _balanced(s):
                 errors.append(f"{name}: unbalanced molang {s[:70]}")
     errors += _consistency(anims, res_all)
+    errors += motion_check(res_all)
     return errors
+
+
+FP_MAX = 60.0        # 一人称の腕のオイラー角の上限（度）
+FP_JUMP = 20.0       # 20 ms より近いキーの間の一人称の腕の変化の上限（度）
+
+
+def motion_check(res_all) -> list:
+    """統合版の catmullrom で 1/120 秒ごとに腕を見て、角速度が上限（AL.arm_speeds: max(1500 度/秒,
+    書いたキーの間の速さ × 1.6)）を超えないか（オイラー角の表し方が近いキーの間で入れ替わると、前後の区間の
+    接線が暴れて腕が振り回される）。一人称の腕は |角度| ≤ FP_MAX、近いキーの間で FP_JUMP 以上飛ばないか。"""
+    from hd_space import rot
+    errs = []
+    for name, res in sorted(res_all.items()):
+        for part, t, w, allow in AL.arm_speed_report(res):
+            errs.append(f"{name}: {part} turns {w:.0f} deg/s at {t:.3f}s (limit {allow:.0f})")
+        for part in AL.ARMS:
+            fp = AL.fp_track(res, part)
+            ts = sorted(fp)
+            for t in ts:
+                if max(abs(x) for x in fp[t]) > FP_MAX:
+                    errs.append(f"{name}: first-person {part} {np.round(fp[t], 1)} at {t} exceeds {FP_MAX:g} deg")
+                    break
+            for a, b in zip(ts, ts[1:]):
+                if b - a < 0.02 - 1e-9:
+                    d = AL._rot_angle(rot(*fp[a]), rot(*fp[b]))
+                    if d > FP_JUMP:
+                        errs.append(f"{name}: first-person {part} jumps {d:.0f} deg between {a} and {b}")
+                        break
+    return errs
 
 
 def _consistency(anims, res_all, limit=0.05):
