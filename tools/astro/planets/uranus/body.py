@@ -6,7 +6,7 @@
   combo2        左下から右上へ、弩を返して斬り上げる
   combo3        踏み込んで弩を突き出し、至近距離で撃つ（三段目: 氷晶散弾。反動で跳ね上がる）
   aim_shot      惑星技 絶対零度矢: 両手で目の高さに構え、狙い、撃つ（0.4 秒で発射。反動）
-  roll          機動技 98° ロール: 弩を胸に抱えて横倒しに一回転（前へ進む軸のまわりの横転）
+  roll / roll_l 機動技 98° ロール: 弩を胸に抱えて横倒しに一回転（前へ進む軸のまわりの横転。右へ / 左へ）
   rain_shot     空中技 ダイヤモンド・レイン: 宙で前上方へ二連射（0.3 秒・0.55 秒）
   tilt_cast     必殺 アクシアル・ティルト（前半）: 左手で世界を横へ傾ける。体ごと 98° の向きへ傾く
   zero_shot     必殺の締め: 片膝をついて構え、凍った敵を砕く一射（0.35 秒で発射。大きな反動）
@@ -63,12 +63,19 @@ aim_fire = P(aim_hold, b=(-10, 14, 0), h=(-4, -10, 0), root_pos=(0, 0, 0.8),
 # ---- 機動技: 横倒しの一回転 ----------------------------------------------------
 tuck = P(rA=wield(blade=dirv(u=1.0, f=0.3, r=-0.2), arm=dirv(f=0.6, u=-0.4, r=0.3)),
          lA=aim(dirv(f=1.0, u=0.2, r=-0.6), twist=30), h=(10, 0, 0))
-roll_frames = flip(0.04, 0.46, -1.0, "z", centre=15.0, steps=8, tuck=False, base=tuck)
-roll_frames[0.0] = H
-roll_frames[0.56] = P(rA=wield(blade=dirv(f=1.0, r=0.3, u=-0.2), arm=dirv(r=0.8, u=-0.6, f=0.2)),
-                      lA=aim(dirv(r=-0.9, u=-0.5, f=0.2)), rL=(-20, 0, 12), lL=(20, 0, -12),
-                      root=(0, 0, -360), ground=True)
-roll_frames[0.7] = P(root=(0, 0, -360))
+
+
+def roll_frames(turns):
+    """turns = -1 で右へ、+1 で左へ倒れ込む一回転（前へ進む軸のまわり）。"""
+    end = 360.0 * turns
+    fr = flip(0.04, 0.46, turns, "z", centre=15.0, steps=8, tuck=False, base=tuck)
+    fr[0.0] = H
+    fr[0.56] = P(rA=wield(blade=dirv(f=1.0, r=0.3, u=-0.2), arm=dirv(r=0.8, u=-0.6, f=0.2)),
+                 lA=aim(dirv(r=-0.9, u=-0.5, f=0.2)), rL=(-20, 0, 12), lL=(20, 0, -12),
+                 root=(0, 0, end), ground=True)
+    fr[0.7] = P(root=(0, 0, end))
+    return fr
+
 
 # ---- 空中技: 前上方へ二連射 ----------------------------------------------------
 rain_aim = P(b=(-12, 6, 0), h=(-24, -4, 0),
@@ -102,7 +109,8 @@ BODY_ANIMS = {
                           0.48: P(c3_kick, b=(-6, -8, 0)), 0.65: H}),
     "aim_shot": anim(0.9, {0.0: H, 0.12: aim_raise, 0.3: aim_hold, 0.4: aim_hold, 0.46: aim_fire,
                            0.66: P(aim_hold, b=(-2, 16, 0)), 0.9: H}),
-    "roll": anim(0.7, roll_frames, kind="act"),
+    "roll": anim(0.7, roll_frames(-1.0), kind="act"),          # 右へ転がる
+    "roll_l": anim(0.7, roll_frames(1.0), kind="act"),         # 左へ転がる
     "rain_shot": anim(0.8, {0.0: H, 0.1: rain_aim, 0.28: rain_aim, 0.33: rain_kick, 0.48: rain_aim,
                             0.56: rain_kick, 0.68: P(rain_aim, b=(-8, 6, 0)), 0.8: H}),
     "tilt_cast": anim(1.2, {0.0: H, 0.18: tilt_reach, 0.5: P(tilt_reach, b=(-4, -22, -16)),

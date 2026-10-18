@@ -17,22 +17,22 @@ arm=腕の向き)。向きは体の空間: dirv(f=前, u=上, r=右)。重い武
 """
 from __future__ import annotations
 
-from astro_animlib import LEFT, H, P, aim, anim, dirv, wield
+from astro_animlib import H, P, aim, anim, dirv, wield
 
 # ---- 三段コンボ -------------------------------------------------------------
 c1_wind = P(b=(4, 44, 0), h=(0, -34, 0), w=(6, 0, 0),
-            rA=wield(blade=dirv(r=1.0, f=-0.35, u=0.25), arm=dirv(r=1.0, u=-0.2, f=0.05)),
+            rA=wield(blade=dirv(r=0.6, f=-0.8, u=0.2), arm=dirv(r=0.9, u=-0.15, f=0.35)),
             lA=aim(dirv(f=1.0, r=-0.4, u=-0.1)),
             rL=(14, 0, 8), lL=(-18, 0, -8), ground=True)
 c1_lift = P(b=(2, 22, 0), h=(0, -16, 0),
             rA=wield(blade=dirv(r=0.7, u=0.7, f=0.2), arm=dirv(r=1.0, u=-0.35, f=0.2)),
             lA=aim(dirv(f=1.0, r=-0.3, u=-0.2)), rL=(8, 0, 6), lL=(-10, 0, -6), ground=True)
 c1_hit = P(b=(8, -14, 0), h=(0, 12, 0), w=(10, 0, 0),
-           rA=wield(blade=dirv(f=1.0, r=-0.1, u=0.05), edge=LEFT),
+           rA=wield(blade=dirv(f=0.85, r=-0.5, u=0.05), arm=dirv(r=0.55, f=0.8, u=-0.12)),
            lA=aim(dirv(f=-0.3, u=-1.0, r=-0.7)),
            rL=(24, 0, 8), lL=(-34, 0, -8), root_pos=(0, 0, -1.2), ground=True)
 c1_follow = P(c1_hit, b=(10, -48, 0), h=(0, 36, 0),
-              rA=wield(blade=dirv(r=-1.0, f=0.2, u=-0.15), arm=dirv(r=-0.85, f=0.5, u=-0.3)))
+              rA=wield(blade=dirv(r=-1.0, f=-0.25, u=-0.1), arm=dirv(f=0.75, r=-0.55, u=-0.2)))
 
 c2_wind = P(b=(12, -34, 0), h=(0, 26, 0), w=(12, 0, 0),
             rA=wield(blade=dirv(r=-0.75, u=-0.55, f=0.35), arm=dirv(f=1.0, u=-0.6, r=-0.25)),
