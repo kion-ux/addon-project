@@ -442,8 +442,11 @@ import { PLANETS, PLANET_KEYS, COMMON, TRANSFORM } from "./data.js";
 import * as ST from "./state.js";
 import { MOVES } from "./engine.js";
 import { command } from "./main.js";
-import { restoreOnJoin } from "./transform.js";
-import { comboStep } from "./combo.js";
+import { restoreOnJoin, CLOAK_TICKS } from "./transform.js";
+import { comboStep, MIN_GAP } from "./combo.js";
+import { TUNE } from "./mobility.js";
+import * as CB from "./combat.js";
+import * as EG from "./engine.js";
 
 const G = globalThis;
 const H = G.__handlers;
@@ -494,6 +497,8 @@ function foes(n = 3, hp = 200, type = "minecraft:zombie") {
   return out;
 }
 const hpSum = (list) => list.reduce((a, e) => a + Math.max(0, e.hp), 0);
+/** スーツの透明化（粒なし）が掛かっているか。 */
+const invisible = (p) => { const e = p.getEffect("invisibility"); return !!e && e.particles === false; };
 function ground(p) { p.location.y = 64; p.vel = { x: 0, y: 0, z: 0 }; p.isOnGround = true; }
 function reset(p) {
   ST.clearCds(p); ST.clearBusy(p); ST.setOverheat(p, 0); ST.setEnergy(p, ST.maxEnergy(p));
@@ -528,8 +533,11 @@ async function testPlanet(key) {
   ok(p.inputPermissions.movementEnabled === false, `${key}: movement not locked during the sequence`);
   ok(p.equip.Head === undefined && count(p, "minecraft:iron_helmet") === 1, `${key}: armor not stashed`);
   ok(p.inv.getItem(3)?.lockMode === "slot", `${key}: core not locked during the sequence`);
-  tick(TRANSFORM.suit_equip + 1);
+  tick(TRANSFORM.suit_equip - 2);
+  ok(!p.getEffect("invisibility"), `${key}: invisible before the suit was placed`);
+  tick(3);
   ok(p.equip.Head?.typeId === (pl.suitOn ?? pl.suit), `${key}: suit_on not placed at suit_equip (head=${p.equip.Head?.typeId})`);
+  ok(invisible(p), `${key}: not invisible (no particles) once the suit is placed`);
   ok(p.camState === "set", `${key}: cinematic camera not set`);
   tick(TRANSFORM.weapon_form - TRANSFORM.suit_equip);
   ok(p.inv.getItem(3)?.typeId === pl.weaponId, `${key}: weapon not formed in the core's slot`);
@@ -542,6 +550,7 @@ async function testPlanet(key) {
   ok(count(p, pl.core) === 0, `${key}: core still present after weapon_form`);
   ok(p.inputPermissions.movementEnabled === true, `${key}: movement not restored`);
   ok(p.camState === "clear", `${key}: camera not cleared`);
+  ok(invisible(p), `${key}: not invisible after the sequence`);
   ok(String(p.title).length > 0, `${key}: no cut-in title`);
   for (const s of ["astro.core_on", "astro.swarm", "astro.assemble_click", "astro.armor_lock", "astro.visor_on", "astro.transform_burst", "astro.weapon_form"]) {
     ok(G.__log.sounds.get(s) > 0, `${key}: transform sound ${s} not played`);
@@ -577,6 +586,7 @@ async function testPlanet(key) {
     ok(ST.isReady(p), `${key}.${kind}: no longer transformed after the move`);
     flushWarns(`${key}.${kind}`);
   }
+  ok(invisible(p) && p.getEffect("invisibility").duration <= CLOAK_TICKS, `${key}: invisibility not kept up while transformed`);
   console.log(`  ${tag} skill ${dealt.skill.toFixed(1).padStart(6)}  dash ${dealt.dash.toFixed(1).padStart(6)}  air ${dealt.air.toFixed(1).padStart(6)}  ult ${dealt.ult.toFixed(1).padStart(6)}`);
 
   // ---- 三段コンボ --------------------------------------------------------
@@ -707,6 +717,11 @@ async function testPlanet(key) {
   // ---- スニーク静止で解除 ------------------------------------------------
   {
     clearMobs(); reset(p);
+    tick(21);   // 透明化を掛け直させる（reset で効果を消したため）
+    // プレイヤーが自分で飲んだ長い薬（解除で消してはいけない）
+    p.addEffect("night_vision", 9600, { amplifier: 0 });
+    p.addEffect("fire_resistance", 9600, { amplifier: 0 });
+    p.addEffect("resistance", 2400, { amplifier: 0 });
     p.isSneaking = true;
     tick(COMMON.revert_hold_ticks - 10);
     ok(/変身解除/.test(p.actionbar), `${key}: revert progress not on HUD`);
@@ -714,7 +729,10 @@ async function testPlanet(key) {
     p.isSneaking = false;
     ok(!ST.formOf(p), `${key}: crouch-still did not revert`);
     ok(p.equip.Head?.typeId === pl.suitOff, `${key}: suit_off not shown during revert`);
+    ok(invisible(p), `${key}: not invisible during the release animation`);
     tick(25);
+    ok(!p.getEffect("invisibility") && p.getDynamicProperty(ST.PROP.invis) !== true, `${key}: invisibility left after the release animation`);
+    for (const id of ["night_vision", "fire_resistance", "resistance"]) ok((p.getEffect(id)?.duration ?? 0) > 2000, `${key}: revert stripped the player's own ${id} potion`);
     ok(p.equip.Head?.typeId === "minecraft:iron_helmet" && p.equip.Chest?.typeId === "minecraft:iron_chestplate" &&
        p.equip.Legs?.typeId === "minecraft:iron_leggings" && p.equip.Feet?.typeId === "minecraft:iron_boots", `${key}: armor not restored after revert`);
     ok(count(p, pl.core) === 1 && count(p, pl.weaponId) === 0, `${key}: weapon->core after revert (cores ${count(p, pl.core)}, weapons ${count(p, pl.weaponId)})`);
@@ -732,6 +750,7 @@ async function testPlanet(key) {
     ok(p.getEffect("weakness"), `${key}: overheat gives no weakness`);
     ok((G.__log.sounds.get("astro.overheat") ?? 0) > 0, `${key}: astro.overheat not played`);
     tick(25);
+    ok(!p.getEffect("invisibility"), `${key}: invisibility left after the depleted revert`);
     ST.setEnergy(p, 100);
     p.selectedSlotIndex = p.inv.slots.findIndex((x) => x?.typeId === pl.core);
     use(p);
@@ -756,6 +775,7 @@ async function testPlanet(key) {
     tick(25);
     ok(!ST.formOf(p) && !ST.isReady(p), `${key}: still transformed after respawn`);
     ok(!p.equip.Head || !p.equip.Head.typeId.startsWith("astro:suit"), `${key}: suit left after respawn`);
+    ok(!p.getEffect("invisibility") && p.getDynamicProperty(ST.PROP.invis) !== true, `${key}: invisibility left after death/respawn`);
     ok(count(p, pl.core) + dropped(pl.core) === 1, `${key}: core count after death = ${count(p, pl.core)} + dropped ${dropped(pl.core)}`);
     ok(count(p, pl.weaponId) === 0 && dropped(pl.weaponId) === 0, `${key}: weapon left after death`);
     ok(p.inputPermissions.movementEnabled && p.camState === "clear", `${key}: input/camera after respawn`);
@@ -785,6 +805,7 @@ async function testPlanet(key) {
     ok(count(p, pl.core) === 1 && count(p, pl.weaponId) === 0, `${key}: core/weapon after dying mid-sequence`);
     ok(p.inputPermissions.movementEnabled && p.camState === "clear", `${key}: frozen/camera after dying mid-sequence`);
     ok(p.equip.Head?.typeId === "minecraft:iron_helmet", `${key}: armor not restored after dying mid-sequence`);
+    ok(!p.getEffect("invisibility"), `${key}: invisibility left after dying mid-sequence`);
     flushWarns(`${key}.death_seq`);
   }
 
@@ -798,6 +819,7 @@ async function testPlanet(key) {
     n.props = new Map(who.props); n.inv = who.inv; n.equip = who.equip; n.camState = who.camState;
     n.inputPermissions = { ...who.inputPermissions };
     n.selectedSlotIndex = who.selectedSlotIndex;
+    n.effects = new Map(who.effects);   // 効果は退出をまたいで残る
     H.playerSpawn({ player: n, initialSpawn: true });
     tick(2);
     return n;
@@ -808,10 +830,12 @@ async function testPlanet(key) {
     q = relog(q);
     ok(ST.isReady(q) && ST.formOf(q) === key, `${key}: transformation not restored after relog`);
     tick(8);
+    ok(invisible(q), `${key}: not invisible after relog with the suit on`);
     ok(String(q.actionbar).includes(pl.form_ja), `${key}: HUD after relog`);
     command(q, "astro:revert", "");
     tick(25);
     ok(!ST.formOf(q) && q.equip.Head?.typeId === "minecraft:iron_helmet" && count(q, pl.core) === 1, `${key}: revert after relog`);
+    ok(!q.getEffect("invisibility"), `${key}: invisibility left after revert (relogged)`);
     // 演出の途中で抜ける
     q.selectedSlotIndex = q.inv.slots.findIndex((x) => x?.typeId === pl.core);
     reset(q);
@@ -824,6 +848,7 @@ async function testPlanet(key) {
     ok(count(q, pl.core) === 1 && count(q, pl.weaponId) === 0 && !String(q.equip.Head?.typeId).startsWith("astro:"), `${key}: mid-sequence relog items`);
     ok(q.inv.slots.every((x) => !x || x.lockMode === "none"), `${key}: an item stayed locked after mid-sequence relog`);
     ok(q.equip.Head?.typeId === "minecraft:iron_helmet", `${key}: armor after mid-sequence relog`);
+    ok(!q.getEffect("invisibility") && q.getDynamicProperty(ST.PROP.invis) !== true, `${key}: invisibility left after mid-sequence relog`);
     flushWarns(`${key}.relog`);
   }
   q.remove();
