@@ -4,14 +4,18 @@
 変換の規則は hyperdim の hd_space / hd_scene と同じ（Mojang のサンプルから逆算した回転の向き、
 X を鏡映した画面）。スーツのトップレベルのボーンはプレイヤーの同名ボーン（姿勢付き）に重ね、
 部位ボーンはその子として描く（統合版のアタッチャブルと同じ）。
+v1.1: 変身中のプレイヤーは透明化で消えるので、**既定ではプレイヤーの肌を描かない**（show_player=False）。
+大きさの比較には ghost=True（バニラのプレイヤーの箱を線で重ねる）と ruler=True（7 頭身の目盛り）。
 
 公開関数（どれも PIL.Image を返す。モジュール化してあるので武器・コア・HUD の担当も足せる）:
   load_suit(key) -> SuitAsset                       生成済みの geo/png/アニメを読む
   pose(name, t=0) -> {bone: {rotation, position}}   プレイヤーの姿勢（stand/walk/hold/air/fp/sneak）
   suit_anim(asset, names, t, env) -> anim           スーツのアニメ（名前のリスト）を t 秒で評価
   assembly_anim(asset, t) / release_anim(asset, t)  組み上がり／解除の途中
-  render(asset, pose_, anim, view, size, weapon=None, extra=None, show_player=True)
-  render_fp(asset, anim, size, weapon=None)         一人称（fp_hide 後に残る物）
+  render(asset, pose_, anim, view, size, weapon=None, extra=None, show_player=False,
+         ghost=False, ruler=None, hide=())           ruler に背丈（例 32.0）を渡すと 7 頭身の目盛り
+  render_fp(asset, anim, size, weapon=None)         一人称（fp_hide 後に残る物。肌は描かない）
+  bones_of_groups(asset, groups) / hide_except_groups(asset, groups)   群で描く物を絞る
   sheet(tiles, path, cols)                          ラベル付きの並べ図
   VIEWS = {"front","back","left","right","q34","q34l","high","low"}: (yaw, pitch)
 weapon / extra は「描き足す物」: {"geo": geo dict または .geo.json, "tex": PIL.Image または png,
@@ -629,7 +633,7 @@ def ortho(yaw, pitch, centre, scale, size):
 # ===========================================================================
 #  描く
 # ===========================================================================
-def scene_quads(asset, pose_, anim, weapon=None, extra=None, show_player=True,
+def scene_quads(asset, pose_, anim, weapon=None, extra=None, show_player=False,
                 hide=(), player_hide=()):
     W = skeleton_world(pose_ or {})
     SW = suit_world(asset.geo, W, anim)
@@ -645,19 +649,106 @@ def scene_quads(asset, pose_, anim, weapon=None, extra=None, show_player=True,
 
 
 def render(asset, pose_=None, anim=None, view="front", size=(300, 400), scale=None,
-           centre=(0, 17.5, 0), weapon=None, extra=None, show_player=True, hide=(),
-           ss=2, bloom=True, shadow=True):
-    """三人称（正射影）。view は VIEWS の名前か (yaw, pitch)。"""
+           centre=(0, 17.5, 0), weapon=None, extra=None, show_player=False, hide=(),
+           ss=2, bloom=True, shadow=True, ghost=False, ruler=None):
+    """三人称（正射影）。view は VIEWS の名前か (yaw, pitch)。
+    show_player: プレイヤーの肌の箱も描く（v1.1 では変身中は透明なので既定 False）。
+    ghost: バニラのプレイヤーの箱（同じ姿勢）を半透明の線で重ねる（大きさの比較）。
+    ruler: 背丈（例 32.0）を渡すと、地面から 1 頭身（背丈/7）ごとの目盛りを左に描く。"""
     yaw, pitch = VIEWS[view] if isinstance(view, str) else view
     scale = scale or size[1] / 46.0
-    quads, textures = scene_quads(asset, pose_ if pose_ is not None else pose("stand"),
-                                  anim or {}, weapon, extra, show_player, hide)
+    pz = pose_ if pose_ is not None else pose("stand")
+    quads, textures = scene_quads(asset, pz, anim or {}, weapon, extra, show_player, hide)
     proj = ortho(yaw, pitch, centre, scale, size)
-    return raster(quads, textures, size, proj, ss=ss, bloom=bloom,
-                  shadow_y=-0.6 if shadow else None)
+    img = raster(quads, textures, size, proj, ss=ss, bloom=bloom,
+                 shadow_y=-0.6 if shadow else None)
+    if ghost:
+        img = draw_ghost(img, skeleton_world(pz), proj)
+    if ruler:
+        img = draw_ruler(img, proj, float(ruler))
+    return img
 
 
-def render_fp(asset, anim=None, size=(400, 225), fov=70.0, weapon=None, show_player=True):
+GHOST_COL = (120, 220, 255, 120)
+
+
+def draw_ghost(img, W, project, col=GHOST_COL):
+    """バニラのプレイヤーの 6 つの箱（姿勢付き）の稜を線で重ねる。"""
+    over = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(over)
+    for name, _p, _pv, cube in SKELETON:
+        if not cube:
+            continue
+        o, sz, _c = cube
+        a = np.array(o, float)
+        b = a + np.array(sz, float)
+        M = W[name]
+        corners = {}
+        for ix in (0, 1):
+            for iy in (0, 1):
+                for iz in (0, 1):
+                    q = np.array([(a, b)[ix][0], (a, b)[iy][1], (a, b)[iz][2], 1.0])
+                    corners[(ix, iy, iz)] = project((M @ q)[:3])
+        for k, p0 in corners.items():
+            for ax in range(3):
+                if k[ax] == 0:
+                    k2 = list(k)
+                    k2[ax] = 1
+                    p1 = corners[tuple(k2)]
+                    if p0 is None or p1 is None:
+                        continue
+                    d.line([(p0[0], p0[1]), (p1[0], p1[1])], fill=col, width=1)
+    out = img.convert("RGBA")
+    out.alpha_composite(over)
+    return out.convert("RGB")
+
+
+def draw_ruler(img, project, H=32.0, col=(255, 214, 120)):
+    """地面 (y=0) から H/7 ごとの横線と番号（7 頭身の目盛り）。"""
+    over = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(over)
+    f = font(11)
+    for k in range(8):
+        y = H * k / 7.0
+        p = project((0, y, 0))
+        if p is None:
+            continue
+        yy = p[1]
+        d.line([(4, yy), (img.size[0] - 4, yy)], fill=col + (50,), width=1)
+        d.line([(4, yy), (22, yy)], fill=col + (220,), width=2)
+        if k < 7:
+            q = project((0, H * (k + 0.5) / 7.0, 0))
+            d.text((6, q[1] - 6), str(7 - k), font=f, fill=col + (230,))
+    out = img.convert("RGBA")
+    out.alpha_composite(over)
+    return out.convert("RGB")
+
+
+def bones_of_groups(asset, groups):
+    """群（inner / boots / … / extra）に属する部位ボーンの名前（子の fx_* も含む）。"""
+    bones = {b["name"]: b for b in asset.geo["bones"]}
+    out = set()
+    for name in bones:
+        n = name
+        while n:
+            g = n.split("_", 1)[0] if "_" in n and not n.startswith("fx_") else None
+            if g in groups:
+                out.add(name)
+                break
+            n = bones[n].get("parent")
+    return out
+
+
+def hide_except_groups(asset, groups):
+    """render(hide=...) 用: groups 以外の群の部位ボーン（例: ["inner"] でフレームだけを描く）。"""
+    keep = bones_of_groups(asset, groups)
+    tops = {"body", "head", "rightArm", "leftArm", "rightLeg", "leftLeg"}
+    return [b["name"] for b in asset.geo["bones"]
+            if b["name"] not in keep and b["name"] not in tops
+            and b.get("parent") in tops]
+
+
+def render_fp(asset, anim=None, size=(400, 225), fov=70.0, weapon=None, show_player=False):
     """一人称。腕は (95,-45,115)/(13.5,-10,12)、目 (0,26,0) から +Z を見る（hd_scene.fp と同じ）。
     anim に fp_hide を入れておくと、一人称で実際に残る物だけが描かれる。"""
     W = skeleton_world(pose("fp"))

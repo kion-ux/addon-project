@@ -16,10 +16,10 @@ import {
   S, isReady, isBusy, energy, addEnergy, addRecord, setNovaRaw,
 } from "./state.js";
 import { P, afterimage, body, bodyStop, sound, white, ring, announce, title, glyph } from "./fx.js";
-import { addNova, entitiesNear } from "./combat.js";
+import { addNova, entitiesNear, isTarget, isHostile } from "./combat.js";
 import {
   allPlayers, knock, effect, removeEffect, flatDir, viewDir, health, valid, now, velocity, BUS,
-  chest, rightOf, norm, sub, scale, isPlayer, report,
+  chest, rightOf, norm, sub, scale, isPlayer, report, groundY, blocked,
 } from "./util.js";
 
 /** 強さの調整値（実機で跳びすぎ／足りない場合はここだけ直す）。 */
@@ -28,6 +28,7 @@ export const TUNE = {
   jumpCarry: 0.5,      // 二段ジャンプで足す水平速度
   boost: 1.15,         // ブースト・ダッシュの水平速度
   boostUp: 0.14,
+  boostWait: 3,        // 空中でスニークしてからブーストを出すまで (tick)。その間に右クリック（バリア・必殺）が来たら出さない
   step: 1.15,          // 回避ステップの水平速度
   stepUp: 0.18,
   stepWindow: 7,       // スニーク 2 回押しの受付 (tick)
@@ -45,7 +46,7 @@ function M(p) {
   if (!m) {
     m = { sneak: false, jump: false, ground: true, airT: 0, jumps: 0, dashes: 0, lastSneak: -99,
           stepCd: 0, noFall: false, noFallUntil: -1, minVy: 0, dodgeUntil: -1, justCd: 0, jumpHeld: 0,
-          hovering: false, hoverT: 0, last: null, used: false, groundT: 0 };
+          hovering: false, hoverT: 0, last: null, used: false, groundT: 0, boostAt: -1 };
     mv.set(p.id, m);
   }
   return m;
@@ -72,6 +73,40 @@ function jumpPressed(p) {
 
 function sneaking(p) {
   try { return p.isSneaking === true; } catch (_) { return false; }
+}
+
+const CLIMB = /(ladder|vine|scaffolding)/;
+
+/**
+ * スラスター機動を使えない「空中」か: はしご・つる・足場を登っている / クリエイティブの飛行 / エリトラの滑空。
+ * isClimbing が読めない版では足元のブロックで判断する。
+ */
+function noThrusters(p) {
+  try { if (p.isFlying === true || p.isGliding === true) return true; } catch (_) { }
+  try {
+    const v = p.isClimbing;
+    if (typeof v === "boolean") return v;
+  } catch (_) { }
+  try {
+    const l = p.location;
+    const b = p.dimension.getBlock({ x: Math.floor(l.x), y: Math.floor(l.y), z: Math.floor(l.z) });
+    return !!b && CLIMB.test(b.typeId);
+  } catch (_) { return false; }
+}
+
+/**
+ * 落下の保険: 機動の後・ホバー中に速く落ちていて地面が近いなら、着地の瞬間だけ無敵（耐性 V）にする。
+ * 落下ダメージは afterEvents でしか読めず、致死の落下は後から回復できないので、先に防ぐ。
+ */
+function fallGuard(p, vy) {
+  const dim = p.dimension;
+  const l = p.location;
+  const reach = Math.max(4, -vy * 2.5 + 2);
+  const gy = groundY(dim, l, Math.ceil(reach), 0);
+  if (!blocked(dim, { x: l.x, y: gy - 1, z: l.z })) return false;   // 下に地面が見つからない（まだ高い）
+  if (l.y - gy > reach) return false;
+  effect(p, "resistance", 4, 4);
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,9 +153,14 @@ function tickOne(p) {
   const jumpEdge = jump && !m.jump;
   m.jump = jump;
   m.jumpHeld = jump ? m.jumpHeld + 1 : 0;
+  if (ground) m.boostAt = -1;
+
+  // 落下の保険（変身が解けた直後の落下も含む）
+  if (!ground && (m.noFall || m.hovering) && vel.y < -0.45) fallGuard(p, vel.y);
 
   if (!ready) {
     if (m.hovering) stopHover(p, m, true);
+    m.boostAt = -1;
     st.revertHold = 0;
     return;
   }
@@ -159,17 +199,25 @@ function tickOne(p) {
     }
   }
 
+  // はしご・つる・足場を登っている / 飛行 / 滑空の間はスラスターを使わない
+  const locked = !ground && noThrusters(p);
+  if (locked) m.boostAt = -1;
+
   // ---- ホバー（空中でジャンプ長押し → 浮遊、離すと低速落下、スニークで降りる） ----
   if (m.hovering) {
-    if (ground || inWater) stopHover(p, m, false);
-    else if (sneakEdge) stopHover(p, m, true);
-    else tickHover(p, m, pl, jump && energy(p) > 0);
-  } else if (!ground && jump && m.jumpHeld >= TUNE.hoverDelay && m.airT >= 4 && energy(p) > 1 && !inWater) {
+    if (ground || inWater || locked) stopHover(p, m, false);
+    else if (sneakEdge) {
+      // スニークは「降りる」だけに使う（同じ押しでブースト・ダッシュを出さない）
+      stopHover(p, m, true);
+      m.boostAt = -1;
+      return;
+    } else tickHover(p, m, pl, jump && energy(p) > 0);
+  } else if (!ground && !locked && jump && m.jumpHeld >= TUNE.hoverDelay && m.airT >= 4 && energy(p) > 1 && !inWater) {
     startHover(p, m, pl);
   }
 
   // ---- 二段ジャンプ ------------------------------------------------------
-  if (!ground && jumpEdge && m.airT >= 4 && m.jumps < mob.air_jumps && !inWater) {
+  if (!ground && !locked && jumpEdge && m.airT >= 4 && m.jumps < mob.air_jumps && !inWater) {
     m.jumps++;
     const f = flatDir(p);
     const hv = Math.hypot(vel.x, vel.z);
@@ -185,16 +233,23 @@ function tickOne(p) {
   }
 
   // ---- ブースト・ダッシュ（空中でスニーク） -----------------------------
-  if (!ground && sneakEdge && m.airT >= 3 && m.dashes < mob.air_dash) {
-    m.dashes++;
-    const f = flatDir(p);
-    knock(p, f.x, f.z, TUNE.boost, TUNE.boostUp);
-    m.noFall = true; m.used = true; m.minVy = 0;
-    dashFx(p, pl, f);
-    thrustFx(p, pl, { x: -f.x, y: -0.2, z: -f.z }, 1.3);
-    sound(p.dimension, "astro.boost", loc, 1.0 + m.dashes * 0.06, 0.9);
-    body(p, "boost", "astro.move");
-    return;
+  // スニークを押してから boostWait tick 待つ。その間に右クリック（空中のバリア・必殺）が来たら出さない（cancelBoost）
+  if (!ground && !locked && sneakEdge && m.airT >= 3 && m.dashes < mob.air_dash && m.boostAt < 0) {
+    m.boostAt = t + TUNE.boostWait;
+  }
+  if (m.boostAt >= 0 && t >= m.boostAt) {
+    m.boostAt = -1;
+    if (!ground && !locked && !inWater && m.dashes < mob.air_dash) {
+      m.dashes++;
+      const f = flatDir(p);
+      knock(p, f.x, f.z, TUNE.boost, TUNE.boostUp);
+      m.noFall = true; m.used = true; m.minVy = 0;
+      dashFx(p, pl, f);
+      thrustFx(p, pl, { x: -f.x, y: -0.2, z: -f.z }, 1.3);
+      sound(p.dimension, "astro.boost", loc, 1.0 + m.dashes * 0.06, 0.9);
+      body(p, "boost", "astro.move");
+      return;
+    }
   }
 
   // ---- 回避ステップ（地上でスニーク 2 回） --------------------------------
@@ -270,6 +325,12 @@ function stopHover(p, m, drop = false) {
 
 export function isHovering(p) { return !!mv.get(p.id)?.hovering; }
 
+/** 待っているブースト・ダッシュを取り消す（空中でスニーク＋右クリック = バリア・必殺の時。main の itemUse から）。 */
+export function cancelBoost(p) {
+  const m = mv.get(p.id);
+  if (m) m.boostAt = -1;
+}
+
 // ---------------------------------------------------------------------------
 //  演出
 // ---------------------------------------------------------------------------
@@ -317,10 +378,28 @@ function heroLanding(p, vy) {
 // ---------------------------------------------------------------------------
 //  ジャスト回避・落下ダメージ
 // ---------------------------------------------------------------------------
+/**
+ * ジャスト回避になる攻撃か: 敵対的な mob（侵略者・monster。中立の mob は戦った相手だけ）か PvP の相手。
+ * 飛び道具は持ち主で判断する。自分・自分の飛び道具・ディスペンサー（持ち主なし）・雪だるま・村人などは数えない
+ * （放置で超新星ゲージを稼げないように）。
+ */
+function dodgeable(p, attacker) {
+  if (!attacker || !valid(attacker)) return false;
+  let src = attacker;
+  try {
+    const owner = attacker.getComponent?.("minecraft:projectile")?.owner;
+    if (owner) src = owner;
+  } catch (_) { }
+  if (!valid(src) || src.id === p.id) return false;
+  if (!isTarget(p, src)) return false;
+  return isPlayer(src) || isHostile(src, p);
+}
+
 /** 回避の無敵中に攻撃されたか（entityHitEntity / entityHurt から）。発動したら true。 */
 export function tryJustDodge(p, attacker) {
   const m = mv.get(p.id);
   if (!m || !isReady(p) || now() > m.dodgeUntil || now() < m.justCd) return false;
+  if (!dodgeable(p, attacker)) return false;
   const pl = PLANETS[S(p).form];
   m.justCd = now() + 30;
   m.dodgeUntil = -1;

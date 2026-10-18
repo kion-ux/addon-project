@@ -466,7 +466,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         h = part("head", "head", (0.0, A.NECK_TOP, 0.0))
         F["head"] = h
         hz = A.HEAD_Z
-        bevel(h, (0, 29.75, hz + 0.1), (3.9, 3.8, 4.3), ME, cut=0.6, axis="z")
+        bevel(h, (0, 29.75, hz + 0.1), (3.8, 4.1, 4.2), ME, cut=0.6, axis="z")
         cbox(h, (0, 29.15, hz - 2.08), (2.9, 2.3, 0.3), DK)                       # 顔の板
         cbox(h, (0, 29.6, hz - 2.25), (2.3, 0.3, 0.16), GL)                       # 目の溝
         rbox(h, (0, 28.05, hz - 0.9), (2.5, 0.9, 2.5), ME, rot=(-14, 0, 0))       # 顎
@@ -477,7 +477,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         F["neck"] = n
         octa(n, (0, 26.7, A.NECK_Z), 2.2, 2.6, SU, axis="y")
         for y in (25.95, 26.65, 27.35):
-            octa(n, (0, y, A.NECK_Z), 2.42, 0.22, ME, axis="y")
+            octa(n, (0, y, A.NECK_Z), 2.42, 0.26, ME, axis="y")
         if cab:
             for sx in (-1, 1):
                 beam(n, (sx * 0.9, 27.9, -0.55), (sx * 1.35, 25.5, 0.15), 0.3, 0.3, DK)
@@ -938,15 +938,18 @@ def measure(s: Suit, step: float = 0.1) -> dict:
     if len(H):
         htop = float(H[:, 1].max())
         prof = _profile(H, float(H[:, 1].min()), htop + 0.1)
-        upper = [(y, wx * wz) for y, wx, wz in prof if y >= htop - 4.8]
-        amax = max([a for _y, a in upper] or [1.0])
+        area = [(y, wx * wz) for y, wx, wz in prof]
+        amax = max([a for y, a in area if y >= htop - 4.8] or [1.0])
+        neck = [(a, y) for y, a in area if htop - 7.5 <= y <= htop - 2.5 and a > 0]
         hbot = float(H[:, 1].min())
-        for y, wx, wz in reversed(prof):
-            if y > htop - 1.5:
-                continue
-            if wx * wz < 0.36 * amax:
-                hbot = y + 0.1
-                break
+        if neck:
+            amin, yn = min(neck)
+            if amin < 0.6 * amax:             # 首のくびれがある → その上で断面が戻る所が顎
+                thr = amin + 0.4 * (amax - amin)
+                for y, a in area:
+                    if y > yn and a >= thr:
+                        hbot = y
+                        break
         out["head_top"], out["head_bot"] = htop, hbot
         out["head_h"] = htop - hbot
         out["head_w"] = max([wx for y, wx, _wz in prof if y >= hbot] or [0.0])
