@@ -103,7 +103,7 @@ WEAPON_ANIMS = {
 
 CORE_ANIMS = {
     "idle": {
-        "fx_spin_globe": W.spin_expr("y", 45),
+        "fx_spin_globe": dict(W.spin_expr("y", 45), **W.pulse_expr(150, 0.04)),   # 自転 + 脈動
         "fx_spin_ring_a": W.spin_expr("y", 80),
         "fx_spin_ring_b": W.spin_expr("y", -120),
     },

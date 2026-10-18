@@ -122,6 +122,21 @@ def ray(bone, c, a, r0, L, w0, w1, n, depth, style, tilt=0.0, styles=None, yaw=0
     return out
 
 
+def spear(bone, c, a, r0, L, w, depth, style, tilt=0.0, tip=None, **kw):
+    """c から角度 a の向きに、半径 r0 から長さ L の先の尖った光条（槍の穂の形: 幅 w の板 + 45° の菱形の先）。
+    tilt は面ごと X 軸まわりに傾ける。tip で先の菱形だけ別の塗り。"""
+    T = rot(tilt, 0, 0)
+    R = T @ rot(0, 0, a)
+    u = R @ np.array([0.0, 1.0, 0.0])
+    c = np.asarray(c, float)
+    Lb = max(0.2, L - w / 2)
+    out = [mat_cube(bone, c + u * (r0 + Lb / 2), (w, Lb, depth), style, R, **kw)]
+    sd = w / math.sqrt(2)
+    out.append(mat_cube(bone, c + u * (r0 + Lb), (sd, sd, depth * 0.96), tip or style,
+                        T @ rot(0, 0, a + 45), **kw))
+    return out
+
+
 def loop_pts(a, b, h, out=(0.0, 0.0, 0.0), n=6):
     """a から b へ、高さ h（+Y）に膨らみ、頂で out だけずれる弧の点列（紅炎のループ）。"""
     pts = []
@@ -234,7 +249,7 @@ def waist(s):
     tips = ray(w, (-6.05, 8.3, -0.2), 180 + 15, 0.0, 2.4, 3.6, 0.8, 2, 0.5, "plate2", yaw=90)
     mirror_x(w, t1, t2, t3, t4, tips)
     rbox(w, (0, 10.8, 2.95), (6.4, 2.6, 0.8), "plate", rot=(10, 0, 0))    # 後ろ垂れ
-    ray(w, (0, 9.8, 3.15), 180, 0.0, 2.6, 2.4, 0.6, 2, 0.5, "crimson", tilt=10)
+    ray(w, (0, 9.8, 3.15), 180, 0.0, 2.4, 2.4, 0.9, 1, 0.5, "crimson", tilt=10)
 
 
 # ---------------------------------------------------------------------------
@@ -301,7 +316,7 @@ def back(s):
     octa(th, (-1.4, 15.6, 5.4), 2.2, 3.0, "plate", axis="y")
     octa(th, (-1.4, 16.3, 5.4), 2.45, 0.4, "bronze", axis="y")
     octa(th, (-1.4, 13.6, 5.4), 2.8, 1.4, "crimson_b", axis="y")
-    ring(th, (-1.4, 12.95, 5.4), 1.1, 8, (0, 0.28, 0.3), "glow", axis="y")
+    ring(th, (-1.4, 12.95, 5.4), 1.1, 6, (0, 0.28, 0.3), "glow", axis="y")
     cbox(th, (-1.4, 12.92, 5.4), (2.0, 0.2, 2.0), "thruster")
     fx = s.fx("thrust", "r", th, pivot=(-1.4, 12.85, 5.4))
     taper(fx, (-1.4, 12.85, 5.4), (-1.4, 5.0, 5.4), 2.3, 0.45, 3, "flame")
@@ -421,8 +436,8 @@ def helmet(s):
     CC = (0.0, 30.4, -5.55)
     octa(hm, CC, 2.4, 0.6, "plate2", axis="z")
     cbox(hm, (CC[0], CC[1], CC[2] - 0.35), (1.5, 1.5, 0.5), "core")
-    for a, L, n in ((0, 5.2, 2), (30, 3.4, 2), (62, 2.6, 1)):
-        rr = ray(hm, CC, a, 1.25, L, 1.4, 0.35, n, 0.45, "plate2", tilt=-16)
+    for a, L, w in ((0, 5.0, 1.3), (30, 3.4, 1.1), (62, 2.5, 1.0)):
+        rr = spear(hm, CC, a, 1.15, L, w, 0.45, "plate2", tilt=-16)
         if a:
             mirror_x(hm, rr)
     ray(hm, (CC[0], CC[1], CC[2] - 0.12), 0, 1.4, 4.0, 0.3, 0.3, 1, 0.5, "glow_hot", tilt=-16)
@@ -465,9 +480,10 @@ def halo(s):
          styles=["plate2", "plate2", "plate2", "crimson"])
     for i in range(8):
         a = i * 45.0
-        L = 4.4 if i % 2 == 0 else 3.4
-        ray(sp, C, a, 6.5, L, 2.4, 0.2, 3, 0.5, "plate2" if i % 2 == 0 else "bronze")   # 金の刃
+        L = 4.6 if i % 2 == 0 else 3.4
+        spear(sp, C, a, 6.4, L, 1.7 if i % 2 == 0 else 1.4, 0.5,
+              "plate2" if i % 2 == 0 else "bronze")                           # 金の刃
         ray(sp, (C[0], C[1], C[2] + 0.05), a + 22.5, 6.4, 3.4, 1.6, 0.2, 2, 0.3, "corona")   # 炎
     si = s.fx("spin", "halo_in", hb, pivot=C)
-    ring(si, (C[0], C[1], C[2] - 0.2), 5.6, 12, (0, 0.3, 0.3), "glow_hot", axis="z",
+    ring(si, (C[0], C[1], C[2] - 0.2), 5.6, 10, (0, 0.3, 0.3), "glow_hot", axis="z",
          styles=["glow_hot", "glow"])

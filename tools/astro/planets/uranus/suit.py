@@ -160,9 +160,10 @@ def legs(s):
     g = s.part("legs", "greave_r", "rightLeg")
     cbox(g, (X, 5.3, 0.05), (5.3, 4.6, 5.4), "plate2")                    # 脛の殻
     # 脛: 八角の盾板 + V 字の稜（霜の白）+ 稜の発光
-    bevel(g, (X, 5.2, -2.95), (4.0, 5.2, 0.8), "plate", cut=0.9, axis="z")
-    keel = rbox(g, (X - 0.62, 5.1, -3.42), (1.3, 4.0, 0.55), "frost", rot=(0, 26, 0))
-    mirror_x(g, keel, about=X)
+    bevel(g, (X, 5.2, -2.95), (4.0, 5.2, 0.8), "plate2", cut=0.9, axis="z")
+    keel = rbox(g, (X - 0.62, 5.1, -3.42), (1.3, 4.0, 0.55), "plate", rot=(0, 26, 0))
+    kr = line_on(g, keel, "north", (0.1, 0.06), (0.1, 0.94), 0.22, 0.2, "rim")
+    mirror_x(g, keel, kr, about=X)
     cbox(g, (X, 5.1, -3.86), (0.26, 3.6, 0.2), "glow")
     # 膝の関節と菱形の膝当て（中に結晶）
     cbox(g, (X, 8.2, 0.05), (5.25, 1.5, 5.35), "frame")
@@ -238,8 +239,9 @@ def torso(s):
     colt = stick(c, col, "up", 0.5, 0.5, (1.6, 4.4, 0.25), "plate2", sink=0.1)
     mirror_x(c, col, colt)
     # 星核: 紺の菱形の台 → 霜の白の菱形の枠 → 天王星 → 縦に立つ小さな環（98°）
-    rbox(c, (0, 20.7, -3.5), (3.9, 3.9, 0.8), "navy", rot=(0, 0, 45))
-    ring(c, (0, 20.7, -3.95), 2.0, 4, (0, 0.5, 0.5), "rim", axis="z", phase=45)
+    diamond(c, (0, 20.7, -3.45), 4.2, 0.8, "navy")
+    diamond(c, (0, 20.7, -3.8), 3.5, 0.5, "rim")
+    diamond(c, (0, 20.7, -3.98), 2.9, 0.3, "navy")
     cbox(c, (0, 20.7, -4.2), (2.2, 2.2, 0.9), "core")
     gl = s.fx("glow", "core", c, pivot=(0, 20.7, -4.3), rotation=(0, 64, 8))
     ring(gl, (0, 20.7, -4.3), 1.62, 10, (0, 0.24, 0.24), "glow", axis="z")
@@ -300,7 +302,9 @@ def arms(s):
     line_on(fa, ob, "west", (0.15, 0.25), (0.85, 0.25), 0.22, 0.2, "glow")
     crystal(fa, (-9.0, 13.3, -0.3), (-0.24, 0.9, 0.42), 5.6, 1.1, "ice")
     crystal(fa, (-8.9, 13.2, 1.3), (-0.2, 0.75, 0.62), 3.4, 0.8, "crystal")
-    rbox(fa, (-6.15, 14.85, -2.72), (4.1, 3.1, 0.7), "frost", rot=(-8, 0, 0))
+    fr = rbox(fa, (-6.15, 14.85, -2.72), (4.1, 3.1, 0.7), "plate", rot=(-8, 0, 0))
+    stick(fa, fr, "north", 0.5, 0.5, (1.5, 1.5, 0.35), "frost", spin=45, sink=0.05)
+    stick(fa, fr, "north", 0.5, 0.5, (0.7, 0.7, 0.5), "gem", spin=45, sink=0.05)
     rbox(fa, (-6.15, 14.85, 2.72), (4.1, 3.1, 0.7), "plate_b", rot=(8, 0, 0))
     cbox(fa, (-6.0, 13.42, 0), (5.7, TRIM_W, 5.9), "rim")
     # 拳: 甲の板・指の関節・二節の指・親指・宝玉
@@ -321,7 +325,7 @@ def arms(s):
 # ---------------------------------------------------------------------------
 def shoulders(s):
     p = s.part("shoulders", "pauldron_r", "rightArm")
-    dome = bevel(p, (-7.1, 24.0, 0.0), (5.9, 3.0, 7.4), "plate", cut=1.1, axis="x",
+    dome = bevel(p, (-7.2, 24.0, 0.0), (6.1, 3.2, 7.6), "plate", cut=1.45, axis="x",
                  rot=(0, 0, -14))
     top = stick(p, dome[0], "up", 0.42, 0.5, (3.6, 5.0, 0.5), "frost", sink=0.15)
     line_on(p, top, "up", (0.12, 0.5), (0.88, 0.5), 0.3, 0.2, "glow")
@@ -330,24 +334,24 @@ def shoulders(s):
     stick(p, rim_, "up", 0.5, 0.5, (0.8, 7.6, 0.3), "rim", sink=0.05)
     for sz in (-1, 1):
         rbox(p, (-10.1, 24.4, sz * 3.9), (0.7, 1.6, 1.6), "plate2", rot=(45 * sz, 0, -30))
-    # 外へ開いて垂れる板（淡・青緑・霜）
-    l1 = rbox(p, (-9.8, 22.2, 0.0), (1.0, 2.6, 6.8), "plate", rot=(0, 0, 18),
-              decals={"west": {"decal": "emblem", "color": (150, 244, 255)}})
-    stick(p, l1, "west", 0.5, 0.04, (6.4, TRIM_W, 0.22), "rim", sink=0.05)
-    l2 = rbox(p, (-10.1, 20.5, 0.1), (0.9, 2.1, 6.0), "plate2", rot=(0, 0, 14))
-    line_on(p, l2, "west", (0.08, 0.3), (0.92, 0.3), 0.22, 0.2, "glow")
-    rbox(p, (-10.25, 19.1, 0.1), (0.8, 1.4, 5.0), "frost", rot=(0, 0, 10))
+    # 外側: 下へ尖る ◆ の大きな板（青緑）に、淡い ◆ と霜の縁・宝玉を重ねる（菱形の意匠）
+    T = (0, 90, 16)
+    diamond(p, (-9.95, 21.7, 0.1), 5.6, 0.8, "plate2", T)
+    diamond(p, (-10.35, 21.55, 0.1), 4.4, 0.4, "rim", T)
+    diamond(p, (-10.5, 21.5, 0.1), 3.8, 0.4, "plate", T)
+    diamond(p, (-10.7, 21.45, 0.1), 1.3, 0.4, "gem", T)
+    rbox(p, (-9.2, 22.2, 0.1), (0.8, 2.4, 6.6), "navy", rot=(0, 0, 16))     # 板の奥の影
     # 右肩: 98° 横倒しの氷晶（外へ、わずかに下向き）
     tl = s.part("shoulders", "tilt", "rightArm", pivot=(-9.0, 25.2, 0.0))
-    crystal(tl, (-8.8, 25.3, 0.2), _dir(98), 6.8, 1.5, "ice")
-    crystal(tl, (-8.7, 25.6, -1.7), _dir(76), 4.3, 1.05, "crystal")
-    crystal(tl, (-8.7, 25.0, 2.0), _dir(120), 3.7, 0.95, "crystal")
+    crystal(tl, (-8.8, 25.3, 0.2), _dir(98), 8.0, 1.9, "ice")
+    crystal(tl, (-8.7, 25.8, -1.8), _dir(74), 5.0, 1.3, "crystal")
+    crystal(tl, (-8.7, 25.0, 2.1), _dir(122), 4.2, 1.15, "crystal")
     octa(tl, (-8.9, 25.25, 0.2), 1.9, 1.0, "navy", axis="x")
     # 左肩: 天を突く氷晶
     cr = s.part("shoulders", "crown", "leftArm", pivot=(9.0, 25.2, 0.0))
-    crystal(cr, (8.6, 25.4, 0.3), _dir(10, +1), 6.4, 1.5, "ice")
-    crystal(cr, (8.9, 25.2, -1.6), _dir(32, +1), 4.0, 1.05, "crystal")
-    crystal(cr, (8.9, 25.1, 2.0), _dir(-8, +1), 3.5, 0.95, "crystal")
+    crystal(cr, (8.6, 25.4, 0.3), _dir(8, +1), 7.6, 1.9, "ice")
+    crystal(cr, (8.9, 25.2, -1.7), _dir(30, +1), 4.8, 1.3, "crystal")
+    crystal(cr, (8.9, 25.1, 2.1), _dir(-12, +1), 4.0, 1.15, "crystal")
     octa(cr, (8.6, 25.3, 0.3), 1.9, 1.0, "navy", axis="y")
 
 
@@ -358,8 +362,8 @@ def helmet(s):
     hm = s.part("helmet", "dome", "head")
     bevel(hm, (0, 31.3, 0.2), (9.8, 4.4, 10.0), "plate", cut=0.85, axis="z")
     # 屋根: 中央の稜へ上る二枚（外の縁に霜の白）
-    rf = rbox(hm, (-2.45, 33.75, 0.4), (5.2, 0.8, 9.2), "plate", rot=(0, 0, -20))
-    rfr = line_on(hm, rf, "up", (0.05, 0.06), (0.05, 0.94), 0.3, 0.2, "rim")
+    rf = rbox(hm, (-2.45, 33.75, 0.4), (5.2, 0.8, 9.2), "frost_p", rot=(0, 0, -20))
+    rfr = line_on(hm, rf, "up", (0.05, 0.06), (0.05, 0.94), 0.3, 0.2, "navy")
     mirror_x(hm, rf, rfr)
     cbox(hm, (0, 34.55, 0.4), (1.2, 0.9, 8.8), "frost")                   # 中央の稜
     cbox(hm, (0, 35.02, 0.6), (0.3, 0.2, 7.6), "glow")

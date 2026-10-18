@@ -80,7 +80,7 @@ def fin3(bone, A, B, C, thick, layer, style, overlap=0.15, styles=None, **kw):
 
 
 def fan_fin(bone, base0, base1, edge, thick, style, width=None, styles=None, taper_k=0.7,
-            **kw):
+            tip_style=None, **kw):
     """ヒレ: 付け根 base0→base1 に沿って並べた根元から、外縁の点列 edge へ放射状に伸びる条の板。
     隣の条と重なって一枚の膜に見え、外縁は条の先で波打つ（波頭）。条の板は付け根から先へ
     taper_k 倍まで細る（2 段）。edge[0] の条が前縁。戻り値はキューブのリスト。"""
@@ -110,7 +110,9 @@ def fan_fin(bone, base0, base1, edge, thick, style, width=None, styles=None, tap
         st = styles[i % len(styles)] if styles else style
         for k, (t0, t1, ww) in enumerate(((0.0, 0.55, w), (0.5, 1.0, w * taper_k))):
             c = root + d * ((t0 + t1) / 2)
-            out.append(mat_cube(bone, c, (thick, ww, L * (t1 - t0) + 0.1), st, R, **kw))
+            sk = (tip_style[i % len(tip_style)] if isinstance(tip_style, (list, tuple))
+                  else tip_style) if (k == 1 and tip_style) else st
+            out.append(mat_cube(bone, c, (thick, ww, L * (t1 - t0) + 0.1), sk, R, **kw))
     return out
 
 
@@ -185,7 +187,13 @@ SUIT_STYLES = {
     "cape": {"kind": "cloth", "base": (30, 44, 132), "shadow": (14, 20, 70), "hem": None,
              "cloud": True, "cloud_glow": AQUA, "hem_emit": 40, "outline": True,
              "line": (10, 14, 50), "outline_k": 0.6, "fold": 7.0},
-    "cape_top": {"kind": "cloth", "base": (30, 44, 132), "shadow": (14, 20, 70),
+    "tail": {"kind": "armor", "base": (44, 104, 222), "light": (120, 170, 245),
+             "dark": (22, 60, 160), "line": (12, 32, 96), "panel": 0, "bolts": False,
+             "outline_k": 0.45},
+    "tail_b": {"kind": "armor", "base": (34, 82, 196), "light": (100, 150, 236),
+               "dark": (18, 48, 140), "line": (10, 28, 90), "panel": 0, "bolts": False,
+               "sheen": False, "outline_k": 0.45},
+    "cape_top": {"kind": "cloth", "base": (40, 96, 214), "shadow": (20, 52, 150),
                  "hem": PEARL, "cloud": False, "outline": True, "line": (10, 14, 50),
                  "outline_k": 0.6, "fold": 7.0},
     "serial": {"text": "TR-08", "under": {"kind": "armor", "base": INDIGO, "panel": 0,
@@ -337,13 +345,16 @@ def waist(s):
 #  尾ビレのマント（ベルトの後ろから二股に垂れる。上下 2 段で揺れる）
 # ---------------------------------------------------------------------------
 def tail_cape(s):
-    tp = s.part("extra", "tail_r", "body", pivot=(-1.7, 12.6, 3.5), rotation=(4, 0, 6))
+    tp = s.part("extra", "tail_r", "body", pivot=(-1.7, 12.6, 3.5), rotation=(4, 0, 8))
     cbox(tp, (-1.7, 12.6, 3.45), (3.4, 1.0, 0.8), "pearl")                 # 留め具
-    cbox(tp, (-1.75, 10.4, 3.6), (3.3, 4.4, 0.4), "cape_top")
-    lo = s.part("extra", "tail2_r", tp, pivot=(-1.75, 8.3, 3.6), rotation=(4, 0, 6))
-    # 下の段: 外へ尖る尾ビレの先（三角を条で埋める）
-    fin3(lo, (-0.2, 8.4, 3.6), (-3.5, 8.4, 3.6), (-3.9, 2.6, 3.6), 0.38, 0.75, "cape")
-    beam(lo, (-3.45, 8.3, 3.6), (-3.9, 2.6, 3.6), 0.4, 0.42, "glow_soft", extend=0.2)
+    cbox(tp, (-1.75, 10.5, 3.6), (3.3, 4.2, 0.4), "cape_top")
+    cbox(tp, (-3.32, 10.5, 3.6), (0.3, 4.0, 0.5), "glow_soft")
+    lo = s.part("extra", "tail2_r", tp, pivot=(-1.75, 8.5, 3.6), rotation=(4, 0, 10))
+    # 下の段: 尾ビレ（上の縁から放射に広がる条。外の条が長く尖って二股になる。先は泡の白）
+    fan_fin(lo, (-0.2, 8.7, 3.6), (-3.4, 8.7, 3.6),
+            [(-0.5, 4.6, 3.6), (-1.6, 3.6, 3.6), (-2.9, 2.6, 3.6), (-4.3, 1.4, 3.6)], 0.36,
+            "tail", styles=["tail", "tail_b"], tip_style=["fin", "fin_m"], taper_k=0.75)
+    beam(lo, (-3.4, 8.6, 3.62), (-4.3, 1.6, 3.62), 0.3, 0.42, "glow_soft", extend=0.1)
 
 
 # ---------------------------------------------------------------------------

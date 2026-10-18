@@ -181,7 +181,8 @@ WEAPON_ANIMS = {
 
 CORE_ANIMS = {
     "idle": {
-        "fx_spin_globe": {"rotation": [0, "q.anim_time * 45.0", 0]},
+        "fx_spin_globe": {"rotation": [0, "q.anim_time * 45.0", 0],
+                          "scale": "1.0 + math.sin(q.anim_time * 150.0) * 0.04"},          # 球の脈動
         "fx_spin_ring_a": {"rotation": [0, "q.anim_time * 80.0", 0]},
         "fx_spin_ring_b": {"rotation": [0, "-q.anim_time * 120.0", 0]},
     },

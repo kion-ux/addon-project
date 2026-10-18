@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 
-from astro_common import (bevel, beam, cbox, line_on, octa, polyline, rbox, ring, stick,
+from astro_common import (bevel, beam, cbox, chamfer, line_on, octa, polyline, rbox, ring, stick,
                           taper)
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 
@@ -158,18 +158,18 @@ def legs(s):
     X = LEG_X - 0.2
     g = s.part("legs", "greave_r", "rightLeg")
     bevel(g, (X, 6.2, 0.05), (5.7, 4.9, 5.9), "plate", cut=0.8, axis="y")     # 脛の殻（帯 = zone）
-    bevel(g, (X, 5.3, 0.05), (6.0, 0.9, 6.2), "rustband", cut=0.8, axis="y")  # 縞（錆色）
-    bevel(g, (X, 7.1, 0.05), (5.9, 0.7, 6.1), "belt", cut=0.8, axis="y")      # 縞（褐色）
+    chamfer(g, (X, 5.3, 0.05), (6.0, 0.9, 6.2), "rustband", cut=0.8, axis="y")  # 縞（錆色）
+    chamfer(g, (X, 7.1, 0.05), (5.9, 0.7, 6.1), "belt", cut=0.8, axis="y")      # 縞（褐色）
     keel = rbox(g, (X - 0.7, 6.2, -3.2), (1.6, 4.2, 0.8), "plate2", rot=(0, 22, 0))
     mirror_x(g, keel, about=X)                                            # 脛の稜（V 字）
     line_on(g, keel, "north", (0.3, 0.1), (0.5, 0.5), 0.26, 0.2, "volt")   # 稲妻の線
     line_on(g, keel, "north", (0.5, 0.5), (0.3, 0.6), 0.26, 0.2, "volt")
     line_on(g, keel, "north", (0.3, 0.6), (0.55, 0.92), 0.26, 0.2, "volt")
     cbox(g, (X, 8.85, 0.05), (5.5, 1.3, 5.5), "frame")                     # 膝の関節
-    # 膝当て: 丸い褐色の盾 + 銅の輪 + 電光の芯
-    octa(g, (X, 8.9, -3.15), 3.9, 1.0, "plate2", axis="z")
-    ring(g, (X, 8.9, -3.7), 1.75, 8, (0, 0.32, 0.3), "copper", axis="z")
-    octa(g, (X, 8.9, -3.75), 1.4, 0.4, "volt_core", axis="z")
+    # 膝当て: 丸い褐色の盾 + 銅の縁 + 電光の宝玉
+    octa(g, (X, 8.9, -3.05), 4.0, 0.8, "copper", axis="z")
+    octa(g, (X, 8.9, -3.35), 3.3, 0.8, "plate2", axis="z")
+    rbox(g, (X, 8.9, -3.8), (1.1, 1.1, 0.4), "gem", rot=(0, 0, 45))
     rbox(g, (X, 10.25, -2.9), (3.4, 0.9, 1.0), "plate", rot=(32, 0, 0))   # 膝の庇
     calf = rbox(g, (X, 6.2, 3.05), (4.8, 4.2, 1.0), "plate_b", rot=(-8, 0, 0))
     stick(g, calf, "south", 0.5, 0.5, (2.8, 2.4, 0.3), "vent", sink=0.1)
@@ -189,10 +189,9 @@ def legs(s):
 #  腰（太いベルト・星核のバックル・ガリレオ衛星・草摺）
 # ---------------------------------------------------------------------------
 def moon(s, w, name, x, style, size=1.2):
-    """ベルトに嵌めたガリレオ衛星: 暗い受け座 + 銅の縁 + 自転する球（fx_spin_<name>）。"""
+    """ベルトに嵌めたガリレオ衛星: 銅の受け座 + 自転する球（fx_spin_<name>）。"""
     z = -3.45
-    octa(w, (x, 12.55, z + 0.05), 1.75, 0.5, "frame", axis="z")
-    ring(w, (x, 12.55, z - 0.25), 0.92, 8, (0, 0.2, 0.22), "copper", axis="z")
+    octa(w, (x, 12.55, z + 0.05), 1.65, 0.6, "copper", axis="z")
     sp = s.fx("spin", name, w, pivot=(x, 12.55, z - 0.6))
     cbox(sp, (x, 12.55, z - 0.6), (size, size, size), style)
     rbox(sp, (x, 12.55, z - 0.6), (size * 0.92, size * 0.92, size * 0.92), style, rot=(0, 45, 0))
@@ -234,42 +233,37 @@ def waist(s):
 # ---------------------------------------------------------------------------
 def torso(s):
     c = s.part("torso", "chest", "body")
-    # 胸郭: 横に広い八角の殻（上が広く、腹へ絞る）
+    # 胸郭: 横に広い八角の殻（上が広く、腹へ絞る）。上半分は褐色の縞の帯
     bevel(c, (0, 21.1, -0.1), (11.4, 7.0, 6.9), "plate", cut=1.1, axis="y")
+    chamfer(c, (0, 23.55, -0.1), (11.0, 1.4, 7.0), "belt", cut=1.15, axis="y")
     # 腹: 帯と縞を交互に重ねた四段（上の段が下に重なる）
-    for i, (y, wd, dp, st) in enumerate(((17.2, 10.0, 6.8, "rustband"), (16.1, 9.7, 6.6, "zone"),
-                                         (15.0, 9.5, 6.4, "belt"), (13.95, 9.3, 6.2, "zone"))):
-        bevel(c, (0, y, -0.05), (wd, 1.15, dp), st, cut=0.7, axis="y")
-    cbox(c, (0, 15.6, -3.36), (0.5, 3.6, 0.2), "volt")                    # 腹の中心線
+    for y, wd, dp, st in ((17.2, 10.0, 6.8, "rustband"), (16.1, 9.7, 6.6, "zone"),
+                          (15.0, 9.5, 6.4, "belt"), (13.95, 9.3, 6.2, "zone")):
+        chamfer(c, (0, y, -0.05), (wd, 1.15, dp), st, cut=0.7, axis="y")
     # 胸板: 炉の左右に、外へ回り込む帯の板（縞入り）と、その下の錆色の縞
-    pec = rbox(c, (-3.85, 21.7, -3.45), (3.7, 4.6, 0.9), "zone", rot=(4, 22, 5))
+    pec = rbox(c, (-3.85, 21.3, -3.45), (3.7, 4.4, 0.9), "zone", rot=(4, 22, 5))
     trim = stick(c, pec, "north", 0.5, 0.97, (3.5, TRIM_W, 0.22), "copper", sink=0.05)
     l1 = line_on(c, pec, "north", (0.15, 0.2), (0.55, 0.38), 0.26, 0.2, "volt")
     l2 = line_on(c, pec, "north", (0.55, 0.38), (0.4, 0.55), 0.26, 0.2, "volt")
     l3 = line_on(c, pec, "north", (0.4, 0.55), (0.85, 0.75), 0.26, 0.2, "volt")
-    low = rbox(c, (-3.4, 18.75, -3.2), (3.4, 1.4, 0.8), "rustband", rot=(-6, 18, 8))
+    low = rbox(c, (-3.4, 18.55, -3.2), (3.4, 1.4, 0.8), "rustband", rot=(-6, 18, 8))
     mirror_x(c, pec, trim, l1, l2, l3, low)
-    # 大赤斑の炉: 暗い受け座 → 重い襟（銅と暗い金属の八角の枠・ボルト）→ 回る渦
-    C = (0, 20.75, -3.6)
-    octa(c, (0, C[1], -3.55), 5.4, 0.5, "dark", axis="z")
-    ring(c, (0, C[1], -3.95), 2.45, 8, (0, 0.85, 0.75), "copper", axis="z",
+    # 大赤斑の炉: 暗い受け座 → 重い襟（銅と暗い金属の八角の枠）→ 金の縁 → 回る渦
+    Y = 20.4
+    octa(c, (0, Y, -3.55), 4.4, 0.5, "dark", axis="z")
+    ring(c, (0, Y, -3.95), 2.5, 8, (0, 0.95, 0.8), "copper", axis="z",
          styles=["copper", "frame"])
-    ring(c, (0, C[1], -4.3), 2.1, 8, (0, 0.3, 0.3), "gold", axis="z")
-    for k in range(4):                                                    # 枠の四隅の締め金
-        a = math.radians(45 + 90 * k)
-        cbox(c, (-2.95 * math.sin(a), C[1] + 2.95 * math.cos(a), -4.05), (0.7, 0.7, 0.5), "frame",
-             rotation=(0, 0, 45))
-    sp = s.fx("spin", "grs", c, pivot=(0, C[1], -4.1))
-    octa(sp, (0, C[1], -4.0), 3.5, 0.3, "grs", axis="z")
+    octa(c, (0, Y, -4.0), 4.05, 0.3, "gold", axis="z")
+    sp = s.fx("spin", "grs", c, pivot=(0, Y, -4.1))
+    octa(sp, (0, Y, -4.1), 3.6, 0.3, "grs", axis="z")
     for k in range(4):                                                    # 渦の腕（4 本の弧）
-        a0 = 90 * k
         pts = []
         for j in range(3):
-            a = math.radians(a0 + j * 38)
-            r = 0.5 + j * 0.55
-            pts.append((-r * math.sin(a), C[1] + r * math.cos(a), -4.22))
-        polyline(sp, pts, 0.32, 0.18, "grs_arm", overlap=0.2)
-    rbox(sp, (0, C[1], -4.25), (0.9, 0.9, 0.3), "grs_eye", rot=(0, 0, 45))
+            a = math.radians(90 * k + j * 40)
+            r = 0.45 + j * 0.6
+            pts.append((-r * math.sin(a), Y + r * math.cos(a), -4.32))
+        polyline(sp, pts, 0.34, 0.18, "grs_arm", overlap=0.2)
+    rbox(sp, (0, Y, -4.35), (1.0, 1.0, 0.3), "grs_eye", rot=(0, 0, 45))
     # 肩の付け根の盛り上がり（首の脇から肩当てへ下る斜面）
     yk = rbox(c, (-4.95, 24.35, -0.1), (2.4, 1.3, 6.0), "plate2", rot=(0, 0, -24))
     ykt = stick(c, yk, "up", 0.5, 0.5, (2.0, 5.6, 0.25), "belt", sink=0.1)
@@ -287,29 +281,31 @@ def back(s):
     bk = s.part("back", "pack", "body")
     cbox(bk, (0, 19.0, 3.05), (9.6, 10.0, 0.8), "plate_b")
     cbox(bk, (0, 18.6, 3.7), (2.6, 8.4, 1.0), "frame")
-    bevel(bk, (0, 19.9, 4.8), (6.8, 6.6, 2.6), "belt", cut=0.9, axis="z")
-    rbox(bk, (0, 23.2, 4.3), (5.6, 1.0, 2.6), "plate", rot=(25, 0, 0))
-    side = cbox(bk, (-3.45, 19.9, 4.8), (0.3, 4.6, 1.8), "plate")
+    bevel(bk, (0, 19.9, 4.8), (7.0, 6.8, 2.6), "plate", cut=0.9, axis="z")
+    cbox(bk, (0, 22.35, 4.85), (6.4, 1.1, 2.75), "belt")                  # 背嚢の縞
+    cbox(bk, (0, 17.45, 4.85), (6.4, 0.9, 2.75), "rustband")
+    rbox(bk, (0, 23.4, 4.3), (5.8, 1.0, 2.6), "plate2", rot=(25, 0, 0))
+    side = cbox(bk, (-3.55, 19.9, 4.8), (0.3, 4.6, 1.8), "copper")
     mirror_x(bk, side)
     cbox(bk, (0, 16.35, 6.15), (3.6, 0.9, 0.2), "hazard")
     # 嵐のタービン: 銅の縁の丸い吸気口に、回る羽根
-    octa(bk, (0, 20.1, 6.15), 3.6, 0.3, "frame", axis="z")
-    ring(bk, (0, 20.1, 6.3), 1.75, 8, (0, 0.3, 0.3), "copper", axis="z")
-    cbox(bk, (0, 20.1, 6.2), (2.2, 2.2, 0.2), "volt_core")
-    fan = s.fx("spin", "fan", bk, pivot=(0, 20.1, 6.45))
+    octa(bk, (0, 20.0, 6.15), 3.8, 0.3, "frame", axis="z")
+    octa(bk, (0, 20.0, 6.2), 3.2, 0.3, "copper", axis="z")
+    cbox(bk, (0, 20.0, 6.3), (2.2, 2.2, 0.2), "volt_core")
+    fan = s.fx("spin", "fan", bk, pivot=(0, 20.0, 6.5))
     for k in range(4):
         a = 45 + 90 * k
         r = math.radians(a)
-        rbox(fan, (-0.8 * math.sin(r), 20.1 + 0.8 * math.cos(r), 6.42), (0.55, 1.5, 0.16), "frame",
+        rbox(fan, (-0.8 * math.sin(r), 20.0 + 0.8 * math.cos(r), 6.47), (0.55, 1.5, 0.16), "frame",
              rot=(0, 0, a + 20))
-    cbox(fan, (0, 20.1, 6.5), (0.6, 0.6, 0.2), "copper", rotation=(0, 0, 45))
+    cbox(fan, (0, 20.0, 6.55), (0.6, 0.6, 0.2), "copper", rotation=(0, 0, 45))
     # スラスター（右。下後ろへ）
     th = s.part("back", "thruster_r", bk, pivot=(-1.9, 16.9, 5.6), rotation=(16, 0, -6))
     octa(th, (-1.9, 15.6, 5.6), 2.4, 3.0, "plate", axis="y")
     octa(th, (-1.9, 16.35, 5.6), 2.65, 0.4, "copper", axis="y")
     octa(th, (-1.9, 13.6, 5.6), 3.0, 1.4, "frame", axis="y")
-    ring(th, (-1.9, 12.95, 5.6), 1.2, 8, (0, 0.28, 0.3), "volt", axis="y")
-    cbox(th, (-1.9, 12.92, 5.6), (2.2, 0.2, 2.2), "thruster")
+    octa(th, (-1.9, 12.95, 5.6), 2.5, 0.25, "volt", axis="y")
+    cbox(th, (-1.9, 12.88, 5.6), (2.2, 0.2, 2.2), "thruster")
     fx = s.fx("thrust", "r", th, pivot=(-1.9, 12.85, 5.6))
     taper(fx, (-1.9, 12.85, 5.6), (-1.9, 5.6, 5.6), 2.4, 0.45, 3, "flame")
     taper(fx, (-1.9, 12.8, 5.6), (-1.9, 8.8, 5.6), 1.1, 0.25, 2, "flame_core", round_=False)
@@ -321,14 +317,14 @@ def back(s):
 def arms(s):
     ar = s.part("arms", "upper_r", "rightArm", pivot=(ARM_X, 20.0, 0))
     bevel(ar, (-6.2, 20.4, 0.0), (5.8, 5.6, 6.0), "plate", cut=0.6, axis="y")
-    bevel(ar, (-6.2, 19.4, 0.0), (6.0, 0.9, 6.2), "belt", cut=0.6, axis="y")
+    chamfer(ar, (-6.2, 19.4, 0.0), (6.0, 0.9, 6.2), "belt", cut=0.6, axis="y")
     cbox(ar, (-6.2, 18.0, 0.0), (6.0, 0.7, 6.2), "accent")
     cbox(ar, (-6.2, 18.0, 0.0), (6.1, 0.22, 6.3), "copper")
     el = s.part("arms", "elbow_r", "rightArm", pivot=(ARM_X, 16.8, 0))
     cbox(el, (-6.2, 16.9, 0.0), (5.5, 1.5, 5.5), "frame")
-    for k in range(3):                                                  # 肘のコイル
+    octa(el, (-9.0, 16.9, 0.2), 1.25, 1.5, "volt_core", axis="y")       # 肘のコイル
+    for k in range(3):
         octa(el, (-9.0, 16.4 + k * 0.5, 0.2), 1.6, 0.32, "coil", axis="y")
-    octa(el, (-9.0, 16.9, 0.2), 1.25, 1.4, "volt", axis="y")
     rbox(el, (-6.4, 17.0, 2.95), (3.2, 2.0, 0.8), "plate2", rot=(-18, 0, 0))
     # 前腕: 手首へ向かって広がる重い篭手
     fa = s.part("arms", "vambrace_r", "rightArm", pivot=(ARM_X, 15.0, 0))
@@ -349,9 +345,9 @@ def arms(s):
         x = -7.95 + i * 1.17
         rbox(h, (x, 11.65, -3.05), (0.9, 1.2, 0.6), "plate_b", rot=(18, 0, 0))
         rbox(h, (x, 10.8, -2.65), (0.85, 0.9, 0.55), "plate_b", rot=(40, 0, 0))
-    octa(h, (-6.2, 12.75, -3.6), 0.55, 4.6, "volt_core", axis="x")      # 拳の電光の芯
-    for i in range(6):                                                  # 巻き線
-        octa(h, (-8.3 + i * 0.84, 12.75, -3.6), 1.05, 0.34, "coil", axis="x")
+    octa(h, (-6.2, 12.75, -3.6), 0.6, 4.4, "volt_core", axis="x")       # 拳の電光の芯
+    for i in range(4):                                                  # 巻き線
+        octa(h, (-7.85 + i * 1.1, 12.75, -3.6), 1.2, 0.5, "coil", axis="x")
     rbox(h, (-3.25, 12.15, -1.3), (0.6, 1.8, 1.4), "plate_b", rot=(0, 0, -10))
     rbox(h, (-9.05, 12.3, 0), (0.4, 1.0, 1.0), "gem", rot=(45, 0, 0))
 
@@ -363,7 +359,7 @@ def shoulders(s):
     p = s.part("shoulders", "pauldron_r", "rightArm")
     dome = bevel(p, (-7.5, 24.2, 0.1), (6.8, 3.6, 7.8), "plate", cut=1.2, axis="x",
                  rot=(0, 0, -14))
-    stick(p, dome[0], "up", 0.5, 0.5, (1.2, 7.0, 0.3), "belt", sink=0.15)   # 頂の縞
+    stick(p, dome[0], "up", 0.5, 0.5, (1.4, 7.0, 0.3), "rustband", sink=0.15)  # 頂の縞
     rim = rbox(p, (-10.75, 24.0, 0.1), (0.9, 2.4, 8.0), "plate2", rot=(0, 0, -26))
     stick(p, rim, "up", 0.5, 0.5, (0.9, 8.0, 0.3), "copper", sink=0.05)
     # 垂れ（帯の重なり: 錆色 → 褐色の縞 → クリーム）
@@ -373,20 +369,19 @@ def shoulders(s):
     l2 = rbox(p, (-10.65, 20.1, 0.15), (1.0, 2.2, 6.8), "belt", rot=(0, 0, 12))
     stick(p, l2, "west", 0.5, 0.05, (6.4, TRIM_W, 0.22), "copper", sink=0.05)
     rbox(p, (-10.8, 18.6, 0.2), (0.9, 1.6, 6.0), "zone", rot=(0, 0, 9))
-    rbox(p, (-6.9, 26.0, 2.9), (0.5, 1.8, 2.4), "plate2", rot=(-25, 0, -14))   # 後ろのヒレ
     # テスラコイルの塔: 台座 → 光る芯に銅の巻き線 → 鏡面のトロイド → 電光の玉 → 回る放電の輪
-    X, Z = -8.2, 0.5
-    tw = s.part("shoulders", "tesla_r", p, pivot=(X, 25.6, Z))
-    octa(tw, (X, 25.9, Z), 2.9, 0.8, "frame", axis="y")
-    octa(tw, (X, 26.4, Z), 2.3, 0.3, "copper", axis="y")
-    octa(tw, (X, 27.75, Z), 1.35, 2.7, "volt_core", axis="y")
+    X, Z = -8.3, 0.4
+    tw = s.part("shoulders", "tesla_r", p, pivot=(X, 25.8, Z))
+    octa(tw, (X, 26.0, Z), 3.0, 0.8, "frame", axis="y")
+    octa(tw, (X, 26.5, Z), 2.4, 0.3, "copper", axis="y")
+    octa(tw, (X, 28.0, Z), 1.35, 3.0, "volt_core", axis="y")
     for k in range(5):
-        octa(tw, (X, 26.75 + k * 0.56, Z), 1.85, 0.36, "coil", axis="y")
-    ring(tw, (X, 29.45, Z), 1.15, 8, (0, 0.5, 0.5), "chrome", axis="y")
-    g = s.fx("glow", "tesla_r", tw, pivot=(X, 30.0, Z))
-    octa(g, (X, 30.0, Z), 0.9, 0.9, "volt", axis="y")
-    arc = s.fx("spin", "arc_r", tw, pivot=(X, 28.3, Z), rotation=(18, 0, 10))
-    ring(arc, (X, 28.3, Z), 1.75, 10, (0, 0.12, 0.14), "volt", axis="y")
+        octa(tw, (X, 26.9 + k * 0.6, Z), 1.9, 0.38, "coil", axis="y")
+    octa(tw, (X, 29.85, Z), 2.7, 0.6, "chrome", axis="y")
+    g = s.fx("glow", "tesla_r", tw, pivot=(X, 30.55, Z))
+    octa(g, (X, 30.55, Z), 1.25, 1.1, "volt", axis="y")
+    arc = s.fx("spin", "arc_r", tw, pivot=(X, 28.4, Z), rotation=(18, 0, 10))
+    ring(arc, (X, 28.4, Z), 1.85, 8, (0, 0.18, 0.18), "volt", axis="y")
 
 
 # ---------------------------------------------------------------------------
@@ -395,52 +390,50 @@ def shoulders(s):
 def helmet(s):
     hm = s.part("helmet", "dome", "head")
     bevel(hm, (0, 30.6, 0.15), (9.8, 4.4, 10.1), "plate", cut=1.0, axis="z")
-    rf = rbox(hm, (-2.45, 33.2, 0.3), (5.2, 0.8, 9.2), "zone", rot=(0, 0, -12))
+    rf = rbox(hm, (-2.45, 33.0, 0.3), (5.2, 0.8, 9.2), "zone", rot=(0, 0, -12))
     mirror_x(hm, rf)
-    cbox(hm, (0, 33.95, 0.3), (1.4, 0.9, 8.8), "plate2")                      # 中央の稜
-    rbox(hm, (0, 31.9, -4.85), (8.6, 2.6, 0.8), "plate", rot=(-28, 0, 0))     # 額の斜面
+    cbox(hm, (0, 33.75, 0.3), (1.4, 0.9, 8.8), "plate2")                      # 中央の稜
     rbox(hm, (0, 31.6, 5.15), (8.6, 2.4, 0.8), "plate", rot=(28, 0, 0))       # 後ろの斜面
-    cbox(hm, (0, 26.9, 4.95), (8.8, 4.6, 0.8), "plate")                        # 後頭部
-    cbox(hm, (0, 28.0, 5.4), (6.0, 0.6, 0.3), "rustband")
+    cbox(hm, (0, 26.9, 4.95), (8.8, 4.6, 0.8), "zone")                         # 後頭部（帯）
+    cbox(hm, (0, 28.2, 5.4), (7.4, 0.9, 0.3), "belt")
+    cbox(hm, (0, 26.4, 5.4), (6.4, 0.6, 0.3), "rustband")
+    cbox(hm, (0, 27.3, 5.55), (1.2, 3.6, 0.4), "plate2")
+    cbox(hm, (0, 27.3, 5.78), (0.3, 2.8, 0.1), "volt")
     sd = cbox(hm, (-4.95, 27.3, 0.1), (0.9, 5.0, 8.4), "belt")                # 側板（縞）
     ear = octa(hm, (-5.55, 27.6, 0.6), 2.6, 0.5, "frame", axis="x")           # 耳のコイル
     ec = [c for k in range(2)
           for c in octa(hm, (-5.85 - k * 0.32, 27.6, 0.6), 1.7 - k * 0.3, 0.2, "coil", axis="x")]
     eg = octa(hm, (-6.45, 27.6, 0.6), 0.8, 0.2, "volt", axis="x")
     mirror_x(hm, sd, ear, ec, eg)
-    # 冠: 金の帯と尖り（前ほど高い）。尖りの先に電光の粒
-    band = cbox(hm, (0, 31.7, 0.15), (10.3, 1.0, 10.5), "gold")               # noqa: F841
-    cbox(hm, (0, 31.7, -5.3), (3.2, 1.1, 0.3), "rustband")                     # 額の紋（錆色）
-    pts = [((0.0, -5.2), 4.4), ((-2.6, -5.1), 3.4), ((-4.95, -3.0), 2.8), ((-5.1, 0.6), 2.4),
-           ((-4.9, 3.8), 2.0), ((-2.4, 5.2), 1.7)]
-    tips = []
-    for (x, z), hgt in pts:
-        lean = (x * 0.12, z * 0.1)
-        sp = taper(hm, (x, 32.0, z), (x + lean[0], 32.0 + hgt, z + lean[1]), 1.3, 0.25, 2, "gold",
-                   round_=False)
-        tips.append(sp)
-        if x != 0.0:
-            mirror_x(hm, sp)
-    taper(hm, (0, 32.0, 5.25), (0, 33.7, 5.75), 1.2, 0.25, 2, "gold", round_=False)
-    rbox(hm, (0, 34.0, -5.55), (0.9, 0.9, 0.4), "gem", rot=(0, 0, 45))         # 前の尖りの宝玉
-    # 額の稲妻（電光のジグザグ）
-    polyline(hm, [(-0.9, 33.3, -5.62), (0.35, 32.45, -5.62), (-0.3, 32.2, -5.62), (0.85, 31.2, -5.62)],
-             0.32, 0.2, "volt", overlap=0.15)
+    # 冠: 金の帯の上に、菱形の尖りが一周する（ジグザグの王冠）。前の中央は大きく、宝玉と稲妻
+    band = cbox(hm, (0, 31.55, 0.15), (10.4, 1.2, 10.6), "gold")
+    for a in (0.18, 0.82):
+        stick(hm, band, "north", a, 1.0, (2.1, 2.1, 0.35), "gold", spin=45, sink=0.1)
+    for a in (0.18, 0.5, 0.82):
+        stick(hm, band, "south", a, 1.0, (1.9, 1.9, 0.35), "gold", spin=45, sink=0.1)
+        for f in ("east", "west"):
+            stick(hm, band, f, a, 1.0, (1.9, 1.9, 0.35), "gold", spin=45, sink=0.1)
+    big = stick(hm, band, "north", 0.5, 1.15, (3.0, 3.0, 0.45), "gold", spin=45, sink=0.12)
+    stick(hm, big, "north", 0.5, 0.5, (1.0, 1.0, 0.3), "gem", sink=0.1)
+    polyline(hm, [(-0.75, 35.3, -5.65), (0.3, 34.15, -5.65), (-0.25, 33.95, -5.65),
+                  (0.7, 32.75, -5.65)], 0.3, 0.2, "volt", overlap=0.15)       # 額の稲妻
+    cbox(hm, (0, 30.55, -5.35), (8.4, 0.5, 0.4), "rustband")                    # 冠の下の錆色の縞
     # 眉庇: 中央で下がる褐色の V
     br = rbox(hm, (-2.45, 29.55, -5.0), (4.9, 1.3, 1.1), "plate2", rot=(-14, 6, 7))
     mirror_x(hm, br)
-    # 面頬・口ひげ・機械の髭（下へ流れる三筋）
+    # 面: 暗い奥・頬の白い面頬・大きな口ひげ・下へ流れる機械の髭（三筋）
     cbox(hm, (0, 25.7, -4.62), (7.6, 3.6, 0.5), "frame")
-    mg = rbox(hm, (-1.15, 26.0, -5.05), (2.4, 2.8, 0.7), "face", rot=(0, 28, 0))
-    mv = stick(hm, mg, "north", 0.5, 0.5, (0.5, 1.2, 0.1), "grille", sink=0.05)
-    mu = rbox(hm, (-1.4, 26.75, -5.6), (2.6, 0.55, 0.5), "beard", rot=(0, 18, -14))   # 口ひげ
-    mirror_x(hm, mg, mv, mu)
-    cbox(hm, (0, 26.0, -5.6), (0.5, 2.4, 0.5), "plate2")
-    bd = taper(hm, (-1.5, 25.4, -5.2), (-1.85, 22.9, -5.0), 1.5, 0.45, 2, "beard", round_=False)
-    mirror_x(hm, bd)
-    taper(hm, (0, 25.3, -5.35), (0, 22.5, -5.15), 1.7, 0.5, 2, "beard", round_=False)
-    ck = rbox(hm, (-3.5, 25.7, -3.75), (1.4, 3.8, 3.3), "plate", rot=(0, 34, -6))  # 頬当て
-    ckt = stick(hm, ck, "west", 0.08, 0.5, (0.35, 3.4, 0.2), "copper", sink=0.05)
+    mg = rbox(hm, (-1.2, 26.1, -5.0), (2.5, 2.6, 0.7), "face", rot=(0, 28, 0))
+    mu = rbox(hm, (-1.55, 26.55, -5.6), (2.9, 0.75, 0.6), "beard", rot=(0, 16, -16))  # 口ひげ
+    mirror_x(hm, mg, mu)
+    cbox(hm, (0, 27.0, -5.55), (0.6, 1.4, 0.5), "plate2")                       # 鼻筋
+    beard = rbox(hm, (0, 24.6, -5.25), (3.4, 3.0, 0.8), "beard", rot=(10, 0, 0))
+    stick(hm, beard, "north", 0.5, 0.06, (2.6, 0.3, 0.2), "copper", sink=0.05)
+    bs = rbox(hm, (-2.0, 24.9, -4.95), (1.6, 2.8, 0.8), "beard", rot=(8, 26, -10))
+    mirror_x(hm, bs)
+    taper(hm, (0, 23.4, -5.45), (0, 22.0, -5.6), 1.6, 0.5, 2, "beard", round_=False)
+    ck = rbox(hm, (-3.5, 25.9, -3.75), (1.4, 3.4, 3.3), "plate", rot=(0, 34, -6))  # 頬当て
+    ckt = stick(hm, ck, "west", 0.08, 0.5, (0.35, 3.0, 0.2), "copper", sink=0.05)
     mirror_x(hm, ck, ckt)
     rbox(hm, (0, 24.0, 5.3), (8.8, 2.0, 0.9), "zone", rot=(18, 0, 0))          # しころ
     rbox(hm, (0, 22.7, 5.6), (8.2, 1.4, 0.8), "rustband", rot=(30, 0, 0))
@@ -453,13 +446,12 @@ def helmet(s):
 
 
 # ---------------------------------------------------------------------------
-#  稲妻の翼（背嚢の上から後ろ上へ、ジグザグに伸びる二枚。空中で開く）
+#  稲妻の翼（背嚢の上から後ろ上へ、ジグザグに伸びる二枚の幅広の板。空中で開く）
 # ---------------------------------------------------------------------------
 def wings(s):
-    wg = s.part("extra", "wing_r", "body", pivot=(-2.4, 22.6, 5.4))
-    pts = [(-2.2, 22.4, 5.4), (-4.6, 25.4, 6.6), (-3.7, 25.6, 6.9), (-6.6, 29.4, 8.3)]
-    polyline(wg, pts, [0.8, 0.7, 0.55], [1.5, 1.2, 1.0], "plate2", overlap=0.35)
-    polyline(wg, [(p[0], p[1] + 0.15, p[2] + 0.05) for p in pts], [0.86, 0.76, 0.6], 0.26, "volt",
+    wg = s.part("extra", "wing_r", "body", pivot=(-2.4, 22.6, 5.6))
+    pts = [(-2.2, 22.2, 5.6), (-4.8, 25.0, 6.8), (-3.9, 25.4, 7.0), (-6.8, 29.0, 8.4)]
+    polyline(wg, pts, [0.5, 0.45, 0.4], [2.2, 1.8, 1.4], "plate2", overlap=0.4)
+    polyline(wg, [(p[0] + 0.0, p[1], p[2] + 0.12) for p in pts], [0.5, 0.45, 0.4], 0.32, "volt",
              overlap=0.3)
-    beam(wg, (-2.6, 21.6, 5.6), (-4.4, 23.6, 6.6), 0.6, 1.0, "rustband")
-    taper(wg, (-6.6, 29.4, 8.3), (-7.4, 30.8, 8.9), 0.6, 0.15, 1, "volt", round_=False)
+    taper(wg, (-6.8, 29.0, 8.4), (-7.7, 30.6, 9.1), 1.0, 0.2, 2, "rustband", round_=False)
