@@ -37,7 +37,10 @@ VIOLET = (142, 124, 255)
 #  塗り（astro_paint.suit_styles("saturn") への上書き・追加）
 # ===========================================================================
 SUIT_STYLES = {
-    "plate": {"bolts": False},
+    "plate": {"base": (222, 188, 118), "light": (250, 228, 172), "dark": (160, 126, 70),
+              "line": (92, 66, 30), "bolts": False},
+    "plate_b": {"base": (184, 152, 92), "light": (222, 196, 140), "dark": (132, 102, 58),
+                "line": (78, 56, 26)},
     "visor": {"glow": (176, 226, 255), "light": (240, 250, 255), "deep": (40, 80, 150), "emit": 20},
     "flame": {"glow": (150, 210, 255), "light": (246, 252, 255), "deep": (70, 110, 210)},
     "flame_core": {"kind": "flame", "glow": (220, 240, 255), "light": (255, 255, 255),
@@ -58,10 +61,10 @@ SUIT_STYLES = {
     "hand": {"kind": "trim", "base": (60, 50, 74), "light": (150, 140, 190), "dark": (24, 20, 34),
              "line": (14, 12, 20)},
     # 環
-    "ring_b": {"kind": "glowline", "glow": ICE, "light": (246, 252, 255), "bevel": False,
-               "outline": False, "emit": 26},
-    "ring_b2": {"kind": "glowline", "glow": (150, 200, 245), "light": (214, 238, 255), "bevel": False,
-                "outline": False, "emit": 70},
+    "ring_b": {"kind": "glowline", "glow": (96, 170, 255), "light": (186, 228, 255), "bevel": False,
+               "outline": False, "emit": 34},
+    "ring_b2": {"kind": "glowline", "glow": (70, 128, 228), "light": (150, 204, 255), "bevel": False,
+                "outline": False, "emit": 90},
     "ring_a": {"kind": "armor", "base": (244, 232, 204), "light": (255, 252, 240),
                "dark": (200, 182, 140), "line": (130, 110, 76), "panel": 0, "sheen": False,
                "stripe": {"dir": "h", "period": 3, "width": 1, "color": (214, 192, 150), "k": 0.6}},
@@ -190,7 +193,7 @@ def dial_ticks(bone, centre, r, axis, big="gold", small="gold", n=12, size=(0.22
 
 # ===========================================================================
 def build_suit(s: Suit):
-    s.inner_suit(gap=0.3)
+    s.inner_suit(gap=0.3, head_style="plate2_b")
     boots(s)
     legs(s)
     waist(s)
@@ -241,9 +244,9 @@ def legs(s):
     cbox(g, (X, 7.25, 0.05), (5.45, 0.55, 5.65), "band")                   # 脛の上の褐色の帯
     cbox(g, (X, 8.25, 0.05), (5.25, 1.5, 5.35), "frame")                   # 膝の関節
     # 膝当て: 金の六角枠 + アイボリーの六角 + 紫の六角の宝玉
-    hex_plate(g, (X, 8.05, -3.0), 1.75, 0.6, "plate2", pointy=True)
-    hex_ring(g, (X, 8.05, -3.35), 1.75, 0.34, 0.25, "gold", pointy=True)
-    hex_plate(g, (X, 8.05, -3.42), 0.7, 0.25, "gem_accent", pointy=True, step=0.04)
+    hex_plate(g, (X, 8.05, -3.0), 1.85, 0.6, "plate", pointy=True)
+    hex_plate(g, (X, 8.05, -3.25), 1.3, 0.5, "plate2", pointy=True, step=0.05)
+    hex_plate(g, (X, 8.05, -3.45), 0.62, 0.3, "gem_accent", pointy=True, step=0.04)
     rbox(g, (X, 9.65, -2.75), (3.0, 0.8, 1.0), "plate", rot=(28, 0, 0))    # 膝の庇
     # ふくらはぎ: 縞の板と排気口
     calf = rbox(g, (X, 5.5, 2.85), (4.6, 4.0, 1.0), "belted", rot=(-8, 0, 0))
@@ -403,7 +406,6 @@ def arms(s):
     rbox(h, (-6.0, 12.55, -2.95), (4.6, 1.3, 0.7), "plate2", rot=(-10, 0, 0))
     for i in range(4):
         x = -7.65 + i * 1.1
-        cbox(h, (x, 12.65, -3.37), (0.7, 0.45, 0.3), "gold")
         rbox(h, (x, 11.7, -2.88), (0.85, 1.2, 0.6), "plate_b", rot=(18, 0, 0))
         rbox(h, (x, 10.85, -2.5), (0.8, 0.9, 0.55), "plate_b", rot=(40, 0, 0))
     rbox(h, (-3.2, 12.2, -1.3), (0.6, 1.8, 1.4), "plate_b", rot=(0, 0, -10))
@@ -443,48 +445,40 @@ def shoulders(s):
 # ---------------------------------------------------------------------------
 def helmet(s):
     hm = s.part("helmet", "dome", "head")
+    # 丸い兜: 前から見ても横から見ても角を落とした二つの面取りを重ねる（アイボリー）
     bevel(hm, (0, 30.9, 0.15), (9.8, 4.4, 10.0), "plate2", cut=1.3, axis="z")
     bevel(hm, (0, 31.2, 0.15), (9.0, 4.2, 10.0), "plate2", cut=1.3, axis="x")
-    cbox(hm, (0, 33.25, 0.15), (6.4, 0.6, 7.2), "plate2_b")                 # 頭頂（帽子の角を覆う）
     cbox(hm, (0, 26.8, 4.95), (8.8, 4.4, 0.8), "plate2")                    # 後頭部
+    cbox(hm, (0, 27.0, 5.4), (0.5, 3.6, 0.2), "glow_soft")
     rbox(hm, (0, 24.1, 5.25), (8.6, 1.9, 0.9), "plate", rot=(18, 0, 0))     # しころ
     rbox(hm, (0, 22.85, 5.5), (8.0, 1.2, 0.8), "band", rot=(30, 0, 0))
     sd = cbox(hm, (-4.95, 27.2, 0.6), (0.9, 4.8, 7.4), "plate")             # 側板（金）
-    # 耳の文字盤（小）
-    ear = octa(hm, (-5.55, 27.6, 0.6), 2.4, 0.5, "plate", axis="x")
+    ear = octa(hm, (-5.55, 27.6, 0.6), 2.4, 0.5, "plate", axis="x")       # 耳の文字盤
     eard = octa(hm, (-5.75, 27.6, 0.6), 1.9, 0.2, "dial", axis="x")
-    earg = octa(hm, (-5.88, 27.6, 0.6), 0.6, 0.16, "gem_accent", axis="x")
-    mirror_x(hm, sd, ear, eard, earg)
-    # 額環（褐色の冠の帯）と金の縁
-    band = cbox(hm, (0, 30.15, -0.1), (9.9, 1.3, 9.9), "band")
-    cbox(hm, (0, 30.9, -0.1), (10.0, 0.22, 10.0), "gold")
-    cbox(hm, (0, 29.45, -0.1), (10.0, 0.22, 10.0), "gold")
-    del band
-    # 冠: 前の大きな尖塔 + 斜め前・横・後ろの尖塔（金）と、その根元の紫の宝玉
-    spikes = [((0.0, -5.1), 5.6, 1.4), ((-2.9, -4.4), 4.0, 1.1), ((-4.6, -1.6), 3.2, 1.0),
-              ((-4.4, 2.2), 2.6, 0.9), ((0.0, 4.9), 2.6, 0.9)]
-    for (x, z), hgt, wd in spikes:
-        out = np.array([x, 0.0, z])
-        n = np.linalg.norm(out)
-        tip = out / n * (n + 0.5) if n else out
-        sp = taper(hm, (x, 31.0, z), (tip[0], 31.0 + hgt, tip[2]), wd, 0.22, 2, "gold", round_=False)
+    mirror_x(hm, sd, ear, eard)
+    # 冠: 頭の上半分を巻く褐色の帯（金の縁）と、帯の後ろから立つ金の尖り（菱形の板の上半分が見える）
+    cbox(hm, (0, 31.55, 0.15), (10.15, 1.3, 10.35), "band")
+    for y in (32.25, 30.85):
+        cbox(hm, (0, y, 0.15), (10.25, 0.2, 10.45), "gold")
+    for (x, z, yaw), size in (((0.0, -4.82, 0), 3.4), ((-2.95, -4.82, 0), 2.2),
+                              ((-4.82, -1.8, 90), 2.3), ((-4.82, 2.3, 90), 1.8),
+                              ((0.0, 5.12, 180), 2.4)):
+        pt = _group(hm, [((x, 32.2, z), (size, size, 0.36), _rot(0, 0, 45), "gold")],
+                    (0, yaw, 0), (x, 32.2, z), (x, 32.2, z))
         if x < -0.01:
-            mirror_x(hm, sp)
-    for x, z in ((0.0, -5.06), (-2.9, -4.32)):
-        g = rbox(hm, (x, 30.15, z - 0.1), (0.62, 0.62, 0.3), "gem_accent", rot=(0, 0, 45))
-        if x < -0.01:
-            mirror_x(hm, g)
-    # 額の六角（紫）と眉庇
-    hex_plate(hm, (0, 31.75, -5.2), 0.75, 0.3, "gold", pointy=True)
-    hex_plate(hm, (0, 31.75, -5.38), 0.48, 0.2, "gem_accent", pointy=True, step=0.04)
-    br = rbox(hm, (-2.3, 29.15, -5.0), (4.6, 0.9, 1.0), "plate", rot=(-12, 6, 6))
+            mirror_x(hm, pt)
+    hex_plate(hm, (0, 31.55, -5.25), 0.62, 0.24, "gem_accent", pointy=True, step=0.04)
+    g = rbox(hm, (-2.95, 31.55, -5.25), (0.6, 0.6, 0.24), "gem_accent", rot=(0, 0, 45))
+    mirror_x(hm, g)
+    # 眉庇
+    br = rbox(hm, (-2.3, 29.25, -5.0), (4.6, 0.9, 1.0), "plate", rot=(-12, 6, 6))
     mirror_x(hm, br)
-    # 面頬: アイボリーの面と金の頬当て・縦の吸気スリット
-    mg = rbox(hm, (-1.15, 25.75, -5.05), (2.4, 3.1, 0.7), "face", rot=(0, 26, 0))
-    mv = stick(hm, mg, "north", 0.5, 0.36, (0.5, 1.2, 0.1), "vent", sink=0.05)
-    mirror_x(hm, mg, mv)
-    cbox(hm, (0, 25.9, -5.55), (0.5, 2.8, 0.5), "plate")                   # 中央の稜（金）
+    # 面頬: 中央で折れたアイボリーの二枚（下縁は金）・金の稜・顎
     cbox(hm, (0, 25.7, -4.62), (7.6, 3.6, 0.5), "frame")                   # 顔の奥
+    mg = rbox(hm, (-1.5, 25.75, -5.0), (3.1, 3.0, 0.6), "face", rot=(0, 24, 0))
+    mt = stick(hm, mg, "north", 0.5, 0.06, (2.9, TRIM_W, 0.16), "gold", sink=0.04)
+    mirror_x(hm, mg, mt)
+    cbox(hm, (0, 25.9, -5.62), (0.45, 2.7, 0.45), "plate")                 # 中央の稜（金）
     rbox(hm, (0, 24.15, -4.8), (3.0, 0.9, 1.3), "plate", rot=(-30, 0, 0))   # 顎
     ck = rbox(hm, (-3.45, 25.7, -3.75), (1.4, 3.8, 3.3), "plate", rot=(0, 34, -6))
     ckt = stick(hm, ck, "west", 0.08, 0.5, (0.35, 3.4, 0.2), "band", sink=0.05)
@@ -524,10 +518,10 @@ def great_ring(s):
 # ---------------------------------------------------------------------------
 #  冠の光輪（小さな環が冠の周りを斜めに回る）
 # ---------------------------------------------------------------------------
-HALO_C = (0.0, 33.6, 0.0)
+HALO_C = (0.0, 34.0, 0.0)
 
 
 def halo(s):
     hl = s.part("extra", "halo", "head", pivot=HALO_C, rotation=(-10, 0, 14))
     sp = s.fx("spin", "halo", hl, pivot=HALO_C)
-    ring(sp, HALO_C, 6.4, 20, (0, 0.6, 0.18), "ring_b", axis="y", styles=["ring_b", "ring_f"])
+    ring(sp, HALO_C, 6.2, 16, (0, 0.55, 0.18), "ring_b", axis="y", styles=["ring_b", "ring_f"])

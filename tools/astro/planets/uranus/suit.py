@@ -18,7 +18,10 @@ from __future__ import annotations
 
 import math
 
-from astro_common import (bevel, beam, cbox, line_on, octa, rbox, stick, taper)
+import numpy as np
+
+from astro_common import (bevel, beam, cbox, line_on, mat_cube, octa, rbox, stick, taper)
+from hd_space import rot
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 from astro_weapon import ring        # 接線の向きを行列で解く輪（astro_common.ring の axis="z" は傾きが逆）
 
@@ -27,7 +30,7 @@ FROST = (226, 244, 250)
 TRIM_W = 0.4           # 縁取りの幅
 
 # 背中の環（98° の傾き: 縦に立ち、上端が 8° 後ろへ倒れ、左右に 15° ひねる）
-RING_C = (0.0, 21.0, 9.6)
+RING_C = (0.0, 21.0, 9.0)
 RING_R = 12.4
 RING_ROT = (-8, 15, 0)
 
@@ -108,9 +111,20 @@ def _dir(deg, side=-1):
     return (side * math.sin(a), math.cos(a), 0.0)
 
 
-def _spike(bone, base, d, length, w0, style="ice", n=3, w1=0.12):
-    tip = (base[0] + d[0] * length, base[1] + d[1] * length, base[2] + d[2] * length)
-    return taper(bone, base, tip, w0, w1, n, style)
+def crystal(bone, base, d, length, w, style="ice", tip=0.4):
+    """氷晶: 45° ずらして重ねた角柱の胴（六角柱に見える）+ 尖った先。d は向き（正規化不要）。6 個。"""
+    d = np.asarray(d, float)
+    d = d / np.linalg.norm(d)
+    b = np.asarray(base, float)
+    mid = b + d * length * (1 - tip)
+    out = [beam(bone, b, mid, w, w, style), beam(bone, b, mid, w * 0.9, w * 0.9, style, roll=45)]
+    out += taper(bone, mid - d * 0.05, b + d * length, w * 0.95, 0.08, 2, style)
+    return out
+
+
+def diamond(bone, centre, size, depth, style, tilt=(0, 0, 0)):
+    """面の中で 45° 回した正方形（◆）を tilt（統合版の角度）で傾けて置く。"""
+    return mat_cube(bone, centre, (size, size, depth), style, rot(*tilt) @ rot(0, 0, 45))
 
 
 # ---------------------------------------------------------------------------
@@ -277,15 +291,15 @@ def arms(s):
     cbox(el, (-6.0, 16.9, 0.0), (5.3, 1.5, 5.3), "frame")
     octa(el, (-8.45, 16.9, 0.2), 1.8, 0.5, "chrome", axis="x")
     rbox(el, (-6.2, 17.0, 2.75), (3.0, 1.9, 0.8), "plate", rot=(-18, 0, 0))
-    taper(el, (-6.2, 16.6, 2.9), (-6.6, 15.6, 5.4), 1.0, 0.14, 2, "ice")
+    crystal(el, (-6.2, 16.5, 2.7), (-0.1, -0.35, 1.0), 2.8, 0.9, "ice")
     # 前腕: 手首へ開く篭手 + 外側の氷晶の刃（前腕に沿って上後ろへ）
     fa = s.part("arms", "vambrace_r", "rightArm", pivot=(ARM_X, 15.0, 0))
     cbox(fa, (-6.0, 14.95, 0), (4.9, 3.1, 5.1), "plate")
     ob = rbox(fa, (-8.7, 14.85, 0), (0.8, 3.4, 4.8), "plate2", rot=(0, 0, 7))
     stick(fa, ob, "west", 0.5, 0.5, (2.4, 2.8, 0.5), "navy", sink=0.1)
     line_on(fa, ob, "west", (0.15, 0.25), (0.85, 0.25), 0.22, 0.2, "glow")
-    taper(fa, (-9.1, 13.6, -0.4), (-10.4, 18.3, 2.2), 1.15, 0.14, 3, "ice")
-    taper(fa, (-9.0, 13.4, 1.0), (-9.9, 16.4, 3.4), 0.8, 0.12, 2, "crystal")
+    crystal(fa, (-9.0, 13.3, -0.3), (-0.24, 0.9, 0.42), 5.6, 1.1, "ice")
+    crystal(fa, (-8.9, 13.2, 1.3), (-0.2, 0.75, 0.62), 3.4, 0.8, "crystal")
     rbox(fa, (-6.15, 14.85, -2.72), (4.1, 3.1, 0.7), "frost", rot=(-8, 0, 0))
     rbox(fa, (-6.15, 14.85, 2.72), (4.1, 3.1, 0.7), "plate_b", rot=(8, 0, 0))
     cbox(fa, (-6.0, 13.42, 0), (5.7, TRIM_W, 5.9), "rim")
@@ -325,15 +339,15 @@ def shoulders(s):
     rbox(p, (-10.25, 19.1, 0.1), (0.8, 1.4, 5.0), "frost", rot=(0, 0, 10))
     # 右肩: 98° 横倒しの氷晶（外へ、わずかに下向き）
     tl = s.part("shoulders", "tilt", "rightArm", pivot=(-9.0, 25.2, 0.0))
-    _spike(tl, (-9.0, 25.2, 0.2), _dir(98), 6.4, 1.6, "ice", 3)
-    _spike(tl, (-8.8, 25.5, -1.7), _dir(74), 4.2, 1.1, "crystal", 2)
-    _spike(tl, (-8.8, 24.9, 2.0), _dir(118), 3.6, 1.0, "crystal", 2)
+    crystal(tl, (-8.8, 25.3, 0.2), _dir(98), 6.8, 1.5, "ice")
+    crystal(tl, (-8.7, 25.6, -1.7), _dir(76), 4.3, 1.05, "crystal")
+    crystal(tl, (-8.7, 25.0, 2.0), _dir(120), 3.7, 0.95, "crystal")
     octa(tl, (-8.9, 25.25, 0.2), 1.9, 1.0, "navy", axis="x")
     # 左肩: 天を突く氷晶
     cr = s.part("shoulders", "crown", "leftArm", pivot=(9.0, 25.2, 0.0))
-    _spike(cr, (8.6, 25.4, 0.3), _dir(12, +1), 6.0, 1.6, "ice", 3)
-    _spike(cr, (8.9, 25.2, -1.6), _dir(30, +1), 3.8, 1.1, "crystal", 2)
-    _spike(cr, (8.9, 25.1, 2.0), _dir(-4, +1), 3.4, 1.0, "crystal", 2)
+    crystal(cr, (8.6, 25.4, 0.3), _dir(10, +1), 6.4, 1.5, "ice")
+    crystal(cr, (8.9, 25.2, -1.6), _dir(32, +1), 4.0, 1.05, "crystal")
+    crystal(cr, (8.9, 25.1, 2.0), _dir(-8, +1), 3.5, 0.95, "crystal")
     octa(cr, (8.6, 25.3, 0.3), 1.9, 1.0, "navy", axis="y")
 
 
@@ -344,7 +358,7 @@ def helmet(s):
     hm = s.part("helmet", "dome", "head")
     bevel(hm, (0, 31.3, 0.2), (9.8, 4.4, 10.0), "plate", cut=0.85, axis="z")
     # 屋根: 中央の稜へ上る二枚（外の縁に霜の白）
-    rf = rbox(hm, (-2.45, 33.75, 0.4), (5.2, 0.8, 9.2), "plate", rot=(0, 0, -15))
+    rf = rbox(hm, (-2.45, 33.75, 0.4), (5.2, 0.8, 9.2), "plate", rot=(0, 0, -20))
     rfr = line_on(hm, rf, "up", (0.05, 0.06), (0.05, 0.94), 0.3, 0.2, "rim")
     mirror_x(hm, rf, rfr)
     cbox(hm, (0, 34.55, 0.4), (1.2, 0.9, 8.8), "frost")                   # 中央の稜
@@ -361,18 +375,19 @@ def helmet(s):
     # 眉庇: 中央で下へ尖る霜の V
     br = rbox(hm, (-2.45, 29.45, -5.05), (4.9, 1.1, 1.0), "frost", rot=(-14, 7, 9))
     mirror_x(hm, br)
-    # ダイヤの鶏冠: 縦に長い両錐の結晶（額から天へ）+ 紺の台
-    rbox(hm, (0, 30.7, -5.55), (1.6, 1.6, 0.6), "navy", rot=(0, 0, 45))
-    taper(hm, (0, 31.6, -5.75), (0, 37.0, -6.6), 2.3, 0.15, 4, "crystal")
-    taper(hm, (0, 31.6, -5.75), (0, 30.0, -5.95), 2.3, 0.6, 2, "crystal")
-    rbox(hm, (0, 31.6, -6.05), (0.9, 0.9, 0.3), "gem", rot=(0, 0, 45))
+    # ダイヤの鶏冠: 額から天へ立つ ◆（霜の枠 → 結晶 → 宝玉）と、背の低い紺の台
+    T = (-16, 0, 0)
+    diamond(hm, (0, 32.9, -5.2), 3.9, 0.6, "navy", T)
+    diamond(hm, (0, 32.9, -5.4), 3.5, 0.7, "frost", T)
+    diamond(hm, (0, 32.9, -5.7), 2.5, 0.5, "crystal", T)
+    diamond(hm, (0, 32.9, -5.98), 1.0, 0.3, "gem", T)
     # 面頬: 中央の稜へ折れた二枚 + 吸気スリット、尖った顎
-    mg = rbox(hm, (-1.15, 25.85, -5.05), (2.4, 3.4, 0.7), "plate", rot=(0, 32, -6))
-    mv = stick(hm, mg, "north", 0.5, 0.4, (0.5, 1.4, 0.1), "vent", sink=0.05)
-    mirror_x(hm, mg, mv)
+    mg = rbox(hm, (-1.3, 25.75, -5.0), (2.6, 3.0, 0.7), "plate", rot=(0, 30, -12))
+    mgl = line_on(hm, mg, "north", (0.85, 0.15), (0.25, 0.55), 0.2, 0.2, "glow_soft")
+    mirror_x(hm, mg, mgl)
     cbox(hm, (0, 25.9, -5.62), (0.45, 2.9, 0.5), "frost")                  # 中央の稜
     cbox(hm, (0, 25.7, -4.62), (7.6, 3.6, 0.5), "frame")                   # 顔の奥
-    rbox(hm, (0, 24.1, -4.95), (1.8, 1.8, 1.0), "plate", rot=(-20, 0, 45))  # 尖った顎
+    diamond(hm, (0, 24.35, -5.0), 2.0, 1.0, "frost", (-20, 0, 0))         # ◆ の顎
     # 頬当て: 前へ向かって内に絞る
     ck = rbox(hm, (-3.45, 25.8, -3.75), (1.4, 3.8, 3.3), "plate2", rot=(0, 34, -6))
     ckt = stick(hm, ck, "west", 0.08, 0.5, (0.35, 3.4, 0.2), "rim", sink=0.05)
@@ -406,8 +421,3 @@ def tilt_ring(s):
         M = (C[0] - RING_R * math.sin(a), C[1] + RING_R * math.cos(a), C[2])
         rbox(sp, M, (1.3, 1.3, 1.3), "crystal", rot=(45, 0, 45))
         cbox(sp, M, (0.75, 0.75, 1.7), "glow")
-    # 三本の細い輻（軸受けから内側の帯へ）
-    for k in range(3):
-        a = math.radians(k * 120 + 60)
-        q = (C[0] - (RING_R - 1.6) * math.sin(a), C[1] + (RING_R - 1.6) * math.cos(a), C[2])
-        beam(sp, (C[0] - 1.0 * math.sin(a), C[1] + 1.0 * math.cos(a), C[2]), q, 0.3, 0.3, "glow_soft")

@@ -308,17 +308,17 @@ def back(s):
     taper(fx, (-1.4, 12.8, 5.4), (-1.4, 8.6, 5.4), 1.1, 0.25, 2, "flame_core", round_=False)
     # 双極の紅炎アーチ（背の左右。上の肩甲骨から外へ膨らみ、腰の上へ戻る）
     ar = s.part("back", "arch_r", bk, pivot=(-2.6, 19.0, 5.2))
-    A, B = (-3.2, 23.2, 5.0), (-4.7, 14.4, 3.6)
+    A, B = (-3.9, 22.6, 5.0), (-4.5, 15.0, 4.0)
     for p in (A, B):                                                       # 根元の金の磁気コイル
         octa(ar, p, 1.5, 1.1, "plate2", axis="x")
         octa(ar, (p[0] - 0.62, p[1], p[2]), 0.8, 0.3, "glow_hot", axis="x")
     fa = s.fx("glow", "arch_r", ar, pivot=(-3.6, 19.0, 5.0))
     pts = loop_pts((A[0] - 0.3, A[1], A[2] + 0.1), (B[0] - 0.3, B[1], B[2] + 0.1), 0.0,
-                   out=(-6.2, 1.8, 2.2), n=6)
+                   out=(-5.6, 0.2, 2.4), n=6)
     polyline(fa, pts, 0.9, 0.9, "plasma")
     polyline(fa, [(q[0] + 0.15, q[1], q[2] + 0.05) for q in pts], 0.4, 1.25, "prom_core")
     # 弧の外へ立つ炎の舌
-    for k, (a, L) in zip((2, 3, 4), ((-58, 3.4), (-84, 4.2), (-112, 3.2))):
+    for k, (a, L) in zip((2, 3, 4), ((-50, 3.4), (-80, 4.2), (-112, 3.2))):
         ray(fa, pts[k], a, 0.3, L, 1.7, 0.35, 2, 0.5, "prom", yaw=-12)
 
 
@@ -380,15 +380,17 @@ def shoulders(s):
     for zc in (-2.2, 0.0, 2.2):
         ray(p, (-10.3, 19.6, zc), -160, 0.0, 2.2 if zc else 2.8, 1.4, 0.5, 1, 0.5, "plate2")
     # 紅炎のループ（肩当ての上、前から後ろへ外へ膨らむ弧）と、弧の上の炎の舌
-    for z in (-2.9, 2.9):
-        octa(p, (-8.0, 25.5, z), 1.4, 0.9, "frame", axis="y")
-        octa(p, (-8.0, 26.0, z), 1.0, 0.3, "glow_hot", axis="y")
-    fp = s.fx("glow", "prom_r", p, pivot=(-8.0, 25.8, 0.0))
-    pts = loop_pts((-8.0, 25.9, -2.9), (-8.0, 25.9, 2.9), 3.6, out=(-1.8, 0.0, 0.0), n=6)
+    PA, PB = (-6.4, 25.7, -2.6), (-9.4, 25.4, 2.6)
+    for q in (PA, PB):
+        octa(p, q, 1.4, 0.9, "frame", axis="y")
+        octa(p, (q[0], q[1] + 0.5, q[2]), 1.0, 0.3, "glow_hot", axis="y")
+    fp = s.fx("glow", "prom_r", p, pivot=(-7.9, 25.8, 0.0))
+    pts = loop_pts((PA[0], PA[1] + 0.4, PA[2]), (PB[0], PB[1] + 0.4, PB[2]), 3.8,
+                   out=(-1.2, 0.0, 0.0), n=6)
     polyline(fp, pts, 0.85, 0.85, "plasma")
     polyline(fp, [(q[0], q[1] + 0.1, q[2]) for q in pts], 1.1, 0.35, "prom_core")
-    for k, a, L in ((2, -20, 2.2), (3, -10, 2.9), (4, -20, 2.0)):
-        ray(fp, pts[k], a, 0.2, L, 1.3, 0.3, 2, 0.45, "prom", yaw=90)
+    for k, a, L in ((2, -24, 2.2), (3, -8, 3.0), (4, 14, 2.0)):
+        ray(fp, pts[k], a, 0.2, L, 1.3, 0.3, 2, 0.45, "prom", yaw=30)
 
 
 # ---------------------------------------------------------------------------
@@ -405,6 +407,9 @@ def helmet(s):
     rbox(hm, (0, 32.0, -4.85), (8.6, 2.6, 0.8), "plate", rot=(-30, 0, 0))       # 額の斜面
     rbox(hm, (0, 31.9, 5.2), (8.6, 2.4, 0.8), "plate", rot=(30, 0, 0))          # 後ろの斜面
     cbox(hm, (0, 26.9, 4.95), (8.8, 4.6, 0.8), "plate")                          # 後頭部
+    rbox(hm, (0, 31.6, 5.45), (1.4, 2.4, 0.5), "plate2", rot=(30, 0, 0))        # 稜が後ろへ降りる
+    cbox(hm, (0, 27.4, 5.45), (1.4, 4.4, 0.4), "plate2")
+    cbox(hm, (0, 27.4, 5.7), (0.4, 3.6, 0.2), "glow")
     sd = cbox(hm, (-4.95, 27.3, 0.1), (0.9, 5.0, 8.4), "plate2")                 # 側板（金）
     sdl = cbox(hm, (-5.42, 26.0, 0.4), (0.2, 0.3, 6.0), "glow")
     ear = octa(hm, (-5.55, 28.0, 0.9), 2.6, 0.5, "bronze", axis="x")
@@ -426,7 +431,7 @@ def helmet(s):
     mirror_x(hm, br)
     # 面頬: 白の V + 紅の吸気スリット、細い顎
     mg = rbox(hm, (-1.1, 25.75, -5.05), (2.3, 3.2, 0.7), "face", rot=(0, 30, 0))
-    mv = stick(hm, mg, "north", 0.5, 0.36, (0.5, 1.2, 0.1), "grille", sink=0.05)
+    mv = stick(hm, mg, "north", 0.5, 0.22, (1.4, 0.5, 0.1), "grille", sink=0.05)
     mirror_x(hm, mg, mv)
     cbox(hm, (0, 25.9, -5.6), (0.5, 2.8, 0.5), "plate2")
     cbox(hm, (0, 25.7, -4.62), (7.6, 3.6, 0.5), "frame")
@@ -441,7 +446,7 @@ def helmet(s):
     vz = s.part("visor", "eye", "head")
     cbox(vz, (0, 27.95, -4.8), (8.4, 1.9, 0.6), "dark")
     fg = s.fx("glow", "visor", vz, pivot=(0, 28.0, -5.1))
-    half = rbox(fg, (-1.95, 27.95, -5.1), (3.9, 1.15, 0.35), "visor", rot=(0, 9, 10))
+    half = rbox(fg, (-1.95, 27.95, -5.1), (3.9, 1.35, 0.35), "visor", rot=(0, 9, 11))
     mirror_x(fg, half)
 
 
@@ -460,9 +465,9 @@ def halo(s):
          styles=["plate2", "plate2", "plate2", "crimson"])
     for i in range(8):
         a = i * 45.0
-        L = 4.6 if i % 2 == 0 else 3.6
-        ray(sp, C, a, 6.6, L, 2.3, 0.4, 2, 0.5, "plate2" if i % 2 == 0 else "bronze")   # 金の刃
-        ray(sp, (C[0], C[1], C[2] + 0.05), a + 22.5, 6.5, 3.2, 1.7, 0.3, 2, 0.3, "corona")   # 炎
+        L = 4.4 if i % 2 == 0 else 3.4
+        ray(sp, C, a, 6.5, L, 2.4, 0.2, 3, 0.5, "plate2" if i % 2 == 0 else "bronze")   # 金の刃
+        ray(sp, (C[0], C[1], C[2] + 0.05), a + 22.5, 6.4, 3.4, 1.6, 0.2, 2, 0.3, "corona")   # 炎
     si = s.fx("spin", "halo_in", hb, pivot=C)
     ring(si, (C[0], C[1], C[2] - 0.2), 5.6, 12, (0, 0.3, 0.3), "glow_hot", axis="z",
          styles=["glow_hot", "glow"])
