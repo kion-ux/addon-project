@@ -27,18 +27,18 @@ c1_hit = P(b=(6, -12, 0), h=(0, 10, 0),
            lA=aim(dirv(f=-0.35, u=-1.0, r=-0.6)),
            rL=(22, 0, 6), lL=(-30, 0, -6), root_pos=(0, 0, -1.0), ground=True)
 c1_follow = P(c1_hit, b=(8, -42, 0), h=(0, 32, 0),
-              rA=wield(blade=dirv(r=-1.0, f=0.25, u=-0.12), edge=dirv(f=-0.5, r=-0.6)))
+              rA=wield(blade=dirv(r=-1.0, f=0.25, u=-0.12), arm=dirv(r=-0.9, f=0.45, u=-0.25)))
 
 c2_wind = P(b=(10, -30, 0), h=(0, 24, 0),
             rA=wield(blade=dirv(r=-0.7, u=-0.6, f=0.45), arm=dirv(f=1.0, u=-0.5, r=-0.2)),
             lA=aim(dirv(f=0.3, u=-1.0, r=0.4)),
             rL=(-22, 0, 6), lL=(14, 0, -6), ground=True)
 c2_hit = P(b=(-6, 22, 0), h=(0, -18, 0),
-           rA=wield(blade=dirv(r=0.55, u=0.75, f=0.45), edge=dirv(u=0.5, r=0.6, f=-0.3)),
+           rA=wield(blade=dirv(r=0.55, u=0.75, f=0.45), arm=dirv(r=0.6, u=0.25, f=0.75)),
            lA=aim(dirv(f=-0.2, u=-1.0, r=-0.5)),
            rL=(-26, 0, 6), lL=(18, 0, -6), root_pos=(0, 0.4, -0.8), ground=True)
 c2_follow = P(c2_hit, b=(-10, 34, 0), h=(-6, -26, 0),
-              rA=wield(blade=dirv(r=0.5, u=0.85, f=-0.3), edge=dirv(u=0.3, r=0.6, f=-0.7)))
+              rA=wield(blade=dirv(r=0.5, u=0.85, f=-0.2), arm=dirv(r=0.85, u=0.5, f=0.15)))
 
 c3_up = P(b=(-14, 0, 0), h=(-16, 0, 0),
           rA=wield(blade=dirv(u=0.55, f=-0.85), arm=dirv(u=1.0, f=0.15, r=0.25)),
@@ -58,7 +58,7 @@ ts_mid = P(ts_wind, b=(4, 2, 0), h=(0, -2, 0),
            rA=wield(blade=dirv(f=1.0, u=0.05, r=0.05), edge=LEFT),
            lA=aim(dirv(f=-0.2, u=-1.0, r=-0.6)))
 ts_follow = P(ts_wind, b=(6, -62, 0), h=(0, 46, 0),
-              rA=wield(blade=dirv(r=-1.0, f=-0.3, u=0.05), edge=dirv(f=-1.0, r=-0.3)),
+              rA=wield(blade=dirv(r=-1.0, f=-0.3, u=0.05), arm=dirv(r=-0.85, f=0.4, u=-0.3)),
               lA=aim(dirv(r=0.6, f=-0.6, u=-0.7)))
 
 charge = P(w=(26, 0, 0), h=(-28, 0, 0),

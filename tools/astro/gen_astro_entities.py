@@ -1975,3 +1975,434 @@ def run_js_test():
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
+
+# ===========================================================================
+#  invaders.js のスモークテスト（@minecraft/server を動くスタブに差し替えて Node で走らせる）
+# ===========================================================================
+JS_SERVER = r"""
+const G = globalThis;
+G.__log = { particles: new Map(), sounds: new Map(), warns: [], props: new Map(), events: new Map(),
+            dmg: new Map(), titles: [] };
+G.__handlers = {};
+const timeouts = [];
+const intervals = [];
+export const system = {
+  currentTick: 0,
+  run(f) { timeouts.push({ due: this.currentTick + 1, f }); return 0; },
+  runTimeout(f, t = 1) { timeouts.push({ due: this.currentTick + Math.max(1, t), f }); return 0; },
+  runInterval(f, t = 1) { intervals.push({ every: Math.max(1, t), f }); return 0; },
+  runJob() { }, clearRun() { },
+  afterEvents: { scriptEventReceive: { subscribe(f) { G.__handlers.scriptEventReceive = f; } } },
+  beforeEvents: { watchdogTerminate: { subscribe() { } }, startup: { subscribe() { } } },
+};
+G.__runTimers = (t) => {
+  for (const iv of intervals) if (t % iv.every === 0) { try { iv.f(); } catch (e) { G.__log.warns.push("interval: " + e.stack); } }
+  const due = timeouts.filter((x) => x.due <= t);
+  for (const x of due) timeouts.splice(timeouts.indexOf(x), 1);
+  for (const x of due) { try { x.f(); } catch (e) { G.__log.warns.push("timeout: " + e.stack); } }
+};
+const events = new Proxy({}, { get(_, name) { return { subscribe(f) { G.__handlers[name] = f; return f; }, unsubscribe() { } }; } });
+export class MolangVariableMap {
+  setFloat(k, v) { if (!Number.isFinite(v)) throw new Error(`non-finite molang ${k}=${v}`); }
+  setColorRGB() { } setColorRGBA() { } setVector3() { }
+}
+export class ItemStack { constructor(typeId, amount = 1) { this.typeId = typeId; this.amount = amount; } }
+export const EntityDamageCause = new Proxy({}, { get: (_, k) => String(k) });
+export const GameMode = { survival: "survival", creative: "creative", adventure: "adventure", spectator: "spectator" };
+
+const FAMILIES = {
+  "astro:void_drone": ["astro_invader", "astro_drone", "monster", "mob"],
+  "astro:void_sentinel": ["astro_invader", "astro_sentinel", "monster", "mob"],
+  "astro:nemesis": ["astro_invader", "astro_boss", "monster", "mob"],
+  "astro:hologram_target": ["astro_target", "mob"],
+  "minecraft:player": ["player", "mob"],
+};
+const HP = { "astro:void_drone": 20, "astro:void_sentinel": 44, "astro:nemesis": 480, "astro:hologram_target": 200 };
+const PROPS = { "astro:void_drone": { "astro:mode": 0 }, "astro:void_sentinel": { "astro:mode": 0 },
+                "astro:nemesis": { "astro:mode": 0, "astro:phase": 1 } };
+
+let nextId = 1;
+export class FakeEntity {
+  constructor(dim, typeId, loc, hp) {
+    this.id = String(nextId++);
+    this.typeId = typeId;
+    this.dimension = dim;
+    this.location = { ...loc };
+    this.vel = { x: 0, y: 0, z: 0 };
+    this.hp = hp ?? HP[typeId] ?? 10; this.maxHp = this.hp;
+    this.alive = true;
+    this.rot = { x: 0, y: 0 };
+    this.tags = new Set();
+    this.props = new Map(Object.entries(PROPS[typeId] ?? {}));
+    this.dyn = new Map();
+    this.effects = [];
+    this.nameTag = "";
+    this.isOnGround = true; this.isSneaking = false;
+    this.selectedSlotIndex = 0;
+    this.inv = [];
+    this.mode = "survival";
+    this.born = system.currentTick;
+    this.lastHurt = -99;
+    this.onScreenDisplay = { setActionBar: (m) => { this.actionbar = m; }, setTitle: (t, o) => { this.title = t; G.__log.titles.push(t); } };
+    dim.entities.push(this);
+  }
+  isValid() { return this.alive; }
+  getComponent(name) {
+    const e = this;
+    if (name === "minecraft:health" && e.typeId !== "astro:void_bolt") {
+      return { get currentValue() { return e.hp; }, get effectiveMax() { return e.maxHp; },
+               setCurrentValue(v) { e.hp = Math.max(0, Math.min(e.maxHp, v)); return true; } };
+    }
+    if (name === "minecraft:projectile" && e.typeId === "astro:void_bolt" && !G.__noShoot) {
+      return { owner: undefined, shoot(v) {
+        for (const k of ["x", "y", "z"]) if (!Number.isFinite(v[k])) throw new Error("bad shoot");
+        e.vel = { ...v }; e.projectile = this; } };
+    }
+    if (name === "minecraft:inventory") {
+      return { container: { size: 36, getItem: (i) => e.inv[i], setItem: (i, it) => { e.inv[i] = it; } } };
+    }
+    return undefined;
+  }
+  hasComponent(n) { return !!this.getComponent(n); }
+  getProperty(k) { if (!this.props.has(k)) throw new Error(`no property ${k} on ${this.typeId}`); return this.props.get(k); }
+  setProperty(k, v) {
+    if (!this.props.has(k)) throw new Error(`no property ${k} on ${this.typeId}`);
+    if (!Number.isInteger(v)) throw new Error(`bad property value ${k}=${v}`);
+    this.props.set(k, v);
+    const key = `${this.typeId}|${k}`;
+    if (!G.__log.props.has(key)) G.__log.props.set(key, new Set());
+    G.__log.props.get(key).add(v);
+  }
+  triggerEvent(n) { const key = `${this.typeId}|${n}`; G.__log.events.set(key, (G.__log.events.get(key) ?? 0) + 1); }
+  addTag(t) { this.tags.add(t); return true; } hasTag(t) { return this.tags.has(t); }
+  removeTag(t) { return this.tags.delete(t); } getTags() { return [...this.tags]; }
+  applyDamage(amount, opts) {
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error("bad damage " + amount);
+    if (opts && opts.damagingEntity && !opts.damagingEntity.alive) throw new Error("damagingEntity invalid");
+    this.hp -= amount;
+    const src = opts?.damagingEntity?.typeId ?? "none";
+    if (this.typeId === "minecraft:player") {
+      const key = `${src}|${opts?.cause ?? "?"}`;
+      G.__log.dmg.set(key, (G.__log.dmg.get(key) ?? 0) + amount);
+    }
+    G.__onHurt?.(this, amount, { cause: opts?.cause, damagingEntity: opts?.damagingEntity });
+    return true;
+  }
+  applyImpulse(v) {
+    if (this.typeId === "minecraft:player") throw new Error("applyImpulse on player");
+    for (const k of ["x", "y", "z"]) if (!Number.isFinite(v[k])) throw new Error("bad impulse");
+    this.vel.x += v.x; this.vel.y += v.y; this.vel.z += v.z;
+  }
+  clearVelocity() { this.vel = { x: 0, y: 0, z: 0 }; }
+  applyKnockback(dx, dz, h, v) {
+    for (const x of [dx, dz, h, v]) if (!Number.isFinite(x)) throw new Error("bad knockback");
+    this.vel = { x: dx * h, y: v, z: dz * h };
+  }
+  addEffect(id, ticks, o) { if (!Number.isFinite(ticks) || ticks <= 0) throw new Error("bad effect"); this.effects.push(id); }
+  removeEffect() { }
+  setRotation(r) { if (!Number.isFinite(r.x) || !Number.isFinite(r.y)) throw new Error("bad rotation"); this.rot = { ...r }; }
+  getRotation() { return { ...this.rot }; }
+  teleport(loc) { for (const k of ["x", "y", "z"]) if (!Number.isFinite(loc[k])) throw new Error("bad teleport"); this.location = { ...loc }; }
+  getViewDirection() { const y = this.rot.y * Math.PI / 180; return { x: -Math.sin(y), y: 0, z: Math.cos(y) }; }
+  getVelocity() { return { ...this.vel }; }
+  getHeadLocation() { return { x: this.location.x, y: this.location.y + 1.6, z: this.location.z }; }
+  getDynamicProperty(k) { return this.dyn.get(k); } setDynamicProperty(k, v) { this.dyn.set(k, v); }
+  remove() { this.alive = false; const a = this.dimension.entities; const i = a.indexOf(this); if (i >= 0) a.splice(i, 1); }
+  kill() { this.hp = 0; }
+  runCommand(c) { return {}; }
+  getGameMode() { return this.mode; }
+  sendMessage(m) { this.lastMessage = m; }
+  playAnimation() { }
+  matches(o) { return (o.families ?? []).every((f) => (FAMILIES[this.typeId] ?? []).includes(f)); }
+}
+
+export class FakeDimension {
+  constructor(id) { this.id = id; this.entities = []; }
+  spawnParticle(id, loc, vars) {
+    for (const k of ["x", "y", "z"]) if (!Number.isFinite(loc[k])) throw new Error(`bad particle loc ${id}`);
+    G.__log.particles.set(id, (G.__log.particles.get(id) ?? 0) + 1);
+  }
+  playSound(id, loc) {
+    for (const k of ["x", "y", "z"]) if (!Number.isFinite(loc[k])) throw new Error(`bad sound loc ${id}`);
+    G.__log.sounds.set(id, (G.__log.sounds.get(id) ?? 0) + 1);
+  }
+  getEntities(q = {}) {
+    let list = this.entities.filter((e) => e.alive);
+    if (q.type) list = list.filter((e) => e.typeId === q.type);
+    if (q.families) list = list.filter((e) => q.families.every((f) => (FAMILIES[e.typeId] ?? []).includes(f)));
+    if (q.tags) list = list.filter((e) => q.tags.every((t) => e.tags.has(t)));
+    if (q.location && q.maxDistance !== undefined) {
+      if (!Number.isFinite(q.maxDistance)) throw new Error("bad query");
+      list = list.filter((e) => Math.hypot(e.location.x - q.location.x, e.location.y - q.location.y, e.location.z - q.location.z) <= q.maxDistance);
+    }
+    return list;
+  }
+  spawnEntity(type, loc) {
+    for (const k of ["x", "y", "z"]) if (!Number.isFinite(loc[k])) throw new Error("bad spawn loc");
+    if (!G.__entityIds.has(type)) throw new Error(`unknown entity ${type}`);
+    return new FakeEntity(this, type, loc);
+  }
+  getBlock(loc) {
+    const solid = loc.y < 64 || (G.__ceiling && loc.y >= 70 && loc.y < 71);
+    return { typeId: solid ? "minecraft:stone" : "minecraft:air", isAir: !solid, isLiquid: false };
+  }
+}
+
+const dims = { overworld: new FakeDimension("minecraft:overworld"), nether: new FakeDimension("minecraft:nether"),
+               the_end: new FakeDimension("minecraft:the_end") };
+G.__dims = dims;
+G.__time = 18000;
+export const world = {
+  afterEvents: events, beforeEvents: events,
+  getAllPlayers() { return Object.values(dims).flatMap((d) => d.entities.filter((e) => e.typeId === "minecraft:player" && e.alive)); },
+  getPlayers() { return this.getAllPlayers(); },
+  getDimension(id) { return dims[String(id).replace("minecraft:", "")]; },
+  getEntity(id) { return Object.values(dims).flatMap((d) => d.entities).find((e) => e.id === id); },
+  getTimeOfDay() { return G.__time; },
+  getAbsoluteTime() { return system.currentTick; },
+  getDynamicProperty() { return undefined; }, setDynamicProperty() { },
+  sendMessage() { }, gameRules: {},
+};
+export default {};
+"""
+
+JS_UI = r"""
+class Form { title() { return this; } body() { return this; } button() { return this; } toggle() { return this; }
+  dropdown() { return this; } slider() { return this; } textField() { return this; }
+  show() { return Promise.resolve({ canceled: true }); } }
+export const ActionFormData = Form; export const ModalFormData = Form; export const MessageFormData = Form;
+export const FormCancelationReason = {};
+export default {};
+"""
+
+JS_TEST = r"""
+import { FakeEntity, system } from "@minecraft/server";
+const G = globalThis;
+let seed = 12345;
+Math.random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+const origWarn = console.warn;
+console.warn = (...a) => { G.__log.warns.push(a.join(" ")); };
+const INV = await import("./invaders.js");
+let fails = 0;
+const fail = (m) => { fails++; console.log("  FAIL " + m); };
+const ow = G.__dims.overworld;
+G.__onHurt = (e, dmg, src) => { INV.onInvaderHurt(e, dmg, src); if (e.hp <= 0 && e.alive && e.typeId !== "minecraft:player") { INV.onInvaderDie(e, src); e.remove(); } };
+
+function physics() {
+  for (const d of Object.values(G.__dims)) {
+    for (const e of [...d.entities]) {
+      if (!e.alive) continue;
+      if (e.typeId === "minecraft:player") {
+        e.location.x += e.vel.x; e.location.y = Math.max(64, e.location.y + e.vel.y); e.location.z += e.vel.z;
+        e.vel = { x: e.vel.x * 0.5, y: e.vel.y * 0.5 - 0.04, z: e.vel.z * 0.5 };
+        e.isOnGround = e.location.y <= 64.001;
+        continue;
+      }
+      if (e.typeId === "astro:void_bolt") {
+        e.location.x += e.vel.x; e.location.y += e.vel.y; e.location.z += e.vel.z;
+        if (e.projectile) {
+          for (const p of d.entities.filter((x) => x.typeId === "minecraft:player")) {
+            const c = { x: p.location.x, y: p.location.y + 1, z: p.location.z };
+            if (Math.hypot(c.x - e.location.x, c.y - e.location.y, c.z - e.location.z) < 0.9) {
+              p.applyDamage(4, { cause: "projectile", damagingEntity: e.projectile.owner?.alive ? e.projectile.owner : undefined });
+              e.remove(); break;
+            }
+          }
+          if (e.alive && (e.location.y < 64 || system.currentTick - e.born > 80)) e.remove();
+        }
+        continue;
+      }
+      e.location.x += e.vel.x; e.location.y += e.vel.y; e.location.z += e.vel.z;
+      e.vel = { x: e.vel.x * 0.91, y: e.vel.y * 0.91, z: e.vel.z * 0.91 };
+      if (e.typeId === "astro:void_sentinel" || e.typeId === "astro:hologram_target") { e.location.y = 64; e.vel.y = 0; }
+      if (e.location.y < 64) { e.location.y = 64; e.vel.y = 0; }
+    }
+  }
+}
+function run(n, every = 1, each) {
+  for (let i = 0; i < n; i++) {
+    system.currentTick++;
+    const t = system.currentTick;
+    G.__runTimers(t);
+    if (t % every === 0) INV.tickInvaders(t);
+    physics();
+    each?.(t);
+  }
+}
+function clear() {
+  for (const d of Object.values(G.__dims)) for (const e of [...d.entities]) e.remove();
+  G.__log.dmg.clear(); G.__log.props.clear(); G.__log.events.clear(); G.__log.titles.length = 0;
+}
+function dmgFrom(type) { let s = 0; for (const [k, v] of G.__log.dmg) if (k.startsWith(type + "|")) s += v; return s; }
+function invWarns() { return G.__log.warns.filter((w) => w.includes("[astro] invaders") || w.includes("Error")); }
+
+// ---- 1) ドローン・センチネル・ネメシスと戦うプレイヤー（毎 tick 呼ぶ）-------------------------
+for (const [label, every, noShoot] of [["every tick", 1, false], ["every 2 ticks + scripted bolts", 2, true]]) {
+  clear();
+  G.__noShoot = noShoot;
+  const p = new FakeEntity(ow, "minecraft:player", { x: 0, y: 64, z: 0 }, 1e6);
+  p.name = "Tester";
+  const drone = new FakeEntity(ow, "astro:void_drone", { x: 6, y: 67, z: 6 });
+  const sentinel = new FakeEntity(ow, "astro:void_sentinel", { x: 3, y: 64, z: 0 });
+  const boss = new FakeEntity(ow, "astro:nemesis", { x: 0, y: 66, z: 12 });
+  INV.onInvaderSpawn(drone); INV.onInvaderSpawn(sentinel); INV.onInvaderSpawn(boss);
+  const warns0 = G.__log.warns.length;
+  const t0 = system.currentTick;
+  run(1200, every, (t) => {
+    // プレイヤーはゆっくり円を描いて歩き、時々跳ぶ。500 tick 目にボスの体力を 45% に
+    const k = t - t0;
+    p.location.x = Math.cos(k / 120) * 2; p.location.z = Math.sin(k / 120) * 2;
+    if (k % 97 === 0) { p.vel.y = 0.42; }
+    if (k === 500) { boss.hp = boss.maxHp * 0.45; INV.onInvaderHurt(boss, 1, { cause: "entityAttack", damagingEntity: p }); }
+    if (boss.hp < 20) boss.hp = 200;     // テスト中に落ちないように
+  });
+  const w = invWarns().slice(0, 5);
+  if (G.__log.warns.length > warns0 && w.length) fail(`[${label}] warnings: ${w.join(" / ").slice(0, 800)}`);
+  for (const [type, min] of [["astro:void_drone", 1], ["astro:void_sentinel", 1], ["astro:nemesis", 1]]) {
+    const d = dmgFrom(type);
+    if (d < min) fail(`[${label}] player took no damage from ${type}`);
+  }
+  const modes = G.__log.props.get("astro:nemesis|astro:mode") ?? new Set();
+  for (const m of [1, 2, 3, 4, 5, 6, 7]) if (!modes.has(m)) fail(`[${label}] nemesis never entered mode ${m} (seen ${[...modes]})`);
+  if (boss.props.get("astro:phase") !== 2) fail(`[${label}] nemesis did not enter phase 2`);
+  const dm = G.__log.props.get("astro:void_drone|astro:mode") ?? new Set();
+  if (!dm.has(1) || !dm.has(2)) fail(`[${label}] drone never charged/fired (${[...dm]})`);
+  const sm = G.__log.props.get("astro:void_sentinel|astro:mode") ?? new Set();
+  if (!sm.has(1) || !sm.has(2)) fail(`[${label}] sentinel never slammed (${[...sm]})`);
+  if (!G.__log.events.get("astro:void_drone|astro:engage")) fail(`[${label}] drone never engaged`);
+  const minions = ow.entities.filter((e) => e.tags.has("astro_minion")).length;
+  if (minions > 6) fail(`[${label}] too many minions ${minions}`);
+  const st = INV.invaderStats();
+  console.log(`  ${label}: dmg drone ${dmgFrom("astro:void_drone").toFixed(0)} sentinel ${dmgFrom("astro:void_sentinel").toFixed(0)}` +
+              ` nemesis ${dmgFrom("astro:nemesis").toFixed(0)} none ${dmgFrom("none").toFixed(0)} | boss modes ${[...modes].sort()} | ${JSON.stringify(st)}`);
+  // ボスを倒す → 撃破演出 → 子機の撤退
+  boss.hp = 1;
+  boss.applyDamage(5, { cause: "entityAttack", damagingEntity: p });
+  run(90, every);
+  if (!G.__log.titles.some((t) => t.includes("撃破"))) fail(`[${label}] no defeat title`);
+  const left = ow.entities.filter((e) => e.tags.has("astro_minion") && e.alive).length;
+  if (left) fail(`[${label}] ${left} minions did not withdraw`);
+  if (invWarns().length) fail(`[${label}] warnings after death: ${invWarns().join(" / ").slice(0, 600)}`);
+  // ドローンの撃破
+  for (const e of ow.entities.filter((x) => x.typeId === "astro:void_drone")) { e.hp = 1; e.applyDamage(3, { cause: "entityAttack", damagingEntity: p }); }
+  run(20, every);
+}
+
+// ---- 2) ヴォイド・シグナルの決まり --------------------------------------------------------
+clear();
+G.__noShoot = false;
+{
+  const p = new FakeEntity(ow, "minecraft:player", { x: 0, y: 64, z: 0 }, 40);
+  p.inv[0] = { typeId: "astro:void_signal", amount: 2 };
+  G.__time = 6000;
+  if (INV.summonNemesis(p)) fail("summoned during the day");
+  G.__time = 18000;
+  G.__ceiling = true;
+  if (INV.summonNemesis(p)) fail("summoned under a roof");
+  G.__ceiling = false;
+  const ne = new FakeEntity(G.__dims.nether, "minecraft:player", { x: 0, y: 64, z: 0 }, 40);
+  ne.inv[0] = { typeId: "astro:void_signal", amount: 1 };
+  if (INV.summonNemesis(ne)) fail("summoned in the nether");
+  if (!INV.summonNemesis(p)) fail("did not summon at night");
+  if (p.inv[0]?.amount !== 1) fail("void signal not consumed");
+  if (INV.summonNemesis(p)) fail("summoned twice during the sequence");
+  run(80);
+  const bosses = ow.entities.filter((e) => e.typeId === "astro:nemesis");
+  if (bosses.length !== 1) fail(`expected 1 nemesis after summon, got ${bosses.length}`);
+  if (INV.summonNemesis(p)) fail("summoned a second nemesis");
+  if (!INV.summonNemesis(p, { force: true })) fail("force summon refused");
+  run(80);
+  p.mode = "creative";
+  run(40);
+}
+
+// ---- 3) ホログラム標的 -------------------------------------------------------------------
+clear();
+{
+  const p = new FakeEntity(ow, "minecraft:player", { x: 0, y: 64, z: 0 }, 40);
+  const tg = INV.summonHologram(p);
+  if (!tg) fail("hologram not spawned");
+  else {
+    tg.applyDamage(12, { cause: "entityAttack", damagingEntity: p });
+    if (!tg.nameTag.includes("DPS") || !tg.nameTag.includes("12.0")) fail(`hologram nameTag: ${tg.nameTag}`);
+    if (tg.hp !== tg.maxHp) fail("hologram not healed");
+    run(140);
+    if (!tg.nameTag.includes("0.0")) fail(`hologram text did not reset: ${tg.nameTag}`);
+    tg.hp = 0;
+    INV.onInvaderDie(tg, { cause: "entityAttack" });
+    tg.remove();
+    run(20);
+    if (!ow.entities.some((e) => e.typeId === "astro:hologram_target")) fail("hologram did not come back");
+  }
+}
+if (invWarns().length) fail(`warnings: ${invWarns().join(" / ").slice(0, 600)}`);
+console.log("__USED__" + JSON.stringify({ particles: [...G.__log.particles.keys()], sounds: [...G.__log.sounds.keys()] }));
+console.log(fails ? `  ${fails} failure(s)` : "  invaders.js: all checks passed");
+process.exit(fails ? 1 : 0);
+"""
+
+
+def js_smoke_test():
+    scripts = os.path.join(BP, "scripts")
+    if not os.path.exists(os.path.join(scripts, "invaders.js")):
+        print("  test: invaders.js missing")
+        return False
+    r = subprocess.run(["node", "--check", os.path.join(scripts, "invaders.js")], capture_output=True, text=True)
+    if r.returncode:
+        print(r.stderr)
+        return False
+    entity_ids = []
+    for fn in os.listdir(os.path.join(BP, "entities")):
+        if fn.endswith(".json"):
+            entity_ids.append(json.load(open(os.path.join(BP, "entities", fn), encoding="utf-8"))
+                              ["minecraft:entity"]["description"]["identifier"])
+    tmp = tempfile.mkdtemp(prefix="astro-inv-")
+    try:
+        with open(os.path.join(tmp, "package.json"), "w") as fh:
+            json.dump({"name": "astro-inv-test", "type": "module"}, fh)
+        for mod, src in (("@minecraft/server", JS_SERVER), ("@minecraft/server-ui", JS_UI)):
+            d = os.path.join(tmp, "node_modules", *mod.split("/"))
+            os.makedirs(d, exist_ok=True)
+            pre = f"globalThis.__entityIds = new Set({json.dumps(entity_ids)});\n" if mod.endswith("server") else ""
+            with open(os.path.join(d, "index.js"), "w", encoding="utf-8") as fh:
+                fh.write(pre + src)
+            with open(os.path.join(d, "package.json"), "w") as fh:
+                json.dump({"name": mod, "type": "module", "main": "index.js"}, fh)
+        shutil.copytree(scripts, os.path.join(tmp, "s"))
+        with open(os.path.join(tmp, "s", "__test_invaders.js"), "w", encoding="utf-8") as fh:
+            fh.write(JS_TEST)
+        r = subprocess.run(["node", os.path.join(tmp, "s", "__test_invaders.js")], capture_output=True, text=True,
+                           timeout=300, cwd=tmp)
+        used = None
+        for line in r.stdout.splitlines():
+            if line.startswith("__USED__"):
+                used = json.loads(line[8:])
+            else:
+                print(line)
+        if r.returncode:
+            print(r.stderr[-3000:])
+            return False
+        errs = []
+        pdir = os.path.join(RP, "particles")
+        particles = set()
+        if os.path.isdir(pdir):
+            for fn in os.listdir(pdir):
+                if fn.endswith(".json"):
+                    particles.add(json.load(open(os.path.join(pdir, fn), encoding="utf-8"))
+                                  ["particle_effect"]["description"]["identifier"])
+        sd = os.path.join(RP, "sounds", "sound_definitions.json")
+        sounds = set(json.load(open(sd, encoding="utf-8"))["sound_definitions"]) if os.path.exists(sd) else set()
+        for pid in used["particles"]:
+            if particles and pid not in particles:
+                errs.append(f"particle {pid} does not exist")
+        for sid in used["sounds"]:
+            if sounds and sid.startswith("astro.") and sid not in sounds:
+                errs.append(f"sound {sid} does not exist")
+        print(f"  used {len(used['particles'])} particles, {len(used['sounds'])} sounds"
+              + ("" if particles else " (particles not generated yet: not checked)"))
+        for e in errs:
+            print("  FAIL", e)
+        return not errs
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)

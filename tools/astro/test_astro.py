@@ -1105,10 +1105,10 @@ def main() -> int:
             print("  FAIL syntax", b)
         return 1
 
-    scratch = os.environ.get("ASTRO_SCRATCH") or None
-    if scratch:
-        os.makedirs(scratch, exist_ok=True)
-    tmp = tempfile.mkdtemp(prefix="astro-test-", dir=scratch)
+    # 一時ファイルは ASTRO_SCRATCH（既定 build_preview/astro/、.gitignore 済み）へ（DESIGN §0）
+    scratch = os.environ.get("ASTRO_SCRATCH", os.path.join(ROOT, "build_preview", "astro"))
+    os.makedirs(scratch, exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix="test-", dir=scratch)
     try:
         with open(os.path.join(tmp, "package.json"), "w") as fh:
             json.dump({"name": "astro-test", "type": "module"}, fh)

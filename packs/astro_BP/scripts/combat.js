@@ -207,7 +207,14 @@ export function hit(src, target, base, o = {}) {
   let amount = Math.max(0, o.raw ? base : base * damageMul(p, key));
   const crit = o.crit === true || (typeof o.crit === "number" && Math.random() < o.crit);
   if (crit) amount *= 1.5;
-  // ノックバック（ダメージより先に。倒した相手も吹き飛ぶ）
+  if (crit) crits.set(tid, now() + 30);
+  if (!rawDamage(p, target, amount)) {
+    const b = bank.get(tid) ?? { e: target, attacker: p, pending: 0, tries: 0 };
+    b.pending = Math.min(b.pending + amount, 400);
+    b.attacker = p;
+    bank.set(tid, b);
+  }
+  // ノックバック（applyDamage のバニラのノックバックの後に上書きする）
   try {
     if (o.pull) {
       const d = sub(o.pull, tloc);
@@ -219,13 +226,6 @@ export function hit(src, target, base, o = {}) {
       knock(target, d.x / l, d.z / l, o.kb ?? 0, o.up ?? 0);
     }
   } catch (_) { }
-  if (crit) crits.set(tid, now() + 30);
-  if (!rawDamage(p, target, amount)) {
-    const b = bank.get(tid) ?? { e: target, attacker: p, pending: 0, tries: 0 };
-    b.pending = Math.min(b.pending + amount, 400);
-    b.attacker = p;
-    bank.set(tid, b);
-  }
   if (!o.quiet) {
     const c = o.color ?? ctx?.c ?? [1, 1, 1];
     burst(tdim, at, c, o.power ?? 1);

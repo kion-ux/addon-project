@@ -49,7 +49,7 @@ export const CFG = {
     waveDamage: 6, jumpClear: 0.9,
   },
   boss: {
-    range: 48, hover: 4.2, keep: 10, maxSpeed: [0, 0.22, 0.3], gap: [0, [46, 66], [26, 38]],
+    range: 48, hover: 2.2, keep: 9, maxSpeed: [0, 0.22, 0.3], gap: [0, [46, 66], [26, 38]],
     beamDamage: [0, 7, 8], meteorDamage: [0, 8, 9], meteorCount: [0, 5, 8], meteorRadius: 2.6,
     holeDamage: [0, 7, 8], dashDamage: [0, 10, 11], summon: [0, 2, 3],
   },
@@ -972,7 +972,7 @@ const BOSS_ACTS = {
     const plan = () => {
       const from = e.location;
       const T = alive(tgt) ? tgt.location : add(from, { x: 0, y: 0, z: 6 });
-      const aim = up(T, -0.6);
+      const aim = up(T, -0.2);             // 原点を足元へ → 核（+2.1）が胸の高さを通る
       const dv = sub(aim, from);
       const L = clamp(len(dv) + 3, 6, 18);
       dir = norm({ x: dv.x, y: clamp(dv.y, -6, 2), z: dv.z });
