@@ -67,7 +67,11 @@ export function moveImpl(key, kind) {
 export function chooseKind(p) {
   let sneak = false, ground = true, water = false, sprint = false;
   try { sneak = !!p.isSneaking; ground = !!p.isOnGround; water = !!p.isInWater; sprint = !!p.isSprinting; } catch (_) { }
-  if (sneak) return novaFull(p) ? "ult" : "barrier";
+  if (sneak) {
+    // ゲージが満タンでも必殺が再使用待ちならバリア（バリアが使えなくならないように）
+    const key = S(p).form;
+    return novaFull(p) && !(key && cdLeft(p, key, "ult") > 0) ? "ult" : "barrier";
+  }
   if (!ground && !water) return "air";
   if (sprint) return "dash";
   return "skill";
@@ -101,6 +105,7 @@ export function perform(p, kind, extra = {}) {
   if (!mv) return false;
   const left = cdLeft(p, key, kind);
   if (left > 0) {
+    if (kind === "ult") return barrier(p);
     deny(p, `§r${glyph(["move", key, kind, "wait"], "")}§r §7${MOVE_LABEL[kind]}「${mv.ja}」 §cあと ${(left / 20).toFixed(1)} 秒`, 0.7);
     return false;
   }
@@ -149,7 +154,11 @@ export function perform(p, kind, extra = {}) {
  *   liveDir() 今の水平前方 / liveView() 今の視線
  *   dmg(base)            同調率・惑星・パッシブの補正を掛けた値（hit() は自動で掛けるので表示・計算用）
  *   hit(e, base, o)      = combat.hit(ctx, e, base, o)
- *   foes(radius, at = chest())  周りの敵 / cone(range, deg, from?, dir?) 扇形 / nearest(radius, deg = 180)
+ *   foes(radius, at = chest())  周りの攻撃してよい相手（範囲技用）/ cone(range, deg, from?, dir?) 扇形
+ *   hostiles(radius, at = chest())  周りの敵対的な相手だけ（標的を選ぶ時。村人・動物・中立の mob を選ばない）
+ *   nearest(radius, deg = 180, los = true)  一番近い敵対的な相手（deg で視線の扇に、los で頭から見通せる相手に絞る）
+ *   aimed(maxD = 16)     視線の先の相手（意図して狙った相手。敵対的でなくてもよい）
+ *   pick(radius, deg = 40)  aimed → nearest の順に一人選ぶ
  *   aim(maxD = 20)       狙っている地点（見ている敵の足元 → 見ているブロックの上 → 前方の地面）
  *   ground(loc)          loc の真下の地面の高さに合わせた点
  */
@@ -204,8 +213,13 @@ export function makeCtx(p, key, kind, extra = {}) {
     dmg(base) { return base * damageMul(p, key); },
     hit(e, base, o) { return hit(ctx, e, base, o); },
     foes(radius, at) { return enemiesNear(ctx, at ?? ctx.chest(), radius); },
+    hostiles(radius, at) { return hostilesNear(ctx, at ?? ctx.chest(), radius); },
     cone(range, deg, from, dir) { return enemiesInCone(ctx, from ?? ctx.chest(), dir ?? ctx.liveView(), range, deg); },
-    nearest(radius, deg = 180) { return nearestEnemy(ctx, ctx.chest(), radius, ctx.liveView(), deg); },
+    nearest(radius, deg = 180, los = true) {
+      return nearestHostile(ctx, ctx.chest(), radius, ctx.liveView(), deg, { los: los ? ctx.head() : null });
+    },
+    aimed(maxD = 16) { return aimedEntity(p, maxD); },
+    pick(radius, deg = 40) { return ctx.aimed(radius) ?? ctx.nearest(radius, deg); },
     aim(maxD = 20) { return aimPoint(p, maxD); },
     ground(loc) { return onGround(ctx.dim, loc); },
   };

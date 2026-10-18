@@ -17,7 +17,7 @@ import {
 import { P, burst, sound, white, title, glyph, emblem, ring } from "./fx.js";
 import {
   valid, health, knock, dist, norm, sub, chest, rand, now, effect, isPlayer, gameMode, BUS, heal,
-  dirTo, report,
+  dirTo, report, clearLine,
 } from "./util.js";
 
 /** 標的にしないエンティティ。 */
@@ -232,6 +232,26 @@ export function nearestHostile(src, loc, radius, dir, deg = 180, o = {}) {
 // ---------------------------------------------------------------------------
 const bank = new Map();   // targetId -> { e, attacker, pending, tries }
 const crits = new Map();  // targetId -> 会心表示の期限 tick
+// 最後にダメージが通った tick（被弾の無敵時間の始まり）。無敵中に強い一撃を当てると差分しか通らないので、
+// 無敵中は当てずにバンクへ貯め、切れてからまとめて通す。
+const lastLanded = new Map();   // targetId -> tick
+const IFRAME = 10;
+
+function inIframes(id) {
+  const t = lastLanded.get(id);
+  return t !== undefined && now() - t < IFRAME;
+}
+
+function landed(id) {
+  const t = now();
+  if (lastLanded.size > 400) for (const [k, v] of lastLanded) if (t - v >= IFRAME) lastLanded.delete(k);
+  lastLanded.set(id, t);
+}
+
+/** プレイヤーが与えたダメージが通った（main の entityHurt から。バニラの通常攻撃の無敵時間も数える）。 */
+export function noteHurt(e) {
+  try { if (valid(e)) landed(e.id); } catch (_) { }
+}
 
 /** 惑星の補正（ナノウェポンの攻撃力 8 を 1.0 として ±3%/点）。 */
 export function planetMul(key) {
@@ -288,11 +308,16 @@ export function hit(src, target, base, o = {}) {
   const crit = o.crit === true || (typeof o.crit === "number" && Math.random() < o.crit);
   if (crit) amount *= 1.5;
   if (crit) crits.set(tid, now() + 30);
-  if (!rawDamage(p, target, amount)) {
-    const b = bank.get(tid) ?? { e: target, attacker: p, pending: 0, tries: 0 };
-    b.pending = Math.min(b.pending + amount, 400);
-    b.attacker = p;
-    bank.set(tid, b);
+  // 無敵中・貯まっている分がある時は当てずに貯める（無敵中の差分ダメージで失わないように）
+  if (amount > 0) {
+    if (inIframes(tid) || bank.has(tid) || !rawDamage(p, target, amount)) {
+      const b = bank.get(tid) ?? { e: target, attacker: p, pending: 0, tries: 0 };
+      b.pending = Math.min(b.pending + amount, 400);
+      b.attacker = p;
+      bank.set(tid, b);
+    } else {
+      landed(tid);
+    }
   }
   // ノックバック（applyDamage のバニラのノックバックの後に上書きする）
   try {
@@ -338,12 +363,13 @@ export function hit(src, target, base, o = {}) {
   return true;
 }
 
-/** 無敵切れを待っている分を流す（毎 tick）。 */
+/** 無敵切れを待っている分を流す（毎 tick。無敵が切れてから一度にまとめて）。 */
 export function flushBank() {
   if (!bank.size) return;
   for (const [id, b] of bank) {
     if (!valid(b.e) || !valid(b.attacker)) { bank.delete(id); continue; }
-    if (rawDamage(b.attacker, b.e, b.pending)) bank.delete(id);
+    if (inIframes(id)) continue;
+    if (rawDamage(b.attacker, b.e, b.pending)) { bank.delete(id); landed(id); }
     else if (++b.tries > 30) bank.delete(id);
   }
 }
@@ -381,18 +407,21 @@ export function push(e, from, kb = 1, upv = 0.2) {
   knock(e, d.x, d.z, kb, upv);
 }
 
-/** 味方（自分と周りのプレイヤー、自分のペット）を数える／癒やす。 */
+/**
+ * 癒やしてよい相手（自分と、自分のペット・自分の馬など）。他のプレイヤーは含めない
+ * （PvP では同じ技が当てている相手を回復させてしまうため）。
+ */
 export function alliesNear(p, loc, radius) {
-  const out = [];
+  const out = [p];
   for (const e of entitiesNear(p.dimension, loc, radius)) {
-    if (!valid(e)) continue;
+    if (!valid(e) || e.id === p.id) continue;
     try {
-      if (e.id === p.id || e.typeId === "minecraft:player") { out.push(e); continue; }
+      if (e.typeId === "minecraft:player") continue;
       const tame = e.getComponent("minecraft:tameable");
-      if (tame?.isTamed && tame.tamedToPlayerId === p.id) out.push(e);
+      const mount = e.getComponent("minecraft:tamemount");
+      if ((tame?.isTamed && tame.tamedToPlayerId === p.id) || (mount?.isTamed && mount.tamedToPlayerId === p.id)) out.push(e);
     } catch (_) { }
   }
-  if (!out.some((e) => e.id === p.id)) out.push(p);
   return out;
 }
 
