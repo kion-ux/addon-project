@@ -221,11 +221,13 @@ def _consistency(anims, res_all, limit=0.05):
         return []
     errs = []
     env_tp = {"v.is_first_person": 0.0, "v.attack_time": 0.0, "v.tcos0": 0.0}
+    env_fp = {"v.is_first_person": 1.0, "v.attack_time": 0.0, "v.tcos0": 0.0}
     for name, res in res_all.items():
         js = anims[AL.PREFIX + name]
         for part, tr in res.tracks.items():
             bone = "root" if part == "root_pos" else AL.BONES[part]
             chan = "position" if part == "root_pos" else "rotation"
+            fp = AL.fp_track(res, part) if part in AL.ARMS else {}
             for t, val in tr.items():
                 e = eval_animation(js, t, env_tp).get(bone, {}).get(chan, [0, 0, 0])
                 rest = (0, 0, 0) if part == "root_pos" else AL.REST.get(part, (0, 0, 0))
@@ -233,6 +235,12 @@ def _consistency(anims, res_all, limit=0.05):
                 if max(abs(got[i] - val[i]) for i in range(3)) > limit:
                     errs.append(f"{name}: {part} at {t}: json {np.round(got, 2)} != {np.round(val, 2)}")
                     break
+                if fp:
+                    g = eval_animation(js, t, env_fp).get(bone, {}).get(chan, [0, 0, 0])
+                    if max(abs(g[i] - fp[t][i]) for i in range(3)) > limit:
+                        errs.append(f"{name}: first-person {part} at {t}: json {np.round(g, 2)} != "
+                                    f"{np.round(fp[t], 2)}")
+                        break
     return errs
 
 

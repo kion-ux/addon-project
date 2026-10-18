@@ -377,7 +377,7 @@ def helmet(s):
     hz = A.HEAD_Z
     hm = s.part("helmet", "dome", "head")
     bevel(hm, (0, 30.65, hz + 0.3), (4.5, 1.7, 4.9), "plate", cut=0.6, axis="z")
-    bevel(hm, (0, 31.62, hz + 0.45), (3.5, 0.9, 4.4), "plate", cut=0.42, axis="z")  # 冠
+    bevel(hm, (0, 31.62, hz + 0.45), (3.5, 0.9, 4.4), "plate", cut=0.32, axis="z")  # 冠
     cbox(hm, (0, 32.0, hz + 0.5), (0.8, 0.34, 3.9), "plate2")                       # 中央の稜
     rbox(hm, (0, 30.7, hz - 2.2), (4.2, 1.3, 0.5), "plate", rot=(-22, 0, 0))       # 額の斜面
     br = rbox(hm, (-1.05, 30.05, hz - 2.42), (2.1, 0.5, 0.5), "plate2", rot=(-8, 8, 9))
@@ -432,7 +432,7 @@ def luna_bit(s):
     cbox(sp, M, (1.6, 1.6, 1.6), "luna")
     rbox(sp, M, (1.45, 1.45, 1.45), "luna", rot=(0, 45, 0))
     ring(sp, M, 1.15, 8, (0, 0.22, 0.32), "gold", axis="y")                        # 機械の輪
-    octa(sp, (M[0] + 0.86, M[1], M[2]), 0.62, 0.22, "frame", axis="x")             # 肩を向く目
+    octa(sp, (M[0] + 0.86, M[1], M[2]), 0.62, 0.26, "frame", axis="x")             # 肩を向く目
     cbox(sp, (M[0] + 0.98, M[1], M[2]), (0.18, 0.3, 0.3), "glow")
     taper(sp, (M[0], M[1] + 0.8, M[2]), (M[0] + 0.25, M[1] + 1.6, M[2] + 0.4), 0.2, 0.16, 1,
           "gold", round_=False)                                                       # アンテナ

@@ -17,7 +17,9 @@
   キー（秒 → 姿勢）は「その時刻の全身の姿勢（絶対値）」。書かなかった部位は自然体。
   前の姿勢を土台に一部だけ変えるなら P(前の姿勢, rA=...)。
   キーの間は統合版と同じ catmullrom で補間される（武器で解いた腕は回転のまま補間されるよう、
-  大きく回る区間に自動でキーを足す）。
+  大きく回る区間に自動でキーを足す。腕のオイラー角は隣のキーと連続な表し方に揃え（_relift）、
+  catmullrom で実際に補間して回転からのずれ・速すぎる所にだけ間隔 MIN_DT 以上のキーを足す（_refine）。
+  書き出した腕は 1/120 秒ごとに角速度を検査する（gen_astro_anim.motion_check / arm_speeds）。
 
 ■ 部位（統合版の回転 [rx, ry, rz]、度。hd_space の規則）
     rA / lA  右腕 / 左腕（体の子）  rx 負 = 前へ上がる、rz 正 = 右腕が外へ開く（左腕は負で外）
@@ -46,7 +48,8 @@
     pose  変身・解除（astro.pose）。持ち姿勢と歩きの腕振りを打ち消す（攻撃の振りはそのまま）
     move  機動・ホバー（astro.move / astro.pose）。持ち姿勢からの差分だけ足す（打ち消し無し。
           他のモーションと重なっても壊れないよう、腕は控えめに）
-    一人称では体・頭・脚・全身は 0、腕は自然体からの差の 25%（画面が暴れないように）。
+    一人称では体・頭・脚・全身は 0、腕は自然体からの回転を同じ軸まわりに 25%（fp_track。自然体の真反対に
+    近い姿勢では 0 へ減らす。オイラー角の成分を 25% にすると ±360° の巻きが 90° のねじれになるので使わない）。
 
 ■ 公開 API
     H, P(*bases, **parts), anim(length, frames, kind="act", loop=False, blend=None)
@@ -55,6 +58,8 @@
                                     部位ごとのトラック（絶対値の Euler）。cloud（武器の表面の点）を渡すと
                                     wield の腕を体に入らない向きへ回し、補間の途中で入るコマにキーを足す
     to_json(res) -> 統合版のアニメーション dict
+    fp_track(res, part) -> {秒: (x, y, z)}   一人称の腕の値
+    arm_speeds(res, part) / arm_speed_report(res)   catmullrom で見た腕の角速度と上限
     sample(res, t) / sample_parts(res, t)   その時刻の姿勢（三人称・物を持った自然体の上で）
     clip_depth(pose, cloud) -> (深さ px, 部位)   スーツを着た体への武器の入り込み
     describe(res) -> [str]          書いたキーごとの腕・刃先の向き（gen_astro_anim --describe）

@@ -1073,7 +1073,7 @@ async function testFixes() {
     ok(!/READY/.test(line2) && /\d+\.\ds/.test(line2), `RC-6: HUD shows READY while the ult is on cooldown (${line2.replace(/[-]/g, "#")})`);
 
     // ---- RC-8: ジャスト回避は敵対的な相手・PvP の相手の攻撃だけ ----------------------
-    reset(p); clearMobs(); tick(20);
+    reset(p); clearMobs(); tick(20); ST.setNovaRaw(p, 0);
     const cow = new FakeEntity(D, "minecraft:cow", { x: 0, y: 64, z: 1.5 }, 10);
     const dodge = () => { p.isSneaking = true; tick(1); p.isSneaking = false; tick(2); p.isSneaking = true; tick(1); p.isSneaking = false; };
     dodge();
