@@ -1881,7 +1881,7 @@ def menu_icon(name):
     def stroke(m, col=None, glow=True):
         if glow:
             cv.glow(m, acc, 1.2, 0.8)
-        cv.fill(m, col or hi)
+        cv.fill(m, hi if col is None else col)
     if name == "status":
         arc = cv.arc(32, 35, 15, 150, 390, 4.0)
         stroke(arc, acc)
