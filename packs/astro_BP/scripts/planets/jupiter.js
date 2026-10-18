@@ -439,6 +439,11 @@ register(KEY, {
         const h = Math.max(5, q.y - g.y);
         sound(dim, "astro.swing", q, 0.6 + k * 0.1, 0.8);
         P(dim, "flare", q, { color: white(m.color, 0.4), size: 1.6, life: 0.2 });
+        // 落ちるまでの溜め: 衛星がその場で膨らみ、周りの光を吸い込む
+        ctx.every(0, 4, 2, (j) => {
+          P(dim, "glow", q, { color: m.color, size: 1.8 + j * 0.45, life: 0.14 });
+          P(dim, "converge", q, { color: m.hot, count: 6, spread: 1.5, life: 0.3, size: 0.7 });
+        });
         meteor(ctx, tl, {
           delay: 8, fall: 6, height: h, from: { x: (q.x - g.x) / h, z: (q.z - g.z) / h },
           color: m.color, size: 1.8 + k * 0.25, quiet: true, ...o,

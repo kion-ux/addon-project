@@ -210,7 +210,7 @@ register(KEY, {
       P(dim, "slash_flat", g, { color: ICE_HOT, rot: i * 55, size: 0.4, life: 0.12, var: i % 2 });
       P(dim, "spark", add(g, f, -0.9), { color: GOLD, count: 4, speed: 5, size: 0.7, dir: norm({ x: -f.x, y: 0.5, z: -f.z }) });
       P(dim, "speedline", up(l, 1.0), { color: ICE, count: 3, dir: { x: -f.x, y: 0, z: -f.z }, speed: 14, spread: 0.7 });
-      if (i % 2 === 0) P(dim, "dust", add(g, f, -0.6), { count: 4, speed: 2, size: 0.8 });
+      if (i % 2 === 0) P(dim, "dust", add(g, f, -0.6), { color: BAND, count: 4, speed: 2, size: 0.8 });
       if (i % 4 === 0) {
         afterimage(dim, l, i % 8 ? GOLD : ICE, 0.3);
         sound(dim, "astro.ring_spin", l, 1.2, 0.45);

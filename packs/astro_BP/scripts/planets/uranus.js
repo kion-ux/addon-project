@@ -53,11 +53,11 @@ let spikeSeq = 0;               // 氷の棘ごとの当たりのタグ
 // ---------------------------------------------------------------------------
 //  補助
 // ---------------------------------------------------------------------------
-/** 今の視線（上下は -0.45〜0.6 に収める。真上・真下を見ていても前へ撃つ）。 */
+/** 今の視線（上下は -0.8〜0.6 に収める。真上・真下を見ていても前へ撃つ）。 */
 function aimDir(ctx) {
   const v = ctx.liveView();
   const f = ctx.liveDir();
-  const y = clamp(Number.isFinite(v.y) ? v.y : 0, -0.45, 0.6);
+  const y = clamp(Number.isFinite(v.y) ? v.y : 0, -0.8, 0.6);
   const k = Math.sqrt(Math.max(0, 1 - y * y));
   return { x: f.x * k, y, z: f.z * k };
 }
