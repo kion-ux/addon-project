@@ -355,7 +355,7 @@ def _ir(t60, damp, pre, seed):
     ir = tvf(nz, lambda t, f: np.exp(-6.91 * t / t60 * (1 + f / damp)))
     ir *= np.minimum(tt(d) / 0.006, 1.0)
     er = np.zeros(ns(0.05))                                   # 初期反射
-    for k in range(6):
+    for _ in range(6):
         er[int(rng.uniform(0.004, 0.045) * SR)] += rng.uniform(-0.6, 0.6)
     ir = mix(ir * 0.8, er)
     ir = np.concatenate([np.zeros(ns(pre)), ir])
@@ -1657,8 +1657,7 @@ def preview(out=None):
         im = Image.fromarray(_cmap(Sd))
         img.paste(im, (cx + 4, y0 + wave_h + 2))
     img.save(out)
-    # 拡大して見やすい分割版も書く
-    per_page = cols * 6
+    # 拡大して見やすい分割版も書く（6 行ずつ）
     for p in range(0, rows, 6):
         sub = img.crop((0, p * ch, cols * cw, min(rows, p + 6) * ch))
         sub.save(out.replace(".png", f"_{p // 6 + 1}.png"))
@@ -1671,7 +1670,6 @@ def preview(out=None):
             print("    " + p)
     else:
         print("  problems: none")
-    del per_page
     return problems
 
 

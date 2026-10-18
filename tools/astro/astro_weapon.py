@@ -173,20 +173,20 @@ def ring(bone, centre, radius, n, seg, style, axis="y", phase=0.0, a0=0.0, a1=36
 
 
 def sphere(bone, centre, r: float, style: str, **kw):
-    """角を落とした球（中心の立方体 + 3 方向の十字 + 45° の帯）。惑星の球・宝玉に。7 個。"""
+    """角を落とした球（中心の立方体 + 3 方向の板 + 各軸まわりに 45° 回した板）。7 個。
+    比率は外形の丸さ（どの向きから見ても半径 r に近い）を数値で探して決めた。
+    惑星の模様は style に globe_style(...) を使うと継ぎ目なく貼れる。"""
     c = tuple(centre)
     d = 2 * r
-    out = [
-        cbox(bone, c, (d * 0.84, d * 0.84, d * 0.84), style, **kw),
-        cbox(bone, c, (d, d * 0.58, d * 0.58), style, **kw),
-        cbox(bone, c, (d * 0.58, d, d * 0.58), style, **kw),
-        cbox(bone, c, (d * 0.58, d * 0.58, d), style, **kw),
-    ]
+    out = [cbox(bone, c, (d * 0.66,) * 3, style, **kw)]
     for axis in ("x", "y", "z"):
-        size = [d * 0.62] * 3
-        size[AC.AX[axis]] = d * 0.9
-        out.append(rbox(bone, c, size, style, rot={"x": (45, 0, 0), "y": (0, 45, 0), "z": (0, 0, 45)}[axis],
-                        **kw))
+        size = [d * 0.46] * 3
+        size[AC.AX[axis]] = d
+        out.append(cbox(bone, c, size, style, **kw))
+    for axis, r_ in (("x", (45, 0, 0)), ("y", (0, 45, 0)), ("z", (0, 0, 45))):
+        size = [d * 0.66] * 3
+        size[AC.AX[axis]] = d * 0.86
+        out.append(rbox(bone, c, size, style, rot=r_, **kw))
     return out
 
 
@@ -317,16 +317,84 @@ def _styles(mod, name, key):
     return st(key) if callable(st) else st
 
 
-def painter_class():
+def _base_painter():
     try:
         import astro_paint as AP
-        for n in ("AstroPainter", "Painter"):
-            if hasattr(AP, n):
-                return getattr(AP, n)
-    except ImportError:
-        pass
-    from hd_paint import HDPainter
-    return HDPainter
+        return getattr(AP, "AstroPainter")
+    except (ImportError, AttributeError):
+        from hd_paint import HDPainter
+        return HDPainter
+
+
+_PAINTER = None
+
+
+def painter_class():
+    """astro_paint.AstroPainter（無ければ hd_paint.HDPainter）に、ウェポン用の素材を足したペインタ。
+
+    追加の kind:
+      globe   箱を重ねた球（sphere()）に、継ぎ目なく惑星の模様を貼る。テクセルごとに 3D の点へ戻し、
+              箱の中心からの向き（経度・緯度）で astro_paint.planet_color を引く。
+              planet="earth" 等 / emit（アルファ。低いほど発光、255 で発光なし）/ spin（経度のずれ 度）/
+              halo（面の縁を染める大気の色。None で無し）/ shade（極に向かう陰 0..1）
+    """
+    global _PAINTER
+    if _PAINTER is not None:
+        return _PAINTER
+    Base = _base_painter()
+
+    class WeaponPainter(Base):
+        def paint_model(self, model, styles):
+            self._cubes = {}
+            for i, cube in enumerate(model.all_cubes()):
+                self._cubes[i] = cube
+            return super().paint_model(model, styles)
+
+        def p_globe(self, st, c):
+            import hd_scene as S
+            from hd_space import rot
+            cube = c.get("cube") or getattr(self, "_cubes", {}).get(c["key"])
+            o = np.asarray(cube.origin, float)
+            sz = np.asarray(cube.size, float)
+            inf = float(cube.inflate or 0.0)
+            a, b = o - inf, o + sz + inf
+            P = [np.asarray(v, float) for v in S.FACES[c["face"]](a, b)]
+            centre = o + sz / 2
+            R = rot(*cube.rotation) if cube.rotation else np.eye(3)
+            c["g"] = (P[0], P[1] - P[0], P[3] - P[0], centre, R)
+
+        def k_globe(self, x, y, st, c):
+            from astro_paint import ATMOS, planet_color
+            P0, du, dv, centre, R = c["g"]
+            w, h = c["w"], c["h"]
+            p = P0 + du * ((x + 0.5) / w) + dv * ((y + 0.5) / h)
+            d = R @ (p - centre)
+            n = float(np.linalg.norm(d)) or 1.0
+            d = d / n
+            name = st.get("planet", "earth")
+            lon = math.atan2(d[0], d[2]) + math.radians(st.get("spin", 0))
+            lat = math.asin(max(-1.0, min(1.0, d[1])))
+            q = (math.cos(lat) * math.sin(lon), math.sin(lat), math.cos(lat) * math.cos(lon))
+            col = planet_color(name, lon, lat, q, 0)
+            k = st.get("shade", 0.18)
+            f = 1.0 - k * abs(d[1]) ** 2
+            col = (col[0] * f, col[1] * f, col[2] * f)
+            halo = st.get("halo", ATMOS.get(name))
+            edge = min(x, y, w - 1 - x, h - 1 - y)
+            if halo is not None and edge == 0 and min(w, h) >= 4:
+                col = tuple(col[i] + (halo[i] - col[i]) * 0.22 for i in range(3))
+            col = tuple(int(max(0, min(255, v))) for v in col)
+            return col, st.get("emit", 255)
+
+    _PAINTER = WeaponPainter
+    return _PAINTER
+
+
+def globe_style(planet: str, emit: int = 40, **kw) -> dict:
+    """sphere() で作った球に惑星の模様を継ぎ目なく貼るスタイル（kind "globe"）。emit=255 で発光なし。"""
+    d = {"kind": "globe", "planet": planet, "emit": emit, "bevel": False, "outline": False}
+    d.update(kw)
+    return d
 
 
 def paint_model(m: Model, styles: dict, path: str, seed: int = 0) -> None:

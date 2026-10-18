@@ -583,39 +583,51 @@ def energy_seg(c, state):
             p.put(x, y, lit[y] if on else dim[y], 255)
     if state == "full":
         p.put(4, 5, WHITE, 230)            # 先端の照り
-    if state == "half":
-        # 満ちている所の端を明るく（液面）
-        p.put(2, 5, lighten(c, 0.8), 255)
-        p.put(1, 9, lighten(c, 0.3), 255)
+    return p
+
+
+CAP_ROWS = {
+    # 3..12 行。左は左上を、右は右下を面取り（セルの斜めと同じ向き）
+    "L": [
+        "..MH",
+        ".MLR",
+        "MLkp",
+        "MLkp",
+        "MLcp",
+        "MLcp",
+        "MDkp",
+        "MDkp",
+        "MDdR",
+        "MMDd",
+    ],
+    "R": [
+        "HMM.",
+        "RLM.",
+        "pkLM",
+        "pkLM",
+        "pcLM",
+        "pcDM",
+        "pkDM",
+        "pkDM",
+        "dDM.",
+        "dM..",
+    ],
+}
+
+
+def _cap(side, pal):
+    p = Px(16)
+    p.bitmap(0, 3, CAP_ROWS[side], pal)
     return p
 
 
 def energy_cap(side, c=None):
     """星力バーの端（中立の金属。c を渡すとその色の LED を灯す）。"""
-    p = Px(16)
-    rows = [
-        "..MMH",   # 3
-        ".MLHR",   # 4
-        "MLkpp",   # 5
-        "MLkpp",   # 6
-        "MLcpp",   # 7
-        "MDcpp",   # 8
-        "MDkpp",   # 9
-        "MDkpp",   # 10
-        ".MDdR",   # 11
-        "..MMd",   # 12
-    ]
     led = c or (150, 210, 255)
-    pal = {"M": (METAL, 255), "L": (METAL_L, 255), "D": (METAL_D, 255), "H": (WHITE, 220),
+    pal = {"M": (METAL, 255), "L": (METAL_L, 255), "D": (METAL_D, 255), "H": (WHITE, 230),
            "R": (METAL_D, 230), "k": (INK, 230), "p": (PLATE, 196), "c": (led, 255),
            "d": ((40, 48, 64), 230)}
-    rows = [r[:CAP_W] for r in rows] if side == "L" else [r[:CAP_W] for r in rows]
-    if side == "R":
-        rows = [r[::-1] for r in rows]
-        # 右端は光の当たり方を逆にせず、陰を強める
-        pal = dict(pal)
-    p.bitmap(0, 3, rows, pal)
-    return p
+    return _cap(side, pal)
 
 
 def nova_seg(state):
@@ -643,27 +655,10 @@ def nova_seg(state):
 
 
 def nova_cap(side):
-    p = Px(16)
-    rows = [
-        "..GGH",
-        ".GLHR",
-        "GLkpp",
-        "GLkpp",
-        "GLspp",
-        "GDspp",
-        "GDkpp",
-        "GDkpp",
-        ".GDdR",
-        "..GGd",
-    ]
-    pal = {"G": ((214, 170, 80), 255), "L": (GOLD_L, 255), "D": ((132, 86, 30), 255), "H": (WHITE, 220),
-           "R": (METAL_D, 230), "k": (INK, 230), "p": (PLATE, 196), "s": ((255, 240, 160), 255),
+    pal = {"M": ((214, 170, 80), 255), "L": (GOLD_L, 255), "D": ((132, 86, 30), 255), "H": (WHITE, 230),
+           "R": (METAL_D, 230), "k": (INK, 230), "p": (PLATE, 196), "c": ((255, 240, 160), 255),
            "d": ((40, 48, 64), 230)}
-    rows = [r[:CAP_W] for r in rows]
-    if side == "R":
-        rows = [r[::-1] for r in rows]
-    p.bitmap(0, 3, rows, pal)
-    return p
+    return _cap(side, pal)
 
 
 PROG_COL = (150, 236, 255)
@@ -784,42 +779,48 @@ MOVE_SYMBOL = {
 }
 
 
+MOVE_FRAME = {
+    # 3..12 行に収まる 11x10 の枠。左上と右下を斜めに切る（必殺は八角形）
+    "std": [(5, 3), (13, 3), (13, 10), (10, 13), (2, 13), (2, 6)],
+    "ult": [(5, 3), (10, 3), (13, 6), (13, 10), (10, 13), (5, 13), (2, 10), (2, 6)],
+}
+
+
 def move_icon(c, kind, ready):
     p = Px(16)
-    # 枠: 左上と右下を大きく面取り（メカの斜め切り）
-    if kind == "ult":
-        pts = [(7.5, 1.6), (13.9, 7.5), (7.5, 13.4), (1.1, 7.5)]           # ひし形
-        pts = [(4.5, 2), (10.5, 2), (13.5, 5), (13.5, 10), (10.5, 13), (4.5, 13), (1.5, 10), (1.5, 5)]
-    else:
-        pts = [(5, 2), (13, 2), (13, 10), (10, 13), (2, 13), (2, 5)]
-    m = poly_mask(16, 16, pts)
+    m = poly_mask(16, 16, MOVE_FRAME["ult" if kind == "ult" else "std"])
     out = edge(m)
     inner = edge(erode(m))
-    body = erode(erode(m))
+    body = erode(m)
     if ready:
-        frame, frame_l, glow_c, plate_a = c, lighten(c, 0.55), c, 214
-        plate = mix(PLATE, c, 0.10)
+        frame, frame_l = c, lighten(c, 0.6)
+        plate = mix(PLATE, c, 0.12)
     else:
-        g = mix(grey(c, 0.85), (110, 116, 130), 0.5)
-        frame, frame_l, glow_c, plate_a = shade(g, 0.78), shade(g, 0.95), g, 200
-        plate = mix(PLATE, (0, 0, 0), 0.2)
-    p.fill_mask(body, plate, plate_a)
-    p.fill_mask(inner, glow_c, 70 if ready else 0)
+        g = mix(grey(c, 0.85), (110, 116, 130), 0.55)
+        frame, frame_l = shade(g, 0.72), shade(g, 0.92)
+        plate = mix(PLATE, (0, 0, 0), 0.25)
+    p.fill_mask(body, plate, 218 if ready else 205)
+    if ready:
+        p.fill_mask(inner, c, 64)                  # 枠の内側のにじみ
     for y, x in zip(*np.nonzero(out)):
-        # 左上の辺は明るく、右下は暗め（面取りの照り）
-        lit = (x + y) < 14
+        lit = (x + y) < 15                          # 左上の辺は明るく
         p.put(x, y, frame_l if lit else frame, 255)
     if ready:
-        # 角の白い光
-        for (x, y) in ((5, 2), (13, 2), (2, 13)) if kind != "ult" else ((4, 2), (10, 13)):
+        for (x, y) in ((5, 3), (12, 3), (2, 12)) if kind != "ult" else ((5, 3), (10, 12)):
             p.put(x, y, WHITE, 255)
     sym = MOVE_SYMBOL[kind]
     if ready:
-        pal = {"W": (WHITE, 255), "C": (lighten(c, 0.25), 255), "c": (c, 150)}
+        pal = {"W": (WHITE, 255), "C": (lighten(c, 0.3), 255), "c": (c, 150)}
     else:
-        gs = (156, 162, 176)
-        pal = {"W": (mix(gs, c, 0.35), 255), "C": (shade(gs, 0.82), 255), "c": (shade(gs, 0.6), 130)}
-    p.bitmap(4 if kind != "ult" else 4, 4 if kind != "ult" else 4, sym, pal)
+        gs = (150, 156, 170)
+        pal = {"W": (mix(gs, c, 0.45), 255), "C": (shade(gs, 0.8), 255), "c": (shade(gs, 0.55), 120)}
+    for j, row in enumerate(sym):
+        for i, ch in enumerate(row):
+            x, y = 4 + i, 4 + j
+            if ch in ". " or out[y, x]:
+                continue
+            col, a = pal[ch]
+            p.put(x, y, col, a)
     return p
 
 
@@ -829,14 +830,15 @@ def move_icon(c, kind, ready):
 def emblem_small(key):
     c = HUD_COL[key]
     p = Px(16)
-    hexpts = [(8, 1.6), (13.6, 4.8), (13.6, 11.2), (8, 14.4), (2.4, 11.2), (2.4, 4.8)]
+    hexpts = [(5.1, 3), (10.9, 3), (14, 8), (10.9, 13), (5.1, 13), (2, 8)]
     m = poly_mask(16, 16, hexpts)
     out = edge(m)
     p.fill_mask(erode(m), PLATE, 216)
     for y, x in zip(*np.nonzero(out)):
         lit = (x + y * 0.8) < 14
         p.put(x, y, lighten(c, 0.5) if lit else shade(c, 0.85), 255)
-    pl = render_planet(key, 16, 3.6 if key not in ("saturn", "sol") else 3.0, crisp=True, detail=0.0)
+    pl = render_planet(key, 16, {"saturn": 2.6, "sol": 3.0, "uranus": 3.2}.get(key, 3.6), crisp=True,
+                       detail=0.0)
     over(p.a, pl, 0, 0)
     tweak_small_emblem(key, p, c)
     return p
@@ -845,11 +847,10 @@ def emblem_small(key):
 def tweak_small_emblem(key, p, c):
     """極小の惑星は手で一部の画素を整える。"""
     if key == "sol":
-        rays = [(8, 2), (8, 13), (2, 8), (13, 8), (4, 4), (11, 4), (4, 11), (11, 11)]
-        for x, y in rays:
-            p.put(x, y, (255, 214, 92), 255)
-        for x, y in [(7, 3), (12, 7), (7, 12), (3, 7)]:
-            p.put(x, y, (255, 160, 40), 200)
+        for x, y in [(7, 4), (8, 4), (7, 11), (8, 11), (4, 7), (4, 8), (11, 7), (11, 8)]:
+            p.put(x, y, (255, 200, 70), 255)
+        for x, y in [(5, 5), (10, 5), (5, 10), (10, 10)]:
+            p.put(x, y, (255, 150, 40), 210)
         p.put(7, 7, WHITE, 255)
     if key == "earth":
         p.put(6, 6, (236, 248, 255), 220)
@@ -872,14 +873,13 @@ ICONS = {
     ], {"Y": (255, 226, 70), "W": (255, 255, 220), "k": (INK, 150)}),
     "nova": ([
         "....Y....",
-        "....W....",
-        "...YWY...",
-        "YWWWWWWWY",
-        "...YWY...",
-        "..Y.W.Y..",
-        ".Y..Y..Y.",
         "....Y....",
-    ], {"Y": (255, 206, 72), "W": (255, 250, 220)}),
+        "...YWY...",
+        ".YYWWWYY.",
+        "...YWY...",
+        "....Y....",
+        "....Y....",
+    ], {"Y": (255, 206, 72), "W": (255, 252, 226)}),
     "revert": ([
         "....W....",
         "..R.W.R..",
@@ -891,16 +891,15 @@ ICONS = {
         "..RRRRR..",
     ], {"W": (255, 255, 255), "R": (255, 96, 96)}),
     "overheat": ([
-        "...WW..f.",
-        "...Wr.ff.",
-        "...Wr.fYf",
-        "...Wr..f.",
-        "..WrrW...",
-        ".WrRRrW..",
-        ".WrRRrW..",
-        "..WWWW...",
-    ], {"W": (226, 230, 240), "r": (255, 90, 60), "R": (255, 160, 90), "f": (255, 120, 40),
-        "Y": (255, 230, 120)}),
+        "....f....",
+        "...fRf...",
+        "...fRf.f.",
+        "..fRYRff.",
+        ".fRYYYRf.",
+        ".fRYWYRf.",
+        ".fRYWYRf.",
+        "..fRRRf..",
+    ], {"f": (230, 50, 30), "R": (255, 120, 40), "Y": (255, 214, 90), "W": (255, 252, 220)}),
     "barrier": ([
         "...CCC...",
         ".CCLLLCC.",
@@ -912,15 +911,15 @@ ICONS = {
         "...CCC...",
     ], {"C": (96, 214, 255), "L": (200, 244, 255), "p": (30, 70, 120), "W": (255, 255, 255)}),
     "sync": ([
-        "V......P.",
-        ".V....P..",
-        "..wVwPw..",
-        "...PV....",
-        "...VP....",
-        "..wPwVw..",
-        ".P....V..",
-        "P......V.",
-    ], {"V": (196, 150, 255), "P": (120, 220, 255), "w": (230, 230, 255)}),
+        ".V.....P.",
+        ".VwwwwwP.",
+        "..V...P..",
+        "...VwP...",
+        "....X....",
+        "...PwV...",
+        "..P...V..",
+        ".PwwwwwV.",
+    ], {"V": (196, 150, 255), "P": (110, 226, 255), "w": ((210, 214, 255), 150), "X": (255, 255, 255)}),
     "check": ([
         "........G",
         ".......GG",
@@ -1095,6 +1094,206 @@ def page_preview(pg, path, scale=4):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     sheet.convert("RGB").save(path)
     return path
+
+
+
+# ===========================================================================
+#  画面の見本を描くための文字（統合版の ASCII に似せた 5x7 のドット文字）と、行の組み立て
+#  グリフは「不透明な列の範囲 + 1 px の隙間」で送る（実機の詰め方をまねる）
+# ===========================================================================
+_MCFONT_SRC = {
+    "A": ".XXX.|X...X|XXXXX|X...X|X...X|X...X|X...X",
+    "B": "XXXX.|X...X|XXXX.|X...X|X...X|X...X|XXXX.",
+    "C": ".XXX.|X...X|X....|X....|X....|X...X|.XXX.",
+    "D": "XXXX.|X...X|X...X|X...X|X...X|X...X|XXXX.",
+    "E": "XXXXX|X....|XXX..|X....|X....|X....|XXXXX",
+    "F": "XXXXX|X....|XXX..|X....|X....|X....|X....",
+    "G": ".XXXX|X....|X..XX|X...X|X...X|X...X|.XXX.",
+    "H": "X...X|X...X|XXXXX|X...X|X...X|X...X|X...X",
+    "I": "XXX|.X.|.X.|.X.|.X.|.X.|XXX",
+    "J": "....X|....X|....X|....X|....X|X...X|.XXX.",
+    "K": "X...X|X..X.|XXX..|X..X.|X...X|X...X|X...X",
+    "L": "X....|X....|X....|X....|X....|X....|XXXXX",
+    "M": "X...X|XX.XX|X.X.X|X...X|X...X|X...X|X...X",
+    "N": "X...X|XX..X|X.X.X|X..XX|X...X|X...X|X...X",
+    "O": ".XXX.|X...X|X...X|X...X|X...X|X...X|.XXX.",
+    "P": "XXXX.|X...X|XXXX.|X....|X....|X....|X....",
+    "Q": ".XXX.|X...X|X...X|X...X|X...X|X..X.|.XX.X",
+    "R": "XXXX.|X...X|XXXX.|X...X|X...X|X...X|X...X",
+    "S": ".XXXX|X....|.XXX.|....X|....X|X...X|.XXX.",
+    "T": "XXXXX|..X..|..X..|..X..|..X..|..X..|..X..",
+    "U": "X...X|X...X|X...X|X...X|X...X|X...X|.XXX.",
+    "V": "X...X|X...X|X...X|X...X|X...X|.X.X.|..X..",
+    "W": "X...X|X...X|X...X|X...X|X.X.X|XX.XX|X...X",
+    "X": "X...X|.X.X.|..X..|.X.X.|X...X|X...X|X...X",
+    "Y": "X...X|.X.X.|..X..|..X..|..X..|..X..|..X..",
+    "Z": "XXXXX|....X|...X.|..X..|.X...|X....|XXXXX",
+    "0": ".XXX.|X...X|X..XX|X.X.X|XX..X|X...X|.XXX.",
+    "1": "..X..|.XX..|..X..|..X..|..X..|..X..|XXXXX",
+    "2": ".XXX.|X...X|....X|..XX.|.X...|X...X|XXXXX",
+    "3": ".XXX.|X...X|....X|..XX.|....X|X...X|.XXX.",
+    "4": "...XX|..X.X|.X..X|X...X|XXXXX|....X|....X",
+    "5": "XXXXX|X....|XXXX.|....X|....X|X...X|.XXX.",
+    "6": "..XX.|.X...|X....|XXXX.|X...X|X...X|.XXX.",
+    "7": "XXXXX|X...X|....X|...X.|..X..|..X..|..X..",
+    "8": ".XXX.|X...X|X...X|.XXX.|X...X|X...X|.XXX.",
+    "9": ".XXX.|X...X|X...X|.XXXX|....X|...X.|.XX..",
+    "a": ".....|.....|.XXX.|....X|.XXXX|X...X|.XXXX",
+    "b": "X....|X....|X.XX.|XX..X|X...X|X...X|XXXX.",
+    "c": ".....|.....|.XXX.|X...X|X....|X...X|.XXX.",
+    "d": "....X|....X|.XX.X|X..XX|X...X|X...X|.XXXX",
+    "e": ".....|.....|.XXX.|X...X|XXXXX|X....|.XXXX",
+    "f": "..XX|.X..|XXXX|.X..|.X..|.X..|.X..",
+    "g": ".....|.....|.XXXX|X...X|X...X|.XXXX|....X|XXXX.",
+    "h": "X....|X....|X.XX.|XX..X|X...X|X...X|X...X",
+    "i": "X|.|X|X|X|X|X",
+    "j": "...X|....|...X|...X|...X|...X|X..X|.XX.",
+    "k": "X...|X...|X..X|X.X.|XX..|X.X.|X..X",
+    "l": "X.|X.|X.|X.|X.|X.|.X",
+    "m": ".....|.....|XX.X.|X.X.X|X.X.X|X...X|X...X",
+    "n": ".....|.....|XXXX.|X...X|X...X|X...X|X...X",
+    "o": ".....|.....|.XXX.|X...X|X...X|X...X|.XXX.",
+    "p": ".....|.....|X.XX.|XX..X|X...X|XXXX.|X....|X....",
+    "q": ".....|.....|.XX.X|X..XX|X...X|.XXXX|....X|....X",
+    "r": ".....|.....|X.XX.|XX..X|X....|X....|X....",
+    "s": ".....|.....|.XXXX|X....|.XXX.|....X|XXXX.",
+    "t": ".X.|.X.|XXX|.X.|.X.|.X.|..X",
+    "u": ".....|.....|X...X|X...X|X...X|X...X|.XXXX",
+    "v": ".....|.....|X...X|X...X|X...X|.X.X.|..X..",
+    "w": ".....|.....|X...X|X...X|X.X.X|X.X.X|.XXXX",
+    "x": ".....|.....|X...X|.X.X.|..X..|.X.X.|X...X",
+    "y": ".....|.....|X...X|X...X|X...X|.XXXX|....X|XXXX.",
+    "z": ".....|.....|XXXXX|...X.|..X..|.X...|XXXXX",
+    ".": ".|.|.|.|.|.|X",
+    ",": ".|.|.|.|.|.|X|X",
+    ":": ".|X|.|.|.|.|X",
+    "!": "X|X|X|X|X|.|X",
+    "?": ".XXX.|X...X|....X|...X.|..X..|.....|..X..",
+    "%": "X...X|....X|...X.|..X..|.X...|X....|X...X",
+    "/": "....X|...X.|...X.|..X..|.X...|.X...|X....",
+    "-": ".....|.....|.....|XXXXX|.....|.....|.....",
+    "+": ".....|..X..|..X..|XXXXX|..X..|..X..|.....",
+    "(": "..XX|.X..|X...|X...|X...|.X..|..XX",
+    ")": "XX..|..X.|...X|...X|...X|..X.|XX..",
+    "[": "XXX|X..|X..|X..|X..|X..|XXX",
+    "]": "XXX|..X|..X|..X|..X|..X|XXX",
+    "<": "...X|..X.|.X..|X...|.X..|..X.|...X",
+    ">": "X...|.X..|..X.|...X|..X.|.X..|X...",
+    "=": ".....|.....|XXXXX|.....|XXXXX|.....|.....",
+    "'": "X|X|.|.|.|.|.",
+    "&": ".XX..|X..X.|.XX..|.XX.X|X..X.|X..X.|.XX.X",
+    "#": ".X.X.|.X.X.|XXXXX|.X.X.|XXXXX|.X.X.|.X.X.",
+    "°": ".XX.|X..X|.XX.|....|....|....|....",
+}
+_MCFONT = {k: [r for r in v.split("|")] for k, v in _MCFONT_SRC.items()}
+MC_COLORS = {
+    "0": (0, 0, 0), "1": (0, 0, 170), "2": (0, 170, 0), "3": (0, 170, 170), "4": (170, 0, 0),
+    "5": (170, 0, 170), "6": (255, 170, 0), "7": (170, 170, 170), "8": (85, 85, 85), "9": (85, 85, 255),
+    "a": (85, 255, 85), "b": (85, 255, 255), "c": (255, 85, 85), "d": (255, 85, 255), "e": (255, 255, 85),
+    "f": (255, 255, 255), "g": (221, 214, 5), "h": (227, 212, 209), "i": (206, 202, 202),
+    "j": (68, 58, 59), "m": (151, 22, 7), "n": (180, 104, 77), "p": (222, 177, 45), "q": (17, 160, 54),
+    "s": (44, 186, 168), "t": (33, 73, 123), "u": (154, 92, 198),
+}
+_JP_FONT = None
+
+
+def _jp_glyph(ch):
+    """日本語の文字: 16 px のドット文字（統合版の日本語ロケールのグリフと同じ密度）。"""
+    global _JP_FONT
+    if _JP_FONT is None:
+        _JP_FONT = ImageFont.truetype("/usr/share/fonts/opentype/unifont/unifont_jp.otf", 16)
+    im = Image.new("L", (18, 18), 0)
+    ImageDraw.Draw(im).text((0, 0), ch, font=_JP_FONT, fill=255)
+    a = np.array(im)[:16, :16] > 127
+    cols = np.nonzero(a.any(axis=0))[0]
+    if not len(cols):
+        return None, 8
+    return a[:, cols.min():cols.max() + 1], cols.max() - cols.min() + 1
+
+
+class Glyphs:
+    """mock 用: コードポイント -> (セル画像, セルの大きさ)。"""
+
+    def __init__(self, *pages):
+        self.pages = {pg.page: pg for pg in pages}
+
+    def cell(self, ch):
+        cp = ord(ch)
+        pg = self.pages.get(cp >> 8)
+        if pg is None:
+            return None, 16
+        a = pg.cell_array(cp & 0xFF)
+        cols = np.nonzero(a[..., 3].max(axis=0) > 0)[0]
+        if not len(cols):
+            return None, pg.cell
+        return a[:, cols.min():cols.max() + 1], pg.cell
+
+
+def compose_line(text, glyphs, S=4, shadow=True, title=1):
+    """1 行を描く。S = GUI px あたりの画素数、title = 文字の拡大率（タイトルは 2〜3）。
+    戻り値: (RGBA float 配列, 幅 GUI px)。行の箱は 16 GUI px（グリフのセルと同じ高さ）。"""
+    U = S * title                        # 1 GUI px の画素数（拡大込み）
+    H = 16 * U
+    out = np.zeros((H, 16 * U * max(1, len(text)) + 8 * U, 4), np.float32)
+    x = 0
+    colour = (255, 255, 255)
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == "§" and i + 1 < len(text):
+            code = text[i + 1]
+            colour = MC_COLORS.get(code, colour) if code != "r" else (255, 255, 255)
+            i += 2
+            continue
+        i += 1
+        if ch == " ":
+            x += 4 * U
+            continue
+        cp = ord(ch)
+        if 0xE000 <= cp <= 0xF8FF:
+            a, cell = glyphs.cell(ch)
+            if a is None:
+                continue
+            f = 16.0 / cell                      # セル 1 画素 = f GUI px
+            w = a.shape[1]
+            im = Image.fromarray(np.clip(a + 0.5, 0, 255).astype(np.uint8), "RGBA")
+            tw, th = max(1, round(w * f * U)), round(cell * f * U)
+            im = im.resize((tw, th), Image.NEAREST if (f * U) >= 1 and float(f * U).is_integer()
+                           else Image.LANCZOS)
+            over(out, np.asarray(im, np.float32), x, 0)
+            x += tw + U
+            continue
+        rows = _MCFONT.get(ch)
+        if rows is not None:
+            w = len(rows[0])
+            for sh in ((1, (0.25, 0.25, 0.25)), (0, None)) if shadow else ((0, None),):
+                off, k = sh
+                col = colour if k is None else tuple(c * k[0] for c in colour)
+                for r, row in enumerate(rows):
+                    for cx, v in enumerate(row):
+                        if v == "X":
+                            yy = (4 + r + off) * U
+                            xx = x + (cx + off) * U
+                            out[yy:yy + U, xx:xx + U, :3] = col
+                            out[yy:yy + U, xx:xx + U, 3] = 255
+            x += (w + 1) * U
+            continue
+        a, w = _jp_glyph(ch)
+        if a is not None:
+            # 16 px の字を 8 GUI px に（S/2 倍）
+            k = U / 2.0
+            for off, kk in (((1, 0.25), (0, 1.0)) if shadow else ((0, 1.0),)):
+                col = tuple(c * kk for c in colour)
+                ys, xs = np.nonzero(a)
+                for yy, xx in zip(ys, xs):
+                    y0 = int(round((4 * U - 1 * U) + yy * k + off * U))
+                    x0 = int(round(x + xx * k + off * U))
+                    out[y0:y0 + int(math.ceil(k)), x0:x0 + int(math.ceil(k)), :3] = col
+                    out[y0:y0 + int(math.ceil(k)), x0:x0 + int(math.ceil(k)), 3] = 255
+            x += int(round(w * k)) + U
+        else:
+            x += 4 * U
+    return out[:, :max(1, x - U)], (x - U) / U
 
 
 def save_png(img, path):

@@ -47,37 +47,38 @@ def build_weapon(m, root):
     # 月の軌道（細い光の輪）と、そこを回る月の子機
     W.ring(grip, (0, 0, 5.0), 2.55, 14, (0, 0.16, 0.16), "glow_soft", axis="z")
     moon = W.spin(m, grip, "moon", (0, 0, 5.0))
-    W.sphere(moon, (0, 2.55, 5.0), 0.62, "luna", uv_scale=10)
+    W.sphere(moon, (0, 2.55, 5.0), 0.62, "moon", uv_scale=12)
 
     # =====================================================================
-    #  form_1_guard — 鍔と地球儀
+    #  form_1_guard — 重ねた十字の鍔と、中央の地球儀
     # =====================================================================
     guard = W.form(m, root, 1, "guard", (0, 0, -3.6))
-    zc = -4.7
-    W.bevel(guard, (0, 0, zc), (2.3, 4.6, 2.5), "plate", cut=0.55, axis="x", edge_style="plate_b",
+    zc = -4.6
+    # 中央の台座（側面から見ると八角形）
+    W.bevel(guard, (0, 0, zc), (2.2, 4.4, 2.6), "plate", cut=0.6, axis="x", edge_style="plate_b",
             uv_scale=6)
     globe = W.spin(m, guard, "globe", (0, 0, zc))
-    W.sphere(globe, (0, 0, zc), 1.5, "core", uv_scale=12)
+    W.sphere(globe, (0, 0, zc), 1.45, "globe", uv_scale=14)
     for s in (-1, 1):                                         # 地球儀の金の縁（両面）
-        W.ring(guard, (s * 1.2, 0, zc), 1.72, 10, (0, 0.34, 0.36), "gold", axis="x", uv_scale=10)
+        W.ring(guard, (s * 1.12, 0, zc), 1.68, 10, (0, 0.34, 0.3), "gold", axis="x", uv_scale=10)
     for s in (-1, 1):
-        # 主翼（青）: 少し柄の側へ反って、先で刃の側へ折れる
-        W.polyline(guard, [(0, s * 2.1, -4.1), (0, s * 4.6, -3.7), (0, s * 6.7, -4.6)],
-                   [1.7, 1.35], [1.7, 1.25], "plate", uv_scale=6)
-        W.beam(guard, (0, s * 2.4, -3.95), (0, s * 4.6, -3.62), 1.78, 0.32, "glow", uv_scale=8)
-        W.beam(guard, (0, s * 4.6, -3.62), (0, s * 6.3, -4.35), 1.43, 0.28, "glow", uv_scale=8)
-        # 翼端の金の爪（刃の向きへ）
-        W.beam(guard, (0, s * 6.6, -4.4), (0, s * 7.1, -6.3), 0.9, 0.9, "gold", uv_scale=10)
-        # 副翼（白）: 刃の付け根から前へ流れる
-        W.polyline(guard, [(0, s * 1.9, -5.7), (0, s * 3.9, -6.2), (0, s * 5.2, -7.5)],
-                   [1.25, 0.95], [1.1, 0.8], "plate2", uv_scale=8)
-        W.beam(guard, (0, s * 5.2, -7.5), (0, s * 5.5, -8.7), 0.6, 0.55, "gold", uv_scale=10)
-        # 鍔の付け根の金具
-        W.cbox(guard, (0, s * 2.25, zc), (2.0, 0.6, 2.9), "frame", uv_scale=8)
+        # 一段目: 青い主鍔（太い角材の両端を刃の側へ折る）と、その平を走る光の線
+        W.cbox(guard, (0, s * 4.3, -4.2), (1.9, 4.6, 1.9), "plate", uv_scale=6)
+        W.beam(guard, (0, s * 6.35, -4.2), (0, s * 7.5, -6.4), 1.7, 1.7, "plate", uv_scale=6)
+        W.beam(guard, (0, s * 7.5, -6.4), (0, s * 7.75, -7.6), 1.0, 1.0, "gold", uv_scale=10, extend=0.3)
+        W.cbox(guard, (0, s * 4.3, -4.2), (1.98, 3.4, 0.34), "glow", uv_scale=10)
+        W.cbox(guard, (0, s * 6.55, -4.15), (2.0, 0.5, 2.1), "gold", uv_scale=10)        # 折れ目の金の帯
+        # 二段目: 白い副鍔（刃の側に重ね、先を前へ流す）
+        W.cbox(guard, (0, s * 3.4, -5.85), (1.5, 3.2, 1.1), "plate2", uv_scale=8)
+        W.beam(guard, (0, s * 4.9, -5.85), (0, s * 5.7, -7.6), 1.3, 1.0, "plate2", uv_scale=8)
+        W.beam(guard, (0, s * 5.7, -7.6), (0, s * 5.85, -8.5), 0.7, 0.6, "gold", uv_scale=10, extend=0.2)
+        # 三段目: 柄の側へ流れる金の小翼
+        W.beam(guard, (0, s * 1.9, -3.4), (0, s * 3.9, -2.4), 1.1, 0.7, "gold", uv_scale=10)
+        W.beam(guard, (0, s * 3.9, -2.4), (0, s * 4.5, -1.6), 0.7, 0.5, "gold", uv_scale=10)
     # 刃の発振器（刃を受ける黒い襟と放熱の光）
-    W.cbox(guard, (0, 0, -6.15), (1.7, 3.6, 0.8), "frame", uv_scale=8)
+    W.cbox(guard, (0, 0, -6.2), (1.7, 3.8, 0.8), "frame", uv_scale=8)
     for s in (-1, 1):
-        W.cbox(guard, (s * 0.86, 0, -6.15), (0.1, 2.6, 0.3), "energy", uv_scale=10)
+        W.cbox(guard, (s * 0.86, 0, -6.2), (0.1, 2.8, 0.3), "energy", uv_scale=10)
 
     # =====================================================================
     #  form_2_blade — 刃（鍔から伸びる）
@@ -87,28 +88,28 @@ def build_weapon(m, root):
     zm = (Z_BLADE0 + Z_BLADE1) / 2
     for s in (-1, 1):
         # 鋼の二枚（樋の両側）
-        W.cbox(blade, (0, s * (HALF_W + 0.35) / 2, zm), (THICK, HALF_W - 0.35, L), "blade", uv_scale=5)
+        W.cbox(blade, (0, s * (HALF_W + 0.45) / 2, zm), (THICK, HALF_W - 0.45, L), "blade", uv_scale=5)
         # 発光する刃（緑青）
         W.cbox(blade, (0, s * (HALF_W + 0.22), zm), (0.5, 0.46, L), "edge", uv_scale=6)
     # 暗い樋（一段くぼむ）と、その芯を走る光
-    W.cbox(blade, (0, 0, zm - 0.6), (0.56, 0.78, L - 1.2), "dark", uv_scale=6)
-    W.cbox(blade, (0, 0, zm - 1.6), (0.62, 0.2, L - 4.4), "energy", uv_scale=6)
-    # 機械の背骨: 樋の上に並ぶ青い節（刃元から先へ小さくなる）と金の留め
-    for i in range(5):
-        z = -8.4 - i * 2.75
-        k = 1.0 - i * 0.07
-        W.cbox(blade, (0, 0, z), (1.32, 1.5 * k, 1.9 * k), "plate", uv_scale=8)
-        W.cbox(blade, (0, 0, z - 1.05 * k), (1.36, 0.9 * k, 0.24), "gold", uv_scale=10)
-    # 刃元の白い装甲（左右）と、その縁の発光
+    W.cbox(blade, (0, 0, zm - 0.6), (0.56, 0.98, L - 1.2), "dark", uv_scale=6)
+    W.cbox(blade, (0, 0, zm - 1.4), (0.62, 0.3, L - 4.0), "energy", uv_scale=6)
+    # 機械の背骨: 樋の上に並ぶ青い節（刃元から先へ小さくなる）。節ごとに光る切れ目
+    for i in range(6):
+        k = 1.0 - i * 0.075
+        z = -8.9 - i * 2.55
+        W.chamfer(blade, (0, 0, z), (1.36, 1.55 * k, 1.95 * k), "plate", cut=0.32, axis="x", uv_scale=8)
+        W.cbox(blade, (0, 0, z - 0.25), (1.4, 0.95 * k, 0.22), "glow", uv_scale=10)
+    # 刃元の白い装甲（左右）と、縁の発光
     for s in (-1, 1):
-        W.cbox(blade, (0, s * 1.45, -7.35), (1.22, 1.9, 1.9), "plate2", uv_scale=8)
-        W.beam(blade, (0, s * 0.6, -8.2), (0, s * 2.3, -8.75), 1.24, 0.22, "glow", uv_scale=10)
-    # 切先: 鋼の三角と、刃先へ収束する発光の刃
+        W.cbox(blade, (0, s * 1.5, -7.45), (1.24, 1.9, 2.1), "plate2", uv_scale=8)
+        W.beam(blade, (0, s * 0.62, -8.45), (0, s * 2.4, -9.15), 1.26, 0.24, "glow", uv_scale=10)
+    # 切先: 鋼の三角と、刃先へ収束する発光の刃・樋の終わりの矢じり
     W.blade_point(blade, Z_BLADE1 + 0.05, HALF_W, Z_TIP, THICK, "blade_flat", layer=0.8, uv_scale=6)
     for s in (-1, 1):
         W.beam(blade, (0, s * (HALF_W + 0.22), Z_BLADE1 + 0.2), (0, s * 0.08, Z_TIP - 0.3), 0.5, 0.46,
                "edge", uv_scale=6, extend=0.3)
-        W.beam(blade, (0, s * 0.39, Z_BLADE1 + 1.1), (0, 0, Z_BLADE1 - 1.0), 0.58, 0.3, "dark", uv_scale=8)
+        W.beam(blade, (0, s * 0.49, Z_BLADE1 + 1.1), (0, 0, Z_BLADE1 - 1.2), 0.58, 0.34, "dark", uv_scale=8)
 
 
 def build_core(m, root):
@@ -130,7 +131,7 @@ def build_core(m, root):
     # 地球儀（ゆっくり自転）
     globe = W.form(m, root, 0, "globe", (0, 0, 0))
     spin = W.spin(m, globe, "globe", (0, 0, 0))
-    W.sphere(spin, (0, 0, 0), 1.75, "core", uv_scale=14)
+    W.sphere(spin, (0, 0, 0), 1.75, "globe", uv_scale=16)
     # 回る輪 A: 縦の輪（YZ 平面）が鉛直軸まわりに回る
     rings = W.form(m, root, 2, "rings", (0, 0, 0))
     ra = W.spin(m, rings, "ring_a", (0, 0, 0))
@@ -150,17 +151,18 @@ def WEAPON_STYLES(key):
         edge={"glow": EDGE, "sat": 0.45, "emit": 40},
         energy={"glow": mix(EDGE, (120, 255, 170), 0.4)},
         wrap={"base": (20, 26, 44), "strap": (54, 104, 210), "skin": (226, 232, 240)},
-        blade={"base": (186, 196, 214), "light": (244, 248, 255), "dark": (112, 122, 146),
-               "line": (46, 54, 76)},
-        blade_flat={"base": (184, 194, 212), "light": (240, 246, 255), "dark": (120, 130, 152)},
+        # 刃の平は鏡面（映り込みの地平線が刃に沿って走る）。切先は段で作るので平らな鋼で
+        blade={"kind": "chrome", "base": (184, 204, 236), "light": (246, 250, 255), "line": (40, 52, 80)},
+        blade_flat={"base": (176, 194, 222), "light": (236, 244, 255), "dark": (120, 134, 162)},
         dark={"base": (16, 22, 40), "glow": EDGE},
-        core={"emit": 30, "halo": (120, 200, 255)},
+        globe=W.globe_style("earth", emit=36),
+        moon=W.globe_style("luna", emit=255, halo=None),
         gem={"glow": (90, 255, 160)},
     )
 
 
 def CORE_STYLES(key):
-    return core_styles(key, core={"emit": 24, "halo": (130, 210, 255)})
+    return core_styles(key, globe=W.globe_style("earth", emit=30))
 
 
 # ---------------------------------------------------------------------------

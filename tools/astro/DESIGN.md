@@ -140,7 +140,8 @@ build_astro.sh   README_ASTRO.md   docs/astro/
 **防具の退避**: 変身時に頭・胴・脚・足の防具をインベントリへ移し（入らなければ変身を断る）、
 種類 ID を動的プロパティに記録。解除時に同じ種類をインベントリから探して着せ直す（kaiju8 の方式）。
 
-**差し替え**: スーツ `astro:suit_<key>` は頭スロットに `lockMode = slot`・`keepOnDeath = true` で置く。
+**差し替え**: スーツは頭スロットに `lockMode = slot`・`keepOnDeath = true` で置く。suit_equip で `astro:suit_<key>_on`
+（組み上がり）を置き、`assemble_len` 秒後に `astro:suit_<key>`（装着中）へ差し替える。
 ナノウェポン `astro:weapon_<key>` は手のコアと同じスロットに `lockMode = inventory`・`keepOnDeath = true` で置く。
 解除時は逆に戻す。保険として 1 秒ごとに「変身していないのにスーツ／ウェポンを持っている」「別形態のウェポン」を
 コアへ戻す掃除をし、地面に落ちたウェポン・スーツ（item エンティティ）も見つけ次第コアに直す。
@@ -239,6 +240,7 @@ export const ENEMIES = {...};
 |---|---|---|
 | `astro:core_<key>` | 惑星コア（9） | stack 1、use_modifiers 0.2 秒、手に持つと 3D のコア |
 | `astro:weapon_<key>` | ナノウェポン（9） | hand_equipped、damage、耐久なし、クリエイティブ一覧に出さない |
+| `astro:suit_<key>_on` | 組み上がり中のスーツ（9） | wearable slot.armor.head、protection = defense、一覧に出さない |
 | `astro:suit_<key>` | スーツ（9） | wearable slot.armor.head、protection = defense、一覧に出さない |
 | `astro:suit_<key>_off` | 分解中のスーツ（9） | 同上、protection 0 |
 | `astro:nano_cell` `astro:core_frame` `astro:solar_fragment` `astro:terminal` `astro:void_signal` | 素材・道具 | |
@@ -313,19 +315,41 @@ ring / crossbow / trident / greatsword。
 発光は entity_emissive_alpha の規約（アルファが低いほど自己発光）。
 
 ### 4.5 アタッチャブル（スーツは gen_astro_suits、ウェポン・コアは gen_astro_weapons が書き出す）
-**スーツ** `astro:suit_<key>`:
+調査で確かめた事実（vanilla bedrock-samples 1.26.50 と公開パックから）:
+* 名前がプレイヤーのボーンと一致するボーンは、スロットに関係なくそのボーンの最終変換に付いて動く（大文字小文字は区別しない）。
+  **装飾ボーンにプレイヤーと同じ名前（cape, hat, jacket, waist, root, rightItem, helmet, bodyArmor, belt, rightSock …）を付けない**。
+* アタッチャブル内の素の `q.*` は持ち主（装着者）を評価する（q.is_on_ground, q.is_sneaking, q.is_sprinting, q.is_invisible …）。
+  素の `v.*` はアタッチャブル自身の変数。持ち主の攻撃の振りは `c.owning_entity->v.attack_time`。
+* 一人称でもアタッチャブルは描かれ、カメラは head ボーンの中。`c.is_first_person` は装着者本人の一人称だけ 1。
+* `entity_emissive_alpha` は裏面を描く（カリング無し）ので、閉じた殻の内側が一人称で画面を覆う。
+  → スーツは **既定 `entity_emissive_alpha_one_sided`、`fx_*` ボーンだけ `entity_emissive_alpha`** にする
+  専用レンダーコントローラ `controller.render.astro.suit`（materials: `[{"*":"Material.default"},{"fx_*":"Material.fx"}]`）。
+* 発光: アルファ 0 = 抜き、255 = 普通に陰影、その間は不透明で **アルファが低いほど強く光る**（1〜40 で全発光）。
+  `tools/mctexture.py` の EM=254 はほぼ光らないので使わない（hd_paint の EMI=12 / SOFT=150 の規約に従う）。
+* アタッチャブルのインスタンス（コントローラの状態）は、アイテムがそのスロットに現れた時と、見る側のクライアントで
+  持ち主が読み込まれた時（描画距離に入る・リスポーン・次元移動・再参加）に作り直される。
+  → 組み上がりは **専用 ID `astro:suit_<key>_on`** にだけ持たせ、組み上がり後にスクリプトが `astro:suit_<key>` に差し替える。
+* 一回きりのアニメは `"loop": "hold_on_last_frame"` と `animation_length` を明示し、`q.all_animations_finished` で遷移。
+  インベントリの人形（`q.is_in_ui`）では組み上がりを飛ばす。
+
+**スーツ** 3 種（同じジオメトリ・テクスチャ）:
+| ID | コントローラの初期状態 | 用途 |
+|---|---|---|
+| `astro:suit_<key>_on` | assemble（1.8 秒、部位がポップ）→ ready | 変身の組み上がり中（スクリプトが suit_equip で置き、assemble_len 後に無印へ差し替え） |
+| `astro:suit_<key>` | ready | 装着中（後から見えた人にも組み上がりを繰り返さない） |
+| `astro:suit_<key>_off` | release（逆順に縮んで消える 0.8 秒）→ gone（全部 scale 0） | 解除の分解（0.9 秒後に外す） |
 ```
-materials default=entity_emissive_alpha, enchanted=entity_alphatest_glint
+materials default=entity_emissive_alpha_one_sided, fx=entity_emissive_alpha
+render_controllers: controller.render.astro.suit
 scripts.parent_setup: "v.helmet_layer_visible = 0.0; v.chest_layer_visible = 0.0; v.leg_layer_visible = 0.0; v.boot_layer_visible = 0.0;"
-animations: assemble / idle / thrust / sprint / fp_hide / controller.animation.astro.suit
-controller: 初期状態 assemble（組み上がり 1.8 秒、ループしない）→ q.all_animations_finished で ready
-animate: controller, idle, {thrust: 空中}, {sprint: 疾走中}, {fp_hide: 一人称}
+animate: controller, idle, {thrust: !q.is_on_ground（なめらかに）}, {sprint: q.is_sprinting}, {fp_hide: c.is_first_person},
+         {hide_all: c.item_slot != 'head' || q.is_invisible}
 ```
-`fp_hide`: 一人称では腕（rightArm/leftArm 配下）以外を scale 0（兜が視界を塞がないように）。
-`astro:suit_<key>_off` は同じモデルで初期状態 release（逆順に縮んで消える 0.8 秒）→ gone（全部 scale 0）。
+`fp_hide`: 一人称では head・body・rightLeg・leftLeg を scale 0（腕だけ残る）。`hide_all`: 6 つのトップレベルボーンを scale 0。
 
 **ナノウェポン** `astro:weapon_<key>`: tp / fp（持ち方）・idle・swing（`c.owning_entity->v.attack_time`）・
 controller（初期 form → ready）。**コア** `astro:core_<key>`: tp / fp・idle（リングの回転・球の脈動）。
+ウェポン・コアも閉じた殻は one_sided、`fx_*` は両面の同じ方式でよい。
 
 ### 4.6 全身モーション（playanimation）
 `astro_animlib.py` の記法でキーポーズを書き、`animation.astro.p.<名前>` として書き出す。
@@ -418,6 +442,18 @@ register("<key>", {
 `at(t, fn)` t tick 後に実行（死亡・退出・解除で止まる） / `every(t0, n, step, fn)` / `once(e, max)` /
 `loc()` `chest()` `front(d, y)` `liveDir()` / `dmg(base)` 同調率と惑星の補正を掛けたダメージ / `level` 同調率 Lv。
 細かい引数は engine.js・fx.js・combat.js の JSDoc を正とする。
+
+### 4.10b スクリプト API の事実（@minecraft/server 1.13.0 で確認済み）
+* ある: itemUse / itemStartUse / itemStopUse / itemReleaseUse（使用時間のあるアイテムだけ）/ entityHitEntity / entityHurt /
+  entityDie / entitySpawn / playerSpawn / playerLeave / worldInitialize、Entity.playAnimation（players は名前の配列）、
+  Dimension.spawnParticle + MolangVariableMap（名前は "variable.xxx"）、applyKnockback(dx, dz, 水平, 垂直)、
+  player.camera.setCamera / fade / clear（コマンド `camera` も可）、player.inputPermissions.movementEnabled / cameraEnabled、
+  onScreenDisplay.setTitle（options を渡すなら fadeIn/stay/fadeOut の 3 つ全部、tick）/ updateSubtitle / setActionBar /
+  setHudVisibility、ItemStack.lockMode / keepOnDeath、isJumping（ジャンプを押している間 true）/ isSneaking / isSprinting。
+* ない: Player.inputInfo、playerButtonInput、playerSwingStart、beforeEvents.entityHurt（ダメージの打ち消しは afterEvents で回復）、
+  worldLoad、プレイヤーへの applyImpulse / clearVelocity（動かすのは applyKnockback と levitation / slow_falling だけ）。
+* カメラと入力ロックは、起動時と playerSpawn で必ず解除する（カメラは /reload やエラーを越えて残る）。
+* ホバー: ジャンプ長押し中は levitation（Lv1〜3、6 tick を 2〜4 tick ごとに掛け直し）、離したら slow_falling、スニークで両方外す。
 
 ### 4.11 検査
 `build_astro.py` は生成 → `test_astro.py` → `check_astro_suits.py` → `validate_astro.py` の順に走らせ、

@@ -111,8 +111,9 @@ def items():
              "minecraft:should_despawn": False,
              "minecraft:glint": False},
             "none"))
-        # スーツ（頭スロット）と、解除中の分解アニメ用の差し替え
-        for suffix, prot in (("", pl["defense"]), ("_off", 0)):
+        # スーツ（頭スロット）。_on = 組み上がり中（アタッチャブルが組み上がりアニメを再生）、
+        # 無印 = 装着中（後から見えた人には組み上がりを繰り返さない）、_off = 分解中
+        for suffix, prot in (("_on", pl["defense"]), ("", pl["defense"]), ("_off", 0)):
             write_json(os.path.join(d, f"suit_{key}{suffix}.item.json"), item(
                 f"suit_{key}{suffix}", f"{NS}_suit_{key}",
                 {"minecraft:max_stack_size": 1,
@@ -190,10 +191,12 @@ def lang_lines():
         ja += [f"item.{NS}.core_{key}.name={pl['core_ja']}",
                f"item.{NS}.weapon_{key}.name={pl['weapon']['ja']}",
                f"item.{NS}.suit_{key}.name={pl['suit_ja']}",
+               f"item.{NS}.suit_{key}_on.name={pl['suit_ja']}",
                f"item.{NS}.suit_{key}_off.name={pl['suit_ja']}"]
         en += [f"item.{NS}.core_{key}.name={pl['core_en']}",
                f"item.{NS}.weapon_{key}.name={pl['weapon']['en']}",
                f"item.{NS}.suit_{key}.name={pl['suit_en']}",
+               f"item.{NS}.suit_{key}_on.name={pl['suit_en']}",
                f"item.{NS}.suit_{key}_off.name={pl['suit_en']}"]
     for name, m in D.MATERIALS.items():
         ja.append(f"item.{NS}.{name}.name={m['ja']}")
@@ -233,7 +236,8 @@ def planet_js(key, pl):
         "weapon": pl["weapon"], "damage": pl["damage"], "defense": pl["defense"],
         "mobility": pl["mobility"], "passive": pl["passive"], "combo3": pl["combo3"],
         "moves": pl["moves"], "motif": pl["motif"],
-        "core": f"{NS}:core_{key}", "suit": f"{NS}:suit_{key}", "suitOff": f"{NS}:suit_{key}_off",
+        "core": f"{NS}:core_{key}", "suit": f"{NS}:suit_{key}", "suitOn": f"{NS}:suit_{key}_on",
+        "suitOff": f"{NS}:suit_{key}_off",
         "weaponId": f"{NS}:weapon_{key}",
     }
 
@@ -257,7 +261,7 @@ def data_js():
         f"export const PLANET_KEYS = {dump(D.PLANET_KEYS)};",
         "export const CORE_TO_PLANET = Object.fromEntries(Object.values(PLANETS).map((p) => [p.core, p.key]));",
         "export const WEAPON_TO_PLANET = Object.fromEntries(Object.values(PLANETS).map((p) => [p.weaponId, p.key]));",
-        "export const SUIT_TO_PLANET = Object.fromEntries(Object.values(PLANETS).flatMap((p) => [[p.suit, p.key], [p.suitOff, p.key]]));",
+        "export const SUIT_TO_PLANET = Object.fromEntries(Object.values(PLANETS).flatMap((p) => [[p.suit, p.key], [p.suitOn, p.key], [p.suitOff, p.key]]));",
         f"export const MATERIALS = {dump({k: {'ja': v['ja'], 'en': v['en']} for k, v in D.MATERIALS.items()})};",
         f"export const ENEMIES = {dump(D.ENEMIES)};",
         f"export const ADDON = {dump({'ja': D.ADDON_JA, 'en': D.ADDON_EN, 'version': '.'.join(map(str, D.VERSION))})};",

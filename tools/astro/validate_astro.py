@@ -278,7 +278,8 @@ def main() -> int:
             if key and key not in keys:
                 errors.append(f"{lf}: missing {key}")
     for key in D.PLANETS:
-        for ident in (f"{NS}:core_{key}", f"{NS}:weapon_{key}", f"{NS}:suit_{key}", f"{NS}:suit_{key}_off"):
+        for ident in (f"{NS}:core_{key}", f"{NS}:weapon_{key}", f"{NS}:suit_{key}", f"{NS}:suit_{key}_on",
+                      f"{NS}:suit_{key}_off"):
             if ident not in item_ids:
                 errors.append(f"item {ident} missing")
             if ident not in att_ids:

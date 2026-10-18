@@ -4,9 +4,12 @@
 座標: 16 単位 = 1 ブロック、プレイヤーは -Z が正面、右手が -X、+Y が上。
 回転: **ここの補助が受け取る / 書き出す rotation は全て統合版の規則そのまま**
       （tools/hyperdim/hd_space.py: R = Rz(-rz)·Ry(ry)·Rx(-rx)、X→Y→Z の順）。
-        * rx が正 … 上端が前（-Z）へ倒れる（下端は後ろへ）。腕なら負の rx で前へ上がる
-        * ry が正 … 前（-Z）を向いていた面が右（-X）を向く
-        * rz が正 … 上端が右（-X）へ倒れる（右腕なら外へ開く）
+        * rx が正 … 上端が前（-Z）へ倒れる（下端は後ろへ）。腕なら負の rx で前へ上がる。
+                    負の rx は面が前上を向く（つま先・斜めの装甲）
+        * ry が正 … 前（-Z）を向いていた面が右（-X）を向く（+X の端が前へ出る）
+        * rz が正 … 上端が左（+X）へ、下端が右（-X）へ。右側の部品なら「下端が外へ開く」
+                    （スカート・肩当ての垂れ）。横板の外（-X）の端を下げたい時は rz を負に
+      右側（-X）だけ作って鏡映すれば、左は (rx, -ry, -rz) に自動で直る（astro_suit.mirror_all）。
       hyperdim の beam/polyline/fill_tri_yz は旧プレビューの規則で角度を出すので、
       ここでは統合版の規則で解き直した版を同じ名前で提供する（形の意味は同じ）。
 
@@ -15,6 +18,9 @@
   cbox(bone, centre, size, style, **kw)           中心と大きさ（rotation は中心まわり）
   rbox(bone, centre, size, style, rot, pivot=None) 中心＋回転（統合版の角度）
   plate(bone, centre, size, style, tilt=(rx,ry,rz)) rbox の別名（傾けた装甲板）
+  surface(cube, face, a, b, lift)                  キューブの面の上の点と法線（回転込み）
+  stick(bone, cube, face, a, b, size, style, lift) 面に貼る小箱（同じ傾きで。ボルト・宝玉・板の重ね）
+  line_on(bone, cube, face, ab0, ab1, w, t, style) 面の上を走る線（発光ライン・縁取り）
   beam(bone, p0, p1, w, h, style, roll=0)          p0→p1 の角柱（局所 X 幅 w・Y 高さ h）
   polyline(bone, pts, widths, heights, style)      点列に沿った角柱の列（先細り可）
   octa(bone, centre, w, length, style, axis)       八角柱（箱＋45°の箱）
@@ -104,6 +110,87 @@ def rbox(bone, centre, size, style, rot=(0, 0, 0), pivot=None, **kw) -> Cube:
 def plate(bone, centre, size, style, tilt=(0, 0, 0), **kw) -> Cube:
     """傾けた装甲板。tilt は統合版の rotation（rx 正 = 上端が前へ / rz 正 = 上端が右(-X)へ）。"""
     return rbox(bone, centre, size, style, rot=tilt, **kw)
+
+
+# ---------------------------------------------------------------------------
+#  面に貼る（傾いた板の上に、同じ傾きで部品・線を載せる）
+# ---------------------------------------------------------------------------
+# 面の中の 2 軸（a, b）。側面は b が高さ（Y）。a, b は 0..1（面の端から端）
+FACE_AXES = {"north": (0, 1, 2, -1), "south": (0, 1, 2, 1), "east": (2, 1, 0, 1),
+             "west": (2, 1, 0, -1), "up": (0, 2, 1, 1), "down": (0, 2, 1, -1)}
+
+
+def cube_rot(c) -> np.ndarray:
+    return rot(*c.rotation) if c.rotation else np.eye(3)
+
+
+def cube_pivot(c) -> np.ndarray:
+    if c.pivot is not None:
+        return np.array(c.pivot, float)
+    return np.array(c.origin, float) + np.array(c.size, float) / 2
+
+
+def surface(c, face, a=0.5, b=0.5, lift=0.0):
+    """キューブ c の面 face 上の点（a, b は面の 2 軸の 0..1。north/south は (x, y)、
+    east/west は (z, y)、up/down は (x, z)）と外向きの法線（モデル空間）。lift で法線方向に浮かす。"""
+    ia, ib, inn, sg = FACE_AXES[face]
+    o = np.array(c.origin, float) - c.inflate
+    s = np.array(c.size, float) + 2 * c.inflate
+    q = o.copy()
+    q[ia] += s[ia] * a
+    q[ib] += s[ib] * b
+    q[inn] += s[inn] if sg > 0 else 0.0
+    n = np.zeros(3)
+    n[inn] = sg
+    R = cube_rot(c)
+    p = cube_pivot(c)
+    nn = R @ n
+    return R @ (q - p) + p + nn * lift, nn
+
+
+def stick(bone, c, face, a, b, size, style, lift=0.0, spin=0.0, sink=0.0, **kw) -> Cube:
+    """キューブ c の面 face の (a, b) に、同じ傾きの小箱を貼る。size = (面の a 方向, b 方向,
+    厚み)。sink で面へ沈める（隙間なく重ねる）。spin は面の法線まわりの回転（度）。"""
+    ia, ib, inn, sg = FACE_AXES[face]
+    pt, n = surface(c, face, a, b)
+    loc = [0.0, 0.0, 0.0]
+    loc[ia], loc[ib], loc[inn] = size[0], size[1], size[2]
+    centre = pt + n * (lift + size[2] / 2 - sink)
+    R = cube_rot(c)
+    if spin:
+        axis = np.zeros(3)
+        axis[inn] = 1.0
+        R = R @ _axis_matrix(axis, spin * sg)
+    return mat_cube(bone, centre, loc, style, R, **kw)
+
+
+def _axis_matrix(axis, deg):
+    a = np.asarray(axis, float) / np.linalg.norm(axis)
+    t = math.radians(deg)
+    K = np.array([[0, -a[2], a[1]], [a[2], 0, -a[0]], [-a[1], a[0], 0]])
+    return np.eye(3) + math.sin(t) * K + (1 - math.cos(t)) * (K @ K)
+
+
+def line_on(bone, c, face, ab0, ab1, w, t, style, lift=0.0, sink=0.08, extend=0.0, **kw):
+    """キューブ c の面の上を (a0,b0) から (a1,b1) へ走る帯（幅 w・厚み t）。発光ライン・縁取りに。"""
+    p0, n = surface(c, face, *ab0)
+    p1, _ = surface(c, face, *ab1)
+    return line3(bone, p0, p1, n, w, t, style, lift=lift, sink=sink, extend=extend, **kw)
+
+
+def line3(bone, p0, p1, normal, w, t, style, lift=0.0, sink=0.08, extend=0.0, **kw) -> Cube:
+    """p0→p1 の帯を、厚みの向きを normal に合わせて置く（面に沿う線）。"""
+    p0, p1 = np.asarray(p0, float), np.asarray(p1, float)
+    d = p1 - p0
+    L = float(np.linalg.norm(d))
+    z = -d / L
+    y = np.asarray(normal, float)
+    y = y - z * float(np.dot(y, z))
+    y /= np.linalg.norm(y)
+    x = np.cross(y, z)
+    R = np.column_stack([x, y, z])
+    centre = (p0 + p1) / 2 + y * (lift + t / 2 - sink)
+    return mat_cube(bone, centre, (w, t, L + extend), style, R, **kw)
 
 
 def mat_cube(bone, centre, size, style, R, **kw) -> Cube:
