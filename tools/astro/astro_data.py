@@ -14,7 +14,7 @@ from __future__ import annotations
 NS = "astro"
 ADDON_JA = "アストロ・ナノギア"
 ADDON_EN = "Astro Nanogear"
-VERSION = (1, 0, 0)
+VERSION = (1, 1, 0)
 
 # ---------------------------------------------------------------------------
 #  全形態共通の数値
