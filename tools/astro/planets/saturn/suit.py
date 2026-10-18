@@ -19,8 +19,7 @@ import math
 
 import numpy as np
 
-from astro_common import (_group, bevel, beam, cbox, line_on, octa, rbox, ring, stick, surface,
-                          taper)
+from astro_common import (_group, cbox, line_on, rbox, ring, stick, surface, taper)
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 from hd_space import rot as _rot
 
@@ -37,6 +36,7 @@ VIOLET = (142, 124, 255)
 #  塗り（astro_paint.suit_styles("saturn") への上書き・追加）
 # ===========================================================================
 SUIT_STYLES = {
+    "plate2": {"detail": False},
     "plate": {"base": (222, 188, 118), "light": (250, 228, 172), "dark": (160, 126, 70),
               "line": (92, 66, 30), "bolts": False},
     "plate_b": {"base": (184, 152, 92), "light": (222, 196, 140), "dark": (132, 102, 58),
@@ -129,6 +129,43 @@ SUIT_ANIMS = {
         "waist_tasset_back": {"rotation": ["v.astro_run * 14.0", 0, 0]},
     },
 }
+
+
+# ===========================================================================
+#  面取り・八角柱（端の面が同じ平面に重ならない版）
+#  astro_common の bevel / octa は部品の端の面が同じ平面に重なり、端が見える所（肩当ての前後・文字盤）で
+#  ちらつく（Z ファイト）。ここでは重ねる部品を少しずつ短くして、端の面をずらす。
+# ===========================================================================
+def bevel(bone, centre, size, style, cut=0.5, axis="z", rot=None, inset=0.06, edge_style=None):
+    i = {"x": 0, "y": 1, "z": 2}[axis]
+    j, k = [n for n in range(3) if n != i]
+    s1 = list(size)
+    s1[j] -= 2 * cut
+    s2 = list(size)
+    s2[k] -= 2 * cut
+    s2[i] -= 2 * inset
+    parts = [(centre, s1, np.eye(3), style), (centre, s2, np.eye(3), style)]
+    e = cut * math.sqrt(2)
+    r45 = _rot(*{"x": (45, 0, 0), "y": (0, 45, 0), "z": (0, 0, 45)}[axis])
+    for sj in (-1, 1):
+        for sk in (-1, 1):
+            c = list(centre)
+            c[j] += sj * (size[j] / 2 - cut)
+            c[k] += sk * (size[k] / 2 - cut)
+            es = [e, e, e]
+            es[i] = size[i] - 4 * inset
+            parts.append((c, es, r45, edge_style or style))
+    return _group(bone, parts, rot, centre, centre)
+
+
+def octa(bone, centre, w, length, style, axis="z", inset=0.05):
+    i = {"x": 0, "y": 1, "z": 2}[axis]
+    size = [w, w, w]
+    size[i] = length
+    s2 = [v * 0.94 for v in size]
+    s2[i] = length - 2 * inset
+    r45 = _rot(*{"x": (45, 0, 0), "y": (0, 45, 0), "z": (0, 0, 45)}[axis])
+    return _group(bone, [(centre, size, np.eye(3), style), (centre, s2, r45, style)], None, centre, centre)
 
 
 # ===========================================================================
@@ -240,8 +277,8 @@ def boots(s):
 def legs(s):
     X = LEG_X
     g = s.part("legs", "greave_r", "rightLeg")
-    cbox(g, (X, 5.6, 0.05), (5.3, 3.9, 5.5), "plate")                      # 脛の殻
-    keel = rbox(g, (X - 0.72, 5.5, -2.95), (1.55, 3.9, 0.8), "plate2", rot=(0, 22, 0))
+    cbox(g, (X, 5.6, 0.05), (5.3, 3.9, 5.5), "plate2_b")                   # 脛の殻（アイボリー）
+    keel = rbox(g, (X - 0.72, 5.5, -2.95), (1.55, 3.9, 0.8), "plate", rot=(0, 22, 0))
     kl = line_on(g, keel, "north", (0.5, 0.12), (0.5, 0.88), 0.2, 0.2, "glow_soft")
     mirror_x(g, keel, kl, about=X)                                          # 脛の稜（V 字）
     cbox(g, (X, 7.25, 0.05), (5.45, 0.55, 5.65), "band")                   # 脛の上の褐色の帯
@@ -436,7 +473,6 @@ def shoulders(s):
     l1 = rbox(p, (-9.85, 19.75, 0.0), (0.9, 1.6, 6.4), "plate2", rot=(0, 0, 16))
     stick(p, l1, "west", 0.5, 0.08, (6.0, 0.3, 0.18), "band", sink=0.05)
     rbox(p, (-9.95, 18.65, 0.1), (0.8, 1.2, 5.6), "plate", rot=(0, 0, 12))
-    rbox(p, (-7.0, 25.7, 2.9), (0.5, 1.6, 2.2), "plate", rot=(-25, 0, -12))   # 後ろのヒレ
 
 
 # ---------------------------------------------------------------------------

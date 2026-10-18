@@ -83,8 +83,19 @@ def collect():
     return out
 
 
-def build(clear=True):
-    """clear=True なら、wield() の腕を武器（生成済みのジオメトリ）が体に入らない向きへ回す。"""
+_JOBS = []
+
+
+def _resolve_job(i):
+    name, spec, kind, hold, key, cl = _JOBS[i]
+    res = AL.resolve(spec, kind, name=name, hold=hold, cloud=cl)
+    res.planet = key
+    return res
+
+
+def build(clear=True, only=None, jobs=None):
+    """全身モーションを解く。clear=True なら wield() の腕を武器（生成済みのジオメトリ）が体に入らない向きへ回す。
+    only = 名前の集合（プレビュー用。指定すると重複の省略はしない）。jobs = 並列の数（既定は CPU の数、最大 4）。"""
     anims, meta, res_all = {}, {}, {}
     clouds = {}
 
@@ -100,16 +111,28 @@ def build(clear=True):
             clouds[key] = weapon_cloud(key)
         return clouds[key]
     shared = set(AL.library())
+    _JOBS.clear()
     for name, spec, kind, hold, key in collect():
+        if only and name not in only:
+            continue
         # 惑星の版は必ず（その惑星の武器で直す）。共通の版は wield() を使う物だけ（騎士剣で）
         cl = cloud_of(key, kind) if (key is not None or AL.uses_wield(spec)) else None
-        if spec["frames"] and name.split(".")[-1] == "henshin":
+        if name.split(".")[-1] == "henshin":
             cl = None            # 変身の前半はコアを持っている
-        res = AL.resolve(spec, kind, name=name, hold=hold, cloud=cl)
-        res.planet = key
+        _JOBS.append((name, spec, kind, hold, key, cl))
+    n = len(_JOBS)
+    jobs = jobs or min(4, os.cpu_count() or 1, max(1, n))
+    if jobs > 1 and n > 4:
+        import concurrent.futures as cf
+        import multiprocessing as mp
+        with cf.ProcessPoolExecutor(jobs, mp_context=mp.get_context("fork")) as ex:
+            results = list(ex.map(_resolve_job, range(n), chunksize=2))
+    else:
+        results = [_resolve_job(i) for i in range(n)]
+    for (name, spec, _kind, _hold, key, _cl), res in zip(_JOBS, results):
         js = AL.to_json(res)
         base = name.split(".", 1)[-1]
-        if key is not None and base in shared and spec is AL_LIB_CACHE.get(base) \
+        if not only and key is not None and base in shared and spec is AL_LIB_CACHE.get(base) \
                 and js == anims.get(AL.PREFIX + base):
             continue            # 共通の版と同じ（同じ種類の武器）なら書かない — スクリプトは共通の版を使う
         res_all[name] = res
@@ -242,9 +265,11 @@ def clip_report(res_all, step=0.04, limit=0.8):
 def preview(name, planet=None, frames=8, view=None, out=None):
     from PIL import Image
     import astro_weapon as W
-    _anims, _meta, res_all = build()
+    want = {name} | ({f"{planet}.{name}"} if planet else set())
+    _anims, _meta, res_all = build(only=want)
     if name not in res_all:
-        raise SystemExit(f"no animation {name!r}. one of: {', '.join(sorted(res_all))}")
+        names = sorted(n for n, *_r in collect())
+        raise SystemExit(f"no animation {name!r}. one of: {', '.join(names)}")
     res = res_all[name]
     key = planet or res.planet or "earth"
     if planet and f"{planet}.{name}" in res_all:
@@ -340,8 +365,10 @@ def main(argv=None) -> int:
             return argv[i + 1] if i + 1 < len(argv) else default
         return default
     if "--describe" in argv:
-        _a, _m, res_all = build()
         name = opt("--describe")
+        _a, _m, res_all = build(only={name})
+        if name not in res_all:
+            raise SystemExit(f"no animation {name!r}")
         for line in AL.describe(res_all[name]):
             print("  " + line)
         return 0
