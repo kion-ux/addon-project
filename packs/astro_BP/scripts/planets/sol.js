@@ -31,7 +31,7 @@ import {
 } from "../fx.js";
 import { hit, hostilesNear, pull } from "../combat.js";
 import {
-  add, sub, up, norm, lerp3, yawRotate, yawDeg, rightOf, chest, dist, effect, onGround, valid, now,
+  add, sub, up, norm, lerp3, yawRotate, rightOf, chest, dist, effect, onGround, valid, now,
 } from "../util.js";
 
 const KEY = "sol";
@@ -116,8 +116,6 @@ register(KEY, {
     ctx.at(9, () => {
       const f = ctx.liveDir();
       const c0 = ctx.chest();
-      const g0 = ctx.ground(ctx.loc());
-      const rot = yawDeg(f);
       sound(dim, "astro.flare", c0, 1.0, 1.4);
       sound(dim, "astro.swing_heavy", c0, 0.8, 1.0);
       sound(dim, "astro.explosion", c0, 1.4, 0.6);
@@ -126,7 +124,7 @@ register(KEY, {
       // 放つ瞬間: 掌の前の閃光と、扇の薙ぎ払い
       P(dim, "flare", add(c0, f, 1.2), { color: HOT, size: 3.2, life: 0.3, rot: 0 });
       P(dim, "impact", add(c0, f, 1.2), { color: white(SUN, 0.3), size: 2.2, life: 0.18 });
-      P(dim, "slash_big", add(c0, f, 2.0), { color: SUN, rot: rot + 90, size: 1.4, life: 0.35, var: 1 });
+      P(dim, "slash_big", add(c0, f, 2.0), { color: SUN, rot: 0, size: 1.4, life: 0.35, var: 1 });   // 右から左への横薙ぎ
       arc(dim, c0, f, 2.6, 70, -70, 6, FLARE, { size: 1.3, steps: 12, life: 0.3 });
       // 当たり: 扇形の中の敵を焼いて押し、目を眩ませる
       for (const e of ctx.cone(8.5, 55, c0, f)) {
@@ -202,7 +200,7 @@ register(KEY, {
       if (i % 3 === 0 && (!lastTrail || dist(g, lastTrail) > 1.2)) {
         lastTrail = g;
         zone(ctx, g, {
-          radius: 1.35, ticks: 50, every: 10, damage: 2, height: 2.0,
+          radius: 1.35, ticks: 50, every: 10, damage: 1.5, height: 2.0,
           hit: { color: FLARE, power: 0.6, nova: 1, xp: 1 },
           effects: [["slowness", 15, 0]],
           visual(d, cz, age) {
@@ -236,7 +234,7 @@ register(KEY, {
       shake(dim, g, 12, 0.45, 0.3);
       P(dim, "pillar", up(g, 0.05), { color: SUN, size: 1.6, height: 7, life: 0.55 });
       P(dim, "pillar", up(g, 0.05), { color: HOT, size: 0.7, height: 8, life: 0.4 });
-      P(dim, "slash_big", up(g, 1.6), { color: FLARE, rot: yawDeg(f) + 90, size: 1.1, life: 0.35 });
+      P(dim, "slash_big", up(g, 1.6), { color: FLARE, rot: -60, size: 1.1, life: 0.35 });   // 斜めの斬り上げ
       P(dim, "flame", up(g, 0.5), { color: FLARE, count: 10, spread: 1.0, size: 1.6, speed: 3 });
       P(dim, "ember", up(g, 0.5), { color: GOLD, count: 16, spread: 1.0, speed: 5 });
       shock(dim, g, SUN, 3.2, { debris: 6 });
@@ -502,7 +500,7 @@ register(KEY, {
     const f = ctx.liveDir();
     const c0 = ctx.chest();
     arc(dim, up(c0, 0.3), f, 2.4, -150, 30, 90, FLARE, { size: 1.2, steps: 10, life: 0.3, sparks: false });
-    P(dim, "slash_big", add(c0, f, 1.6), { color: SUN, rot: yawDeg(f) + 90, size: 1.1, life: 0.3 });
+    P(dim, "slash_big", add(c0, f, 1.6), { color: SUN, rot: 90, size: 1.1, life: 0.3 });   // 縦の振り下ろし
     P(dim, "flare", add(c0, f, 1.4), { color: HOT, size: 1.6, life: 0.2 });
     for (let k = 1; k <= 4; k++) {
       ctx.at(k, () => {

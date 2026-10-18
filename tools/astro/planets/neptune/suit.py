@@ -263,8 +263,10 @@ def boots(s):
     cbox(b, (X, 1.7, -0.2), (5.2, 3.2, 5.8), "plate2")                     # 足の殻
     toe = rbox(b, (X, 1.0, -3.25), (4.7, 2.0, 1.9), "plate", rot=(-34, 0, 0))
     line_on(b, toe, "north", (0.5, 0.15), (0.5, 0.9), 0.32, 0.2, "glow")
-    taper(b, (X, 0.4, -3.9), (X, 0.35, -5.6), 2.6, 0.6, 2, "plate2", round_=False)   # 尖ったつま先
-    cbox(b, (X, 0.0, -4.2), (4.0, 0.5, 0.8), "pearl")
+    # 尖ったつま先（左右の板が前で合わさる舳先）と真珠の縁
+    pr = rbox(b, (X - 0.75, 0.45, -4.25), (2.0, 1.1, 1.7), "plate2", rot=(-8, 34, 0))
+    pe = stick(b, pr, "north", 0.5, 0.15, (1.9, 0.3, 0.18), "pearl", sink=0.04)
+    mirror_x(b, pr, pe, about=X)
     inst = rbox(b, (X, 3.35, -2.45), (4.0, 2.0, 0.8), "plate", rot=(-28, 0, 0))   # 甲
     stick(b, inst, "north", 0.5, 0.92, (3.6, TRIM_W, 0.2), "pearl", sink=0.05)
     rbox(b, (X, 1.7, 2.75), (4.6, 2.8, 0.9), "plate2_b", rot=(8, 0, 0))   # 踵

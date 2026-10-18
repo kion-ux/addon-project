@@ -21,10 +21,10 @@ import {
   register, lunge, hover, plunge, safeAhead, ultOpen, zone, meteor, chain, dirTo,
 } from "../engine.js";
 import {
-  P, line, ring, arc, shock, beam, emblem, flash, shake, sound, body, white, mix, afterimage, fxScale,
+  P, ring, arc, shock, beam, emblem, flash, shake, sound, body, white, mix, afterimage, fxScale,
 } from "../fx.js";
 import {
-  hit, nearestEnemy, hostilesNear, freeze, pull, launch,
+  hit, nearestEnemy, hostilesNear, freeze, pull,
 } from "../combat.js";
 import { S } from "../state.js";
 import {

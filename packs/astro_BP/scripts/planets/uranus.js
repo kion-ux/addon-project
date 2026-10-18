@@ -151,9 +151,10 @@ function iceSpikes(ctx, g, n = 5, R = 1.6, tag = "spike") {
 function fireArrow(ctx, from, d, main) {
   const { dim } = ctx;
   let spikes = 0;
+  const tag = `splash${++spikeSeq}`;
   projectile(ctx, from, d, {
-    speed: 1.7, range: 24, radius: 0.75, pierce: Infinity, life: 20,
-    damage: main ? 9 : 7,
+    speed: 1.7, range: 24, radius: 0.85, pierce: Infinity, life: 20,
+    damage: main ? 10 : 7,
     hitOpts: { color: AZURE, kb: 0.35, up: 0.1, power: 1.3, sound: "astro.ice_crack" },
     trail(dd, pos, prev, age) {
       line(dd, "trail", prev, pos, 0.3, { color: white(AZURE, 0.35), size: 0.55, life: 0.35 });
@@ -164,6 +165,14 @@ function fireArrow(ctx, from, d, main) {
     onHit(e) {
       freeze(e, 60, true);
       encase(dim, e);
+      // 貫いた所から冷気が弾け、すぐ隣の敵も凍えさせる
+      const c = chest(e);
+      P(dim, "ring_n", c, { color: FROST, count: 16, spread: 0.5, speed: 4, life: 0.3, var: 1 });
+      for (const o of ctx.foes(1.8, c)) {
+        if (o.id === e.id || !ctx.once(o, 1, tag)) continue;
+        hit(ctx, o, 3, { color: ICE, power: 0.8, sound: "astro.ice_crack" });
+        effect(o, "slowness", 40, 2);
+      }
     },
     onEnd(pos, reason) {
       if (!pos || !finite(pos) || reason === "owner") return;
@@ -202,7 +211,7 @@ function iceDecoy(ctx, at) {
     sound(dim, "astro.hit_metal", c, 0.8, 0.5);
     for (const e of ctx.foes(3.6, c)) {
       if (!ctx.once(e, 1, "decoy")) continue;
-      hit(ctx, e, 7, { color: ICE, kb: 0.9, up: 0.35, dir: dirTo(g, e.location), power: 1.4, sound: "astro.ice_crack" });
+      hit(ctx, e, 8, { color: ICE, kb: 0.9, up: 0.35, dir: dirTo(g, e.location), power: 1.4, sound: "astro.ice_crack" });
       freeze(e, 40, false);
       encase(dim, e);
     }
@@ -445,8 +454,10 @@ register(KEY, {
     ctx.every(12, 8, 2, (i) => {
       let k = 0;
       for (const e of ctx.foes(15, up(centre, 1))) {
+        const first = !caught.has(e.id);
         caught.set(e.id, e);
         if (k++ >= 12) continue;
+        if (first && ctx.once(e, 1, "tilt")) hit(ctx, e, 4, { color: AZURE, power: 1.0, quiet: true });
         launch(e, i === 0 ? 0.42 : 0.12, i === 0 ? 1.5 : 0.65, grav);
         if (i % 2 === 0) {
           P(dim, "speedline", chest(e), { color: FROST, dir: grav, count: 3, speed: 14, spread: 0.5 });
@@ -464,13 +475,13 @@ register(KEY, {
     ctx.at(28, () => {
       sound(dim, "astro.ice_crack", centre, 0.7, 1.4);
       sound(dim, "astro.ice_shatter", centre, 0.6, 0.6);
-      let k = 0;
-      for (const e of caught.values()) {
-        if (!valid(e) || k++ >= 12) continue;
+      // 4 体ずつ 1 tick ずらして凍らせる（パーティクルの予算）
+      [...caught.values()].filter(valid).slice(0, 12).forEach((e, k) => ctx.at(k >> 2, () => {
+        if (!valid(e)) return;
         freeze(e, 60, true);
         encase(dim, e, true);
-        hit(ctx, e, 6, { color: ICE, power: 1.2, sound: "astro.ice_crack" });
-      }
+        hit(ctx, e, 8, { color: ICE, power: 1.2, sound: "astro.ice_crack" });
+      }));
     });
     ctx.every(36, 2, 8, () => {
       let k = 0;
@@ -512,14 +523,14 @@ register(KEY, {
       }
     });
     ctx.at(53, () => {
-      let k = 0;
-      for (const e of caught.values()) {
-        if (!valid(e) || k++ >= 12) continue;
+      // 棺は光の届いた順に連鎖して砕ける（3 体ずつ 1 tick ずらす。パーティクルの予算）
+      [...caught.values()].filter(valid).slice(0, 12).forEach((e, k) => ctx.at(Math.floor(k / 3), () => {
+        if (!valid(e)) return;
         const c = chest(e);
         shatterFx(dim, c, 2.2);
         shock(dim, onGround(dim, e.location, 3), ICE, 2.4, { dust: false });
-        hit(ctx, e, 16, { color: ICE, kb: 1.0, up: 0.5, dir: dirTo(centre, e.location), power: 2.2, crit: true, sound: "astro.hit_heavy" });
-      }
+        hit(ctx, e, 20, { color: ICE, kb: 1.0, up: 0.5, dir: dirTo(centre, e.location), power: 2.2, crit: true, sound: "astro.hit_heavy" });
+      }));
       sound(dim, "astro.explosion_big", centre, 1.1, 1.2);
       sound(dim, "astro.ice_shatter", centre, 0.7, 1.5);
       shake(dim, centre, 26, 0.8, 0.5);
