@@ -25,7 +25,7 @@ import {
   P, line, ring, arc, shock, emblem, flash, shake, sound, body, white, afterimage, fxScale,
 } from "../fx.js";
 import {
-  hit, enemiesNear, enemiesOnLine, nearestEnemy, hostilesNear, freeze,
+  hit, enemiesNear, enemiesOnLine, nearestHostile, hostilesNear, freeze,
 } from "../combat.js";
 import {
   add, sub, up, norm, lerp3, yawRotate, yawDeg, rightOf, chest, hdist, dist, onGround, effect,
@@ -71,6 +71,9 @@ function splashAt(dim, q, power = 1) {
   P(dim, "splash", { ...q, y: q.y - 0.5 }, { color: SILVER, count: 1, spread: 0.3 * power, size: 0.8 * power });
 }
 
+/** 被弾時の液体化（onHurt）の再使用（playerId → tick）。 */
+const hurtCd = new Map();
+
 /** 水平な前方 f に対する「右」（プレイヤーから見て右 = 昼側）。 */
 function daySide(f) { return rightOf(f); }
 
@@ -86,7 +89,6 @@ register(KEY, {
     body(p, "mercury.flash_slash");
     sound(dim, "astro.liquid", p.location, 1.4, 0.7);
     sound(dim, "astro.beam_charge", p.location, 1.9, 0.45);
-    const pre = { f: ctx.f };
     ctx.every(0, 3, 2, (i) => {
       const f = ctx.liveDir();
       const blade = ctx.local(-0.3, 0.6, 0.7);
@@ -102,7 +104,6 @@ register(KEY, {
     const cut = [];
     ctx.at(6, () => {
       const f = ctx.liveDir();
-      pre.f = f;
       const from = ctx.loc();
       const dest = safeAhead(dim, from, f, 7);
       const a = up(from, 1.0);
@@ -111,7 +112,7 @@ register(KEY, {
       for (const e of enemiesOnLine(ctx, a, b, 1.5)) {
         if (!ctx.once(e, 1, "pass")) continue;
         const q = posOf(e);
-        if (q) cut.push(q);
+        if (q && cut.length < 4) cut.push(q);
         hit(ctx, e, 8, { color: SILVER, kb: 0.25, up: 0.25, dir: f, power: 1.4, sound: "astro.hit_metal" });
         P(dim, "cross", chest(e), { color: white(NIGHT, 0.3), size: 1.1, rot: yawDeg(f) + 45, life: 0.25 });
       }
@@ -175,14 +176,15 @@ register(KEY, {
     effect(p, "resistance", 24, 2);
     sound(dim, "astro.boost", p.location, 1.4, 0.9);
     sound(dim, "astro.wind", p.location, 1.6, 0.6);
-    let target = ctx.nearest(12, 70) ?? nearestEnemy(ctx, ctx.chest(), 8);
+    // 見ている相手（意図して狙った）→ 無ければ周りの敵対的な相手だけ（村人や動物を勝手に狙わない）
+    let target = ctx.nearest(12, 70) ?? nearestHostile(ctx, ctx.chest(), 8);
     let last = posOf(target);
     const ANG = [130, -110, 10];
     P(dim, "wind", ctx.chest(), { color: SILVER, count: 4, spread: 0.8, speed: 8, dir: UP });
     for (let i = 0; i < 3; i++) {
       ctx.at(2 + i * 8, () => {
         // 標的が倒れていたら、最後の位置の近くの次の相手へ
-        if (!posOf(target) && last) target = nearestEnemy(ctx, up(last, 1), 6);
+        if (!posOf(target) && last) target = nearestHostile(ctx, up(last, 1), 6);
         const T = posOf(target);
         const from = ctx.loc();
         const col = i % 2 ? NIGHT : DAY;
@@ -204,7 +206,8 @@ register(KEY, {
           P(dim, "flare", tc, { color: white(col, 0.5), size: 1.0, rot: yawDeg(f), life: 0.15 });
           splashAt(dim, tc, 0.8);
           sound(dim, "astro.swing", at, 1.2 + i * 0.1, 1.0);
-          if (valid(target)) {
+          // 跳べずに離れたままなら斬らない（遠くからの当たりにしない）
+          if (valid(target) && hdist(at, T) < 4.5) {
             hit(ctx, target, i === 2 ? 7 : 5, { color: col, kb: i === 2 ? 0.4 : 0.1, up: i === 2 ? 0.65 : 0.15, dir: f, power: i === 2 ? 1.6 : 1.2, sound: "astro.hit_metal" });
           }
           for (const e of ctx.foes(2.4, tc)) {
@@ -376,12 +379,18 @@ register(KEY, {
       }
       ring(dim, "dot", C, R, 32, { color: i % 2 ? NIGHT : DAY, size: 0.55, life: 0.5 }, 0.25 + i * 0.25);
     });
-    // 八度の弦（八芒星 {8/3}）を斬り抜ける
-    const at0 = ctx.loc();
+    // 8: 軌道へ跳ぶ（いちばん近い軌道の点）
+    ctx.at(8, () => {
+      quickImage(dim, ctx.loc(), 0, 0.9);
+      quickTrail(dim, ctx.chest(), up(pt(0), 1.0), SILVER, 0.3);
+      warp(ctx, pt(0), up(C, 1.0));
+      sound(dim, "astro.just_dodge", C, 1.2, 0.8);
+    });
+    // 10〜38: 八度の弦（八芒星 {8/3}: 135° ずつ進むと 8 回で元の点へ戻る）を斬り抜ける
     for (let i = 0; i < 8; i++) {
       ctx.at(10 + i * 4, () => {
-        const a = i === 0 ? onGround(dim, at0, 4) : pt(i - 1);
-        const b = pt(i);
+        const a = pt(i);
+        const b = pt(i + 1);
         const col = i % 2 ? NIGHT : DAY;
         const A = up(a, 1.0), B = up(b, 1.0);
         quickImage(dim, ctx.loc(), i, 0.9);
@@ -582,6 +591,3 @@ register(KEY, {
   },
   meta: {},
 });
-
-/** 被弾時の液体化（onHurt）の再使用（playerId → tick）。 */
-const hurtCd = new Map();
