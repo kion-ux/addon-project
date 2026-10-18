@@ -1,129 +1,61 @@
 // ===========================================================================
-//  侵略者とホログラム標的 — 最小版
+//  侵略者とホログラム標的 — main.js から呼ばれる窓口
 //
-//  TODO(enemies agent): ヴォイド・ドローン／センチネル／ネメシスの攻撃パターンをここに書く。
-//  main.js はこのファイルの次の関数（フック）だけを呼ぶ。名前と引数は変えずに中身を差し替えること:
+//  中身は invaders.js（ヴォイド・ドローン／センチネル／虚星王ネメシスの行動と攻撃、ホログラム標的の
+//  DPS 表示、ヴォイド・シグナルによる召喚）。main.js はこのファイルの次の関数だけを呼ぶ:
 //    initEnemies()                         起動時に 1 回
-//    tickEnemies(tick)                     毎 tick（重い処理は自分で間引く）
-//    onEntitySpawn(entity)                 entitySpawn（astro: の敵・標的が現れた）
-//    onEntityHurt(entity, damage, source)  entityHurt（source = damageSource）。true を返すとダメージ表示を出さない
+//    tickEnemies(tick)                     毎 tick
+//    onEntitySpawn(entity)                 entitySpawn
+//    onEntityHurt(entity, damage, source)  entityHurt。true を返すとダメージ表示を出さない
 //    onEntityDie(entity, source)           entityDie
 //    summonTarget(player)                  /scriptevent astro:target
-//    summonBoss(player)                    /scriptevent astro:boss と ヴォイド・シグナルの使用
-//    useVoidSignal(player)                 astro:void_signal を使った（夜だけボスを呼ぶ等）
+//    summonBoss(player)                    /scriptevent astro:boss（条件を無視して呼ぶ）
+//    useVoidSignal(player)                 astro:void_signal を使った（夜の地上だけ）
 //    isEnemy(entity)                       侵略者か
 // ===========================================================================
-import { ENEMIES } from "./data.js";
-import { P, sound, announce } from "./fx.js";
-import { valid, health, now, flatDir, report, cmd } from "./util.js";
+import {
+  INVADER, isInvader, onInvaderSpawn, tickInvaders, summonNemesis, summonHologram,
+  onInvaderHurt, onInvaderDie, setInvaderDamageFilter,
+} from "./invaders.js";
+import { barrierActive, isDodging } from "./mobility.js";
+import { valid, report } from "./util.js";
 
 export const TYPES = {
-  drone: "astro:void_drone",
-  sentinel: "astro:void_sentinel",
-  boss: "astro:nemesis",
-  target: "astro:hologram_target",
+  drone: INVADER.drone,
+  sentinel: INVADER.sentinel,
+  boss: INVADER.boss,
+  target: INVADER.target,
   bolt: "astro:void_bolt",
 };
-const ENEMY_SET = new Set([TYPES.drone, TYPES.sentinel, TYPES.boss]);
 
 export function isEnemy(e) {
-  try { return ENEMY_SET.has(e.typeId); } catch (_) { return false; }
+  try { return isInvader(e); } catch (_) { return false; }
 }
 
-export function initEnemies() { }
-
-// ---------------------------------------------------------------------------
-//  ホログラム標的: 倒れない。直近 5 秒の合計と DPS を頭上に出す
-// ---------------------------------------------------------------------------
-const logs = new Map();   // entityId -> { e, log: [{t, d}] }
-const WINDOW = 100;
-
-function targetName(sum, dps) {
-  const name = ENEMIES.hologram_target?.ja ?? "ホログラム標的";
-  return `§b${name}\n§f5秒合計 §c${sum.toFixed(1)} §7| §fDPS §6${dps.toFixed(1)}`;
-}
-
-function targetHurt(e, dmg) {
-  const t = now();
-  const rec = logs.get(e.id) ?? { e, log: [] };
-  rec.log = rec.log.filter((x) => t - x.t <= WINDOW);
-  rec.log.push({ t, d: dmg });
-  rec.e = e;
-  logs.set(e.id, rec);
-  const h = health(e);
-  try { if (h) h.setCurrentValue(h.effectiveMax); } catch (_) { }
-  const sum = rec.log.reduce((a, x) => a + x.d, 0);
-  const span = Math.max(20, t - rec.log[0].t) / 20;
-  try { e.nameTag = targetName(sum, sum / span); } catch (_) { }
-  try { P(e.dimension, "hex", { x: e.location.x, y: e.location.y + 1.0, z: e.location.z }, { color: [0.4, 0.9, 1], size: 1.0, life: 0.2 }); } catch (_) { }
-}
-
-export function tickEnemies(tick) {
-  if (tick % 10 !== 0 || !logs.size) return;
-  const t = now();
-  for (const [id, rec] of logs) {
-    if (!valid(rec.e)) { logs.delete(id); continue; }
-    rec.log = rec.log.filter((x) => t - x.t <= WINDOW);
-    if (!rec.log.length) {
-      try { rec.e.nameTag = targetName(0, 0); } catch (_) { }
-      logs.delete(id);
-    }
-  }
-}
-
-export function onEntitySpawn(e) {
-  try {
-    if (e.typeId === TYPES.target) e.nameTag = targetName(0, 0);
-  } catch (_) { }
-}
-
-/** true を返すと main はダメージ表示を出さない。 */
-export function onEntityHurt(e, damage, source) {
-  try {
-    if (e.typeId === TYPES.target) { targetHurt(e, damage); return false; }
-  } catch (err) { report("enemies.hurt", err); }
-  return false;
-}
-
-export function onEntityDie(e, source) { }
-
-function spawnInFront(p, type, d = 3) {
-  const f = flatDir(p);
-  const l = p.location;
-  const at = { x: l.x + f.x * d, y: l.y, z: l.z + f.z * d };
-  try { return p.dimension.spawnEntity(type, at); } catch (_) {
-    cmd(p, `summon ${type} ^ ^ ^${d}`);
+export function initEnemies() {
+  // ナノ・バリアと回避ステップの無敵の間は、侵略者のスクリプト攻撃（レーザー・衝撃波・隕石）を受けない
+  setInvaderDamageFilter((p) => {
+    try {
+      if (!valid(p) || p.typeId !== "minecraft:player") return undefined;
+      if (barrierActive(p) || isDodging(p)) return false;
+    } catch (e) { report("enemies.filter", e); }
     return undefined;
-  }
+  });
 }
 
-export function summonTarget(p) {
-  const e = spawnInFront(p, TYPES.target, 3);
-  if (e) onEntitySpawn(e);
-  sound(p.dimension, "astro.ui_select", p.location, 1.0, 0.8);
-  return e;
+export function tickEnemies() { tickInvaders(); }
+
+export function onEntitySpawn(e) { onInvaderSpawn(e); }
+
+/** true を返すと main はダメージ表示を出さない（侵略者・標的とも数字は出す）。 */
+export function onEntityHurt(e, damage, source) {
+  return onInvaderHurt(e, damage, source) === true;
 }
 
-export function summonBoss(p) {
-  const e = spawnInFront(p, TYPES.boss, 8);
-  sound(p.dimension, "astro.nemesis_spawn", p.location, 1.0, 1.0);
-  announce(p, "§5虚星王 ネメシス 降臨", 60);
-  return e;
-}
+export function onEntityDie(e, source) { onInvaderDie(e, source); }
 
-/** 手に持っている物を 1 つ減らす。 */
-function consumeHeld(p, typeId) {
-  try {
-    const inv = p.getComponent("minecraft:inventory")?.container;
-    const slot = p.selectedSlotIndex ?? 0;
-    const it = inv?.getItem(slot);
-    if (!it || it.typeId !== typeId) return false;
-    if (it.amount > 1) { it.amount -= 1; inv.setItem(slot, it); } else inv.setItem(slot, undefined);
-    return true;
-  } catch (_) { return false; }
-}
+export function summonTarget(p) { return summonHologram(p); }
 
-export function useVoidSignal(p) {
-  if (!consumeHeld(p, "astro:void_signal")) return undefined;
-  return summonBoss(p);
-}
+export function summonBoss(p) { return summonNemesis(p, { force: true }); }
+
+export function useVoidSignal(p) { return summonNemesis(p); }

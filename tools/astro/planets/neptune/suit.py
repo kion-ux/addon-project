@@ -79,6 +79,41 @@ def fin3(bone, A, B, C, thick, layer, style, overlap=0.15, styles=None, **kw):
     return out
 
 
+def fan_fin(bone, base0, base1, edge, thick, style, width=None, styles=None, taper_k=0.7,
+            **kw):
+    """ヒレ: 付け根 base0→base1 に沿って並べた根元から、外縁の点列 edge へ放射状に伸びる条の板。
+    隣の条と重なって一枚の膜に見え、外縁は条の先で波打つ（波頭）。条の板は付け根から先へ
+    taper_k 倍まで細る（2 段）。edge[0] の条が前縁。戻り値はキューブのリスト。"""
+    b0, b1 = _v(base0), _v(base1)
+    E = [_v(p) for p in edge]
+    n = len(E)
+    N = np.cross(b1 - b0, E[0] - b0)
+    if np.linalg.norm(N) < 1e-6:
+        N = np.cross(b1 - b0, E[-1] - b0)
+    N /= np.linalg.norm(N)
+    out = []
+    for i, P in enumerate(E):
+        root = b0 + (b1 - b0) * (i / max(1, n - 1))
+        d = P - root
+        L = float(np.linalg.norm(d))
+        if L < 0.2:
+            continue
+        dz = d / L
+        wv = np.cross(N, dz)
+        R = np.column_stack([N, wv, np.cross(N, wv)])
+        if width is None:
+            sp = float(np.linalg.norm(b1 - b0)) / max(1, n - 1)
+            nb = float(np.linalg.norm(E[min(n - 1, i + 1)] - E[max(0, i - 1)])) / 2
+            w = max(0.5, (sp + nb) * 0.75)
+        else:
+            w = width[i] if isinstance(width, (list, tuple)) else width
+        st = styles[i % len(styles)] if styles else style
+        for k, (t0, t1, ww) in enumerate(((0.0, 0.55, w), (0.5, 1.0, w * taper_k))):
+            c = root + d * ((t0 + t1) / 2)
+            out.append(mat_cube(bone, c, (thick, ww, L * (t1 - t0) + 0.1), st, R, **kw))
+    return out
+
+
 def diamond(bone, centre, d, t, style, tilt=0.0, yaw=0.0, **kw):
     """対角線 d の菱形の板（厚み t）。tilt は上端を前へ倒す角度（負で下端が前 = 鱗の重なり）。"""
     s = d / math.sqrt(2)
@@ -117,10 +152,10 @@ SUIT_STYLES = {
     # 白い波頭のヒレ（条の筋が斜めに走る）
     "fin": {"kind": "armor", "base": FOAM, "light": (255, 255, 255), "dark": (176, 204, 238),
             "line": (120, 160, 220), "panel": 0, "bolts": False, "outline_k": 0.35,
-            "bevel_lo": 0.92},
+            "bevel_lo": 0.92, "unlit": True},
     "fin_m": {"kind": "armor", "base": (190, 222, 250), "light": (236, 248, 255),
               "dark": (140, 186, 236), "line": (110, 150, 214), "panel": 0, "bolts": False,
-              "sheen": False, "outline_k": 0.3, "bevel_lo": 0.92},
+              "sheen": False, "outline_k": 0.3, "bevel_lo": 0.92, "unlit": True},
     "fin_b": {"kind": "armor", "base": (196, 220, 246), "light": (240, 248, 255),
               "dark": (120, 156, 210), "line": (50, 84, 150), "panel": 0, "sheen": False},
     "pearl": {"kind": "trim", "base": PEARL, "light": (255, 255, 255), "dark": (96, 132, 176),

@@ -821,6 +821,7 @@ async function testCommon() {
     ok(/DPS/.test(tgt.nameTag), "hologram nameTag lost");
   }
   H.scriptEventReceive({ id: "astro:boss", message: "", sourceEntity: p });
+  tick(80);   // 召喚の演出（3.3 秒）の後に現れる
   ok(G.__log.spawned.has("astro:nemesis"), "astro:boss did not try to spawn nemesis");
   // ---- 落ちたウェポン・スーツの掃除 ----------------------------------------
   D.spawnItem(new ItemStack(PLANETS.earth.weaponId), { x: 3, y: 64, z: 3 });
