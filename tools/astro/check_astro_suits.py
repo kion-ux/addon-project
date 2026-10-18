@@ -117,7 +117,7 @@ def check_model(key, verbose=False) -> Report:
         for ok, name, msg in AS.proportion_checks(meas):
             lines.append(f"    {'ok' if ok else 'NG'}  {name:13s} {msg}")
             if not ok:
-                r.err(f"{name}: {msg}")
+                r.err(f"7-head/detail check '{name}' failed (see the table above)")
         r.info("7-head proportions / detail:\n" + "\n".join(lines))
         if verbose:
             r.info(f"  measure: " + ", ".join(f"{k}={v:.2f}" if isinstance(v, float) else f"{k}={v}"

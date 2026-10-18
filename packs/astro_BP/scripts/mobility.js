@@ -19,7 +19,7 @@ import { P, afterimage, body, bodyStop, sound, white, ring, announce, title, gly
 import { addNova, entitiesNear, isTarget, isHostile } from "./combat.js";
 import {
   allPlayers, knock, effect, removeEffect, flatDir, viewDir, health, valid, now, velocity, BUS,
-  chest, rightOf, norm, sub, scale, isPlayer, report, groundY, blocked,
+  chest, rightOf, norm, sub, scale, isPlayer, report, groundY, blocked, getEffect,
 } from "./util.js";
 
 /** 強さの調整値（実機で跳びすぎ／足りない場合はここだけ直す）。 */
@@ -106,6 +106,9 @@ function fallGuard(p, vy, peakY) {
   const gy = groundY(dim, l, Math.ceil(reach), 0);
   if (!blocked(dim, { x: l.x, y: gy - 1, z: l.z })) return false;   // 下に地面が見つからない（まだ高い）
   if (l.y - gy > reach || peakY - gy <= 3.2) return false;
+  // 必殺・バリア・回避の長い耐性 V を短い保険で上書きしない
+  const cur = getEffect(p, "resistance");
+  if (cur && cur.amplifier >= 4 && cur.duration >= 4) return true;
   effect(p, "resistance", 4, 4);
   return true;
 }

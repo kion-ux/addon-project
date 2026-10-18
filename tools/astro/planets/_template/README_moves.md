@@ -79,9 +79,12 @@ register("mars", {
 | `liveDir()` / `liveView()` | **今の**水平前方 / 視線（溜めの後に振り向きを追う時） |
 | `dmg(base)` | 同調率・惑星・パッシブの補正を掛けた値（**hit() は自動で掛けるので表示・計算用**） |
 | `hit(e, base, o)` | `combat.hit(ctx, e, base, o)` の短縮 |
-| `foes(radius, at = chest())` | 周りの攻撃してよい相手 |
+| `foes(radius, at = chest())` | 周りの攻撃してよい相手（**範囲技用**。PvP のプレイヤーと範囲の中の生き物に当たる） |
+| `hostiles(radius, at = chest())` | 周りの**敵対的な相手だけ**（標的・落下点・軌道の中心を**選ぶ**時はこれ） |
 | `cone(range, deg, from?, dir?)` | 扇形（既定: 胸から今の視線） |
-| `nearest(radius, deg = 180)` | 一番近い相手（deg で視線の扇に絞る） |
+| `nearest(radius, deg = 180, los = true)` | 一番近い**敵対的な相手**（deg で視線の扇に、los で頭から見通せる相手に絞る） |
+| `aimed(maxD = 16)` | 視線の先の相手（意図して狙った相手。敵対的でなくてもよい。ブロックの向こうは無し） |
+| `pick(radius, deg = 40)` | `aimed` → `nearest` の順に一人選ぶ（単体を狙う技の標準） |
 | `aim(maxD = 20)` | 狙っている地点（見ている敵の足元 → 見ているブロックの上 → 前方の地面） |
 | `ground(loc)` | loc の真下の地面に合わせた点 |
 | `extra` | 呼び出し側の追加情報（combo3 なら `{ target }`） |
@@ -162,10 +165,14 @@ register("mars", {
 | `nova` / `xp` | ゲージ・同調率 XP の増加（既定 技 2・通常 3 / 2）。**1 つの技で稼げるのは nova 14・xp 12 まで** |
 
 範囲: `enemiesNear(ctx, loc, r)` `enemiesInCone(ctx, origin, dir, range, deg)` `enemiesOnLine(ctx, a, b, width)`
-`nearestEnemy(ctx, loc, r, dir?, deg?)`。**自動で狙う技（パッシブ・追尾）は `nearestHostile` / `hostilesNear`**
-（monster の家族と侵略者だけ。村人・動物・他のプレイヤーを勝手に撃たない）。
+`nearestEnemy(ctx, loc, r, dir?, deg?)`。**自動で狙う技（パッシブ・追尾）と「標的を選ぶ」処理は `nearestHostile(src, loc, r, dir?, deg?, {los})` /
+`hostilesNear`（`ctx.hostiles` / `ctx.nearest` / `ctx.pick`）**: 侵略者と monster の家族だけ。中立の mob（ゾンビピグリン・
+エンダーマン・クモ・ピグリン）はそのプレイヤーと戦った直後だけ。村人・動物・ゴーレム・プレイヤーは選ばない。
+`isTarget` は自分・自分のペット・自分の馬（tamemount）・乗っている相手・乗り手・自分の飛び道具・クリエイティブを除く。
+`chain()` の飛び移り先も既定で敵対的な相手だけ（`filter` で変えられる）。
 状態: `freeze(e, ticks, strong)` `pull(e, to, strength)` `push(e, from, kb, up)` `launch(e, up, kb, dir)`
-`alliesNear(p, loc, r)`（自分・周りのプレイヤー・自分のペット）`heal(e, n)`。
+`alliesNear(p, loc, r)`（**自分と自分のペット・馬だけ**。他のプレイヤーは含めない — PvP で当てている相手を癒やさない）`heal(e, n)`。
+瞬間移動: `warp(ctx, loc, facing, { ground: true })` で足元に地面の無い所（虚空・崖の外）へは跳ばない。
 
 ### util.js（計算）
 
@@ -218,6 +225,10 @@ chest(e) rand pick clamp effect(e, id, ticks, amp) groundY(dim, loc) onGround(di
 * 技・コンボ: コントローラ `astro.act`（既定）。機動: `astro.move`。変身・ホバー: `astro.pose`。
 * 共通の名前（`cast` `throw` `slam` `thrust` `spin` `ult_rise` …）は、その形態の版（`mars.cast`）があればそちらが再生される。
 * コンボは `<key>.combo1` `<key>.combo2` `<key>.combo3` があれば自動で再生される（無ければバニラの振り）。
+  combo.js は斬撃・当たりの音をモーションの当たりのキー（combo.js の `STRIKE`。body.py の cN_hit の時刻）まで遅らせ、
+  `combo3` もその時刻に呼ぶ。`combo3` の中で自分でモーションの当たりまで待つ（`ctx.at(7, …)` など）なら
+  `register` に `meta: { combo3Synced: true }` を書く（すぐに呼ばれる）。body.py の当たりの時刻を変えたら STRIKE も直す。
+* 連打は 8 tick に 1 回しか数えない（段・ゲージが進まない）。三段目の後は `combo3` の返り値の間、次の段を始めない。
 * 長さは `anim_meta.js`（`bodyTicks("mars.slam")` で tick）。技の時間割をモーションに合わせるのに使える。
 
 ## 7. テスト
@@ -243,6 +254,8 @@ python3 tools/astro/test_astro.py                    # 全形態 + 雛形の読�
 * `ctx.front()` は**開始時の向き**。突進中に前を追うなら `ctx.local(…)` か `ctx.liveDir()`。
 * 多段の当たりで `ctx.once` を忘れると 1 体に何十回も当たる（バンクで全部通る）。段ごとに tag を変える。
 * 位置は毎回 `ctx.loc()` で取り直す（`ctx.start` は開始時のまま）。地面に置くものは `ctx.ground()`。
-* 自動で敵を探すパッシブは `nearestHostile`（村人を撃たない）。
+* 自動で敵を探すパッシブ・標的を選ぶ処理は `nearestHostile` / `ctx.hostiles` / `ctx.pick`（村人・動物・中立の mob を撃たない）。
+  `ctx.foes(...)[0]` や「一番体力の多い相手」を `foes` から選ぶと、村のゴーレムや牛に大技が落ちる。
+* 標的の周りへ跳ぶ技は、標的を見通せるか（`clearLine`）と行き先の足元（`warp(..., { ground: true })`）を確かめる。
 * `ult` は必ず `ultOpen` から。`burst` ではダメージを与えない（変身の硬直中）。
 * 長い技（60 tick 超）でも返り値は 200 まで。ゾーンや弾は技の後も残ってよい（解除・死亡で消える）。

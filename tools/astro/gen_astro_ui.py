@@ -2167,11 +2167,19 @@ def suit_paths(key):
 
 
 def render_bust(geo_path, tex_path, size=64, yaw=-26.0, pitch=-8.0):
-    """スーツのジオメトリ（プレイヤーと同じボーン名）を休みの姿勢で描き、脚を隠して頭と胴を切り出す。"""
+    """スーツのジオメトリ（プレイヤーと同じボーン名）を立ち姿で描き、兜と肩・胸（胸像）を切り出す。
+    v1.1 の 7 頭身では頭が小さいので、画像の割合ではなくモデル空間の箱で切る: 立ち姿のワールド座標で
+    中心が「胸の下 (y 19.6) より上・肩当ての外 (|x| 9.0) より内」にあるキューブだけを残す（脚・炎も除く）。
+    環・光輪・衛星などの飾りも、この箱に入る部分だけが写る。"""
+    import tempfile
     hyper = os.path.join(TOOLS, "hyperdim")
     if hyper not in sys.path:
         sys.path.insert(0, hyper)
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
     from hd_preview import render   # noqa: E402
+    import astro_suit as AS          # noqa: E402
+    from astro_common import cube_matrix  # noqa: E402
     geo = json.load(open(geo_path, encoding="utf-8"))["minecraft:geometry"][0]
     bones = geo.get("bones", [])
     parent = {b["name"]: b.get("parent") for b in bones}
@@ -2179,24 +2187,43 @@ def render_bust(geo_path, tex_path, size=64, yaw=-26.0, pitch=-8.0):
     def under(name, roots):
         seen = set()
         while name and name not in seen:
-            if name in roots:
+            if name in roots or any(name.startswith(r) for r in roots if r.endswith("_")):
                 return True
             seen.add(name)
             name = parent.get(name)
         return False
-    roots = {"rightLeg", "leftLeg"}
-    hide = {b["name"] for b in bones if under(b["name"], roots) or b["name"].startswith("fx_thrust")}
-    big = render(geo_path, tex_path, 256, yaw, pitch, 0, margin=0.02, bg=(0, 0, 0, 0), ss=2, hide=tuple(hide))
+    W = AS.suit_world(geo)
+    y_cut, x_max = 19.6, 9.0
+    keep_bones = []
+    kept = 0
+    for b in bones:
+        nb = {k: v for k, v in b.items() if k != "cubes"}
+        if not under(b["name"], {"rightLeg", "leftLeg", "fx_thrust_"}):
+            cubes = []
+            for c in b.get("cubes", []):
+                o = np.array(c["origin"], float)
+                ctr = (W[b["name"]] @ cube_matrix(c) @ np.r_[o + np.array(c["size"], float) / 2, 1.0])[:3]
+                if ctr[1] >= y_cut and abs(ctr[0]) <= x_max:
+                    cubes.append(c)
+            if cubes:
+                nb["cubes"] = cubes
+                kept += len(cubes)
+        keep_bones.append(nb)
+    if not kept:
+        return None
+    g2 = dict(geo, bones=keep_bones)
+    with tempfile.TemporaryDirectory() as td:
+        tmp = os.path.join(td, "bust.geo.json")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump({"format_version": "1.12.0", "minecraft:geometry": [g2]}, fh)
+        big = render(tmp, tex_path, 256, yaw, pitch, 0, margin=0.02, bg=(0, 0, 0, 0), ss=2)
     bb = big.getbbox()
     if not bb:
         return None
     big = big.crop(bb)
-    # 上の 8 割（兜・胸・肩）を残す
-    w, h = big.size
-    big = big.crop((0, 0, w, int(h * 0.80)))
     side = max(big.size)
     sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    sq.alpha_composite(big, ((side - big.size[0]) // 2, (side - big.size[1]) // 2))
+    sq.alpha_composite(big, ((side - big.size[0]) // 2, max(0, side - big.size[1]) // 3))
     im = sq.resize((size - 2, size - 2), Image.LANCZOS)
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     canvas.alpha_composite(im, (1, 1))
