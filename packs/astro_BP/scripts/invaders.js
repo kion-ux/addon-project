@@ -742,18 +742,26 @@ function bossTick(r, t, dt) {
     steer(e, { x: dn.x * sp, y: clamp(dn.y * sp, -0.15, 0.15), z: dn.z * sp }, 0.25);
   }
   if (st.act || !tgt || t < st.next) return;
-  // ---- 次の技を選ぶ ----
+  // ---- 次の技を選ぶ（シャッフルした袋から順に。今使えない技は袋に残して次の技へ） ----
   const range = dist(pos, tgt.location);
-  const options = BOSS_MOVES.filter((m) => {
-    if (m === st.lastMove) return false;
+  const usable = (m) => {
     if (m === "summon") return minions(e).length < MINION_CAP;
     if (m === "blackhole") return range < 16 && canHazard(2);
     if (m === "meteor") return canHazard(3);
     if (m === "dash") return range < 20;
     return range < 26;
-  });
-  if (!options.length) { st.next = t + 20; return; }
-  const name = options[Math.floor(Math.random() * options.length)];
+  };
+  if (!st.bag?.length) {
+    st.bag = [...BOSS_MOVES];
+    for (let i = st.bag.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [st.bag[i], st.bag[j]] = [st.bag[j], st.bag[i]];
+    }
+    if (st.bag[0] === st.lastMove && st.bag.length > 1) st.bag.push(st.bag.shift());
+  }
+  const idx = st.bag.findIndex(usable);
+  if (idx < 0) { st.next = t + 20; return; }
+  const name = st.bag.splice(idx, 1)[0];
   st.lastMove = name;
   st.act = BOSS_ACTS[name](r, tgt);
   st.act.name = name;

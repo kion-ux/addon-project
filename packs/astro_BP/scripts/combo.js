@@ -28,8 +28,10 @@ export function onMeleeHit(p, target) {
   const s = combos.get(p.id) ?? { step: 0, last: -999 };
   const step = now() - s.last <= COMMON.combo_reset_ticks ? (s.step % 3) + 1 : 1;
   combos.set(p.id, { step, last: now() });
+  // 形態のコンボのモーションがあれば使う。無ければ 1・2 段目はバニラの振りのまま、3 段目は共通の回転斬り
   const anim = `${key}.combo${step}`;
   if (hasBody(anim)) body(p, anim);
+  else if (step === 3) body(p, "spin");
   addNova(p, COMMON.nova_on_hit);
   if (target.typeId !== "astro:hologram_target") addXp(p, key, COMMON.xp_on_hit);
   BUS.emit("hit", p, target, pl.damage, null);

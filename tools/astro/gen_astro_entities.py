@@ -1973,9 +1973,6 @@ def run_js_test():
     return js_smoke_test()
 
 
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
-
 
 # ===========================================================================
 #  invaders.js のスモークテスト（@minecraft/server を動くスタブに差し替えて Node で走らせる）
@@ -2179,7 +2176,7 @@ export default {};
 JS_TEST = r"""
 import { FakeEntity, system } from "@minecraft/server";
 const G = globalThis;
-let seed = 12345;
+let seed = Number(process.env.ASTRO_SEED ?? 12345);
 Math.random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 const origWarn = console.warn;
 console.warn = (...a) => { G.__log.warns.push(a.join(" ")); };
@@ -2406,3 +2403,7 @@ def js_smoke_test():
         return not errs
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

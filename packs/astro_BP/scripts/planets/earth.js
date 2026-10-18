@@ -20,7 +20,7 @@
 //   * 音は 2 つ重ねると厚くなる（振り + 属性の音）。大技は shake と flash も
 // ===========================================================================
 import {
-  register, lunge, hover, ultOpen, projectile, dirTo, dashHits,
+  register, lunge, hover, ultOpen, projectile, dirTo,
 } from "../engine.js";
 import {
   P, line, ring, arc, shock, beam, emblem, flash, shake, sound, body, white, mix, afterimage,
@@ -407,4 +407,3 @@ register(KEY, {
   },
 });
 
-export { dashHits };
