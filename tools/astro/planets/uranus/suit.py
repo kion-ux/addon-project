@@ -18,8 +18,9 @@ from __future__ import annotations
 
 import math
 
-from astro_common import (bevel, beam, cbox, line_on, octa, rbox, ring, stick, taper)
+from astro_common import (bevel, beam, cbox, line_on, octa, rbox, stick, taper)
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
+from astro_weapon import ring        # 接線の向きを行列で解く輪（astro_common.ring の axis="z" は傾きが逆）
 
 NAVY = (29, 58, 85)
 FROST = (226, 244, 250)
@@ -51,10 +52,10 @@ SUIT_STYLES = {
              "line": (10, 22, 36), "panel": 0, "sheen": False},
     "rim": {"kind": "trim", "base": (206, 228, 238), "light": (255, 255, 255), "dark": (112, 146, 168),
             "line": (36, 58, 80)},
-    "ice": {"kind": "crystal", "base": (190, 238, 255), "glow": (140, 226, 255), "line": (50, 110, 150),
-            "emit": 150},
-    "crystal": {"kind": "crystal", "base": (214, 250, 255), "glow": (160, 250, 255), "line": (40, 110, 140),
-                "emit": 90},
+    "ice": {"kind": "crystal", "base": (158, 222, 248), "glow": (110, 206, 255), "line": (40, 96, 140),
+            "emit": 215},
+    "crystal": {"kind": "crystal", "base": (200, 244, 255), "glow": (140, 236, 255), "line": (40, 110, 140),
+                "emit": 175},
     "gem": {"glow": (150, 246, 255), "deep": (16, 80, 110)},
     "hazard": {"c1": (150, 244, 255), "c2": NAVY},
     "serial": {"text": "UR-07", "under": {"kind": "armor", "base": (47, 159, 168), "panel": 0,
@@ -211,7 +212,7 @@ def torso(s):
     ob = rbox(c, (-3.3, 16.0, -2.3), (1.4, 4.2, 1.0), "plate2", rot=(0, 36, -6))   # 脇腹
     mirror_x(c, ob)
     # 結晶の胸板: 上の面（前上を向く）と下の面（前下を向く）が稜で折れる
-    up_ = rbox(c, (-2.6, 22.35, -3.0), (5.0, 2.7, 0.9), "plate", rot=(-14, 20, 9))
+    up_ = rbox(c, (-2.6, 22.35, -3.0), (5.0, 2.7, 0.9), "frost_p", rot=(-14, 20, 9))
     lo_ = rbox(c, (-2.35, 20.05, -3.08), (4.5, 2.4, 0.9), "plate", rot=(18, 20, 14))
     tr1 = stick(c, up_, "north", 0.5, 0.96, (4.8, TRIM_W, 0.22), "rim", sink=0.05)
     l1 = line_on(c, up_, "north", (0.92, 0.12), (0.2, 0.3), 0.24, 0.2, "glow")
@@ -266,10 +267,10 @@ def back(s):
 # ---------------------------------------------------------------------------
 def arms(s):
     ar = s.part("arms", "upper_r", "rightArm", pivot=(ARM_X, 20.0, 0))
-    bevel(ar, (-6.1, 20.4, 0.0), (5.4, 5.6, 5.8), "plate2", cut=0.6, axis="y")
+    bevel(ar, (-6.1, 20.4, 0.0), (5.4, 5.6, 5.8), "plate", cut=0.6, axis="y")
     cbox(ar, (-6.1, 17.85, 0.0), (5.7, 0.7, 6.1), "navy")
     cbox(ar, (-6.1, 17.85, 0.0), (5.8, 0.22, 6.2), "rim")
-    op = rbox(ar, (-8.85, 19.9, 0.0), (0.6, 3.2, 3.8), "plate", rot=(0, 0, 4))
+    op = rbox(ar, (-8.85, 19.9, 0.0), (0.6, 3.2, 3.8), "plate2", rot=(0, 0, 4))
     line_on(ar, op, "west", (0.5, 0.12), (0.5, 0.88), 0.26, 0.2, "glow")
     # 肘: 溝のある関節・外の円盤・後ろへ伸びる結晶
     el = s.part("arms", "elbow_r", "rightArm", pivot=(ARM_X, 16.8, 0))

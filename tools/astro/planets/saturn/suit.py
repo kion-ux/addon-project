@@ -19,7 +19,8 @@ import math
 
 import numpy as np
 
-from astro_common import (_group, bevel, beam, cbox, line_on, octa, rbox, ring, stick, taper)
+from astro_common import (_group, bevel, beam, cbox, line_on, octa, rbox, ring, stick, surface,
+                          taper)
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 from hd_space import rot as _rot
 
@@ -161,6 +162,18 @@ def hex_ring(bone, centre, R, w, t, style, axis="z", rot_=None, pointy=False, st
     return _group(bone, parts, rot_, centre, centre)
 
 
+FACE_AXIS = {"north": "z", "south": "z", "east": "x", "west": "x", "up": "y", "down": "y"}
+
+
+def hex_on(bone, cube, face, a, b, R, depth, style, lift=0.0, sink=0.05, pointy=False, step=0.1):
+    """傾いた板 cube の面 face の (a, b) に、同じ傾きで六角形を貼る。戻り値: 一番薄い板の前面の点。"""
+    pt, n = surface(cube, face, a, b)
+    c = pt + n * (lift + depth / 2 - sink)
+    hex_plate(bone, tuple(c), R, depth, style, axis=FACE_AXIS[face], rot_=cube.rotation,
+              pointy=pointy, step=step)
+    return c + n * depth / 2
+
+
 def dial_ticks(bone, centre, r, axis, big="gold", small="gold", n=12, size=(0.22, 0.5, 0.14),
                big_size=(0.36, 0.8, 0.16)):
     """文字盤の目盛り（n 本の放射状の小片。3 時ごとに大きく）。"""
@@ -278,8 +291,7 @@ def waist(s):
     line_on(tz, t2, "west", (0.5, 0.1), (0.5, 0.72), 0.22, 0.18, "glow")
     stick(tz, t2, "west", 0.08, 0.5, (TRIM_W, 5.4, 0.16), "gold", sink=0.04)
     stick(tz, t2, "west", 0.92, 0.5, (TRIM_W, 5.4, 0.16), "gold", sink=0.04)
-    hx = (-6.25, 10.6, -0.1)
-    hex_plate(tz, hx, 0.62, 0.22, "gem_accent", axis="x", step=0.04, rot_=(0, 0, 11))
+    hex_on(tz, t2, "west", 0.5, 0.82, 0.62, 0.22, "gem_accent", step=0.04, pointy=True)
     # 先の尖り（下へ細る金の剣先）
     taper(tz, (-5.25, 5.75, -0.1), (-5.0, 3.6, -0.1), 1.6, 0.35, 2, "plate", round_=False)
     del t1
@@ -337,17 +349,17 @@ def back(s):
     rbox(bk, (0, 23.0, 3.5), (6.0, 1.0, 1.4), "plate", rot=(20, 0, 0))     # 肩の間の板
     # 文字盤: 八角の台（金）→ アイボリーの盤 → 目盛り → 紫の軸石
     D = (0, 19.4, 4.3)
-    octa(bk, (0, 19.4, 3.85), 7.6, 0.8, "plate", axis="z")
-    octa(bk, (0, 19.4, 4.25), 6.6, 0.4, "dial", axis="z")
-    dial_ticks(bk, (0, 19.4, 4.5), 2.75, "z", size=(0.26, 0.6, 0.16), big_size=(0.42, 0.95, 0.18))
-    octa(bk, (0, 19.4, 4.55), 1.0, 0.3, "gem_accent", axis="z")
+    octa(bk, (0, 19.4, 3.85), 5.4, 0.8, "plate", axis="z")
+    octa(bk, (0, 19.4, 4.25), 4.7, 0.4, "dial", axis="z")
+    dial_ticks(bk, (0, 19.4, 4.5), 2.5, "z", size=(0.24, 0.55, 0.16), big_size=(0.4, 0.9, 0.18))
+    octa(bk, (0, 19.4, 4.55), 0.9, 0.3, "gem_accent", axis="z")
     sr = s.fx("spin", "bring", bk, pivot=D)
-    ring(sr, (0, 19.4, 4.1), 3.95, 16, (0, 0.35, 0.35), "glow", axis="z",
+    ring(sr, (0, 19.4, 4.1), 4.0, 16, (0, 0.34, 0.34), "glow", axis="z",
          styles=["glow", "ring_b2"])
     hh = s.fx("spin", "bhour", bk, pivot=D)
-    beam(hh, (0, 19.4, 4.68), (0, 21.0, 4.68), 0.36, 0.12, "hand")
+    cbox(hh, (0, 20.1, 4.68), (0.36, 1.4, 0.12), "hand")
     mh = s.fx("spin", "bmin", bk, pivot=D)
-    beam(mh, (0, 19.4, 4.74), (0, 22.0, 4.74), 0.24, 0.1, "hand")
+    cbox(mh, (0, 20.45, 4.74), (0.24, 2.1, 0.1), "hand")
     # スラスター（右。下後ろへ）
     th = s.part("back", "thruster_r", bk, pivot=(-2.4, 16.0, 4.0), rotation=(18, 0, -10))
     octa(th, (-2.4, 15.0, 4.0), 1.9, 2.6, "plate2", axis="y")
@@ -380,8 +392,8 @@ def arms(s):
     cbox(fa, (-6.0, 14.9, 0), (5.3, 3.3, 5.4), "plate2")
     ob = rbox(fa, (-8.85, 14.85, 0), (0.7, 3.4, 4.6), "plate", rot=(0, 0, 7))
     stick(fa, ob, "west", 0.5, 0.92, (4.4, TRIM_W, 0.16), "band", sink=0.04)
-    hex_plate(fa, (-9.25, 14.75, 0), 1.0, 0.24, "gold", axis="x", rot_=(0, 0, 7))
-    hex_plate(fa, (-9.38, 14.75, 0), 0.62, 0.2, "gem_accent", axis="x", rot_=(0, 0, 7), step=0.04)
+    hex_on(fa, ob, "west", 0.5, 0.45, 1.0, 0.24, "gold", pointy=True)
+    hex_on(fa, ob, "west", 0.5, 0.45, 0.62, 0.2, "gem_accent", lift=0.2, pointy=True, step=0.04)
     rbox(fa, (-6.15, 14.85, -2.82), (4.1, 3.0, 0.6), "plate2", rot=(-8, 0, 0))
     rbox(fa, (-6.15, 14.85, 2.82), (4.1, 3.0, 0.6), "plate2_b", rot=(8, 0, 0))
     cbox(fa, (-6.0, 13.3, 0), (5.7, 0.5, 5.9), "band")
@@ -408,14 +420,14 @@ def shoulders(s):
     line_on(p, top, "up", (0.5, 0.1), (0.5, 0.9), 0.26, 0.2, "glow")
     # 外の文字盤（外 -X を向く）: 金の縁 → アイボリーの盤 → 目盛り → 紫の軸石 → 時針・分針
     C = (-10.2, 22.2, 0.0)
-    octa(p, (-9.85, 22.2, 0.0), 5.2, 0.7, "plate", axis="x")
-    octa(p, (-10.15, 22.2, 0.0), 4.4, 0.3, "dial", axis="x")
-    dial_ticks(p, (-10.33, 22.2, 0.0), 1.75, "x", size=(0.2, 0.42, 0.12), big_size=(0.3, 0.7, 0.14))
-    octa(p, (-10.36, 22.2, 0.0), 0.7, 0.2, "gem_accent", axis="x")
+    octa(p, (-9.85, 22.2, 0.0), 3.7, 0.7, "plate", axis="x")
+    octa(p, (-10.15, 22.2, 0.0), 3.1, 0.3, "dial", axis="x")
+    dial_ticks(p, (-10.33, 22.2, 0.0), 1.6, "x", size=(0.18, 0.4, 0.12), big_size=(0.28, 0.62, 0.14))
+    octa(p, (-10.36, 22.2, 0.0), 0.6, 0.2, "gem_accent", axis="x")
     hr = s.fx("spin", "hour_r", p, pivot=C)
-    beam(hr, (-10.42, 22.2, 0.0), (-10.42, 23.3, 0.0), 0.3, 0.1, "hand")
+    cbox(hr, (-10.42, 22.7, 0.0), (0.1, 1.0, 0.28), "hand")
     mn = s.fx("spin", "min_r", p, pivot=C)
-    beam(mn, (-10.47, 22.2, 0.0), (-10.47, 22.2, -1.6), 0.2, 0.08, "hand")
+    cbox(mn, (-10.47, 22.2, -0.7), (0.08, 0.2, 1.4), "hand")
     # 上の縁: 外へ反る金の環の縁（土星の環の意匠）
     rim = rbox(p, (-9.6, 25.1, 0.0), (0.8, 1.2, 7.4), "plate", rot=(0, 0, -32))
     stick(p, rim, "up", 0.5, 0.5, (0.8, 7.4, 0.24), "band", sink=0.05)
@@ -439,8 +451,8 @@ def helmet(s):
     rbox(hm, (0, 22.85, 5.5), (8.0, 1.2, 0.8), "band", rot=(30, 0, 0))
     sd = cbox(hm, (-4.95, 27.2, 0.6), (0.9, 4.8, 7.4), "plate")             # 側板（金）
     # 耳の文字盤（小）
-    ear = octa(hm, (-5.55, 27.6, 0.6), 2.8, 0.5, "plate", axis="x")
-    eard = octa(hm, (-5.75, 27.6, 0.6), 2.2, 0.2, "dial", axis="x")
+    ear = octa(hm, (-5.55, 27.6, 0.6), 2.4, 0.5, "plate", axis="x")
+    eard = octa(hm, (-5.75, 27.6, 0.6), 1.9, 0.2, "dial", axis="x")
     earg = octa(hm, (-5.88, 27.6, 0.6), 0.6, 0.16, "gem_accent", axis="x")
     mirror_x(hm, sd, ear, eard, earg)
     # 額環（褐色の冠の帯）と金の縁
