@@ -137,12 +137,14 @@ def build_weapon(m, root):
         y, z = _yz(CO, r, a)
         pts.append((0, y, z))
     W.polyline(blade, pts, 1.05, 0.62, "edge_hot", uv_scale=8)
-    # 刃の中ほどの暗い溝と三本の放熱のスリット（両面）
-    arc = [(0, *_yz(CO, 5.6, a)) for a in (-40, -20, 0, 20, 40)]
-    W.polyline(blade, arc, 1.0, 0.55, "dark", uv_scale=8)
-    for a in (-22, 0, 22):
-        y, z = _yz(CO, 6.7, a)
-        W.cbox(blade, (0, y, z), (1.0, 1.0, 0.36), "edge", rotation=(-a, 0, 0), uv_scale=10)
+    # 刃の付け根の鋲の列と、放射状の溶岩のひび（両面）
+    for a in (-36, -12, 12, 36):
+        y, z = _yz(CO, _r_in(a) + 0.35, a)
+        W.cbox(blade, (0, y, z), (1.04, 0.5, 0.5), "brass", rotation=(45, 0, 0), uv_scale=12)
+    for a, r0, r1 in ((-26, 5.0, 7.4), (4, 4.6, 7.0), (30, 5.2, 7.6)):
+        y0, z0 = _yz(CO, r0, a)
+        y1, z1 = _yz(CO, r1, a + 6)
+        W.beam(blade, (0, y0, z0), (0, y1, z1), 0.98, 0.3, "edge", uv_scale=10)
     # 刃と台の継ぎ目の鉄の帯
     W.cbox(blade, (0, -2.1, Z_HEAD), (1.3, 0.8, 6.4), "frame", uv_scale=8)
 
@@ -205,13 +207,13 @@ def WEAPON_STYLES(key):
         metal={"base": (70, 62, 62), "light": (134, 122, 118), "dark": (36, 30, 30), "line": (16, 12, 12)},
         wrap={"base": (30, 24, 24), "strap": (150, 56, 34), "skin": (214, 196, 176)},
         dark={"base": (28, 22, 22), "glow": EDGE, "line": (8, 6, 6)},
-        globe=W.globe_style("mars", emit=110),
+        globe=W.globe_style("mars", emit=170),
         glow={"glow": (255, 128, 44)},
     )
 
 
 def CORE_STYLES(key):
-    return core_styles(key, **_common(), globe=W.globe_style("mars", emit=96))
+    return core_styles(key, **_common(), globe=W.globe_style("mars", emit=170))
 
 
 # ---------------------------------------------------------------------------

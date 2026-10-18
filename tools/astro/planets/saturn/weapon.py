@@ -113,8 +113,8 @@ def build_weapon(m, root):
     hr = W.spin(m, rg, "hour", (0, 0, C_Z))
     mn = W.spin(m, rg, "min", (0, 0, C_Z))
     for s in (-1, 1):
-        W.cbox(hr, (s * 1.0, 2.55, C_Z), (0.14, 2.3, 0.36), "hand", uv_scale=10)
-        W.cbox(mn, (s * 1.05, 0, C_Z - 2.95), (0.12, 0.24, 3.3), "hand", uv_scale=10)
+        W.cbox(hr, (s * 1.0, 2.55, C_Z), (0.16, 2.3, 0.55), "hand", uv_scale=10)
+        W.cbox(mn, (s * 1.06, 0, C_Z - 2.95), (0.14, 0.4, 3.3), "hand", uv_scale=10)
 
 
     # =====================================================================
@@ -175,8 +175,10 @@ def WEAPON_STYLES(key):
     return weapon_styles(
         key,
         # 外刃: 淡い金の鏡面（映り込み）とその色違い。歯はアイボリーの鋼
-        blade={"kind": "chrome", "base": (236, 222, 190), "light": (255, 252, 240), "line": (90, 70, 40)},
-        blade_b={"kind": "chrome", "base": (214, 196, 156), "light": (250, 240, 216), "line": (80, 60, 34)},
+        blade={"kind": "blade", "base": (234, 222, 192), "light": (255, 251, 238), "dark": (178, 160, 120),
+               "line": (90, 70, 40), "glint_period": 14},
+        blade_b={"kind": "blade", "base": (220, 196, 146), "light": (252, 238, 204), "dark": (160, 134, 86),
+                 "line": (80, 60, 34), "glint_period": 14},
         tooth={"kind": "blade", "base": (226, 228, 236), "light": (252, 252, 255),
                "dark": (150, 156, 176), "line": (60, 64, 82), "outline": True},
         edge={"glow": ICE, "sat": 0.45, "emit": 30},
@@ -184,8 +186,8 @@ def WEAPON_STYLES(key):
               "line": (70, 44, 24), "panel": 0, "sheen": False},
         plate={"base": (222, 188, 118), "light": (250, 228, 172), "dark": (160, 126, 70),
                "line": (92, 66, 30), "bolts": False},
-        hand={"kind": "trim", "base": (60, 50, 74), "light": (150, 140, 190), "dark": (24, 20, 34),
-              "line": (14, 12, 20)},
+        hand={"kind": "trim", "base": (112, 96, 196), "light": (196, 186, 255), "dark": (46, 36, 96),
+              "line": (24, 18, 50)},
         gem_v={"kind": "gem", "glow": (168, 150, 255), "deep": (52, 36, 120), "outline": False,
                "bevel": False},
         ring_ice={"kind": "glowline", "glow": (110, 180, 255), "light": (200, 236, 255), "bevel": False,
@@ -193,14 +195,14 @@ def WEAPON_STYLES(key):
         ring_ivory={"kind": "armor", "base": (244, 232, 204), "light": (255, 252, 240),
                     "dark": (200, 182, 140), "line": (130, 110, 76), "panel": 0, "sheen": False},
         wrap={"base": (40, 30, 24), "strap": (160, 108, 62), "skin": (236, 226, 204)},
-        globe=W.globe_style("saturn", emit=60),
+        globe=W.globe_style("saturn", emit=170, shade=0.3),
     )
 
 
 def CORE_STYLES(key):
     return core_styles(
         key,
-        globe=W.globe_style("saturn", emit=40),
+        globe=W.globe_style("saturn", emit=110, shade=0.3),
         band={"kind": "armor", "base": (160, 108, 62), "light": (214, 160, 104), "dark": (112, 74, 44),
               "line": (70, 44, 24), "panel": 0, "sheen": False},
         gem_v={"kind": "gem", "glow": (168, 150, 255), "deep": (52, 36, 120), "outline": False,

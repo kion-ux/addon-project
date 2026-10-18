@@ -33,7 +33,7 @@ Z_TIP = -28.6             # 切先
 LIFT = 2.4                # 切先での峰側への反り（+Y）
 W0, W1 = 3.0, 1.9         # 刃の幅（付け根 → 先）
 THICK = 0.72              # 刃の厚み（X）
-N_SEG = 6
+N_SEG = 8
 
 
 def centre(t):
@@ -84,14 +84,14 @@ def build_weapon(m, root):
     for s, st in ((-1, "glow_day"), (1, "glow_night")):                  # 放熱口（昼 / 夜）
         W.cbox(guard, (s * 0.97, 0, -4.0), (0.1, 2.2, 0.5), st, uv_scale=12)
     # 鍔の外周の細い輪（静止）
-    W.ring(guard, (0, 0, -4.15), 2.75, 16, (0, 0.24, 0.5), "chrome", axis="z", uv_scale=10)
+    W.ring(guard, (0, 0, -4.15), 2.4, 14, (0, 0.26, 0.55), "chrome", axis="z", uv_scale=10)
     # 冷却フィン: 刃の軸まわりに回る六枚の放熱板（ねじれた羽根）
     fins = W.spin(m, guard, "fins", (0, 0, -4.15))
     for k in range(6):
         a = k * 60.0
-        c = (math.cos(math.radians(a)) * 1.75, math.sin(math.radians(a)) * 1.75, -4.15)
-        # 半径方向に長い板を軸まわりに a 度、羽根のねじれ 25°
-        W.rbox(fins, c, (1.3, 0.22, 1.0), "fin", rot=(25, 0, -a), uv_scale=10)
+        c = (math.cos(math.radians(a)) * 1.55, math.sin(math.radians(a)) * 1.55, -4.15)
+        # 半径方向に長い板を軸まわりに a 度、羽根のねじれ 30°
+        W.rbox(fins, c, (1.35, 0.26, 1.2), "fin", rot=(30, 0, -a), uv_scale=10)
     W.octa(fins, (0, 0, -4.15), 1.5, 1.1, "frame", uv_scale=10)          # フィンの軸
     W.ring(fins, (0, 0, -4.15), 1.05, 8, (0, 0.14, 0.2), "glow_soft", axis="z", uv_scale=12)
 
@@ -216,11 +216,11 @@ def WEAPON_STYLES(key):
     return weapon_styles(
         key,
         # 液体金属の刃: 鏡面に波打つ照りの境（刃文）と斜めの映り込み
-        liquid={"kind": "blade", "all_faces": True, "base": (190, 204, 224),
-                "light": (250, 252, 255), "dark": (110, 122, 146), "line": (40, 48, 66),
+        liquid={"kind": "blade", "all_faces": True, "base": (214, 226, 242),
+                "light": (255, 255, 255), "dark": (150, 164, 190), "line": (50, 60, 82),
                 "glint_period": 16, "fuller": False, "hamon": (236, 250, 255)},
-        liquid_flat={"kind": "blade", "base": (184, 198, 220), "light": (246, 250, 255),
-                     "dark": (110, 122, 146), "outline": False, "bevel": False,
+        liquid_flat={"kind": "blade", "base": (210, 222, 240), "light": (252, 254, 255),
+                     "dark": (150, 164, 190), "outline": False, "bevel": False,
                      "fuller": False, "hamon_off": True, "glint_period": 9999},
         spine={"kind": "chrome", "base": (226, 234, 246), "light": (255, 255, 255),
                "line": (60, 70, 90)},
