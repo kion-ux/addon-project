@@ -262,6 +262,9 @@ def fill_tri_yz(bone, apex, base_a, base_b, x_w, layer_h, style, **kw):
     return bone.cubes[n0:]
 
 
+# 重ねた部品の端の面を同じ平面に置かないためのずらし量（統合版は同一平面の面がちらつく）
+ZF_INSET = 0.04
+
 AX = {"x": 0, "y": 1, "z": 2}
 
 
@@ -285,7 +288,8 @@ def octa(bone, centre, w, length, style, axis="z", style2=None, rot=None, pivot=
     """八角柱（箱 + 軸まわりに 45° 回した箱）。ノズル・関節の円盤・柄に。rot で組ごと傾ける。"""
     size = [w, w, w]
     size[AX[axis]] = length
-    s2 = [v * 0.94 if i != AX[axis] else v for i, v in enumerate(size)]
+    # 45° の箱は軸方向を少し短くして、端の面が同じ平面に重ならない（Z ファイトでちらつかない）ようにする
+    s2 = [v * 0.94 if i != AX[axis] else v - 2 * ZF_INSET for i, v in enumerate(size)]
     r45 = globals()["rot"](*_axis_rot(axis, 45))
     return _group(bone, [(centre, size, np.eye(3), style), (centre, s2, r45, style2 or style)],
                   rot, pivot, centre, **kw)
@@ -299,6 +303,7 @@ def chamfer(bone, centre, size, style, cut=0.5, axis="z", rot=None, pivot=None, 
     s1[j] -= 2 * cut
     s2 = list(size)
     s2[k] -= 2 * cut
+    s2[i] -= 2 * ZF_INSET          # 端の面をずらす（Z ファイト防止）
     return _group(bone, [(centre, s1, np.eye(3), style), (centre, s2, np.eye(3), style)],
                   rot, pivot, centre, **kw)
 
@@ -314,6 +319,7 @@ def bevel(bone, centre, size, style, cut=0.5, axis="z", edge_style=None, rot=Non
     s1[j] -= 2 * cut
     s2 = list(size)
     s2[k] -= 2 * cut
+    s2[i] -= 2 * ZF_INSET          # 重ねる部品の端の面を少しずつずらす（Z ファイト防止）
     parts = [(centre, s1, np.eye(3), style), (centre, s2, np.eye(3), style)]
     e = cut * math.sqrt(2)
     r45 = globals()["rot"](*_axis_rot(axis, 45))
@@ -323,7 +329,7 @@ def bevel(bone, centre, size, style, cut=0.5, axis="z", edge_style=None, rot=Non
             c[j] += sj * (size[j] / 2 - cut)
             c[k] += sk * (size[k] / 2 - cut)
             es = [e, e, e]
-            es[i] = size[i]
+            es[i] = size[i] - 4 * ZF_INSET
             parts.append((c, es, r45, edge_style or style))
     return _group(bone, parts, rot, pivot, centre, **kw)
 

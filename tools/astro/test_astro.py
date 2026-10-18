@@ -879,10 +879,11 @@ async function testCommon() {
   // ルナ・ビット（パッシブ）
   clearMobs();
   const z = foes(1, 100)[0];
-  z.location = { x: 0, y: 64, z: 4 };
-  const cow = new FakeEntity(D, "minecraft:cow", { x: 0, y: 64, z: -3 }, 10);
+  // 前の技で動いたプレイヤーの位置を基準に置く（6m 以内）
+  z.location = { x: p.location.x, y: p.location.y, z: p.location.z + 4 };
+  const cow = new FakeEntity(D, "minecraft:cow", { x: p.location.x, y: p.location.y, z: p.location.z - 3 }, 10);
   tick(90);
-  ok(z.hp < 100, "earth passive luna_bit did not zap a hostile");
+  ok(z.hp < 100, `earth passive luna_bit did not zap a hostile (player at ${JSON.stringify(p.location)}, form=${ST.formOf(p)}, hp=${z.hp})`);
   ok(cow.hp === 10, "luna_bit shot a passive animal");
   ok(p.getEffect("regeneration"), "earth passive effect (regeneration) missing");
   // ---- 壁に向かうワープ・突進（ブロックに埋まらない） ------------------------

@@ -2921,8 +2921,8 @@ def self_check(E, docs):
     errors = []
     err = errors.append
     ids = [f.id for f in E]
-    want = design_ids() + list(EXTRA_IDS)
-    if sorted(ids) != sorted(want):
+    want = sorted(set(design_ids()) | set(EXTRA_IDS))   # ring_n / line_n は DESIGN にも載った
+    if sorted(ids) != want:
         err(f"ids differ from DESIGN §4.7: missing {sorted(set(want) - set(ids))} extra {sorted(set(ids) - set(want))}")
     if len(set(ids)) != len(ids):
         err("duplicate ids")

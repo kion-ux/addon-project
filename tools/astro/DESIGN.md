@@ -278,7 +278,7 @@ leftArm (4,12,-2)+(4,12,4) / rightLeg (-3.9,0,-2)+(4,12,4) / leftLeg (-0.1,0,-2)
 あることを確かめる。1% を超えて外に出ていたらビルドを止める（関節の内側など見えない所は許容リストで除外可）。
 
 **ナノウェポン**（`planets/<key>/weapon.py` の build_weapon）: hyperdim と同じ武器空間（握り = 原点、刃先 = -Z、+Y = 上）。
-ボーン `hold`（`binding: q.item_slot_to_bone_name(c.item_slot)`）→ `root` → 部品。形成アニメ用に
+ボーン `hold`（`binding: q.item_slot_to_bone_name(c.item_slot)`）→ `origin` → 部品（`root` はプレイヤーのボーン名なので使わない）。形成アニメ用に
 部品ボーンへ `form_<順番>_<名前>`（例 `form_0_grip`, `form_1_guard`, `form_2_blade`）と付けると、
 gen_astro_anim が持ち替えた瞬間に刃が伸びるアニメを作る。回る部品は `fx_spin_*`。
 持ち方は kind ごとに astro_hold.py が決める（三人称・一人称）。kind: saber / scepter / sword / axe / hammer /

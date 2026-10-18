@@ -87,6 +87,11 @@ def _n3(px, py, pz, f, k, oct_=3):
         0.5 * fbm(pz * f - 4.1, py * f - px * 0.6 * f, k + 3, oct_)
 
 
+def _wrap(a):
+    """経度の差を -π..π に（呼び出し側が自転のずらしを足しても斑点が消えないように）。"""
+    return (a + math.pi) % (2 * math.pi) - math.pi
+
+
 def planet_color(name, lon, lat, P, seed=0):
     """惑星 name の表面色（発光させる前の色）を返す。"""
     px, py, pz = P
@@ -138,7 +143,7 @@ def planet_color(name, lon, lat, P, seed=0):
         col = mix((236, 220, 190), (176, 112, 70), smooth(-0.2, 0.6, band))
         if abs(lat) < 0.12:
             col = mix(col, (250, 240, 220), 0.4)
-        dl, dt = lon - 0.55, lat + 0.36
+        dl, dt = _wrap(lon - 0.55), lat + 0.36
         e = (dl / 0.42) ** 2 + (dt / 0.2) ** 2
         if e < 1.0:
             col = mix((222, 92, 52), (190, 60, 40), e)
@@ -163,7 +168,7 @@ def planet_color(name, lon, lat, P, seed=0):
         st = math.sin(lat * 14 + lon * 2 + n * 4)
         if st > 0.92:
             col = mix(col, (230, 244, 255), 0.75)
-        dl, dt = lon + 0.35, lat + 0.3
+        dl, dt = _wrap(lon + 0.35), lat + 0.3
         e = (dl / 0.34) ** 2 + (dt / 0.17) ** 2
         if e < 1.0:
             col = mix((14, 28, 92), (24, 50, 140), e)
