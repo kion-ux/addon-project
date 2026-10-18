@@ -360,44 +360,62 @@ export function onInvaderSpawn(e) {
 // ---------------------------------------------------------------------------
 export function tickInvaders() {
   const t = now();
-  const dt = lastTick < 0 ? 1 : clamp(t - lastTick, 1, 6);
+  const n = lastTick < 0 ? 1 : clamp(t - lastTick, 1, 4);
   lastTick = t;
   if (t >= scanAt) {
     scanAt = t + 10;
     try { scan(); } catch (err) { report("scan", err); }
   }
-  // 予定
-  for (let i = tasks.length - 1; i >= 0; i--) {
-    const k = tasks[i];
-    if (k.due > t) continue;
-    tasks.splice(i, 1);
-    if (k.owner && !alive(k.owner)) continue;
-    try { k.fn(t); } catch (err) { report("task", err); }
-  }
-  // 敵
+  // 時間割（予定・ボスの技・危険物・ボルト）は経過した tick を一つずつ進める（2 tick ごとの呼び出しでも
+  // 「k === 20」のような節目を飛ばさない）。AI（位置取り・技の選択）は 1 回だけ。
+  for (let s = n - 1; s >= 0; s--) timeline(t - s);
   for (const [id, r] of reg) {
     if (!valid(r.e)) { reg.delete(id); continue; }
     try {
       r.st.last = r.e.location;
       r.st.dim = r.e.dimension;
       if (!alive(r.e)) continue;
-      if (r.kind === "drone") droneTick(r, t, dt);
-      else if (r.kind === "sentinel") sentinelTick(r, t, dt);
-      else bossTick(r, t, dt);
+      if (r.kind === "drone") droneTick(r, t, n);
+      else if (r.kind === "sentinel") sentinelTick(r, t, n);
+      else bossTick(r, t, n);
     } catch (err) { report(r.kind, err); }
   }
-  // 危険物とボルト
+  if (t >= holoAt) { holoAt = t + 10; holoSweep(t); }
+}
+let holoAt = 0;
+
+function timeline(tt) {
+  for (let i = tasks.length - 1; i >= 0; i--) {
+    const k = tasks[i];
+    if (k.due > tt) continue;
+    tasks.splice(i, 1);
+    if (k.owner && !alive(k.owner)) continue;
+    try { k.fn(tt); } catch (err) { report("task", err); }
+  }
+  for (const r of reg.values()) {
+    const act = r.st.act;
+    if (r.kind !== "boss" || !act || !alive(r.e)) continue;
+    const k = tt - act.t0;
+    if (k < 0) continue;
+    let keep = false;
+    try { keep = act.step(k, tt); } catch (err) { report(`boss.${act.name}`, err); }
+    if (!keep && r.st.act === act) {
+      r.st.act = null;
+      setMode(r.e, 0);
+      const g = CFG.boss.gap[r.st.phase];
+      r.st.next = tt + Math.round(rand(g[0], g[1]));
+    }
+  }
   for (let i = hazards.length - 1; i >= 0; i--) {
     let keep = false;
-    try { keep = hazards[i].step(t); } catch (err) { report("hazard", err); }
+    try { keep = hazards[i].step(tt); } catch (err) { report("hazard", err); }
     if (!keep) hazards.splice(i, 1);
   }
   for (let i = bolts.length - 1; i >= 0; i--) {
     let keep = false;
-    try { keep = boltStep(bolts[i], t, dt); } catch (err) { report("bolt", err); }
+    try { keep = boltStep(bolts[i], tt, 1); } catch (err) { report("bolt", err); }
     if (!keep) bolts.splice(i, 1);
   }
-  if (t % 10 === 0) holoSweep(t);
 }
 
 // ===========================================================================
@@ -700,17 +718,6 @@ function bossTick(r, t, dt) {
     P(dim, "void", add(bossCore(e), { x: Math.cos(a) * 2.2, y: rand(-1.5, 1.5), z: Math.sin(a) * 2.2 }), { count: 1, size: 1.0, life: 1.0, color: VIO });
   }
   if (st.phase === 2 && t % 5 === 0) P(dim, "ember", up(pos, 1.2), { count: 3, spread: 1.6, size: 0.8, life: 1.0, color: MAG });
-  // ---- 行動 ----
-  if (st.act) {
-    let keep = false;
-    try { keep = st.act.step(t - st.act.t0, t); } catch (err) { report(`boss.${st.act.name}`, err); }
-    if (!keep) {
-      st.act = null;
-      setMode(e, 0);
-      const g = C.gap[st.phase];
-      st.next = t + Math.round(rand(g[0], g[1]));
-    }
-  }
   // ---- 位置取り（突進中は突進が動かす） ----
   if (!st.act?.moves) {
     let want;
@@ -750,7 +757,7 @@ function bossTick(r, t, dt) {
   st.lastMove = name;
   st.act = BOSS_ACTS[name](r, tgt);
   st.act.name = name;
-  st.act.t0 = t;
+  st.act.t0 = t + 1;          // 次の tick の時間割で k = 0 から
 }
 
 function bossRoar(r, awaken) {
@@ -759,7 +766,7 @@ function bossRoar(r, awaken) {
   const dim = e.dimension;
   const c = bossCore(e);
   st.act = {
-    name: "roar", locked: true, t0: now(),
+    name: "roar", locked: true, t0: now() + 1,
     step(k) {
       if (k === 0) {
         setMode(e, 7);
@@ -810,7 +817,7 @@ const BOSS_ACTS = {
     const dmg = CFG.boss.beamDamage[st.phase];
     if (!canHazard(lines.length)) return { step: () => false };
     return {
-      step(k) {
+      step(k, tt) {
         const eye = bossEye(e);
         if (k === 0) {
           setMode(e, 1);
@@ -829,30 +836,34 @@ const BOSS_ACTS = {
         }
         if (k === 20) {
           setMode(e, 2);
+          const until = tt + 26;
+          for (let i = 0; i < lines.length; i++) addHazard({ owner: e, step: (t2) => t2 < until });
           snd(dim, "beam_fire", eye, 0.8, 1.0);
           snd(dim, "laser", eye, 0.7, 1.0);
           shake(dim, eye, 20, 0.5, 1.2);
         }
         const s = (k - 20) / 24;
         if (s > 1) return k < 50;
-        for (const [a, b] of lines) {
+        lines.forEach(([a, b], li) => {
           const G = lerp3(a, b, s);
           const dv = sub(G, eye);
-          P(dim, "beam", eye, { dir: norm(dv), len: len(dv), size: 1.7, life: 0.12, color: MAG });
+          const dn = norm(dv);
+          P(dim, "beam", eye, { dir: dn, len: len(dv), size: 1.7, life: 0.12, color: MAG });
           if (k % 2 === 0) {
             P(dim, "spark", G, { count: 4, speed: 5, size: 0.8, color: MAG, life: 0.4 });
             P(dim, "ember", G, { count: 2, spread: 0.3, size: 0.8, life: 0.8, color: MAG });
           }
           for (const p of players(dim)) {
-            if ((hitAt.get(p.id) ?? -99) > k - 10) continue;
+            const key = `${p.id}:${li}`;
+            if (hitAt.has(key)) continue;          // 一本の光線は一人に一度だけ当たる
             if (segDist(chest(p), eye, G) < 1.2 || segDist(up(p.location, 0.2), eye, G) < 1.0) {
-              hitAt.set(p.id, k);
-              hurt(p, dmg, e, "magic");
-              try { p.setOnFire?.(2, true); } catch (_) { }
+              hitAt.set(key, k);
+              hurt(p, dmg, e, "entityAttack");
+              knock(p, dn.x, dn.z, 0.4, 0.25);
               P(dim, "impact", chest(p), { size: 1.2, life: 0.2, color: MAG });
             }
           }
-        }
+        });
         return true;
       },
     };

@@ -3,6 +3,7 @@
 
     python3 tools/astro/gen_astro_anim.py                     書き出し＋検査
     python3 tools/astro/gen_astro_anim.py --check             めり込みの一覧も出す（武器が体に入るコマ）
+    python3 tools/astro/gen_astro_anim.py --describe <名前>   書いたキーごとに腕と刃先の向き（f 前 u 上 r 右）
     python3 tools/astro/gen_astro_anim.py --preview <名前> [--planet <key>] [--frames 8] [--view q34]
         <名前> は共通の名前（henshin）か惑星の名前（earth.combo1）。キーの姿勢を描いて
         build_preview/astro/anim_<名前>.png に並べる（スーツがあれば着せ、武器を手に持たせる）
@@ -317,6 +318,12 @@ def main(argv=None) -> int:
             i = argv.index(name)
             return argv[i + 1] if i + 1 < len(argv) else default
         return default
+    if "--describe" in argv:
+        _a, _m, res_all = build()
+        name = opt("--describe")
+        for line in AL.describe(res_all[name]):
+            print("  " + line)
+        return 0
     if "--preview" in argv:
         preview(opt("--preview"), opt("--planet"), int(opt("--frames", 8)), opt("--view"))
         return 0

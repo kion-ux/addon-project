@@ -15,11 +15,11 @@
 """
 from __future__ import annotations
 
-from astro_animlib import DOWN, FWD, LEFT, H, P, aim, anim, dirv, wield
+from astro_animlib import DOWN, LEFT, H, P, aim, anim, dirv, wield
 
 # ---- 三段コンボ -------------------------------------------------------------
 c1_wind = P(b=(0, 38, 0), h=(0, -28, 0),
-            rA=wield(blade=dirv(r=1.0, f=-0.3, u=0.12), edge=FWD),
+            rA=wield(blade=dirv(r=1.0, f=-0.3, u=0.12), arm=dirv(r=1.0, u=-0.25, f=0.1)),
             lA=aim(dirv(f=1.0, r=-0.35, u=-0.15)),
             rL=(12, 0, 6), lL=(-16, 0, -6), ground=True)
 c1_hit = P(b=(6, -12, 0), h=(0, 10, 0),
@@ -30,7 +30,7 @@ c1_follow = P(c1_hit, b=(8, -42, 0), h=(0, 32, 0),
               rA=wield(blade=dirv(r=-1.0, f=0.25, u=-0.12), edge=dirv(f=-0.5, r=-0.6)))
 
 c2_wind = P(b=(10, -30, 0), h=(0, 24, 0),
-            rA=wield(blade=dirv(r=-0.7, u=-0.6, f=0.45), edge=dirv(u=0.6, r=0.6, f=0.2)),
+            rA=wield(blade=dirv(r=-0.7, u=-0.6, f=0.45), arm=dirv(f=1.0, u=-0.5, r=-0.2)),
             lA=aim(dirv(f=0.3, u=-1.0, r=0.4)),
             rL=(-22, 0, 6), lL=(14, 0, -6), ground=True)
 c2_hit = P(b=(-6, 22, 0), h=(0, -18, 0),
@@ -51,7 +51,7 @@ c3_hit = P(w=(28, 0, 0), h=(-24, 0, 0),
 
 # ---- 技 --------------------------------------------------------------------
 ts_wind = P(b=(6, 56, 0), w=(10, 0, 0), h=(0, -42, 0),
-            rA=wield(blade=dirv(r=0.8, f=-0.6, u=0.15), edge=FWD),
+            rA=wield(blade=dirv(r=0.8, f=-0.6, u=0.15), arm=dirv(r=1.0, u=-0.15, f=-0.1)),
             lA=aim(dirv(f=1.0, u=0.2, r=-0.25)),
             rL=(10, 0, 16), lL=(-22, 0, -14), ground=True)
 ts_mid = P(ts_wind, b=(4, 2, 0), h=(0, -2, 0),

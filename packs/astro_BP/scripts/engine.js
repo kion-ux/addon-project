@@ -314,8 +314,7 @@ export function warp(pOrCtx, loc, facing) {
   const dim = p.dimension;
   let q = null;
   for (const dy of [0, 1, 2, -1]) {
-    const c = { x: loc.x, y: Math.floor(loc.y) + dy + (loc.y % 1 > 0.01 ? 0 : 0), z: loc.z };
-    c.y = loc.y + dy;
+    const c = { x: loc.x, y: loc.y + dy, z: loc.z };
     if (standable(dim, c)) { q = c; break; }
   }
   if (!q) {
@@ -415,7 +414,8 @@ export function meteor(ctx, target, o = {}) {
       });
     }
   }
-  ctx.at(delay, () => sound(dim, "astro.meteor", top, 1.0, 1.2));
+  // astro.meteor の着弾音は鳴らしてから 1.15 秒（23 tick）後
+  ctx.at(Math.max(0, delay + fall - 23), () => sound(dim, "astro.meteor", top, 1.0, 1.2));
   const dir = norm(sub(g, top));
   for (let i = 0; i <= fall; i++) {
     ctx.at(delay + i, () => {
@@ -595,13 +595,15 @@ export function genericMoves(key) {
           meteor(ctx, tgt, { delay: 10, fall: 6, radius: 3.5, damage: 10, color: k % 2 ? ctx.accent : c });
         });
       }
+      // astro.supernova は鳴らしてから 1.66 秒（33 tick）後に弾ける
+      ctx.at(17, () => sound(dim, "astro.supernova", centre, 1.0, 1.4));
       ctx.at(50, () => {
         const g = onGround(dim, centre);
         P(dim, "lens", { ...g, y: g.y + 1.5 }, { color: white(c, 0.5), size: 3, life: 0.5 });
         P(dim, "flare", { ...g, y: g.y + 1.2 }, { color: white(c, 0.6), size: 2.4, life: 0.35 });
         shock(dim, g, c, 10, { debris: 16 });
         flash(dim, g, 30, [1, 1, 1], 0.1, 0.5);
-        sound(dim, "astro.supernova", g, 1.0, 1.4);
+        sound(dim, "astro.explosion_big", g, 0.9, 1.4);
         shake(dim, g, 24, 0.7, 0.6);
         for (const e of ctx.foes(10.5, { ...g, y: g.y + 1 })) {
           hit(ctx, e, 14, { color: c, kb: 1.4, up: 0.6, power: 2.2, crit: true });

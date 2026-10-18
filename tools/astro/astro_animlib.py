@@ -695,6 +695,25 @@ def sample(res: Resolved, t: float) -> dict:
     return pose
 
 
+def describe(res: Resolved) -> list:
+    """書いたキーごとに、右腕・刃先が体の空間でどちらを向いたか（f 前 / u 上 / r 右）と腕の Euler。"""
+    import astro_hold as AH
+    hold = AH.hold(res.wkind)
+    out = []
+
+    def fur(v):
+        return f"f{-v[2]:+.2f} u{v[1]:+.2f} r{-v[0]:+.2f}"
+    for t in res.keys:
+        p = sample_parts(res, t)
+        Rp = rot(*p.get("w", (0, 0, 0))) @ rot(*p.get("b", (0, 0, 0)))
+        R = Rp @ rot(*p["rA"])
+        arm = R @ ARM_DOWN
+        blade = R @ np.asarray(hold["blade_arm"], float)
+        out.append(f"t={t:5.2f}  rA=({p['rA'][0]:7.1f},{p['rA'][1]:7.1f},{p['rA'][2]:7.1f})  "
+                   f"arm[{fur(arm)}]  blade[{fur(blade)}]")
+    return out
+
+
 # ===========================================================================
 #  共通モーション（DESIGN.md §4.6）
 # ===========================================================================
