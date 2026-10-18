@@ -1336,7 +1336,10 @@ def _mode_prop(hi):
 
 
 def _player_targets(dist):
+    # 侵略者のセンサーは透明化を見破る（変身中のプレイヤーは透明化で肌を隠しているため。既定 0.7 だと
+    # 変身すると狙われる距離が縮んでしまう）
     return {"priority": 2, "must_see": True, "must_see_forget_duration": 6.0, "reselect_targets": True,
+            "target_invisible_multiplier": 1.0,
             "within_radius": dist, "entity_types": [
                 {"filters": {"all_of": [{"test": "is_family", "subject": "other", "value": "player"},
                                         {"test": "has_ability", "subject": "other", "operator": "!=",
