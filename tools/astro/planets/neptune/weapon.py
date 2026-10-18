@@ -17,7 +17,7 @@ import astro_weapon as W
 from astro_common import taper
 from astro_paint import core_styles, mix, weapon_styles
 
-from .suit import AQUA, FIN, FOAM, INDIGO, PEARL, diamond, fan_fin
+from .suit import AQUA, FIN, FOAM, INDIGO, PEARL, fan_fin
 
 KIND = "trident"
 
@@ -26,12 +26,6 @@ Z_BAR = -20.6           # 横木
 Z_TIP = -33.6           # 中央の穂先の先端
 Z_BUTT = 15.0           # 石突きの端
 EDGE = (96, 236, 255)   # 水色の刃
-
-
-def dia_yz(bone, centre, d, t, style, **kw):
-    """YZ 平面（穂先の開く面）の菱形: 対角線 d・厚み t（X）。"""
-    s = d / 2 ** 0.5
-    return W.cbox(bone, centre, (t, s, s), style, rotation=(45, 0, 0), **kw)
 
 
 def build_weapon(m, root):
@@ -112,22 +106,22 @@ def build_weapon(m, root):
     for s in (-1, 1):
         W.beam(pr, (0, s * 0.72, Z_BAR - 0.8), (0, s * 0.5, -28.4), 0.56, 0.3, "edge",
                uv_scale=8)
-    arrowhead(pr, 0.0, -28.4, 2.1, Z_TIP, 0.8)
+    arrowhead(pr, 0.0, -28.6, 1.65, Z_TIP, 0.8)
     # 左右の穂: 外へ張ってから前へ。先に鏃と外向きの返し
     for s in (-1, 1):
-        pts = [(0, s * 3.2, Z_BAR - 0.4), (0, s * 4.0, -23.4), (0, s * 3.85, -26.2),
-               (0, s * 3.4, -27.4)]
+        pts = [(0, s * 3.2, Z_BAR - 0.4), (0, s * 4.2, -23.4), (0, s * 4.15, -26.0),
+               (0, s * 3.8, -27.2)]
         W.polyline(pr, pts, [1.1, 1.0, 0.9], [1.1, 1.0, 0.9], "prong", uv_scale=8)
-        W.polyline(pr, [(0, s * 4.6, -23.0), (0, s * 4.45, -26.2)], 0.62, 0.34, "edge",
+        W.polyline(pr, [(0, s * 4.8, -23.0), (0, s * 4.75, -26.0)], 0.62, 0.34, "edge",
                    uv_scale=8)
-        arrowhead(pr, s * 3.3, -27.2, 1.5, -31.4, 0.72)
-        W.beam(pr, (0, s * 3.9, -27.0), (0, s * 5.1, -25.6), 0.55, 0.5, "prong", uv_scale=10)
-        W.beam(pr, (0, s * 5.05, -25.65), (0, s * 5.25, -24.7), 0.45, 0.42, "edge", uv_scale=10)
+        arrowhead(pr, s * 3.75, -27.0, 1.25, -30.8, 0.72)
+        W.beam(pr, (0, s * 4.6, -26.4), (0, s * 5.5, -25.2), 0.55, 0.5, "prong", uv_scale=10)
+        W.beam(pr, (0, s * 5.45, -25.25), (0, s * 5.6, -24.4), 0.45, 0.42, "edge", uv_scale=10)
 
 
 def arrowhead(bone, y0, z_base, half_w, z_tip, thick):
     """返しの付いた鏃（YZ 平面）: 真珠の三角・水色に光る両刃・後ろへ返る二本の返し。"""
-    W.blade_point(bone, z_base, half_w, z_tip, thick, "prong_flat", layer=0.7, y0=y0, uv_scale=8)
+    W.blade_point(bone, z_base, half_w, z_tip, thick, "prong_flat", layer=0.85, y0=y0, uv_scale=8)
     for s in (-1, 1):
         W.beam(bone, (0, y0 + s * (half_w + 0.15), z_base + 0.1), (0, y0 + s * 0.1, z_tip - 0.2),
                thick + 0.12, 0.34, "edge", uv_scale=8, extend=0.2)

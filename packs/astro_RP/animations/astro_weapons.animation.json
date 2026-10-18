@@ -754,6 +754,181 @@
         }
       }
     },
+    "animation.astro.core.uranus.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.47,
+      "bones": {
+        "form_0_globe": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_cage": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.135": [
+              0,
+              0,
+              0
+            ],
+            "0.267": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.355": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_2_rings": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.23": [
+              0,
+              0,
+              0
+            ],
+            "0.362": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.45": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.core.uranus.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -76.49,
+            -56.69,
+            102.45
+          ],
+          "position": [
+            -1.9,
+            22.9,
+            -3.61
+          ],
+          "scale": 0.85
+        }
+      }
+    },
+    "animation.astro.core.uranus.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 110.0) * 0.35",
+            0
+          ],
+          "rotation": [
+            0,
+            "math.sin(q.anim_time * 40.0) * 8.0",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 40"
+          ],
+          "scale": "1 + math.sin(q.anim_time * 150) * 0.03"
+        },
+        "fx_spin_ring": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * -90"
+          ]
+        }
+      }
+    },
+    "animation.astro.core.uranus.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            18.0,
+            -0.0,
+            -0.0
+          ],
+          "position": [
+            -0.4,
+            22.62,
+            -4.82
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "animation.astro.core.uranus.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "origin": {
+          "scale": "1.0 + v.astro_usew * 0.12",
+          "position": [
+            0,
+            "v.astro_usew * 1.2",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_ring": {
+          "rotation": [
+            0,
+            "q.anim_time * -360 * v.astro_usew",
+            0
+          ]
+        }
+      }
+    },
     "animation.astro.weapon.earth.form": {
       "loop": "hold_on_last_frame",
       "animation_length": 0.62,
@@ -1050,9 +1225,9 @@
             -169.99
           ],
           "position": [
-            -0.39,
-            26.08,
-            1.69
+            0.21,
+            25.84,
+            3.28
           ],
           "scale": 0.6
         }
@@ -1512,6 +1687,215 @@
             1.0
           ],
           "scale": 0.86
+        }
+      }
+    },
+    "animation.astro.weapon.uranus.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.62,
+      "bones": {
+        "form_0_grip": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_body": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.125": [
+              0,
+              0,
+              0
+            ],
+            "0.257": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.345": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_2_limbs": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.21": [
+              0.0,
+              0.35,
+              0.35
+            ],
+            "0.342": [
+              1.15,
+              1.08,
+              1.08
+            ],
+            "0.43": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "form_3_bolt": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.295": [
+              0.35,
+              0.35,
+              0.0
+            ],
+            "0.427": [
+              1.08,
+              1.08,
+              1.15
+            ],
+            "0.515": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "form_4_ring": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.38": [
+              0,
+              0,
+              0
+            ],
+            "0.512": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.6": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.weapon.uranus.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -67.01,
+            -60.03,
+            117.03
+          ],
+          "position": [
+            -3.0,
+            23.82,
+            -2.45
+          ],
+          "scale": 0.6
+        }
+      }
+    },
+    "animation.astro.weapon.uranus.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 90.0) * 0.1",
+            0
+          ]
+        },
+        "fx_spin_tilt": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 120.0"
+          ]
+        },
+        "fx_glow_bolt": {
+          "scale": "1 + math.sin(q.anim_time * 180) * 0.05"
+        }
+      }
+    },
+    "animation.astro.weapon.uranus.swing": {
+      "loop": true,
+      "bones": {
+        "origin": {
+          "rotation": [
+            "(v.astro_fp > 0.5 ? -18 : -14) * (math.sin(math.pow(v.astro_sw, 0.6) * 180.0) - 0.18 * math.sin(v.astro_sw * 360.0))",
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0,
+            "(v.astro_fp > 0.5 ? 2.5 : 1.5) * math.sin(v.astro_sw * 180.0)"
+          ]
+        },
+        "fx_spin_tilt": {
+          "rotation": [
+            0,
+            0,
+            "v.astro_sw * 360.0"
+          ]
+        }
+      }
+    },
+    "animation.astro.weapon.uranus.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            35.53,
+            3.44,
+            1.12
+          ],
+          "position": [
+            -0.6,
+            21.85,
+            1.0
+          ],
+          "scale": 0.85
         }
       }
     }
