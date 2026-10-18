@@ -401,92 +401,125 @@ REPAIR_MAX_STEP = 90.0   # 隣り合うキーの間のねじりの差の上限�
 TWISTS = tuple(range(-180, 180, 10))
 
 
-def _repair(res, cloud, hold, rounds=3, step=0.02):
-    """統合版と同じ catmullrom で 0.02 秒ごとに調べ、武器が体に入るコマを含む「書いたキーの間」の区間で、
-    腕を刃の軸まわりにねじる角度（刃先の向きは変えない）を REPAIR_STEP 秒ごとに Viterbi で選び直す。
-    ねじりは書いたキーで 0 に戻り、速くねじるほど高くつく（直しのキーが交互にねじれて腕が暴れないように。
-    体を避けきれない時は少し入るのを許す）。"""
+def _twist_segment(res, cloud, blade_l, a, b, factor, gap):
+    """書いたキー a〜b の間で、腕を刃の軸まわりにねじる角度（刃先の向きは変えない）を gap 秒ごとに Viterbi で
+    選ぶ。ねじりは a・b で 0、隣り合うキーの差は REPAIR_MAX_STEP 以下、キーの間の回る速さは
+    factor × max(ARM_SPEED_MAX, a〜b の速さ × 1.6) 以下（もとの動きが既に速い所は、それより速くしない）。"""
+    tr = res.tracks["rA"]
+    mk = res.mats["rA"]
+    INF = 1e18
+    pts = [a] + sorted(x for x in tr if a < x < b) + [b]
+    S = set(pts[1:-1])
+    for p, q in zip(pts, pts[1:]):
+        m = int((q - p) / gap + 1e-9)
+        S |= {round(p + (q - p) * k / m, 3) for k in range(1, m)}
+    S = sorted(x for x in S if a < x < b)
+    if not S:
+        return
+    base = [_key_R(tr, mk, t) if t in tr else rot(*_eval_track(tr, t)) for t in S]
+    node = []
+    for t, R0 in zip(S, base):
+        parts = sample_parts(res, t)
+        bt = R0 @ blade_l
+        arm0 = R0 @ ARM_DOWN
+        row = []
+        for phi in TWISTS:
+            R = _axis_angle(bt, phi) @ R0
+            d, _b = clip_depth(parts_pose(dict(parts, rA=euler(R))), cloud)
+            row.append(60.0 * max(0.0, d - 0.15) ** 2 + (_angle(R @ ARM_DOWN, arm0) / 30.0) ** 2
+                       + 0.1 * (phi / 90.0) ** 2)
+        node.append(np.array(row))
+    T = [a] + S + [b]
+    ph = np.array(TWISTS, float)
+    diff = (ph[None, :] - ph[:, None] + 180.0) % 360.0 - 180.0     # diff[i, j] = 前 i → 次 j
+    RT = [_key_R(tr, mk, a)] + base + [_key_R(tr, mk, b)]
+    TW = [np.stack([_axis_angle(R0 @ blade_l, phi) @ R0 for phi in TWISTS]) for R0 in RT]
+    allow = factor * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
+    nt = len(TWISTS)
+
+    def edge(k):
+        """k → k+1 の重さ: もとの動きより速く回る分。上限を超える組・ねじりの差が大きい組は不可。"""
+        dt = max(T[k + 1] - T[k], 1e-3)
+        A = np.repeat(TW[k], nt, axis=0)
+        B = np.tile(TW[k + 1], (nt, 1, 1))
+        ang = angle_many(A, B).reshape(nt, nt)
+        base_ang = _rot_angle(RT[k], RT[k + 1])
+        e = (np.maximum(0.0, ang - base_ang) / dt / REPAIR_SPEED) ** 2
+        fast = (ang / dt > allow) & (ang > base_ang * 1.02 + 0.5)
+        e[(np.abs(diff) > REPAIR_MAX_STEP + 1e-6) | fast] = INF
+        return e
+    i0 = TWISTS.index(0)
+    cost = edge(0)[i0] + node[0]
+    back = []
+    for k in range(1, len(S)):
+        tot = cost[:, None] + edge(k)
+        back.append(np.argmin(tot, axis=0))
+        cost = tot.min(axis=0) + node[k]
+    cost = cost + edge(len(S))[:, i0]
+    idx = [int(np.argmin(cost))]
+    for bk in reversed(back):
+        idx.append(int(bk[idx[-1]]))
+    idx.reverse()
+    if all(TWISTS[i] == 0 for i in idx):
+        return
+    for t, R0, i in zip(S, base, idx):
+        R = _axis_angle(R0 @ blade_l, TWISTS[i]) @ R0
+        tr[t] = tuple(float(x) for x in euler(R))
+        mk[t] = R
+
+
+def _repair(res, cloud, hold, rounds=5, step=0.02):
+    """統合版と同じ catmullrom で 0.02 秒ごとに調べ、武器が体に入るコマを含む「書いたキーの間」の区間を、
+    腕を刃の軸まわりにねじって直す（_twist_segment。速くねじるほど高くつき、腕の速さの上限は超えない。
+    体を避けきれない時は少し入るのを許す）。区間はいつも直す前の状態から解き直す: 直した結果が
+    arm_speeds の上限を超えた区間は、速さの余裕を減らして解き直す（最後はねじらない）。"""
     if cloud is None or "rA" not in res.tracks:
         return
     tr = res.tracks["rA"]
     mk = res.mats["rA"]
     blade_l = np.asarray(hold["blade_arm"], float)
     auth = sorted(set(res.keys) | {min(tr), max(tr)})
-    INF = 1e18
-    for rnd in range(rounds):
-        n = max(2, int(math.ceil(res.length / step)))
-        segs = set()
+    snap_tr, snap_mk = dict(tr), dict(mk)
+    fac = {}
+    gap = {}
+
+    def seg_of(t):
+        return min(max(k for k in range(len(auth) - 1) if auth[k] <= t + 1e-9), len(auth) - 2)
+
+    def restore(j):
+        a, b = auth[j], auth[j + 1]
+        for x in [x for x in tr if a < x < b]:
+            del tr[x]
+            mk.pop(x, None)
+        for x, v in snap_tr.items():
+            if a < x < b:
+                tr[x] = v
+                mk[x] = snap_mk.get(x)
+    n = max(2, int(math.ceil(res.length / step)))
+    for _rnd in range(rounds):
+        todo = set()
         for i in range(1, n):
             t = res.length * i / n
             d, _b = clip_depth(sample(res, t), cloud)
             if d > REPAIR_AT:
-                j = max(k for k in range(len(auth) - 1) if auth[k] <= t + 1e-9)
-                segs.add(min(j, len(auth) - 2))
-        if not segs:
+                j = seg_of(t)
+                if fac.get(j, 1.0) > 0.4 and gap.get(j, 1.0) > MIN_DT + 1e-6:
+                    todo.add(j)
+        tm, w, allow = arm_speeds(res, "rA")
+        for m in np.where(w > allow * 0.995)[0]:
+            j = seg_of(float(tm[m]))
+            if j in fac:                       # 直した区間が速すぎる → 余裕を減らして解き直す
+                todo.add(j)
+                fac[j] = fac[j] - 0.15
+                gap[j] = gap[j] / 0.75          # 解き直す時は細かくしない（下で 0.75 倍に戻る）
+        if not todo:
             break
-        gap = REPAIR_STEP if rnd == 0 else REPAIR_STEP * 0.75
-        for j in sorted(segs):
-            a, b = auth[j], auth[j + 1]
-            pts = [a] + sorted(x for x in tr if a < x < b) + [b]
-            S = set(pts[1:-1])
-            for p, q in zip(pts, pts[1:]):
-                m = int((q - p) / gap + 1e-9)
-                S |= {round(p + (q - p) * k / m, 3) for k in range(1, m)}
-            S = sorted(x for x in S if a < x < b)
-            if not S:
-                continue
-            base = [_key_R(tr, mk, t) if t in tr else rot(*_eval_track(tr, t)) for t in S]
-            node = []
-            for t, R0 in zip(S, base):
-                parts = sample_parts(res, t)
-                bt = R0 @ blade_l
-                arm0 = R0 @ ARM_DOWN
-                row = []
-                for phi in TWISTS:
-                    R = _axis_angle(bt, phi) @ R0
-                    d, _b = clip_depth(parts_pose(dict(parts, rA=euler(R))), cloud)
-                    row.append(60.0 * max(0.0, d - 0.15) ** 2 + (_angle(R @ ARM_DOWN, arm0) / 30.0) ** 2
-                               + 0.1 * (phi / 90.0) ** 2)
-                node.append(np.array(row))
-            T = [a] + S + [b]
-            ph = np.array(TWISTS, float)
-            diff = (ph[None, :] - ph[:, None] + 180.0) % 360.0 - 180.0     # diff[i, j] = 前 i → 次 j
-            # 各時刻のねじった回転（a・b はねじらない）。区間の速さの上限は arm_speeds と同じ
-            RT = [_key_R(tr, mk, a)] + base + [_key_R(tr, mk, b)]
-            TW = [np.stack([_axis_angle(R0 @ blade_l, phi) @ R0 for phi in TWISTS]) for R0 in RT]
-            allow = 0.85 * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
-            nt = len(TWISTS)
-
-            def edge(k):
-                """k → k+1 の 24×24 の重さ: もとの動きより速く回る分と、上限を超える組・ねじりの差が大きい組は不可。"""
-                dt = max(T[k + 1] - T[k], 1e-3)
-                A = np.repeat(TW[k], nt, axis=0)
-                B = np.tile(TW[k + 1], (nt, 1, 1))
-                ang = angle_many(A, B).reshape(nt, nt)
-                base_ang = _rot_angle(RT[k], RT[k + 1])
-                e = (np.maximum(0.0, ang - base_ang) / dt / REPAIR_SPEED) ** 2
-                # 上限を超える組は不可（もとの動きが既に上限より速い所では、それより速くしない組だけ）
-                fast = (ang / dt > allow) & (ang > base_ang * 1.02 + 0.5)
-                e[(np.abs(diff) > REPAIR_MAX_STEP + 1e-6) | fast] = INF
-                return e
-            i0 = TWISTS.index(0)
-            cost = edge(0)[i0] + node[0]
-            back = []
-            for k in range(1, len(S)):
-                tot = cost[:, None] + edge(k)
-                back.append(np.argmin(tot, axis=0))
-                cost = tot.min(axis=0) + node[k]
-            cost = cost + edge(len(S))[:, i0]
-            idx = [int(np.argmin(cost))]
-            for bk in reversed(back):
-                idx.append(int(bk[idx[-1]]))
-            idx.reverse()
-            if all(TWISTS[i] == 0 for i in idx) and not any(t not in tr for t in S):
-                continue
-            for t, R0, i in zip(S, base, idx):
-                R = _axis_angle(R0 @ blade_l, TWISTS[i]) @ R0
-                tr[t] = tuple(float(x) for x in euler(R))
-                mk[t] = R
+        for j in sorted(todo):
+            fac.setdefault(j, 0.9)
+            gap[j] = max(MIN_DT, gap.get(j, REPAIR_STEP / 0.75) * 0.75)
+            restore(j)
+            if fac[j] > 0.4:
+                _twist_segment(res, cloud, blade_l, auth[j], auth[j + 1], fac[j], gap[j])
         _finalize_arms(res.tracks, res.mats, res.plain, res.keys, only=("rA",))
 
 

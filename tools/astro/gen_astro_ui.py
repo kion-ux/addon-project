@@ -2170,7 +2170,7 @@ def render_bust(geo_path, tex_path, size=64, yaw=-26.0, pitch=-8.0):
     """スーツのジオメトリ（プレイヤーと同じボーン名）を立ち姿で描き、兜と肩・胸（胸像）を切り出す。
     v1.1 の 7 頭身では頭が小さいので、画像の割合ではなくモデル空間の箱で切る: 立ち姿のワールド座標で
     中心が「胸の下 (y 19.6) より上・肩当ての外 (|x| 9.0) より内」にあるキューブだけを残す（脚・炎も除く）。
-    環・光輪・衛星などの飾りも、この箱に入る部分だけが写る。"""
+    環・光輪・衛星など（extra_* / fx_spin_*）は頭の後ろ（|x| 6.5 以内）の物だけが写る。"""
     import tempfile
     hyper = os.path.join(TOOLS, "hyperdim")
     if hyper not in sys.path:
@@ -2203,7 +2203,8 @@ def render_bust(geo_path, tex_path, size=64, yaw=-26.0, pitch=-8.0):
             for c in b.get("cubes", []):
                 o = np.array(c["origin"], float)
                 ctr = (W[b["name"]] @ cube_matrix(c) @ np.r_[o + np.array(c["size"], float) / 2, 1.0])[:3]
-                if ctr[1] >= y_cut and abs(ctr[0]) <= x_max:
+                orbit = under(b["name"], {"extra_", "fx_spin_"})    # 衛星・環は頭の後ろの物だけ
+                if ctr[1] >= y_cut and abs(ctr[0]) <= (6.5 if orbit else x_max):
                     cubes.append(c)
             if cubes:
                 nb["cubes"] = cubes
