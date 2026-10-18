@@ -35,7 +35,8 @@ tools/astro/
   astro_data.py          ゲームデータの単一ソース（惑星・技・数値・レシピ・敵）
   astro_common.py        パス・NS・write_json・ジオメトリ補助（hd_common の box/cbox/beam/polyline 等を再輸出）
   astro_paint.py         メカ用テクスチャペインタ（hd_paint.HDPainter を継承し素材を追加）
-  astro_suit.py          スーツの骨格（プレイヤーのボーン名・ピボット）・部位ボーン・被覆検査
+  astro_suit.py          スーツの骨格（プレイヤーのボーン名・ピボット）・部位ボーン・7 頭身の解剖定数 A と frame7()・
+                         プロポーション／細かさの計測（measure / proportion_checks / clashes）
   astro_hold.py          ナノウェポン／コアの持ち方（hd_space / hd_holds の規則で一人称・三人称を逆算）
   astro_weapon.py        ウェポン・コアのモデル補助とアタッチャブル／アニメの書き出し
   astro_scene.py         スーツを着て武器を持ったプレイヤーを描くレンダラ（hd_scene の規則）
@@ -55,7 +56,8 @@ tools/astro/
   gen_astro_entities.py  敵・投射物・ホログラム標的・ダメージ表示（BP/RP の entity・モデル・テクスチャ・アニメ）
   gen_astro_packs.py     マニフェスト・アイテム・レシピ・言語・item_texture.json・scripts/data.js
   validate_astro.py      参照整合性（ID・テクスチャ・UV・Molang 括弧・言語キー）
-  check_astro_suits.py   スーツの肌の被覆検査・部位ボーン命名・キューブ数・テクスチャ密度
+  check_astro_suits.py   スーツの 7 頭身プロポーション・キューブ数・細かい部品の割合・部位ボーン命名・
+                         テクスチャ密度・ループの継ぎ目・hide_all（§4.11）
   test_astro.py          スクリプトの挙動テスト（@minecraft/server のスタブで全技を実行）
   preview_astro.py       docs/astro/*.png（スーツの三面図・武器・アイコン・HUD・パーティクル）
   build_astro.py         全部回して検査し dist/ へ
@@ -259,9 +261,9 @@ item_texture.json のキーは `astro_<name>`。
 body (0,24,0)   head (0,24,0)   rightArm (-5,22,0)   leftArm (5,22,0)
 rightLeg (-1.9,12,0)   leftLeg (1.9,12,0)
 ```
-肌の箱: head (-4,24,-4)+(8,8,8) / body (-4,12,-2)+(8,12,4) / rightArm (-8,12,-2)+(4,12,4) /
-leftArm (4,12,-2)+(4,12,4) / rightLeg (-3.9,0,-2)+(4,12,4) / leftLeg (-0.1,0,-2)+(4,12,4)。
-外側のレイヤー（帽子 0.5・上着/袖/ズボン 0.25）より外を覆うこと。
+肌の箱（参考。v1.0 はこれを覆う形だった）: head (-4,24,-4)+(8,8,8) / body (-4,12,-2)+(8,12,4) /
+rightArm (-8,12,-2)+(4,12,4) / leftArm (4,12,-2)+(4,12,4) / rightLeg (-3.9,0,-2)+(4,12,4) / leftLeg (-0.1,0,-2)+(4,12,4)。
+**v1.1 からは肌を覆わない**: 変身中は透明化で肌を隠し、スーツは §4.3b の 7 頭身の寸法で作る。
 
 **部位ボーン**: キューブは必ず部位ボーンに入れる（トップレベルのボーンに直接置かない）。部位ボーンの名前は
 `<群>_<名前>` で、群は組み上がりの順番（astro_data.ASSEMBLE_ORDER）:
@@ -273,9 +275,8 @@ leftArm (4,12,-2)+(4,12,4) / rightLeg (-3.9,0,-2)+(4,12,4) / leftLeg (-0.1,0,-2)
 スラスターの炎ボーンは `fx_thrust_*`（空中で伸び、地上で縮む）、発光の脈動は `fx_glow_*`、
 回転体は `fx_spin_*`（動きは planets/<key>/suit.py の SUIT_ANIMS で書く）。
 
-**被覆の検査**（check_astro_suits.py）: 6 部位それぞれ、肌の外側レイヤーの表面（帽子 0.5、他 0.25 膨らませた箱）を
-0.5 単位間隔で標本化し、各点が同じトップレベルボーン配下のいずれかのキューブ（回転・inflate 込み）の内側に
-あることを確かめる。1% を超えて外に出ていたらビルドを止める（関節の内側など見えない所は許容リストで除外可）。
+**検査**（check_astro_suits.py）: v1.0 の肌の被覆検査（astro_suit.coverage()。もう使わない）に代わり、
+v1.1 からは 7 頭身のプロポーションと細かさを測る（§4.3b・§4.11）。
 
 **ナノウェポン**（`planets/<key>/weapon.py` の build_weapon）: hyperdim と同じ武器空間（握り = 原点、刃先 = -Z、+Y = 上）。
 ボーン `hold`（`binding: q.item_slot_to_bone_name(c.item_slot)`）→ `origin` → 部品（`root` はプレイヤーのボーン名なので使わない）。形成アニメ用に
@@ -535,11 +536,19 @@ register("<key>", {
 どれかが失敗したら dist を書かない。
 * **test_astro.py**: hyperdim の test_hd.py と同じく @minecraft/server を動くスタブに差し替え、
   9 形態 × {変身, 4 技, 三段コンボ, 機動 5 種, バリア, 解除, 死亡→リスポーン, 星力切れ} と敵 3 種の攻撃を
-  実行し、例外が無いこと、技がダメージを与えること、使ったパーティクル・効果音・全身モーション・アイテム ID が
-  パックに実在することを確かめる。
+  実行し、例外が無いこと、技がダメージを与えること、変身中の透明化（組み上がりの始まりから分解の終わりまで。
+  死亡・再参加で外れる）、使ったパーティクル・効果音・全身モーション・アイテム ID がパックに実在することを確かめる。
 * **validate_astro.py**: ジオメトリ・テクスチャ・アニメ・アタッチャブル・パーティクル・効果音・アイコン・
   言語キー・レシピ・マニフェスト・item_texture の相互参照、UV がテクスチャ内、Molang の括弧、
   パーティクルの色が tinting の中にあること、JSON の形式。
-* **check_astro_suits.py**: 被覆（4.3）、部位ボーンの命名、キューブ数の下限（スーツ 250）、ボーン名の重複。
+* **check_astro_suits.py**（v1.1。肌の被覆は調べない）: 立ち姿の装甲の表面を標本化して測る 7 頭身の
+  プロポーション（背丈 31〜35、頭の高さ = 背丈/7 ± 12%、頭の幅 5.4 以下、胸/腰の幅 1.45 以上、
+  見えている脚 0.44 × 背丈以上。飾り・extra_*・fx_thrust_*・fx_spin_* は除く）、細かさ（キューブ 600〜1400、
+  3 辺とも 1.0 以下の部品が 35% 以上、0.15 未満の辺が無い）、部位ボーンの命名・ボーン名の重複、テクスチャ 1024²
+  以下（テクセル x3 未満は警告）、炎の塗りは fx_* の下、回転体と手足のめり込み（警告）、SUIT_ANIMS の
+  ボーン・Molang・ループの継ぎ目、書き出したファイルの揃い・UV・hide_all（`c.item_slot != 'head'` だけ）。
+* **gen_astro_entities.py --test**: 侵略者 3 種と標的の Node スモークテスト（全攻撃・第二形態・子機の上限・
+  撃破の演出。体力 40 以下で崩れる演出に入りドロップ・経験値・remove まで進むこと、BOSS_LOOT がルートテーブルと、
+  dyingHp が damage_sensor の閾値と一致すること）。
 * **プレビュー**: preview_astro.py が docs/astro/ に、スーツの正面・背面・斜め（素の状態と組み上がり途中）、
   武器、コア、アイコン一覧、HUD の見本、パーティクルの見本を書き出す。作業者は自分の担当の絵を必ず見て直す。
