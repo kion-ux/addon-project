@@ -177,7 +177,9 @@ def legs(s):
     t = s.part("legs", "thigh_r", "rightLeg", pivot=(X, 11.6, 0))
     cbox(t, (X, 10.9, 0.05), (5.8, 3.4, 5.8), "plate_b")
     th = rbox(t, (X, 10.9, -3.05), (5.0, 3.0, 0.8), "zone", rot=(-5, 0, 0))
-    line_on(t, th, "north", (0.85, 0.1), (0.85, 0.85), 0.26, 0.2, "volt")
+    line_on(t, th, "north", (0.86, 0.12), (0.7, 0.45), 0.24, 0.2, "volt")         # 稲妻の線
+    line_on(t, th, "north", (0.7, 0.45), (0.86, 0.55), 0.24, 0.2, "volt")
+    line_on(t, th, "north", (0.86, 0.55), (0.72, 0.88), 0.24, 0.2, "volt")
     cbox(t, (X, 9.35, -3.1), (4.6, TRIM_W, 0.6), "copper")
     cbox(t, (X - 3.05, 10.8, 0.3), (0.6, 3.0, 4.2), "plate2",
          decals={"west": {"decal": "serial", "text": "ZS-05", "ink": (60, 30, 16)}})
@@ -359,7 +361,8 @@ def shoulders(s):
     top = stick(p, dome[0], "up", 0.5, 0.5, (3.6, 6.8, 0.4), "belt", sink=0.12)   # 頂の褐色の板
     stick(p, top, "up", 0.62, 0.5, (0.9, 6.4, 0.2), "rustband", sink=0.05)
     for a in (0.06, 0.94):
-        line_on(p, dome[1], "north" if a < 0.5 else "south", (0.12, 0.62), (0.88, 0.62), 0.24, 0.2, "volt")
+        line_on(p, dome[1], "north" if a < 0.5 else "south", (0.15, 0.6), (0.85, 0.6), 0.2, 0.2,
+                "glow_soft")
     rim = rbox(p, (-10.75, 24.0, 0.1), (0.9, 2.4, 8.0), "plate2", rot=(0, 0, -26))
     stick(p, rim, "up", 0.5, 0.5, (0.9, 8.0, 0.3), "copper", sink=0.05)
     # 垂れ（帯の重なり: 錆色 → 褐色の縞 → クリーム）
