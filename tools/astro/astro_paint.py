@@ -928,6 +928,13 @@ def common_styles(key):
                    "line": (50, 56, 70)},
         "gold": dict(GOLD),
         "silver": dict(SILVER),
+        # v1.1（7 頭身の内部フレーム・細かい部品）: 中間の明るさの金属
+        "steel": {"kind": "chrome", "base": mix((128, 136, 154), frame, 0.3),
+                  "light": (196, 204, 220), "line": (34, 38, 50)},
+        "frame_lt": {"kind": "frame", "base": mix(fr, (150, 158, 178), 0.42),
+                     "light": mix(fr, WHITE, 0.55), "line": shade(frame, 0.45)},
+        "rivet": {"kind": "trim", "base": (176, 184, 200), "light": (240, 244, 252),
+                  "dark": (96, 102, 120), "line": (40, 44, 56), "bevel": False},
         "visor": {"kind": "visor", "glow": glow, "light": lt, "deep": dp, "line": dp,
                   "bevel": False, "emit_outline": shade(dp, 0.7)},
         "glow": {"kind": "glowline", "glow": glow, "light": lt, "bevel": False,
@@ -972,7 +979,7 @@ def common_styles(key):
 
 def suit_styles(key, **over):
     """スーツの素材一式。名前: plate plate_b plate2 plate2_b accent plain plain2 inner frame dark
-    chrome gold silver visor glow glow_soft glow_accent vent thruster flame core planet gem
+    chrome gold silver steel frame_lt rivet visor glow glow_soft glow_accent vent thruster flame core planet gem
     gem_accent energy crystal ice cloth hazard serial emblem luna。
     over で上書き・追加（辞書は浅くマージ、新しい名前は追加）。"""
     st = common_styles(key)

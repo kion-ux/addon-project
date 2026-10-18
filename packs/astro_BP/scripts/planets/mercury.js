@@ -29,7 +29,7 @@ import {
 } from "../combat.js";
 import {
   add, sub, up, norm, lerp3, yawRotate, yawDeg, rightOf, chest, hdist, dist, onGround, effect,
-  valid, now, finite, clamp, rand,
+  valid, now, finite, clamp, rand, clearLine,
 } from "../util.js";
 
 const KEY = "mercury";
@@ -150,7 +150,7 @@ register(KEY, {
         P(dim, "ring", c, { color: white(SILVER, 0.3), size: 1.2, life: 0.25 });
         if (k % 2 === 0) P(dim, "spark", c, { color: k % 4 ? NIGHT : DAY, count: 6, speed: 6 });
       });
-      for (const q of spots.slice(0, 6)) {
+      for (const q of spots) {
         for (const e of ctx.foes(2.0, up(q, 0.8))) {
           if (ctx.once(e, 1, "pop")) hit(ctx, e, 5, { color: NIGHT, kb: 0.4, up: 0.45, dir: dirTo(q, posOf(e) ?? q), power: 1.2, sound: "astro.splash" });
         }
@@ -176,15 +176,16 @@ register(KEY, {
     effect(p, "resistance", 24, 2);
     sound(dim, "astro.boost", p.location, 1.4, 0.9);
     sound(dim, "astro.wind", p.location, 1.6, 0.6);
-    // 見ている相手（意図して狙った）→ 無ければ周りの敵対的な相手だけ（村人や動物を勝手に狙わない）
-    let target = ctx.nearest(12, 70) ?? nearestHostile(ctx, ctx.chest(), 8);
+    // 見ている相手（意図して狙った）→ 視線の扇の敵対的な相手 → 周りの敵対的な相手（村人や動物を勝手に狙わない）。
+    // どれも頭から見通せる相手だけ（壁や地面の向こうの洞窟の敵へ跳ばない）
+    let target = ctx.pick(12, 40) ?? nearestHostile(ctx, ctx.chest(), 8, null, 180, { los: ctx.head() });
     let last = posOf(target);
     const ANG = [130, -110, 10];
     P(dim, "wind", ctx.chest(), { color: SILVER, count: 4, spread: 0.8, speed: 8, dir: UP });
     for (let i = 0; i < 3; i++) {
       ctx.at(2 + i * 8, () => {
         // 標的が倒れていたら、最後の位置の近くの次の相手へ
-        if (!posOf(target) && last) target = nearestHostile(ctx, up(last, 1), 6);
+        if (!posOf(target) && last) target = nearestHostile(ctx, up(last, 1), 6, null, 180, { los: ctx.head() });
         const T = posOf(target);
         const from = ctx.loc();
         const col = i % 2 ? NIGHT : DAY;
@@ -196,8 +197,9 @@ register(KEY, {
           last = T;
           const d0 = dirTo(T, from);
           const dest = add(T, yawRotate(d0, ANG[i]), 2.1);
-          const ok = standable(dim, dest) && warp(ctx, dest, up(T, 1.0));
-          if (!ok) warp(ctx, add(T, d0, 1.8), up(T, 1.0));
+          // 足元に地面のある所へだけ跳ぶ（崖の外・虚空の上へ出ない）
+          const ok = standable(dim, dest) && warp(ctx, dest, up(T, 1.0), { ground: true });
+          if (!ok) warp(ctx, add(T, d0, 1.8), up(T, 1.0), { ground: true });
           const at = ctx.loc();
           quickTrail(dim, up(from, 1.0), up(at, 1.0), col, 0.3);
           const f = dirTo(at, T);
@@ -206,11 +208,12 @@ register(KEY, {
           P(dim, "flare", tc, { color: white(col, 0.5), size: 1.0, rot: yawDeg(f), life: 0.15 });
           splashAt(dim, tc, 0.8);
           sound(dim, "astro.swing", at, 1.2 + i * 0.1, 1.0);
-          // 跳べずに離れたままなら斬らない（遠くからの当たりにしない）
-          if (valid(target) && hdist(at, T) < 4.5) {
+          // 跳べずに離れたまま・壁越しなら斬らない（遠くからの当たりにしない）
+          const reach = dist(at, T) < 4.5 && clearLine(dim, up(at, 1.4), tc);
+          if (reach && valid(target)) {
             hit(ctx, target, i === 2 ? 7 : 5, { color: col, kb: i === 2 ? 0.4 : 0.1, up: i === 2 ? 0.65 : 0.15, dir: f, power: i === 2 ? 1.6 : 1.2, sound: "astro.hit_metal" });
           }
-          for (const e of ctx.foes(2.4, tc)) {
+          for (const e of reach ? ctx.foes(2.4, tc) : []) {
             if (e.id === target?.id || !ctx.once(e, 1, `w${i}`)) continue;
             hit(ctx, e, 3, { color: col, kb: 0.3, up: 0.2, dir: dirTo(T, posOf(e) ?? T) });
           }
@@ -218,7 +221,7 @@ register(KEY, {
           // 敵がいない: 前へ短く跳んで斬る
           const f = ctx.liveDir();
           const dest = safeAhead(dim, from, f, 3.2);
-          warp(ctx, dest, add(dest, f, 4));
+          warp(ctx, dest, add(dest, f, 4), { ground: true });
           quickTrail(dim, up(from, 1.0), up(dest, 1.0), col, 0.3);
           arc(dim, ctx.chest(), f, 1.9, -60, 60, i * 30 - 30, col, { size: 0.8, steps: 9 });
           sound(dim, "astro.swing", dest, 1.3, 0.9);
@@ -341,7 +344,9 @@ register(KEY, {
     ultOpen(ctx, 72, 14);
     const f0 = ctx.f;
     const rgt = daySide(f0);
-    const foes0 = enemiesNear(ctx, ctx.chest(), 14);
+    // 群れの中心は見通せる敵対的な相手から（地下や壁の向こう・動物や村人で軌道がずれないように）
+    const eye = ctx.head();
+    const foes0 = ctx.hostiles(14).filter((e) => { const q = posOf(e); return q && clearLine(dim, eye, up(q, 1.0)); });
     let C;
     if (foes0.length) {
       let sx = 0, sy = 0, sz = 0, n = 0;
@@ -384,7 +389,7 @@ register(KEY, {
     ctx.at(8, () => {
       quickImage(dim, ctx.loc(), 0, 0.9);
       quickTrail(dim, ctx.chest(), up(pt(0), 1.0), SILVER, 0.3);
-      warp(ctx, pt(0), up(C, 1.0));
+      warp(ctx, pt(0), up(C, 1.0), { ground: true });
       sound(dim, "astro.just_dodge", C, 1.2, 0.8);
     });
     // 10〜38: 八度の弦（八芒星 {8/3}: 135° ずつ進むと 8 回で元の点へ戻る）を斬り抜ける
@@ -395,7 +400,7 @@ register(KEY, {
         const col = i % 2 ? NIGHT : DAY;
         const A = up(a, 1.0), B = up(b, 1.0);
         quickImage(dim, ctx.loc(), i, 0.9);
-        warp(ctx, b, up(C, 1.0));
+        warp(ctx, b, up(C, 1.0), { ground: true });
         // 止まった時の中に残る弦の光
         line(dim, "trail", A, B, 0.35, { color: white(col, 0.4), size: 0.75, life: 2.2 });
         line(dim, "glow", up(A, -0.6), up(B, -0.6), 0.5, { color: col, size: 0.45, life: 2.0 });

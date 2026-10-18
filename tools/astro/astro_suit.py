@@ -210,6 +210,7 @@ DEFAULT_ALLOW = [
 FRAME7_STYLES = {
     "suit": "inner",        # 筋肉にあたる芯（六角メッシュの黒いボディスーツ）
     "metal": "frame",       # 骨・節・支柱（溝のある暗い金属）
+    "band": "frame_lt",     # 手足の節の輪・肋骨（少し明るい金属。暗い芯との境目を見せる）
     "dark": "dark",         # 隙間・指の関節・軸受け（無地の暗い金属）
     "joint": "chrome",      # 球関節・ドラムの蓋・ピストンのロッド（鏡面）
     "glow": "glow_soft",    # センサーの灯り（半発光）
@@ -338,7 +339,7 @@ class Suit:
         （武器の握りの点 A.GRIP を包む）、つま先の板の付いた足。右側は `_r` で作り、左は鏡映される。
 
         style: 塗りの役割の上書き。文字列ならボディスーツ（"suit" の役割）の名前、辞書なら
-               {"suit","metal","dark","joint","glow"} の一部（FRAME7_STYLES）。
+               {"suit","metal","band","dark","joint","glow"} の一部（FRAME7_STYLES）。
         bulk:  手足と胸の太さの倍率（0.85〜1.2。細身の水星 0.9、巨体の木星 1.15 など）。
         skip:  作らない部分の名前（"head" "neck" "chest" "spine" "waist" "pelvis" "shoulder" "upper_arm"
                "elbow" "forearm" "wrist" "hand" "hip" "thigh" "knee" "shin" "ankle" "foot" "pistons" "cables"）。
@@ -448,6 +449,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
             raise ValueError(f"frame7 style roles are {sorted(st)}, not {sorted(unknown)}")
         st.update(style)
     SU, ME, DK, JO, GL = st["suit"], st["metal"], st["dark"], st["joint"], st["glow"]
+    BA = st["band"]
     k = max(0.8, min(1.25, float(bulk)))
     F = Frame()
     want = lambda n: n not in skip  # noqa: E731
@@ -477,7 +479,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         F["neck"] = n
         octa(n, (0, 26.7, A.NECK_Z), 2.2, 2.6, SU, axis="y")
         for y in (25.95, 26.65, 27.35):
-            octa(n, (0, y, A.NECK_Z), 2.42, 0.26, ME, axis="y")
+            octa(n, (0, y, A.NECK_Z), 2.42, 0.26, BA, axis="y")
         if cab:
             for sx in (-1, 1):
                 beam(n, (sx * 0.9, 27.9, -0.55), (sx * 1.35, 25.5, 0.15), 0.3, 0.3, DK)
@@ -495,9 +497,9 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         for i, y in enumerate((24.7, 23.5, 22.3)):                                  # 肋骨
             wx = (3.95 - i * 0.3) * k
             rib = polyline(c, [(-0.45, y, -2.35), (-wx + 0.4, y - 0.25, -1.75),
-                                (-wx, y - 0.45, 0.4)], 0.42, 0.42, ME)
+                                (-wx, y - 0.45, 0.4)], 0.42, 0.42, BA)
             mirror_x(c, rib)
-        cl = beam(c, (-0.5, 25.95, -1.5), (-4.6 * k, 25.55, -0.5), 0.5, 0.5, ME)   # 鎖骨
+        cl = beam(c, (-0.5, 25.95, -1.5), (-4.6 * k, 25.55, -0.5), 0.5, 0.5, BA)   # 鎖骨
         pec = rbox(c, (-2.05 * k, 24.15, -2.28), (3.0 * k, 2.5, 0.5), SU, rot=(-4, 12, 0))
         sock = octa(c, (-4.15 * k, 24.4, 0.0), 1.9, 0.6, DK, axis="x")             # 肩の受け
         lat = beam(c, (-3.7 * k, 25.4, 1.6), (-3.0 * k, 20.9, 1.35), 0.42, 0.55, ME)
@@ -521,7 +523,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         F["waist"] = w
         chamfer(w, (0, 18.75, A.WAIST_Z + 0.05), (4.9, 4.6, 3.5), SU, cut=0.7, axis="y")
         for i, (y, ww) in enumerate(((20.05, 3.5), (19.0, 3.25), (17.95, 3.0))):  # 腹の節
-            cbox(w, (0, y, -1.62 + i * 0.04), (ww, 0.82, 0.36), ME)
+            cbox(w, (0, y, -1.62 + i * 0.04), (ww, 0.82, 0.36), BA)
         cbox(w, (0, 18.7, 1.95), (2.5, 3.4, 0.5), ME)                              # 腰椎の箱
         if pist:
             pw = piston(w, (-2.62, 21.1, -0.05), (-2.42, 16.7, 0.15), r=0.3, style=ME,
@@ -549,7 +551,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         if want("upper_arm"):
             octa(ua, (ax, 21.45, 0.05), 2.35 * k, 4.3, SU, axis="y")                # 二の腕の芯
             for y in (22.75, 20.15):
-                octa(ua, (ax, y, 0.05), 2.62 * k, 0.3, ME, axis="y")
+                octa(ua, (ax, y, 0.05), 2.62 * k, 0.3, BA, axis="y")
             beam(ua, (ax, 23.5, -1.15 * k), (ax + 0.05, 19.6, -1.1 * k), 0.5, 0.36, ME)
             if pist:
                 piston(ua, (ax, 22.9, 1.32 * k), (A.ELBOW[0], 17.3, 1.18 * k), r=0.27,
@@ -566,7 +568,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         if want("forearm"):
             taper(fa, (fx_, 18.0, 0.05), (fx_ + 0.06, 14.95, 0.0), 2.62 * k, 2.15 * k, 2, SU)
             for y, ww in ((17.15, 2.82), (15.65, 2.5)):
-                octa(fa, (fx_, y, 0.02), ww * k, 0.26, ME, axis="y")
+                octa(fa, (fx_, y, 0.02), ww * k, 0.26, BA, axis="y")
             beam(fa, (fx_, 17.7, -1.18 * k), (fx_ + 0.06, 15.2, -0.98 * k), 0.36, 0.36, ME)
             beam(fa, (fx_ - 0.05, 17.7, 1.15 * k), (fx_ + 0.04, 15.2, 0.98 * k), 0.36, 0.36, ME)
         if want("wrist"):
@@ -585,7 +587,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         if want("thigh"):
             taper(th, (LX - 0.05, 14.3, 0.05), (LX, 9.35, -0.05), 3.05 * k, 2.55 * k, 2, SU)
             for y, ww in ((12.9, 3.12), (10.6, 2.86)):
-                octa(th, (LX, y, 0.0), ww * k, 0.3, ME, axis="y")
+                octa(th, (LX, y, 0.0), ww * k, 0.3, BA, axis="y")
             beam(th, (LX - 1.38 * k, 13.7, 0.25), (LX - 1.18 * k, 9.7, 0.1), 0.42, 0.5, ME)
             beam(th, (LX + 1.2 * k, 13.2, 0.1), (LX + 1.05 * k, 9.7, 0.0), 0.38, 0.42, ME)
             rbox(th, (LX, 11.9, -1.42 * k), (1.9 * k, 3.8, 0.42), ME, rot=(-4, 0, 0))
@@ -605,7 +607,7 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
             taper(sn, (LX, 7.75, 0.1), (LX, 2.55, 0.2), 2.5 * k, 2.0 * k, 2, SU)
             chamfer(sn, (LX, 5.85, 0.95), (2.2 * k, 3.3, 1.3), SU, cut=0.45, axis="y")  # ふくらはぎ
             for y, ww in ((6.75, 2.62), (3.55, 2.26)):
-                octa(sn, (LX, y, 0.12), ww * k, 0.26, ME, axis="y")
+                octa(sn, (LX, y, 0.12), ww * k, 0.26, BA, axis="y")
             beam(sn, (LX, 7.4, -1.15 * k), (LX, 2.75, -0.98 * k), 0.6, 0.36, ME)
         if want("ankle"):
             joint_drum(sn, A.ANKLE, 0.92, 2.3 * k, axis="x", style=ME, cap=JO, hub=DK,

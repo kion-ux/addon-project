@@ -393,6 +393,7 @@ REPAIR_AT = 0.6      # 補間の途中でこれより深く入り込むコマに
 REPAIR_STEP = 0.04   # 直す区間で腕のねじりを選ぶ間隔（秒。足すキーの間隔はこれ以上）
 REPAIR_SPEED = 800.0  # ねじりの速さ（度/秒）がこれだと、体に 0.13 px 入るのと同じ重さ
 REPAIR_MAX_STEP = 90.0   # 隣り合うキーの間のねじりの差の上限（度。これを超えると補間の向きが曖昧になる）
+TWIST_RATE_MAX = 1000.0  # ねじる速さの上限（度/秒）。もとの動きと足して腕の速さの上限を超える速さも使わない
 TWISTS = tuple(range(-180, 180, 15))
 
 
@@ -447,18 +448,25 @@ def _repair(res, cloud, hold, rounds=3, step=0.02):
             ph = np.array(TWISTS, float)
             diff = (ph[None, :] - ph[:, None] + 180.0) % 360.0 - 180.0     # diff[i, j] = 前 i → 次 j
 
-            def edge(dt):
-                e = (np.abs(diff) / max(dt, 1e-3) / REPAIR_SPEED) ** 2
-                e[np.abs(diff) > REPAIR_MAX_STEP + 1e-6] = INF
+            # ねじる速さの上限: 腕の速さの上限（arm_speeds と同じ）から、もとの動きの速さを引いた残り
+            RT = [_key_R(tr, mk, a)] + base + [_key_R(tr, mk, b)]
+            allow = 0.85 * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
+
+            def edge(k):
+                dt = max(T[k + 1] - T[k], 1e-3)
+                cap = min(TWIST_RATE_MAX, allow - _rot_angle(RT[k], RT[k + 1]) / dt)
+                rate = np.abs(diff) / dt
+                e = (rate / REPAIR_SPEED) ** 2
+                e[(np.abs(diff) > REPAIR_MAX_STEP + 1e-6) | (rate > max(cap, 0.0) + 1e-6)] = INF
                 return e
             i0 = TWISTS.index(0)
-            cost = edge(T[1] - T[0])[i0] + node[0]
+            cost = edge(0)[i0] + node[0]
             back = []
             for k in range(1, len(S)):
-                tot = cost[:, None] + edge(T[k + 1] - T[k])
+                tot = cost[:, None] + edge(k)
                 back.append(np.argmin(tot, axis=0))
                 cost = tot.min(axis=0) + node[k]
-            cost = cost + edge(T[-1] - T[-2])[:, i0]
+            cost = cost + edge(len(S))[:, i0]
             idx = [int(np.argmin(cost))]
             for bk in reversed(back):
                 idx.append(int(bk[idx[-1]]))

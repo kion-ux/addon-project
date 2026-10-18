@@ -5,7 +5,7 @@
 //  見た目は弾ごとの trail() で描く。ブーメラン（行って戻る）・追尾・貫通・多段に対応。
 //  エンティティの問い合わせは 1 発につき 1 tick 1 回（その tick に進む区間をまとめて調べる）。
 // ===========================================================================
-import { isTarget, entitiesNear, hit } from "./combat.js";
+import { isTarget, isHostile, entitiesNear, hit } from "./combat.js";
 import { valid, add, dist, chest, norm, sub, blocked, report, now } from "./util.js";
 
 const shots = [];
@@ -19,14 +19,15 @@ export const MAX_SHOTS = 80;
  * @param o     speed 1 tick に進む距離（既定 1.2）/ range 射程 m（既定 30）/ radius 当たりの半径（0.6）/
  *              pierce 貫通できる数（0 = 最初の 1 体で終わる、Infinity = 全部）/ gravity 毎 tick の落下 /
  *              life 最長 tick（100）/ blocks false でブロックを抜ける /
- *              homing 追尾する相手（エンティティ。true なら前方の一番近い敵を自動で）/ turn 追尾の強さ 0..1（0.35）/
+ *              homing 追尾する相手（エンティティ。true なら前方の一番近い敵対的な相手を自動で）/ turn 追尾の強さ 0..1（0.35）/
  *              returns true で射程の端（か returnAt tick）で持ち主へ戻る（ブーメラン。戻りは同じ相手に再び当たる）/
  *              returnAt 折り返す tick / hitEvery 同じ相手に何 tick おきに当たり直すか（貫通弾の多段）/
  *              damage と hitOpts を渡すと当たった相手に hit(src, e, damage, hitOpts) を自動で行う /
  *              trail(dim, pos, prev, age, shot) 毎 tick の見た目 /
  *              onHit(e, pos, shot) 当たった時 / onEnd(pos, reason, shot) 終わった時
  *              （reason: "block" | "entity" | "range" | "life" | "owner" | "returned" | "stopped"）
- * @returns shot（shot.stop() で消せる。shot.pos / shot.vel / shot.age / shot.back を読める）
+ * @returns shot（shot.stop() で黙って消せる / shot.end(reason) で onEnd を呼んで終える。
+ *          shot.pos / shot.vel / shot.age / shot.back を読める）
  */
 export function shoot(src, from, dir, o = {}) {
   const ctx = src && src.p && src.kind ? src : null;
@@ -43,6 +44,7 @@ export function shoot(src, from, dir, o = {}) {
     speed: sp, left: o.range ?? 30, radius: o.radius ?? 0.6, pierce: o.pierce ?? 0, gravity: o.gravity ?? 0,
     hits: new Map(), age: 0, back: false, o, done: false, travelled: 0,
     stop() { shot.done = true; },
+    end(reason = "stopped") { end(shot, reason); },
   };
   if (o.homing === true) {
     shot.homing = autoTarget(owner, from, d, o.range ?? 30);
@@ -56,7 +58,7 @@ export function shoot(src, from, dir, o = {}) {
 function autoTarget(owner, from, d, range) {
   let best, bs = -Infinity;
   for (const e of entitiesNear(owner.dimension, from, Math.min(range, 32))) {
-    if (!isTarget(owner, e)) continue;
+    if (!isTarget(owner, e) || !isHostile(e, owner)) continue;   // 自動で追うのは敵対的な相手だけ
     const to = sub(chest(e), from);
     const l = Math.hypot(to.x, to.y, to.z) || 1;
     const c = (to.x * d.x + to.y * d.y + to.z * d.z) / l;

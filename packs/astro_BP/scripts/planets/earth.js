@@ -31,7 +31,7 @@ import {
 import { reflectProjectiles } from "../mobility.js";
 import {
   add, up, lerp3, norm, sub, yawRotate, yawDeg, rightOf, flatDir, chest, hdist, groundY, onGround,
-  effect, now, valid,
+  effect, now, valid, blocked,
 } from "../util.js";
 
 const KEY = "earth";
@@ -127,8 +127,10 @@ register(KEY, {
         speed: 0.85, range: 12, radius: 1.7, pierce: Infinity, life: 30, blocks: false,
         damage: 9, hitOpts: { color: OCEAN, kb: 1.5, up: 0.3, dir: f, power: 1.4, sound: "astro.splash" },
         trail(d, pos, prev, age, s) {
-          // 地形に沿って進む（段差を越える）
+          // 地形に沿って進む（2 段までの段差を越える）。越えられない壁・丘に当たったらそこで砕ける
+          // （ブロックを抜けないので、壁の向こうの相手に当たらない）
           const gy = groundY(d, pos, 3, 2);
+          if (blocked(d, { x: pos.x, y: gy + 0.5, z: pos.z })) { s.end("block"); return; }
           s.pos.y = gy + 0.9;
           const q = s.pos;
           if (age === 7) P(d, "wave", { ...q, y: gy + 0.05 }, { color: white(OCEAN, 0.15), dir: f, speed: 17, size: 1.0, life: 0.35 });
@@ -309,7 +311,7 @@ register(KEY, {
         }
       });
     }
-    // オーロラの幕（aurora 1 回で半径 spread の輪に帯が並ぶ）。味方を癒やす
+    // オーロラの幕（aurora 1 回で半径 spread の輪に帯が並ぶ）。自分と自分のペットを癒やす（他のプレイヤーは含めない）
     for (const t of [16, 44]) {
       ctx.at(t, () => {
         P(dim, "aurora", up(centre, 0.1), { color: AURORA_G, spread: 8, count: 16, height: 5.5, life: 3.0, spin: 6 });
