@@ -120,18 +120,18 @@ p.onScreenDisplay.setTitle(`§r${G.iconBig.overheat}`, { subtitle: "§cOVERHEAT"
 
 | 番号 | G のキー | 幅 (GUI px) | 行 |
 |---|---|---|---|
-| U+EA00 | `G.energy.capL` | 4 | 3–12 |
-| U+EA01 | `G.energy.capR` | 4 | 3–12 |
+| U+EA00 | `G.energy.<key>.capL`（全惑星共通） | 4 | 3–12 |
+| U+EA01 | `G.energy.<key>.capR`（全惑星共通） | 4 | 3–12 |
 | U+EA02 | `G.nova.full` | 6 | 4–11 |
 | U+EA03 | `G.nova.empty` | 6 | 4–11 |
 | U+EA04 | `G.nova.flow` | 6 | 4–11 |
 | U+EA05 | `G.nova.capL` | 4 | 3–12 |
 | U+EA06 | `G.nova.capR` | 4 | 3–12 |
-| U+EA07 | `G.progress.full` | 4 | 5–10 |
-| U+EA08 | `G.progress.empty` | 4 | 5–10 |
-| U+EA09 | `G.progress.half` | 4 | 5–10 |
-| U+EA0A | `G.progress.capL` | 3 | 4–11 |
-| U+EA0B | `G.progress.capR` | 3 | 4–11 |
+| U+EA07 | `G.progress.full` = `G.sync.full` | 4 | 5–10 |
+| U+EA08 | `G.progress.empty` = `G.sync.empty` | 4 | 5–10 |
+| U+EA09 | `G.progress.half` = `G.sync.half` | 4 | 5–10 |
+| U+EA0A | `G.progress.capL` = `G.sync.capL` | 3 | 4–11 |
+| U+EA0B | `G.progress.capR` = `G.sync.capR` | 3 | 4–11 |
 | U+EA0C | `G.xp.full` | 3 | 6–9 |
 | U+EA0D | `G.xp.empty` | 3 | 6–9 |
 | U+EA0E | `G.xp.capL` | 2 | 5–10 |

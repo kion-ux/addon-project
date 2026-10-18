@@ -716,7 +716,7 @@ def sp_flame(w, h, f, n=8):
 
     def tongue(cx, base, height, width, ph, sway):
         hh = (yy - base) / height                      # 0 = 根元, 1 = 先
-        wob = sway * np.sin(hh * 5.0 + phase + ph) * hh ** 1.3
+        wob = sway * np.sin(hh * 5.0 + phase + ph) * np.clip(hh, 0, 1) ** 1.3
         wd = width * np.sqrt(np.clip(hh, 0, 1)) * np.clip(1 - hh, 0, 1) ** 0.75
         return hard(np.abs(x - cx - wob) < wd) * hard((hh > 0) & (hh < 1)), wob
 
@@ -2547,7 +2547,7 @@ def build_effects():
             "隕石・彗星・火の弾", "size 0.5〜3 / len 2〜8 / speed 0（毎 tick）or 10〜30 / life 0.2〜1",
             star=True)
     S = f.S
-    dir_init(f, (0.4, -1.0, 0.0), "飛ぶ向き（頭の向き。未指定は斜め下）")
+    dir_init(f, (0.4, -1.0, 0.0), "飛ぶ向き（頭の向き。未指定は (0.4, −1, 0) = 斜め下）")
     f.init(f"v.e_len = {f.v('len', f'{S} * 3.0', '尾の長さ (m)', doc_default='size × 3')};")
     f.instant(f.v("count", 12, "粒の数（約 1/3 が頭、残りが尾の筋）"))
     f.point()
@@ -3131,6 +3131,7 @@ DEMO = {
     "spark": {"vx": 1.0, "vy": 0.3},
     "speedline": {"vx": 0.0, "vy": 0.0, "vz": 1.0},
     "slash": {"rot": 30.0, "cr": 1.0, "cg": 0.3, "cb": 0.4},
+    "slash_big": {"var": 1.0, "rot": -20.0},
     "slash_flat": {"rot": 90.0},
     "warning": {"size": 1.5, "life": 1.5},
     "debris": {"speed": 9.0},

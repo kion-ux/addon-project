@@ -190,25 +190,24 @@ def planet_color(name, lon, lat, P, seed=0):
             col = mix(col, (255, 255, 236), (pl - 0.6) * 2.2)
         return col
     if name == "luna":
-        n = _n3(px, py, pz, 2.0, 53, 3)
-        col = mix((176, 178, 184), (120, 122, 132), smooth(0.48, 0.62, n))   # 海（暗い所）
-        # クレーター: 格子ごとに 1 個、暗い底と明るい縁
-        f = 4.5
+        n = _n3(px, py, pz, 1.8, 53, 3)
+        col = mix((202, 204, 210), (150, 154, 164), smooth(0.5, 0.62, n))   # 海（少し暗い所）
+        # クレーター: 格子ごとに 1 個、少し暗い底と、上側の明るい縁
+        f = 4.0
         gx, gy = lon * f, lat * f
         for oy in (-1, 0, 1):
             for ox in (-1, 0, 1):
                 cx, cy = math.floor(gx) + ox, math.floor(gy) + oy
-                if hash2(cx, cy, 61) < 0.45:
+                if hash2(cx, cy, 61) < 0.5:
                     continue
-                fx = cx + 0.2 + 0.6 * hash2(cx, cy, 62)
-                fy = cy + 0.2 + 0.6 * hash2(cx, cy, 63)
-                rr = 0.18 + 0.2 * hash2(cx, cy, 64)
+                fx = cx + 0.25 + 0.5 * hash2(cx, cy, 62)
+                fy = cy + 0.25 + 0.5 * hash2(cx, cy, 63)
+                rr = 0.16 + 0.16 * hash2(cx, cy, 64)
                 d = math.hypot(gx - fx, gy - fy)
-                if d < rr * 0.75:
-                    col = shade(col, 0.74)
+                if d < rr * 0.72:
+                    col = shade(col, 0.86)
                 elif d < rr:
-                    col = mix(col, (226, 228, 232), 0.55 if (gy - fy) < 0 else 0.0) \
-                        if (gy - fy) < 0 else shade(col, 0.86)
+                    col = mix(col, WHITE, 0.3) if (gy - fy) > 0 else shade(col, 0.9)
         return col
     return (180, 180, 180)
 
@@ -743,7 +742,7 @@ class AstroPainter(HDPainter):
 
     def k_luna(self, x, y, st, c):
         c["planet"] = "luna"
-        return self._sphere(x, y, dict(st, radius=1.3), c, False)
+        return self._sphere(x, y, dict(st, radius=1.5), c, False)
 
     # ==================================================================
     #  デカール
@@ -955,7 +954,8 @@ def common_styles(key):
                    "under": _armor(plate, panel=0)},
         "emblem": {"kind": "decal", "decal": "emblem", "under": _armor(plate2, panel=0),
                    "color": glow},
-        "luna": {"kind": "planet", "planet": "luna", "bevel": False, "outline": False},
+        "luna": {"kind": "planet", "planet": "luna", "bevel": False, "outline": False,
+                 "radius": 1.45, "vary": 0},
     }
     for v in st.values():                         # 銘板の小さな灯りなどは惑星の発光色で
         if v.get("kind") in ("armor", "armor2"):
