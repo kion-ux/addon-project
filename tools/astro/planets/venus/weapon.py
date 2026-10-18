@@ -22,7 +22,7 @@ from astro_paint import core_styles, weapon_styles
 KIND = "scepter"
 
 Z_STAR = -22.6          # 星の頭の中心
-R_LONG, R_SHORT = 6.2, 4.3      # 光条の長さ（中心から）
+R_LONG, R_SHORT = 6.2, 4.9      # 光条の長さ（中心から）
 R_CLOUD = 7.0           # 雲の輪の半径
 
 STAR = (255, 240, 150)  # 明けの明星の白金の光

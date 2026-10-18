@@ -24,6 +24,9 @@ c1_wind = P(b=(4, 44, 0), h=(0, -34, 0), w=(6, 0, 0),
             rA=wield(blade=dirv(r=1.0, f=-0.35, u=0.25), arm=dirv(r=1.0, u=-0.2, f=0.05)),
             lA=aim(dirv(f=1.0, r=-0.4, u=-0.1)),
             rL=(14, 0, 8), lL=(-18, 0, -8), ground=True)
+c1_lift = P(b=(2, 22, 0), h=(0, -16, 0),
+            rA=wield(blade=dirv(r=0.7, u=0.7, f=0.2), arm=dirv(r=1.0, u=-0.35, f=0.2)),
+            lA=aim(dirv(f=1.0, r=-0.3, u=-0.2)), rL=(8, 0, 6), lL=(-10, 0, -6), ground=True)
 c1_hit = P(b=(8, -14, 0), h=(0, 12, 0), w=(10, 0, 0),
            rA=wield(blade=dirv(f=1.0, r=-0.1, u=0.05), edge=LEFT),
            lA=aim(dirv(f=-0.3, u=-1.0, r=-0.7)),
@@ -100,8 +103,16 @@ wr_roar = P(b=(-18, 0, 0), h=(-40, 0, 0),
             lA=aim(dirv(r=-1.0, u=0.6, f=0.1)),
             rL=(-4, 0, 16), lL=(4, 0, -16), ground=True)
 
+# ---- 共通の「投げる」を斧で（腕を右上へ逃がして、斧頭が兜に当たらないように） -----
+th_wind = P(rA=wield(blade=dirv(u=0.55, f=-0.75, r=0.45), arm=dirv(u=0.75, f=-0.15, r=0.75)),
+            lA=aim(dirv(f=1.0, u=0.15, r=-0.1)), b=(-6, 30, 0), h=(0, -24, 0), rL=(14, 0, 4),
+            lL=(-20, 0, -4))
+th_rel = P(rA=wield(blade=dirv(f=1.0, u=-0.1, r=0.1), arm=dirv(f=0.9, u=-0.1, r=0.4)),
+           lA=aim(dirv(f=-0.3, u=-1.0, r=-0.4)), b=(14, -22, 0), h=(-8, 20, 0),
+           rL=(16, 0, 4), lL=(-30, 0, -4), root_pos=(0, -0.6, -1.0))
+
 BODY_ANIMS = {
-    "combo1": anim(0.55, {0.0: H, 0.1: c1_wind, 0.21: c1_hit, 0.3: c1_follow,
+    "combo1": anim(0.55, {0.0: H, 0.05: c1_lift, 0.1: c1_wind, 0.21: c1_hit, 0.3: c1_follow,
                           0.4: P(c1_follow, b=(8, -44, 0)), 0.55: H}),
     "combo2": anim(0.55, {0.0: H, 0.1: c2_wind, 0.23: c2_hit, 0.33: c2_follow,
                           0.42: P(c2_follow, b=(-10, 34, 0)), 0.55: H}),
@@ -116,6 +127,7 @@ BODY_ANIMS = {
                                 0.06: ol_slam, 0.6: P(ol_slam, w=(30, 0, 0), h=(-30, 0, 0)), 0.95: H}),
     "moon_call": anim(1.5, {0.0: H, 0.25: mc_call, 0.8: P(mc_call, h=(-40, 0, 0)), 1.0: mc_point,
                             1.32: P(mc_point, b=(10, 0, 0)), 1.5: H}),
+    "throw": anim(0.55, {0.0: H, 0.14: th_wind, 0.26: th_rel, 0.38: P(th_rel, b=(14, -20, 0)), 0.55: H}),
     "war_roar": anim(1.0, {0.0: H, 0.12: P(wr_roar, b=(10, 0, 0), h=(6, 0, 0)), 0.3: wr_roar,
                            0.78: P(wr_roar, h=(-44, 0, 0)), 1.0: H}),
 }
