@@ -70,7 +70,7 @@ def legs(s):
                        rot=(-3, 0, 0), inset=0.3, trim="gold", rivet="rivet", n_rivets=3,
                        rivet_edge="top")
     line_on(t, fr["top"], "north", (0.74, 0.1), (0.74, 0.7), 0.18, 0.16, "glow")
-    side = rbox(t, (LX - 1.78, 11.95, 0.05), (0.5, 4.4, 2.9), "plate", rot=(0, 0, -3))
+    side = rbox(t, (LX - 1.78, 11.38, 0.05), (0.5, 3.25, 2.9), "plate", rot=(0, 0, -3))  # 上端 13.0
     rivets(t, side, "west", 3, edge="bottom", margin=0.3)
     k = s.part("legs", "knee_r", "rightLeg", pivot=A.KNEE)
     kg = bevel(k, (LX, 8.45, -1.88), (2.3, 2.3, 0.8), "plate2", cut=0.38, axis="z")
@@ -103,9 +103,10 @@ def waist(s):
     mirror_x(w, hp, hpr)
     rs = rbox(w, (0, 15.05, 2.45), (4.6, 2.7, 0.5), "plate", rot=(14, 0, 0))
     rivets(w, rs, "south", 4, edge="top", margin=0.3)
-    ts = s.part("waist", "tasset_r", w, pivot=(-3.35, 16.6, 0.0), rotation=(0, 0, 12))
-    base = layered_plate(ts, (-3.75, 14.75, 0.0), (0.5, 3.5, 3.5), "plate", top="plate2",
-                         face="west", inset=0.38, trim="gold", rivet="rivet", n_rivets=3,
+    # 草摺: 腿の外の板（y 13.0 まで）の上で終わり、篭手の内側（x -4.5）より内に収める（README §12）
+    ts = s.part("waist", "tasset_r", w, pivot=(-3.35, 16.6, 0.0), rotation=(0, 0, 8))
+    base = layered_plate(ts, (-3.62, 15.15, 0.0), (0.45, 2.8, 3.5), "plate", top="plate2",
+                         face="west", inset=0.36, trim="gold", rivet="rivet", n_rivets=3,
                          rivet_edge="top")
     line_on(ts, base["top"], "west", (0.15, 0.4), (0.85, 0.4), 0.2, 0.16, "glow")
 
@@ -165,12 +166,12 @@ def arms(s):
     fa = s.part("arms", "vambrace_r", "rightArm", pivot=A.WRIST)
     F = A.FOREARM_X
     bevel(fa, (F, 17.15, 0.0), (2.85, 1.9, 2.95), "plate", cut=0.45, axis="y")
-    bevel(fa, (F + 0.02, 15.7, 0.0), (3.2, 1.75, 3.25), "plate", cut=0.5, axis="y")
-    ob = rbox(fa, (F - 1.72, 16.3, 0.0), (0.42, 3.1, 2.6), "plate2", rot=(0, 0, 5))
+    bevel(fa, (F - 0.04, 15.7, 0.0), (3.0, 1.75, 3.15), "plate", cut=0.48, axis="y")
+    ob = rbox(fa, (F - 1.68, 16.3, 0.0), (0.42, 3.1, 2.6), "plate2", rot=(0, 0, 5))
     rivets(fa, ob, "west", 3, edge="top", margin=0.28)
     fv = rbox(fa, (F + 0.02, 16.4, -1.66), (2.2, 1.9, 0.35), "plate2", rot=(-5, 0, 0))
     vents(fa, fv, "north", 3, box=(0.2, 0.2, 0.8, 0.8), w=0.18)
-    octa(fa, (F + 0.04, 14.72, 0.0), 3.3, 0.34, "gold", axis="y")              # 袖口
+    chamfer(fa, (F - 0.04, 14.72, 0.0), (3.06, 0.34, 3.2), "gold", cut=0.4, axis="y")  # 袖口
     h = s.part("arms", "hand_r", "rightArm", pivot=A.WRIST)
     rbox(h, (-7.42, 13.62, 0.0), (0.36, 1.7, 2.3), "plate2", rot=(0, 0, 4))
     for zf in (-0.93, -0.31, 0.31, 0.93):                                       # 指の甲当て

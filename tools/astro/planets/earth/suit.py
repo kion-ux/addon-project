@@ -126,7 +126,7 @@ def legs(s):
                        rivet="rivet", n_rivets=3, rivet_edge="top")
     line_on(t, fr["top"], "north", (0.74, 0.1), (0.74, 0.6), 0.18, 0.16, "glow")
     line_on(t, fr["top"], "north", (0.74, 0.6), (0.42, 0.86), 0.18, 0.16, "glow")
-    side = rbox(t, (LX - 1.78, 11.65, 0.05), (0.5, 3.8, 2.9), "plate2", rot=(0, 0, -3),
+    side = rbox(t, (LX - 1.78, 11.38, 0.05), (0.5, 3.25, 2.9), "plate2", rot=(0, 0, -3),
                 decals={"west": {"decal": "serial", "text": "GA-03", "ink": (40, 60, 110)}})
     rivets(t, side, "west", 3, edge="bottom", margin=0.3)
     cbox(t, (LX - 1.62, 9.62, 0.05), (0.42, 0.42, 2.7), "gold")
@@ -322,7 +322,7 @@ def arms(s):
     rivets(fa, ob, "west", 3, edge="top", margin=0.28)
     fv = rbox(fa, (FX_ + 0.02, 16.4, -1.66), (2.2, 1.9, 0.35), "plate2", rot=(-5, 0, 0))
     vents(fa, fv, "north", 3, box=(0.2, 0.2, 0.8, 0.8), w=0.18)
-    octa(fa, (FX_ - 0.02, 14.72, 0.0), 3.1, 0.34, "gold", axis="y")                # 袖口
+    chamfer(fa, (FX_ - 0.04, 14.72, 0.0), (3.06, 0.34, 3.2), "gold", cut=0.4, axis="y")  # 袖口
     sensor(fa, (FX_ + 0.05, 15.5, 1.68), 0.26, "glow", "dark", facing=1)
     rivets(fa, lo[1], "south", 2, edge="bottom", margin=0.3, span=(0.3, 0.7))
 

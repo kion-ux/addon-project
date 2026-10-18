@@ -961,6 +961,29 @@ def arm_speeds(res, part, step=1.0 / 120.0):
     return tm, w, allow
 
 
+def strike_time(res, hold, step=1.0 / 120.0):
+    """武器が当たる時刻（秒）: 刃先の向き（全身・腰・体・右腕の回転を通した物）が最も速く回るコマを含む、
+    書いたキーの区間の終わりのキー（振り抜いた姿勢 = c1_hit など）。右腕を wield() / aim() で書いていない
+    モーションは None。"""
+    mk = res.mats.get("rA", {})
+    if not any(mk.get(t) is not None for t in res.keys):
+        return None
+    bl = np.asarray(hold["blade_arm"], float)
+    n = max(2, int(math.ceil(res.length / step)))
+    T = np.linspace(0.0, res.length, n + 1)
+    dirs = []
+    for t in T:
+        p = sample_parts(res, float(t))
+        R = rot(*p.get("root", (0, 0, 0))) @ rot(*p.get("w", (0, 0, 0))) @ rot(*p.get("b", (0, 0, 0))) \
+            @ rot(*p["rA"])
+        dirs.append(R @ bl)
+    D = np.array(dirs)
+    w = np.degrees(np.arccos(np.clip((D[1:] * D[:-1]).sum(axis=1), -1.0, 1.0)))
+    tp = float((T[1:] + T[:-1])[int(np.argmax(w))] / 2)
+    keys = sorted(res.keys)
+    return round(min([k for k in keys if k >= tp - 1e-9] or [keys[-1]]), 3)
+
+
 def arm_speed_report(res, step=1.0 / 120.0):
     """[(部位, 時刻, 角速度, 許す速さ)]: 上限を超えた腕（部位ごとに最悪の 1 つ）。"""
     out = []

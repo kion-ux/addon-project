@@ -20,6 +20,8 @@
             プレイヤーのボーン名（cape, helmet, waist, rightItem …）を装飾に使っていない
           * テクスチャ 1024x1024 以下（テクセル x3 未満は警告）、炎（flame 系の塗り）は fx_* の下（両面の材質）
           * 回転体（fx_spin_* の部分木）が idle アニメの一周の間に他の装甲へめり込まないか（警告）
+          * 手足の装甲が胴の装甲にめり込まないか（立ち・歩きの両端・持ち姿勢で OBB の重なり 0.2 以上。警告。
+            astro_suit.clashes）
   アニメ  * SUIT_ANIMS のボーンが実在、Molang が読める、部位ボーンの scale を書いていない
             （組み上がり・解除が scale を使うため）、トップレベルを動かしていない
           * ループするアニメ（idle / thrust / sprint / 追加）が継ぎ目なく繰り返す（q.anim_time の周波数 ×
@@ -48,6 +50,7 @@ from astro_data import PLANETS  # noqa: E402
 MIN_CUBES, MAX_CUBES = AS.LIMITS["cubes"]
 FLAME_STYLES = ("flame", "flame_core")
 MIN_TEXEL = 3.0
+CLASH_DEPTH = 0.2           # 手足 ↔ 胴の装甲のめり込みの警告の深さ
 
 
 class Report:
@@ -138,6 +141,16 @@ def check_model(key, verbose=False) -> Report:
         check_orbits(s, r)
     except Exception as e:  # noqa: BLE001
         r.warn(f"orbit check failed: {e}")
+    # 手足の装甲が胴の装甲にめり込まないか（立ち・歩きの両端・持ち姿勢。骨格 inner_* は数えない）
+    try:
+        cl = AS.clashes(s, CLASH_DEPTH)
+        for c in cl[:10]:
+            r.warn(f"clash {c} — limb armor passes through torso armor (move/trim it; parts above "
+                   "a limb pivot swing when the limb rotates)")
+        if len(cl) > 10:
+            r.warn(f"... {len(cl) - 10} more clashes")
+    except Exception as e:  # noqa: BLE001
+        r.warn(f"clash check failed: {e}")
     # SUIT_ANIMS
     names = {b.name for b in m.bones}
     owned_scale = {nm for nm, _g in G.pop_bones(s)} | \
