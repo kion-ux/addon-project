@@ -2664,6 +2664,309 @@ def write_ui_md(G, pages, widths_note):
     return UI_MD
 
 
+# ===========================================================================
+#  docs/astro/hud.png: 画面の見本（ゲーム画面・アクションバー 2 行・タイトルのカットイン・ターミナル）
+#  S = 2（1 GUI px = 2 画素）で描き、最後に 2 倍に拡大する
+# ===========================================================================
+MS = 2
+
+
+def _block_scene(W, H, seed=3):
+    """ゲーム画面らしい背景（夜明け前の空・星・ブロックの丘・木）。GUI px 単位で描いて MS 倍。"""
+    rng = np.random.default_rng(seed)
+    a = np.zeros((H, W, 4), np.float32)
+    y = np.arange(H)[:, None] / H
+    a[..., :3] = _ramp(np.broadcast_to(y, (H, W)), [(0.0, (12, 16, 46)), (0.45, (40, 40, 96)), (0.62, (120, 86, 130)),
+                                                    (0.70, (230, 150, 120)), (1.0, (230, 150, 120))])
+    a[..., 3] = 255
+    for _ in range(140):
+        sx, sy = int(rng.uniform(0, W)), int(rng.uniform(0, H * 0.5))
+        a[sy, sx, :3] = (230, 230, 255)
+    # 大きな惑星（空に浮かぶ）
+    pl = render_planet("saturn", 70, 16, ss=3)
+    over(a, pl * np.array([1, 1, 1, 0.85], np.float32), int(W * 0.72), int(H * 0.08))
+    # 遠い丘（ブロック）
+    def hills(base, amp, blk, col, top, seed):
+        r = np.random.default_rng(seed)
+        h = base
+        for x0 in range(0, W, blk):
+            h = int(np.clip(h + r.integers(-1, 2) * blk // 2, base - amp, base + amp))
+            a[h:, x0:x0 + blk, :3] = col
+            a[h:h + max(1, blk // 3), x0:x0 + blk, :3] = top
+            for yy in range(h, H, blk):
+                a[yy, x0:x0 + blk, :3] = np.array(col) * 0.85
+                a[yy:yy + blk, x0, :3] = np.array(col) * 0.85
+    hills(int(H * 0.64), 8, 6, (52, 50, 78), (70, 74, 100), seed)
+    hills(int(H * 0.74), 10, 12, (58, 48, 40), (64, 112, 56), seed + 1)
+    # 木
+    for tx in (int(W * 0.12), int(W * 0.86)):
+        ty = int(H * 0.60)
+        a[ty:ty + 34, tx:tx + 6, :3] = (70, 52, 34)
+        a[ty - 18:ty + 6, tx - 12:tx + 18, :3] = (36, 76, 40)
+        a[ty - 18:ty - 14, tx - 12:tx + 18, :3] = (50, 100, 52)
+    a[int(H * 0.86):, :, :3] *= 0.85
+    return a
+
+
+def _hotbar(a, W, H, weapon_icon=None):
+    """ホットバー・ハート・満腹・経験値（GUI px）。"""
+    x0, y0 = (W - 182) // 2, H - 22
+    a[y0:y0 + 22, x0:x0 + 182, :3] = a[y0:y0 + 22, x0:x0 + 182, :3] * 0.35 + 18
+    for i in range(9):
+        sx = x0 + 1 + i * 20
+        a[y0 + 1:y0 + 21, sx:sx + 20, :3] = (60, 60, 64)
+        a[y0 + 2:y0 + 20, sx + 1:sx + 19, :3] = (34, 34, 38)
+    sel = x0 + 1
+    for t in range(2):
+        a[y0 - 1 + t, sel - 1:sel + 21, :3] = 230
+        a[y0 + 21 - t, sel - 1:sel + 21, :3] = 230
+        a[y0 - 1:y0 + 22, sel - 1 + t, :3] = 230
+        a[y0 - 1:y0 + 22, sel + 20 - t, :3] = 230
+    if weapon_icon is not None:
+        ic = np.asarray(Image.fromarray(np.clip(weapon_icon, 0, 255).astype(np.uint8)).resize((16, 16),
+                                                                                              Image.LANCZOS),
+                        np.float32)
+        over(a, ic, sel + 2, y0 + 3)
+    # 経験値と体力・満腹
+    a[y0 - 7:y0 - 4, x0:x0 + 182, :3] = (20, 30, 20)
+    a[y0 - 6:y0 - 5, x0 + 1:x0 + 120, :3] = (128, 255, 32)
+    heart = ["X.X", "XXX", ".X."]
+    for i in range(10):
+        hx, hy = x0 + i * 8, y0 - 16
+        for r, row in enumerate(heart):
+            for c_, v in enumerate(row):
+                if v == "X":
+                    a[hy + r * 2:hy + r * 2 + 2, hx + c_ * 2:hx + c_ * 2 + 2, :3] = (220, 30, 40)
+        hx2 = x0 + 182 - 8 - i * 8
+        a[hy:hy + 6, hx2 + 1:hx2 + 6, :3] = (170, 110, 60)
+        a[hy + 1:hy + 3, hx2 + 2:hx2 + 4, :3] = (230, 180, 120)
+    # 照準
+    cx, cy = W // 2, H // 2
+    a[cy - 4:cy + 5, cx, :3] = 235
+    a[cy, cx - 4:cx + 5, :3] = 235
+
+
+def _draw_lines(canvas, lines, cx_gui, top_gui, glyphs, title=1, pitch=10, bg=True):
+    """中央揃えの複数行を canvas（MS 倍の画素）へ。戻り値: 各行の幅（GUI px）。"""
+    widths = []
+    for i, ln in enumerate(lines):
+        img, w = compose_line(ln, glyphs, S=MS, title=title)
+        widths.append(w)
+        x = int(round(cx_gui * MS - img.shape[1] / 2))
+        y = int(round((top_gui + i * pitch * title) * MS))
+        if bg:
+            pad = 2 * MS
+            y0, y1 = y + 3 * MS * title, y + 13 * MS * title
+            box = canvas[y0:y1, max(0, x - pad):x + img.shape[1] + pad]
+            box[..., :3] *= 0.62
+        over(canvas, img, x, y)
+    return widths
+
+
+def hud_mock(pg, pg2, G):
+    from_hud = Glyphs(pg, pg2)
+    key, t = "earth", 6
+    pl = D.PLANETS[key]
+    sys.path.insert(0, HERE)
+    W, H = 480, 270
+    scene = _block_scene(W, H)
+    wpath = os.path.join(ITEM_DIR, f"weapon_{key}.png")
+    wicon = np.asarray(Image.open(wpath).convert("RGBA"), np.float32) if os.path.exists(wpath) else None
+    _hotbar(scene, W, H, wicon)
+    screen = np.asarray(Image.fromarray(scene.astype(np.uint8)).resize((W * MS, H * MS), Image.NEAREST),
+                        np.float32).copy()
+    J = js_helpers(G)
+    tc = pl["tc"]
+    line1 = (f"§r{G['emblem'][key]} {tc}{pl['form_ja']} §fLv3 {G['icon']['sep']} {G['icon']['energy']}"
+             f"{J.energy_bar(key, 0.72, 16, t)} §f86 {G['icon']['sep']} {G['icon']['nova']}{J.nova_bar(0.64, 10, t)} §764%")
+    line2 = (f"§r{J.move(key, 'skill', False)} §73.4s  {J.move(key, 'dash', True)} {G['icon']['check']}  "
+             f"{J.move(key, 'air', True)} {G['icon']['check']}  {J.move(key, 'ult', False)} §764%")
+    widths = _draw_lines(screen, [line1, line2], W / 2, H - 58, from_hud)
+    # タイトル（変身の締め）
+    title = f"§r{G['banner']['wingL']}{G['emblemBig'][key]}{G['banner']['wingR']}"
+    sub = f"§r{G['banner']['lineL']} {tc}{pl['form_ja']} §7| {tc}{pl['form_en']} §r{G['banner']['lineR']}"
+    _draw_lines(screen, [title], W / 2, 52, from_hud, title=2, bg=False)
+    _draw_lines(screen, [sub], W / 2, 92, from_hud, title=1, bg=False)
+    panels = [("ゲーム画面（地球 ガイア・変身中）: タイトル = 変身の締め、アクションバー 2 行", screen)]
+
+    # --- 状態の差し替えの見本 ---
+    rows = []
+    variants = [
+        ("通常", line1, line2),
+        ("星力 20% 未満（点滅）", (f"§r{G['emblem']['mars']} §cアレス §fLv2 {G['icon']['sep']} {G['icon']['energy']}"
+                             f"{J.energy_bar('mars', 0.15, 16, 0)} §c15 {G['icon']['warn']} {G['icon']['sep']} "
+                             f"{G['icon']['nova']}{J.nova_bar(1.0, 10, 9)} §e100%"),
+         f"§r{J.move('mars', 'skill', True)} {G['icon']['check']}  {J.move('mars', 'dash', False)} §71.2s  "
+         f"{J.move('mars', 'air', True)} {G['icon']['check']}  {J.move('mars', 'ult', True)} §6READY"),
+        ("解除の長押し", (f"§r{G['emblem']['neptune']} §9トリトン §fLv4 {G['icon']['sep']} {G['icon']['energy']}"
+                       f"{J.energy_bar('neptune', 0.48, 16, 0)} §f53 {G['icon']['sep']} {G['icon']['nova']}"
+                       f"{J.nova_bar(0.3, 10, 0)} §730%"),
+         f"§r{G['icon']['revert']} §cREVERT {J.bar(G['progress'], 0.55, 20)} §f55%"),
+        ("ナノ・バリア", (f"§r{G['emblem']['saturn']} §hクロノス §fLv1 {G['icon']['sep']} {G['icon']['energy']}"
+                       f"{J.energy_bar('saturn', 0.9, 16, 0)} §f90 {G['icon']['sep']} {G['icon']['nova']}"
+                       f"{J.nova_bar(0.82, 10, 0)} §782%"),
+         f"§r{G['icon']['barrier']} §bNANO BARRIER {J.bar(G['progress'], 0.6, 10)}"),
+        ("オーバーヒート（変身していない）", f"§r{G['icon']['overheat']} §cOVERHEAT §f12s {G['icon']['lock']}",
+         f"§r{G['icon']['sync']} §dSYNC Lv3 {J.pips(3)} {J.bar(G['sync'], 0.4, 10)}"),
+    ]
+    for k2 in KEYS:
+        variants.append((D.PLANETS[k2]["ja"], (f"§r{G['emblem'][k2]} {D.PLANETS[k2]['tc']}{D.PLANETS[k2]['form_ja']} "
+                                              f"§fLv5 {G['icon']['sep']} {G['icon']['energy']}"
+                                              f"{J.energy_bar(k2, 0.66, 16, 0)} §f66"),
+                         " ".join(f"{J.move(k2, kd, True)}" for kd in KINDS) + "  " +
+                         " ".join(f"{J.move(k2, kd, False)}" for kd in KINDS)))
+    VW = 480
+    vh = 26 * len(variants) + 6
+    strip = np.zeros((vh * MS, VW * MS, 4), np.float32)
+    strip[..., :3] = (22, 24, 34)
+    strip[..., 3] = 255
+    for i, (lab, a1, a2) in enumerate(variants):
+        y = 4 + i * 26
+        if i % 2:
+            strip[y * MS:(y + 26) * MS, :, :3] = (28, 30, 42)
+        lab_img, _ = compose_line(f"§7{lab}", from_hud, S=MS)
+        over(strip, lab_img, 4 * MS, (y + 6) * MS)
+        _draw_lines(strip, [a1, a2], 300, y - 2, from_hud)
+    panels.append(("状態ごとの 2 行目の差し替えと 9 惑星の色（技アイコン: 使える / 待ち）", strip))
+
+    # --- タイトル・カットイン ---
+    TW, TH = 480, 150
+    tpan = _block_scene(TW, TH, seed=9)
+    tpan[..., :3] *= 0.55
+    tpan = np.asarray(Image.fromarray(tpan.astype(np.uint8)).resize((TW * MS, TH * MS), Image.NEAREST),
+                      np.float32).copy()
+    _draw_lines(tpan, ["§fCORE SYNC §b50%"], TW * 0.25, 10, from_hud, title=2, bg=False)
+    _draw_lines(tpan, [f"§r{J.bar(G['progress'], 0.5, 20)}"], TW * 0.25, 48, from_hud, bg=False)
+    _draw_lines(tpan, [f"§r{G['iconBig']['nova']}"], TW * 0.75, 2, from_hud, title=2, bg=False)
+    _draw_lines(tpan, [f"§r{G['banner']['divider']} §6{pl['moves']['ult']['ja']} §r{G['banner']['divider']}"],
+                TW * 0.75, 44, from_hud, bg=False)
+    big = "".join(G["emblemBig"][k2] for k2 in KEYS)
+    _draw_lines(tpan, [f"§r{big}"], TW / 2, 66, from_hud, title=1, bg=False)
+    icons = "".join(G["iconBig"][n] for n in G["iconBig"])
+    _draw_lines(tpan, [f"§r{G['banner']['wingL']}{icons}{G['banner']['wingR']}"], TW / 2, 90, from_hud, bg=False)
+    _draw_lines(tpan, [f"§r{G['banner']['wingL']}{G['emblemBig']['sol']}{G['banner']['wingR']}"], TW / 2, 104,
+                from_hud, title=2, bg=False)
+    panels.append(("タイトル: CORE SYNC（左）・必殺技（右）・EB の全部（中、16 px 相当）・太陽の締め（下、2 倍）", tpan))
+
+    # --- ターミナル（server-ui のフォーム） ---
+    panels.append(("星核ターミナル（server-ui）: トップと惑星図鑑", terminal_mock(G, from_hud)))
+    # 縦に積んで 2 倍に
+    lab_h = 14 * MS
+    Wp = max(p_[1].shape[1] for p_ in panels)
+    Ht = sum(p_[1].shape[0] + lab_h + 4 * MS for p_ in panels)
+    out = np.zeros((Ht, Wp, 4), np.float32)
+    out[..., :3] = (12, 13, 18)
+    out[..., 3] = 255
+    y = 0
+    for lab, img in panels:
+        li, _ = compose_line(f"§f{lab}", from_hud, S=MS)
+        over(out, li, 2 * MS, y - 2 * MS)
+        y += lab_h
+        over(out, img, (Wp - img.shape[1]) // 2, y)
+        y += img.shape[0] + 4 * MS
+    im = Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).convert("RGB")
+    im = im.resize((im.width * 2 // MS * MS // MS * MS // 1 if False else im.width * 2, im.height * 2), Image.NEAREST)
+    return im, widths
+
+
+def terminal_mock(G, glyphs):
+    """server-ui の ActionForm に似せた見本（GUI px で 2 枚並べる）。"""
+    W, H = 480, 300
+    a = _block_scene(W, H, seed=21)
+    a[..., :3] *= 0.4
+    a = np.asarray(Image.fromarray(a.astype(np.uint8)).resize((W * MS, H * MS), Image.NEAREST), np.float32).copy()
+
+    def form(x0, title, body, buttons):
+        fw, fh = 220, 286
+        X0, Y0 = x0 * MS, 6 * MS
+        a[Y0:Y0 + fh * MS, X0:X0 + fw * MS, :3] = (49, 50, 56)
+        a[Y0:Y0 + 18 * MS, X0:X0 + fw * MS, :3] = (30, 31, 36)
+        a[Y0 + fh * MS - MS:Y0 + fh * MS, X0:X0 + fw * MS, :3] = (20, 20, 24)
+        _draw_lines(a, [title], x0 + fw / 2, 7, glyphs, bg=False)
+        yy = 26
+        for ln in body:
+            img, _ = compose_line(ln, glyphs, S=MS)
+            over(a, img, X0 + 6 * MS, (yy - 3) * MS)
+            yy += 11
+        yy += 3
+        for icon, text in buttons:
+            bh = 30
+            by = yy * MS
+            a[by:by + bh * MS, X0 + 4 * MS:X0 + (fw - 4) * MS, :3] = (88, 90, 98)
+            a[by:by + MS, X0 + 4 * MS:X0 + (fw - 4) * MS, :3] = (120, 122, 132)
+            a[by + (bh - 1) * MS:by + bh * MS, X0 + 4 * MS:X0 + (fw - 4) * MS, :3] = (40, 40, 46)
+            if icon is not None:
+                ic = Image.fromarray(np.clip(icon, 0, 255).astype(np.uint8), "RGBA").resize((26 * MS, 26 * MS),
+                                                                                        Image.LANCZOS)
+                over(a, np.asarray(ic, np.float32), X0 + 7 * MS, by + 2 * MS)
+            for j, tl in enumerate(text.split("\n")):
+                img, _ = compose_line(tl, glyphs, S=MS)
+                ty = by + (bh // 2 - 8 - (5 if "\n" in text else 0) + j * 10) * MS
+                over(a, img, X0 + int((fw / 2 + 12) * MS - img.shape[1] / 2), ty)
+            yy += bh + 2
+        return yy
+
+    J = js_helpers(G)
+    menu = {n: np.asarray(Image.open(os.path.join(UI_DIR, f"{n}.png")).convert("RGBA"), np.float32)
+            for n in MENU_ACCENT}
+    pl = D.PLANETS["earth"]
+    form(8, "§f星核ターミナル", [
+        f"§r{G['emblem']['earth']} §a{pl['form_ja']} §7変身中",
+        f"§r{G['icon']['energy']}{J.energy_bar('earth', 0.72, 16, 0)} §f72",
+        f"§r{G['icon']['nova']}{J.nova_bar(0.64, 10, 0)} §764%",
+        f"§r{G['icon']['sync']} §dLv3 {J.pips(3)} {J.bar(G['sync'], 0.4, 10)}",
+    ], [(menu["codex"], "§0惑星図鑑"), (menu["revert"], "§4変身解除"), (menu["settings"], "§0設定"),
+        (menu["guide"], "§0操作説明"), (menu["records"], "§0記録")])
+    emb = {k: np.asarray(Image.open(os.path.join(UI_DIR, f"emblem_{k}.png")).convert("RGBA"), np.float32)
+           for k in KEYS}
+    btns = []
+    for k in KEYS[:7]:
+        p_ = D.PLANETS[k]
+        locked = k in ("uranus",)
+        txt = (f"§0{p_['form_ja']}\n§8{p_['ja']} {p_['en']}" if not locked else
+               f"§r{G['icon']['lock']} §8???\n§8{p_['ja']}")
+        btns.append((emb[k], txt))
+    form(252, "§f惑星図鑑", [f"§r{G['icon']['arrow']} §7形態を選ぶ（9）"], btns + [(menu["back"], "§0戻る")][:1])
+    return a
+
+
+class js_helpers:
+    """glyphs.js の関数と同じ規則（見本と検査に使う）。"""
+
+    def __init__(self, G):
+        self.G = G
+
+    def bar(self, st, frac, cells, caps=True):
+        f = max(0.0, min(1.0, frac))
+        step = 0.5 if "half" in st else 1.0
+        units = round(f * cells / step) * step
+        if f > 0 and units <= 0:
+            units = step
+        if f < 1 and units >= cells:
+            units = cells - step
+        s_ = st.get("capL", "") if caps else ""
+        for i in range(cells):
+            s_ += st["full"] if units >= i + 1 else (st["half"] if units >= i + 0.5 and "half" in st else st["empty"])
+        return s_ + (st.get("capR", "") if caps else "")
+
+    def energy_bar(self, key, frac, cells=16, tick=0):
+        low = frac < 0.2 and (tick // 8) % 2 == 0
+        return self.bar(self.G["energyLow"] if low else self.G["energy"][key], frac, cells)
+
+    def nova_bar(self, frac, cells=10, tick=0):
+        if frac < 1:
+            return self.bar(self.G["nova"], frac, cells)
+        head = (tick // 4) % (cells + 4)
+        n = self.G["nova"]
+        return n["capL"] + "".join(n["flow"] if 0 <= head - i < 3 else n["full"] for i in range(cells)) + n["capR"]
+
+    def pips(self, n, mx=5):
+        return self.G["icon"]["pipOn"] * n + self.G["icon"]["pipOff"] * (mx - n)
+
+    def move(self, key, kind, ready):
+        return self.G["move"][key][kind]["ready" if ready else "wait"]
+
+
 def save_png(img, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if isinstance(img, np.ndarray):
@@ -2672,14 +2975,102 @@ def save_png(img, path):
     return path
 
 
+def iter_glyphs(G, path="G"):
+    for k, v in G.items():
+        if isinstance(v, dict):
+            yield from iter_glyphs(v, f"{path}.{k}")
+        else:
+            yield f"{path}.{k}", v
+
+
+def self_check(pages, G):
+    errors = []
+    by_page = {pg.page: pg for pg in pages}
+    for pg in pages:
+        h, w = pg.img.shape[:2]
+        if h != w or h % 16 or pg.page in FORBIDDEN_PAGES:
+            errors.append(f"page {pg.page:02X}: {w}x{h}")
+    for name, ch in iter_glyphs(G):
+        if len(ch) != 1:
+            errors.append(f"{name}: {len(ch)} chars")
+            continue
+        cp = ord(ch)
+        pg = by_page.get(cp >> 8)
+        if pg is None:
+            errors.append(f"{name}: U+{cp:04X} not on a generated page")
+            continue
+        idx = cp & 0xFF
+        if idx not in pg.meta:
+            errors.append(f"{name}: U+{cp:04X} unassigned")
+            continue
+        a = pg.cell_array(idx)[..., 3]
+        x0, x1 = pg.meta[idx]["span"]
+        if a.max() < 128:
+            errors.append(f"{name}: empty cell")
+        if a[:, x0].max() < FAINT_A - 2 or a[:, x1 - 1].max() < FAINT_A - 2:
+            errors.append(f"{name}: no edge pixel at its span {x0}..{x1 - 1}")
+        if a[:, :x0].max() > 0 or a[:, x1:].max() > 0:
+            errors.append(f"{name}: pixels outside its span")
+        unit = pg.cell // 16
+        lim = (2 * unit, 14 * unit) if pg.page == PAGE_HUD else (2 * unit, 30 * unit)
+        rows = np.nonzero(a.max(axis=1) > 0)[0]
+        if len(rows) and (rows.min() < lim[0] or rows.max() >= lim[1]):
+            errors.append(f"{name}: rows {rows.min()}..{rows.max()} outside {lim}")
+        if pg.page == PAGE_HUD and not name.startswith("G.emblem.") and not name.startswith("G.move."):
+            # 小さなグリフは 3〜12 行（バーの端だけ 3〜12、他は 4〜11 が目安）
+            if len(rows) and (rows.min() < 3 or rows.max() > 12):
+                errors.append(f"{name}: rows {rows.min()}..{rows.max()} outside 3..12")
+    # アイテムアイコン
+    try:
+        atlas = json.load(open(os.path.join(RP, "textures", "item_texture.json"), encoding="utf-8"))
+        for k, v in atlas["texture_data"].items():
+            if k.startswith("astro_"):
+                tex = v["textures"] if isinstance(v["textures"], str) else v["textures"][0]
+                if not os.path.exists(os.path.join(RP, tex + ".png")):
+                    errors.append(f"item_texture {k}: {tex}.png missing")
+    except FileNotFoundError:
+        errors.append("item_texture.json missing (run gen_astro_packs.py)")
+    return errors
+
+
 def main():
     pg, G = build_hud_page()
-    save_png(pg.image(), os.path.join(FONT_DIR, "glyph_EA.png"))
-    page_preview(pg, os.path.join(SCRATCH, "glyphs_EA.png"))
     pg2, G2 = build_art_page()
-    save_png(pg2.image(), os.path.join(FONT_DIR, "glyph_EB.png"))
+    G.update(G2)
+    for path, page in ((os.path.join(FONT_DIR, "glyph_EA.png"), pg), (os.path.join(FONT_DIR, "glyph_EB.png"), pg2)):
+        save_png(page.image(), path)
+    write_glyphs_js(G, (pg, pg2))
+    # フォーム・アイテム・パックのアイコン
+    for key in KEYS:
+        save_png(ui_emblem(key), os.path.join(UI_DIR, f"emblem_{key}.png"))
+    for name in MENU_ACCENT:
+        save_png(menu_icon(name), os.path.join(UI_DIR, f"{name}.png"))
+    for name, fn in ITEM_ICONS.items():
+        save_png(fn(), os.path.join(ITEM_DIR, f"{name}.png"))
+    kinds = {}
+    for key in KEYS:
+        img, how = suit_icon(key)
+        kinds[how] = kinds.get(how, 0) + 1
+        save_png(img, os.path.join(ITEM_DIR, f"suit_{key}.png"))
+    icon = Image.fromarray(np.clip(pack_icon() + 0.5, 0, 255).astype(np.uint8), "RGBA").convert("RGB")
+    for pack in (BP, RP):
+        icon.save(os.path.join(pack, "pack_icon.png"), optimize=True)
+    # プレビュー（常に書く。軽い）
+    page_preview(pg, os.path.join(SCRATCH, "glyphs_EA.png"))
     page_preview(pg2, os.path.join(SCRATCH, "glyphs_EB.png"))
-    print("  ui: glyph_EA, glyph_EB")
+    mock, widths = hud_mock(pg, pg2, G)
+    os.makedirs(DOCS, exist_ok=True)
+    mock.save(os.path.join(DOCS, "hud.png"), optimize=True)
+    note = f"1 行目 ≈ {widths[0]:.0f} GUI px、2 行目 ≈ {widths[1]:.0f} GUI px（地球・16 + 10 セル）"
+    write_ui_md(G, (pg, pg2), note)
+    errors = self_check((pg, pg2), G)
+    n = sum(1 for _ in iter_glyphs(G))
+    print(f"  ui: glyph_EA {len(pg.meta)} cells, glyph_EB {len(pg2.meta)} cells, glyphs.js {n} keys, "
+          f"suit icons {kinds}, {note}")
+    if errors:
+        for e in errors:
+            print("  !!", e)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

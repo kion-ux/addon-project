@@ -600,6 +600,137 @@ def build_sentinel():
 
 
 # ===========================================================================
+#  虚星王 ネメシス（ボス、HP 480、全高約 4 ブロック）
+#  浮遊する黒い星の機械。光の漏れる割れ目を持つ装甲殻の球（中は星の渦巻く虚空）、
+#  正面の特異点の単眼（菫の虹彩・黒い瞳・回る降着円盤・V 字の瞼）、背後に扇状に広がる
+#  9 本の黒い棘の光冠、傾いて回る二重の光輪、周りを巡る 6 枚の装甲片、下に垂れる 5 本の触手、
+#  眼の左右から前へ曲がる大顎。
+# ===========================================================================
+NEM_C = (0.0, 34.0, 0.0)
+NEM_R = 11.0
+NEM_SPINES = 9
+NEM_TENDRILS = 5
+NEM_SHARDS = 6
+
+
+def _sph(lon, lat, r=1.0, c=NEM_C):
+    """球面上の点。lon 0 = 正面（-Z）、lon 90 = 右（-X）、lat 90 = 真上。"""
+    a, b = math.radians(lon), math.radians(lat)
+    n = V(-math.sin(a) * math.cos(b), math.sin(b), -math.cos(a) * math.cos(b))
+    return V(*c) + n * r, n
+
+
+def build_nemesis():
+    m = Model(f"geometry.{NS}.nemesis", uv_scale=2, visible_bounds=(5.6, 5.4), vb_offset=(0, 2.2, 0),
+              max_atlas=(1024, 1024))
+    cx, cy, cz = NEM_C
+    R = NEM_R
+    m.bone("root", (0, 0, 0))
+    body = m.bone("body", NEM_C, parent="root")
+    # ---- 核: 星の渦巻く虚空の球 + 割れ目から光の漏れる装甲殻 ----------------
+    core = m.bone("core", NEM_C, parent="body")
+    ball(core, NEM_C, R - 0.7, "void", uv_scale=3)
+    shell = m.bone("shell", NEM_C, parent="body")
+    for lat in (-52, -18, 18, 52):
+        for k in range(8):
+            lon = 22.5 + 45 * k
+            pc, n = _sph(lon, lat, R)
+            front = math.degrees(math.acos(max(-1, min(1, -n[2]))))
+            if front < 48:
+                continue
+            p0, _ = _sph(lon, lat - 15, R)
+            p1, _ = _sph(lon, lat + 15, R)
+            w = 2 * math.pi * R * math.cos(math.radians(lat)) / 8 * 0.84
+            st = "scale" if (k + (lat > 0)) % 2 else "dark"
+            slab(shell, p0, p1, w, 1.8, n, st, extend=0.2)
+    for sy_ in (-1, 1):                                    # 極の蓋
+        octa(shell, (cx, cy + sy_ * (R - 0.2), cz), 7.4, 1.8, "dark", axis="y")
+        octa(shell, (cx, cy + sy_ * (R + 0.8), cz), 3.6, 0.6, "glow_v", axis="y")
+    # ---- 単眼: 縁・虹彩・特異点の瞳・降着円盤・V 字の瞼 ---------------------
+    ez = cz - R + 0.2
+    eye = m.bone("eye", (cx, cy, ez), parent="body")
+    ring(eye, (cx, cy, ez - 0.2), 7.7, 16, (0, 1.4, 2.4), "dark", axis="z", phase=11.25)
+    ring(eye, (cx, cy, ez - 1.0), 6.9, 16, (0, 0.5, 0.6), "glow_vs", axis="z", phase=11.25)
+    bevel(eye, (cx, cy, ez + 0.4), (13.6, 13.6, 1.4), "eye_v", cut=13.6 * 0.293, axis="z", uv_scale=5)
+    bevel(eye, (cx, cy, ez - 0.45), (6.4, 6.4, 0.6), "pupil_v", cut=6.4 * 0.293, axis="z", uv_scale=6)
+    disk = m.bone("fx_eye_ring", (cx, cy, ez - 0.9), parent="eye")
+    ring(disk, (cx, cy, ez - 0.9), 3.9, 12, (0, 0.6, 0.4), "glow", axis="z", styles=["glow", "glow_v"])
+    lids = m.bone("lids", (cx, cy, ez), parent="eye")
+    for s_ in (-1, 1):
+        # 上の瞼（中央へ下がる V 字）と下の瞼
+        rbox(lids, (s_ * 4.2, cy + 6.6, ez - 0.6), (9.0, 2.4, 3.2), "hull2", rot=(-10, 0, s_ * 16))
+        rbox(lids, (s_ * 4.6, cy + 7.9, ez + 0.2), (8.4, 1.6, 3.0), "dark", rot=(-4, 0, s_ * 18))
+        rbox(lids, (s_ * 4.4, cy - 6.9, ez - 0.4), (7.6, 2.0, 2.8), "hull2", rot=(10, 0, s_ * -12))
+        rbox(lids, (s_ * 7.6, cy, ez - 0.2), (2.0, 7.0, 2.8), "dark", rot=(0, s_ * 18, 0))
+        rbox(lids, (s_ * 4.6, cy + 5.45, ez - 2.25), (6.6, 0.45, 0.4), "glow", rot=(-10, 0, s_ * 16))
+    # ---- 大顎（眼の左右から前下へ曲がる） ------------------------------------
+    for side, s_ in (("r", -1), ("l", 1)):
+        mp = V(s_ * 8.6, cy - 4.0, cz - 6.0)
+        mb = m.bone(f"fx_mandible_{side}", tuple(mp), parent="body")
+        pts = [mp, mp + V(s_ * 3.2, -3.0, -3.4), mp + V(s_ * 2.6, -8.2, -7.4),
+               mp + V(s_ * -0.6, -11.6, -10.4), mp + V(s_ * -3.4, -12.6, -11.4)]
+        polyline(mb, pts, [3.6, 3.0, 2.2, 1.2], [3.0, 2.6, 2.0, 1.0], "hull2")
+        polyline(mb, [pts[1] + V(0, 1.2, 0), pts[2] + V(0, 0.9, 0), pts[3] + V(0, 0.6, 0)],
+                 [0.5, 0.4], [3.2, 2.4], "glow_v", overlap=0.1)
+    # ---- 光冠: 背後に扇状に広がる黒い棘 --------------------------------------
+    for i in range(NEM_SPINES):
+        a = math.radians(-104 + 208 * i / (NEM_SPINES - 1))   # 0 = 真上
+        d = unit(V(-math.sin(a), math.cos(a), 0.42))
+        base = V(cx, cy, cz + 3.0) + d * (R - 2.0)
+        L = 23.0 - 6.0 * abs(math.cos(a * 1.0)) * 0 - (5.0 if i % 2 else 0.0)
+        sb = m.bone(f"fx_spine_{i}", tuple(np.round(base, 3)), parent="body")
+        tip = base + d * L + V(0, 0, 3.0)
+        bend = base + d * (L * 0.55) + V(0, 0, 1.0)
+        spike(sb, base, bend, 3.4, 2.2, 1, "dark")
+        spike(sb, bend, tip, 2.2, 0.5, 2, "dark")
+        slab(sb, base + d * 1.5 + V(0, 0, -1.2), bend + V(0, 0, -1.0), 0.6, 0.5, V(0, 0, 1), "glow_v")
+        cbox(sb, tuple(tip), (1.1, 1.1, 1.1), "glow", rotation=(45, 0, 45))
+    # ---- 二重の光輪（傾けた親ボーン → 自分の軸まわりに回る子ボーン） ---------------
+    m.bone("ring_a", NEM_C, parent="body", rotation=(72, 0, 18))
+    ra = m.bone("fx_ring_a", NEM_C, parent="ring_a")
+    ring(ra, NEM_C, 19.0, 24, (0, 1.2, 2.2), "trim", axis="y", styles=["dark", "dark", "glow_v"])
+    for k in range(4):
+        p, _ = (V(cx - 19.2 * math.sin(math.radians(45 + 90 * k)), cy,
+                  cz - 19.2 * math.cos(math.radians(45 + 90 * k))), None)
+        cbox(ra, tuple(p), (2.6, 3.4, 2.6), "hull2", rotation=(0, 45 + 90 * k, 0))
+        cbox(ra, tuple(p + V(0, 1.85, 0)), (1.2, 0.3, 1.2), "glow", rotation=(0, 45 + 90 * k, 0))
+    m.bone("ring_b", NEM_C, parent="body", rotation=(-58, 0, -24))
+    rb = m.bone("fx_ring_b", NEM_C, parent="ring_b")
+    ring(rb, NEM_C, 15.6, 18, (0, 0.7, 1.0), "glow_v", axis="y", styles=["glow_v", "glow_vs"])
+    # ---- 巡る装甲片 -----------------------------------------------------------
+    orb = m.bone("fx_shards", NEM_C, parent="body")
+    for i in range(NEM_SHARDS):
+        a = math.radians(i * 360 / NEM_SHARDS + 30)
+        h = (6.0, -5.0, 2.0, -8.0, 7.0, -2.0)[i]
+        c = V(cx - 23.0 * math.sin(a), cy + h, cz - 23.0 * math.cos(a))
+        sb = m.bone(f"fx_shard_{i}", tuple(np.round(c, 3)), parent="fx_shards")
+        tilt = (20 + 15 * i, i * 360 / NEM_SHARDS + 30, 25 - 10 * i)
+        rbox(sb, tuple(c), (3.2, 6.6, 1.6), "dark", rot=tilt)
+        rbox(sb, tuple(c + V(0, 0.4, 0)), (1.8, 4.4, 2.0), "crystal", rot=tilt)
+        rbox(sb, tuple(c + V(0, -3.6, 0)), (1.6, 2.2, 1.2), "hull2", rot=(tilt[0] + 30, tilt[1], tilt[2]))
+    # ---- 触手（3 節。節ごとにボーン） -----------------------------------------
+    for i in range(NEM_TENDRILS):
+        a = math.radians(i * 360 / NEM_TENDRILS + 36)
+        top = V(cx - 6.2 * math.sin(a), cy - R + 1.6, cz - 6.2 * math.cos(a) + 1.5)
+        out = V(-math.sin(a), 0, -math.cos(a))
+        parent = "body"
+        p0 = top
+        for k in range(3):
+            seg = 8.0 - k * 1.6
+            p1 = p0 + V(0, -seg, 0) + out * (1.4 - k * 0.9)
+            tb = m.bone(f"fx_tendril_{i}_{k}", tuple(np.round(p0, 3)), parent=parent)
+            w = 2.6 - k * 0.7
+            beam(tb, p0, p1, w, w, "dark" if k else "hull2", extend=0.4)
+            octa(tb, tuple(p0), w + 0.9, 1.0, "trim" if k == 0 else "frame", axis="y")
+            if k == 2:
+                cbox(tb, tuple(p1 + V(0, -0.6, 0)), (1.2, 1.6, 1.2), "glow", rotation=(0, 45, 0))
+            parent = f"fx_tendril_{i}_{k}"
+            p0 = p1
+    fit_density(m, 2, (1024, 1024))
+    return m
+
+
+# ===========================================================================
 #  プレビュー（hd_scene の規則でボーンを組み、X を鏡映して描く。holo_* は加算合成）
 #  ※ hd_preview.render は x をもう一度反転しているので鏡像になる。ここは hd_scene.ortho と同じ向き
 # ===========================================================================
