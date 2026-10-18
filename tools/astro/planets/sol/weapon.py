@@ -78,12 +78,13 @@ def build_weapon(m, root):
     W.cbox(guard, (0, 0, zc), (0.7, 0.5, 4.9), "spine", uv_scale=8)          # 輪の中の軸（縦）
     for s in (-1, 1):
         # 主翼: 外へ張り出し、刃の側へ反り返る太陽フレアの弧（太い金 → 細い先）
-        main = [(0, s * 1.9, -4.5), (0, s * 4.2, -3.9), (0, s * 6.3, -4.7), (0, s * 7.4, -6.5),
-                (0, s * 7.5, -8.7)]
-        W.polyline(guard, main, [1.9, 1.6, 1.2, 0.8], [1.7, 1.4, 1.1, 0.8], "plate2", uv_scale=7)
-        W.polyline(guard, [(q[0], q[1] - s * 0.05, q[2] - 0.02) for q in main[:4]],
-                   [2.0, 1.7, 1.3], [0.3, 0.3, 0.3], "glow", uv_scale=10)
-        W.beam(guard, main[-1], (0, s * 7.2, -9.8), 0.55, 0.55, "gold", uv_scale=10, extend=0.2)
+        main = [(0, s * 1.9, -4.5), (0, s * 4.1, -3.5), (0, s * 6.3, -3.9), (0, s * 7.7, -5.6),
+                (0, s * 8.0, -7.9), (0, s * 7.4, -9.9)]
+        W.polyline(guard, main, [2.1, 1.8, 1.5, 1.1, 0.7], [2.3, 1.9, 1.5, 1.1, 0.7], "plate2", uv_scale=7)
+        W.polyline(guard, [(q[0], q[1] + s * 0.5, q[2] + 0.35) for q in main[:4]],
+                   [2.2, 1.9, 1.6], [0.3, 0.3, 0.3], "glow", uv_scale=10)
+        W.polyline(guard, [(q[0], q[1] - s * 0.55, q[2] - 0.35) for q in main[1:5]],
+                   [1.0, 0.9, 0.7], [0.7, 0.6, 0.5], "crimson", uv_scale=8)
         # 副翼: 輪の脇から刃の側へ細く巻く（紅）
         W.polyline(guard, [(0, s * 2.3, -6.2), (0, s * 3.9, -7.2), (0, s * 4.4, -8.9)],
                    [1.3, 0.9], [1.0, 0.7], "crimson", uv_scale=8)
@@ -92,8 +93,9 @@ def build_weapon(m, root):
     # 翼の先で揺れる紅炎（両面の fx）
     fl = W.glow(m, guard, "guard", (0, 0, -6.0))
     for s in (-1, 1):
-        tongue(fl, (0, s * 6.9, -5.6), 40 if s > 0 else 140, 2.4, 1.3, 0.4, 0.5, "flame_t")
-        tongue(fl, (0, s * 4.9, -4.1), 25 if s > 0 else 155, 1.9, 1.0, 0.3, 0.45, "flame_t")
+        tongue(fl, (0, s * 7.9, -5.2), -10 if s > 0 else 190, 2.6, 1.5, 0.4, 0.5, "flame_t")
+        tongue(fl, (0, s * 6.0, -3.4), -50 if s > 0 else 230, 2.2, 1.3, 0.3, 0.45, "flame_t")
+        tongue(fl, (0, s * 8.1, -8.0), 20 if s > 0 else 160, 1.8, 1.1, 0.3, 0.45, "flame_t")
     # 刃の発振器（刃を受ける黒い襟と放熱の光）
     W.cbox(guard, (0, 0, -6.95), (2.0, 4.6, 1.1), "frame", uv_scale=8)
     for s in (-1, 1):
@@ -121,15 +123,14 @@ def build_weapon(m, root):
         for y0, y1, st, th in bands:
             W.cbox(pl, (0, s * (y0 + y1) / 2, zm), (th, y1 - y0, L), st, uv_scale=5)
         # 炎の舌: 長短を不揃いに、根元が太く先へ向かって曲がりながら細る（3 段で反る）
-        for k, (z, Lt, a0) in enumerate(((-9.6, 3.4, 40), (-14.6, 2.5, 46), (-19.2, 3.1, 42),
-                                         (-24.0, 2.2, 50), (-28.4, 2.6, 46), (-32.4, 1.7, 54))):
-            base = np.array([0.0, s * (PLASMA_W - 0.3), z])
-            w0 = 2.2 - k * 0.12
+        for k, (z, Lt, a0) in enumerate(((-9.4, 4.4, 34), (-14.8, 3.0, 42), (-19.6, 4.0, 38),
+                                         (-24.8, 2.8, 46), (-29.4, 3.0, 48), (-33.2, 1.8, 56))):
+            base = np.array([0.0, s * (PLASMA_W - 0.4), z])
+            w0 = 2.9 - k * 0.22
             for j in range(3):
-                a = a0 + j * 14
-                tg = tongue(pl, base, a if s > 0 else 180 - a, Lt / 3 * 1.25,
-                            w0 * (1 - j * 0.3), w0 * (1 - (j + 1) * 0.3), 0.62 - j * 0.05,
-                            "flame_t", n=1)
+                a = a0 + j * 16
+                tongue(pl, base, a if s > 0 else 180 - a, Lt / 3 * 1.3,
+                       w0 * (1 - j * 0.3), w0 * (1 - (j + 1) * 0.3), 0.64 - j * 0.06, "flame_t", n=1)
                 ar = math.radians(a)
                 base = base + np.array([0.0, s * math.cos(ar), -math.sin(ar)]) * (Lt / 3)
     W.blade_point(pl, Z_BLADE1 + 0.05, PLASMA_W, Z_TIP, 0.8, "plasma_flat", layer=0.8, uv_scale=6)

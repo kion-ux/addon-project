@@ -112,23 +112,28 @@ def build_weapon(m, root):
     for s in (-1, 1):
         W.beam(pr, (0, s * 0.72, Z_BAR - 0.8), (0, s * 0.5, -28.4), 0.56, 0.3, "edge",
                uv_scale=8)
-    dia_yz(pr, (0, 0, -30.0), 3.8, 0.8, "prong", uv_scale=8)       # 鏃（YZ 平面の菱形）
-    dia_yz(pr, (0, 0, -30.0), 2.4, 0.92, "edge", uv_scale=10)
-    dia_yz(pr, (0, 0, -30.0), 1.0, 1.0, "prong", uv_scale=12)
-    taper(pr, (0, 0, -31.8), (0, 0, Z_TIP), 0.9, 0.2, 2, "prong", round_=False, uv_scale=10)
+    arrowhead(pr, 0.0, -28.4, 2.1, Z_TIP, 0.8)
     # 左右の穂: 外へ張ってから前へ。先に鏃と外向きの返し
     for s in (-1, 1):
         pts = [(0, s * 3.2, Z_BAR - 0.4), (0, s * 4.0, -23.4), (0, s * 3.85, -26.2),
-               (0, s * 3.4, -27.6)]
+               (0, s * 3.4, -27.4)]
         W.polyline(pr, pts, [1.1, 1.0, 0.9], [1.1, 1.0, 0.9], "prong", uv_scale=8)
         W.polyline(pr, [(0, s * 4.6, -23.0), (0, s * 4.45, -26.2)], 0.62, 0.34, "edge",
                    uv_scale=8)
-        dia_yz(pr, (0, s * 3.3, -29.0), 2.7, 0.7, "prong", uv_scale=8)
-        dia_yz(pr, (0, s * 3.3, -29.0), 1.6, 0.82, "edge", uv_scale=10)
-        taper(pr, (0, s * 3.3, -30.3), (0, s * 3.1, -31.8), 0.65, 0.16, 1, "prong",
-              round_=False, uv_scale=10)
-        W.beam(pr, (0, s * 3.9, -28.2), (0, s * 5.0, -26.8), 0.55, 0.5, "prong", uv_scale=10)
-        W.beam(pr, (0, s * 4.95, -26.85), (0, s * 5.15, -25.9), 0.45, 0.42, "edge", uv_scale=10)
+        arrowhead(pr, s * 3.3, -27.2, 1.5, -31.4, 0.72)
+        W.beam(pr, (0, s * 3.9, -27.0), (0, s * 5.1, -25.6), 0.55, 0.5, "prong", uv_scale=10)
+        W.beam(pr, (0, s * 5.05, -25.65), (0, s * 5.25, -24.7), 0.45, 0.42, "edge", uv_scale=10)
+
+
+def arrowhead(bone, y0, z_base, half_w, z_tip, thick):
+    """返しの付いた鏃（YZ 平面）: 真珠の三角・水色に光る両刃・後ろへ返る二本の返し。"""
+    W.blade_point(bone, z_base, half_w, z_tip, thick, "prong_flat", layer=0.7, y0=y0, uv_scale=8)
+    for s in (-1, 1):
+        W.beam(bone, (0, y0 + s * (half_w + 0.15), z_base + 0.1), (0, y0 + s * 0.1, z_tip - 0.2),
+               thick + 0.12, 0.34, "edge", uv_scale=8, extend=0.2)
+        W.beam(bone, (0, y0 + s * half_w, z_base + 0.2), (0, y0 + s * (half_w - 0.45), z_base + 1.7),
+               thick * 0.9, 0.5, "prong", uv_scale=10)
+    W.cbox(bone, (0, y0, z_base - 1.0), (thick + 0.16, 0.4, 1.6), "edge", uv_scale=12)
 
 
 def build_core(m, root):
@@ -201,6 +206,9 @@ def WEAPON_STYLES(key):
         prong={"kind": "chrome", "base": (214, 234, 250), "light": (255, 255, 255),
                "line": (34, 52, 96)},
         edge={"glow": EDGE, "sat": 0.45, "emit": 30},
+        prong_flat={"kind": "blade", "base": (200, 224, 244), "light": (250, 254, 255),
+                    "dark": (130, 156, 196), "outline": False, "bevel": False, "fuller": False,
+                    "hamon_off": True, "glint_period": 9999, "hi": 0.0, "lo": 1.1},
         wrap={"base": (14, 20, 48), "strap": (40, 120, 220), "skin": (200, 230, 246)},
         energy={"glow": mix(EDGE, (255, 255, 255), 0.3)},
     )

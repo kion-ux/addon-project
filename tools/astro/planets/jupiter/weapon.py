@@ -30,6 +30,8 @@ ZH = -19.6               # 鎚頭の中心（z）
 HY = 6.2                 # 鎚頭の半長（打撃面の y）
 
 ICON = {"weapon": (90, 0, 45), "core": (25, -18, 0)}
+# 一人称: 鎚頭が大きいので、照準から少し右下へ離す
+HOLD = {"fp": {"at": (11.8, -11.0, 15.0)}}
 
 
 def build_weapon(m, root):
@@ -107,13 +109,14 @@ def build_weapon(m, root):
     # =====================================================================
     fins = W.form(m, root, 4, "fins", (0, 0, ZH - 2.6))
     for s in (-1, 1):
-        pts = [(0, s * 0.8, ZH - 2.4), (0, s * 2.4, ZH - 4.4), (0, s * 1.5, ZH - 4.6),
-               (0, s * 3.2, ZH - 7.0)]
-        W.polyline(fins, pts, 0.55, [1.6, 1.1, 0.8], "plate2", overlap=0.35, uv_scale=8)
-        W.polyline(fins, [(0.32, p[1], p[2]) for p in pts], 0.12, [0.5, 0.4, 0.3], "volt",
+        pts = [(0, s * 0.9, ZH - 2.4), (0, s * 2.9, ZH - 4.6), (0, s * 1.7, ZH - 4.9),
+               (0, s * 3.9, ZH - 7.8)]
+        W.polyline(fins, pts, 0.6, [2.0, 1.4, 1.0], "plate2", overlap=0.4, uv_scale=8)
+        W.polyline(fins, [(0.34, p[1], p[2]) for p in pts], 0.12, [0.6, 0.45, 0.35], "volt",
                    overlap=0.25, uv_scale=10)
-        W.polyline(fins, [(-0.32, p[1], p[2]) for p in pts], 0.12, [0.5, 0.4, 0.3], "volt",
+        W.polyline(fins, [(-0.34, p[1], p[2]) for p in pts], 0.12, [0.6, 0.45, 0.35], "volt",
                    overlap=0.25, uv_scale=10)
+        W.cbox(fins, (0, s * 4.1, ZH - 8.1), (0.5, 0.5, 0.5), "volt", rotation=(45, 0, 0), uv_scale=10)
     W.octa(fins, (0, 0, ZH - 2.9), 1.8, 0.8, "copper", uv_scale=10)
     W.cbox(fins, (0, 0, ZH - 3.55), (1.0, 1.0, 0.7), "gem", rotation=(0, 0, 45), uv_scale=12)
 

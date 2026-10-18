@@ -71,6 +71,10 @@ SUIT_STYLES = {
                 "line": (54, 62, 80), "panel": 0},
     "gun": dict(GUN),
     "plate2": dict(GUN),
+    # 胸甲の板（板を重ねて一枚に見せる: 輪郭と面取りを弱く）
+    "breast": {"kind": "armor", "base": (214, 224, 238), "light": (255, 255, 255),
+               "dark": (140, 152, 172), "line": (90, 100, 120), "panel": 0, "outline_k": 0.2,
+               "bevel": False, "hi": 0.2, "lo": 0.85},
     # 羽根（重なった羽根が一枚ずつ読めるよう、上が明るく下が暗い無地の板）
     "feather": {"kind": "armor", "base": (222, 230, 242), "light": (255, 255, 255),
                 "dark": (132, 144, 166), "line": (60, 70, 92), "panel": 0, "sheen": False,
@@ -330,7 +334,7 @@ def torso(s):
     mx(c, ob, obl)
     # 胸甲: 肩の付け根で広く、星核の脇で細くなる鏡面の三角（V 字に絞る）。外の斜辺に発光線
     top_in, top_out, tip = (-0.45, 24.45, -3.05), (-4.75, 24.45, -2.95), (-1.95, 18.2, -3.15)
-    pecs = wing(c, top_in, top_out, tip, 0.6, "chrome", n=5, curve=0.17)
+    pecs = wing(c, top_in, top_out, tip, 0.6, "breast", n=5, curve=0.17)
     edge = beam(c, np.add(top_out, (0.08, -0.2, -0.32)), np.add(tip, (0.25, 0.9, -0.3)),
                 0.24, 0.24, "glow_day")
     flow = beam(c, (-2.0, 23.9, -3.42), (-2.3, 20.6, -3.42), 0.5, 0.14, "quick")

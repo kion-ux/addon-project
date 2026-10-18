@@ -488,7 +488,8 @@ def shoulders(s):
         base = (-8.9, 26.0, z)
         tip = (-11.0 - 0.6 * k, 28.4 + 2.2 * k, z * 1.25)
         octa(p, (-8.9, 25.85, z), 2.6, 0.6, "brass", axis="y", rot=(0, 0, -20), pivot=base)
-        taper(p, base, tip, 2.4, 0.5, 3, "iron")
+        taper(p, base, tip, 2.5, 0.45, 4, "steel", style_r="steel_b")
+        cbox(p, tip, (0.55, 0.55, 0.55), "iron")
     # 前後の当て板
     fr = rbox(p, (-7.6, 23.6, -4.65), (5.2, 2.6, 0.8), "plate2", rot=(-14, 0, -12))
     stick(p, fr, "north", 0.5, 0.5, (3.4, 0.4, 0.2), "glow", sink=0.05)
