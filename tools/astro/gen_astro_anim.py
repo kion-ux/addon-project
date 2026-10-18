@@ -94,7 +94,10 @@ def build(clear=True):
             clouds[key] = weapon_cloud(key)
         return clouds[key]
     for name, spec, kind, hold, key in collect():
-        cl = cloud_of(key, kind) if AL.uses_wield(spec) else None
+        # 惑星の版は必ず（その惑星の武器で直す）。共通の版は wield() を使う物だけ（騎士剣で）
+        cl = cloud_of(key, kind) if (key is not None or AL.uses_wield(spec)) else None
+        if spec["frames"] and name.split(".")[-1] == "henshin":
+            cl = None            # 変身の前半はコアを持っている
         res = AL.resolve(spec, kind, name=name, hold=hold, cloud=cl)
         res.planet = key
         res_all[name] = res

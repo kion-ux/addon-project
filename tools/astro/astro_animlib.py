@@ -284,7 +284,7 @@ def _arm_matrix(v, side, pose, hold, cloud=None, solved=None):
     if v.roll:
         R = _axis_angle(bt, v.roll) @ R
     if cloud is not None and solved is not None:
-        R = _clear(R, bt, want / np.linalg.norm(want), loc, solved, cloud)
+        R = _clear(R, bt, want / np.linalg.norm(want), loc, solved, cloud, blade_l=blade_l)
     return R
 
 
@@ -329,35 +329,101 @@ def clip_depth(pose, cloud, skip=()):
     return worst
 
 
-def _clear(R0, bt, want_dir, local_vec, parts, cloud):
-    """武器の刃先の向き bt を保ったまま、腕を刃の軸まわりに回して（手首の角度は一定）体に入らない所を探す。
-    want_dir / local_vec: 守りたい向き（腕の向き or 刃の向き）と、その腕の局所でのベクトル。"""
-    def at(phi):
-        return _axis_angle(bt, phi) @ R0
+def _angle(a, b):
+    return math.degrees(math.acos(max(-1.0, min(1.0, float(np.dot(a, b))))))
 
-    def cost(phi):
-        R = at(phi)
-        e = euler(R)
-        d, _b = clip_depth(parts_pose(dict(parts, rA=e)), cloud)
-        v = R @ local_vec
-        dev = math.degrees(math.acos(max(-1.0, min(1.0, float(np.dot(v, want_dir))))))
-        return 60.0 * max(0.0, d - 0.15) ** 2 + (dev / 30.0) ** 2, d
-    c0, d0 = cost(0.0)
+
+def _clear(R0, bt, want_dir, local_vec, parts, cloud, blade_l=None, tilt=True):
+    """体に入らない腕の向きを探す。まず刃先の向き bt を保ったまま腕を刃の軸まわりに回し（手首の角度は一定）、
+    それでも入るなら刃先を少し（〜36°）傾けることも許す。want_dir / local_vec: 守りたい向きと、その腕の局所の
+    ベクトル（腕の向き or 刃の向き）。返り値は腕の局所の回転行列。"""
+    blade_l = None if blade_l is None else np.asarray(blade_l, float)
+
+    def cost(R):
+        d, _b = clip_depth(parts_pose(dict(parts, rA=euler(R))), cloud)
+        c = 60.0 * max(0.0, d - 0.15) ** 2 + (_angle(R @ local_vec, want_dir) / 30.0) ** 2
+        if blade_l is not None:
+            c += 2.0 * (_angle(R @ blade_l, bt) / 25.0) ** 2
+        return c, d
+    c0, d0 = cost(R0)
     if d0 <= 0.3:
         return R0
-    best = (c0, 0.0)
+    best = (c0, R0, d0)
     for phi in range(-170, 180, 10):
-        c, _d = cost(float(phi))
+        R = _axis_angle(bt, phi) @ R0
+        c, d = cost(R)
         if c < best[0]:
-            best = (c, float(phi))
-    step = 5.0
-    while step >= 1.0:
-        for sgn in (-1, 1):
-            c, _d = cost(best[1] + sgn * step)
-            if c < best[0]:
-                best = (c, best[1] + sgn * step)
-        step /= 2
-    return at(best[1])
+            best = (c, R, d)
+    if tilt and best[2] > 0.3 and blade_l is not None:
+        base = best[1]
+        perp = np.cross(bt, [0.0, 1.0, 0.0])
+        if np.linalg.norm(perp) < 1e-3:
+            perp = np.cross(bt, [1.0, 0.0, 0.0])
+        perp /= np.linalg.norm(perp)
+        for k in range(8):
+            ax = _axis_angle(bt, k * 45.0) @ perp
+            for ang in (12.0, 24.0, 36.0):
+                for phi in range(-150, 180, 30):
+                    R = _axis_angle(ax, ang) @ _axis_angle(bt, phi) @ base
+                    c, d = cost(R)
+                    if c < best[0]:
+                        best = (c, R, d)
+    # 近くを細かく
+    R = best[1]
+    for step in (6.0, 3.0, 1.5):
+        improved = True
+        while improved:
+            improved = False
+            for ax in (bt, np.array([1.0, 0, 0]), np.array([0, 1.0, 0]), np.array([0, 0, 1.0])):
+                for sgn in (-1, 1):
+                    Rc = _axis_angle(ax, sgn * step) @ best[1]
+                    c, d = cost(Rc)
+                    if c < best[0] - 1e-9:
+                        best = (c, Rc, d)
+                        improved = True
+    return best[1]
+
+
+REPAIR_AT = 0.6      # 補間の途中でこれより深く入り込むコマにはキーを足して直す（px）
+
+
+def _repair(res, cloud, hold, rounds=16, step=0.02):
+    """統合版と同じ catmullrom で 0.02 秒ごとに調べ、武器が体に入るコマに腕のキーを足して直す。"""
+    if cloud is None or "rA" not in res.tracks:
+        return
+    tr = res.tracks["rA"]
+    blade_l = np.asarray(hold["blade_arm"], float)
+    tried = set()
+    first, last = min(tr), max(tr)
+    for _ in range(rounds):
+        worst = (REPAIR_AT, None)
+        n = max(2, int(math.ceil(res.length / step)))
+        for i in range(1, n):
+            t = res.length * i / n
+            d, _b = clip_depth(sample(res, t), cloud)
+            if d > worst[0] + 1e-6:
+                worst = (d, round(t, 3))
+        t = worst[1]
+        if t is None:
+            break
+        near = min(tr, key=lambda x: abs(x - t))
+        if abs(near - t) < 0.012:
+            if near in tried or near in (first, last):
+                # 自然体のキー（最初・最後）や一度直したキーは動かさない: 少しずらした所に足す
+                t = round(t + (0.015 if t < near or near == first else -0.015), 3)
+                if t <= first or t >= last or t in tr:
+                    break
+            else:
+                t = near
+        tried.add(t)
+        parts = sample_parts(res, t)
+        R_cur = rot(*parts["rA"])
+        Rp = _parent_R(parts)
+        bt = R_cur @ blade_l
+        R = _clear(R_cur, bt, R_cur @ ARM_DOWN, ARM_DOWN, parts, cloud, blade_l=blade_l)
+        tr[t] = tuple(float(x) for x in euler_near(R, np.array(parts["rA"])))
+        res.mats["rA"][t] = R
+        _ = Rp
 
 
 def _foot_min(pose):
@@ -433,6 +499,8 @@ def resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved:
         blend = span < 300.0
     res = Resolved(name, spec["length"], spec["kind"], spec["loop"], blend, tracks, mats, wkind)
     res.keys = list(times)
+    if cloud is not None:
+        _repair(res, cloud, hold if hold is not None else _hold_info(wkind))
     return res
 
 

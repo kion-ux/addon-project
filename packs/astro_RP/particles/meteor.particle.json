@@ -1,0 +1,68 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "astro:meteor",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/particle/astro_atlas"
+      }
+    },
+    "components": {
+      "minecraft:emitter_initialization": {
+        "creation_expression": "v.e_dx = (v.vx ?? 0.0); v.e_dy = (v.vy ?? 0.0); v.e_dz = (v.vz ?? 0.0); v.e_dl = math.sqrt(v.e_dx * v.e_dx + v.e_dy * v.e_dy + v.e_dz * v.e_dz); v.e_has = (v.e_dl > 0.0001) ? 1.0 : 0.0; v.e_nx = (v.e_has > 0.5) ? (v.e_dx / math.max(v.e_dl, 0.0001)) : 0.3714; v.e_ny = (v.e_has > 0.5) ? (v.e_dy / math.max(v.e_dl, 0.0001)) : -0.9285; v.e_nz = (v.e_has > 0.5) ? (v.e_dz / math.max(v.e_dl, 0.0001)) : 0.0; v.e_len = (v.len ?? (v.size ?? 1.0) * 3.0);"
+      },
+      "minecraft:emitter_rate_instant": {
+        "num_particles": "(v.count ?? 16.0)"
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0
+      },
+      "minecraft:emitter_shape_point": {
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(v.life ?? 0.3)"
+      },
+      "minecraft:particle_motion_parametric": {
+        "relative_position": [
+          "v.e_nx * ((v.speed ?? 0.0) * v.particle_age - v.e_len * (v.particle_random_1 * v.particle_random_1)) + (v.particle_random_2 * 2.0 - 1.0) * 0.25 * (v.size ?? 1.0) * (v.particle_random_1 * v.particle_random_1)",
+          "v.e_ny * ((v.speed ?? 0.0) * v.particle_age - v.e_len * (v.particle_random_1 * v.particle_random_1)) + (v.particle_random_3 * 2.0 - 1.0) * 0.25 * (v.size ?? 1.0) * (v.particle_random_1 * v.particle_random_1)",
+          "v.e_nz * ((v.speed ?? 0.0) * v.particle_age - v.e_len * (v.particle_random_1 * v.particle_random_1)) + (v.particle_random_2 + v.particle_random_3 - 1.0) * 0.25 * (v.size ?? 1.0) * (v.particle_random_1 * v.particle_random_1)"
+        ],
+        "rotation": "v.particle_random_4 * 360.0 + v.particle_age * 200.0"
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "(v.size ?? 1.0) * (0.05 + 0.9 * math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 0.7)) * (1.0 - 0.25 * (v.particle_age / v.particle_lifetime))",
+          "(v.size ?? 1.0) * (0.05 + 0.9 * math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 0.7)) * (1.0 - 0.25 * (v.particle_age / v.particle_lifetime))"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 1024,
+          "texture_height": 1024,
+          "uv": [
+            1,
+            647
+          ],
+          "uv_size": [
+            96,
+            96
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "math.lerp((v.cr ?? 1.0), 1.0, (math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 5.0) * 0.85)) * math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 0.4) * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 2.0, 0.0, 1.0)",
+          "math.lerp((v.cg ?? 0.55), 1.0, (math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 5.0) * 0.85)) * math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 0.4) * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 2.0, 0.0, 1.0)",
+          "math.lerp((v.cb ?? 0.16), 1.0, (math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 5.0) * 0.85)) * math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 0.4) * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 2.0, 0.0, 1.0)",
+          "math.pow(1.0 - (v.particle_random_1 * v.particle_random_1), 0.4) * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 2.0, 0.0, 1.0)"
+        ]
+      }
+    }
+  }
+}

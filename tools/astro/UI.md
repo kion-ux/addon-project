@@ -266,29 +266,29 @@ p.onScreenDisplay.setTitle(`§r${G.iconBig.overheat}`, { subtitle: "§cOVERHEAT"
 
 | 番号 | G のキー | 幅 (GUI px) | 行 |
 |---|---|---|---|
-| U+EB00 | `G.emblemBig.mercury` | 16 | 2–29 |
-| U+EB01 | `G.emblemBig.venus` | 16 | 2–29 |
-| U+EB02 | `G.emblemBig.earth` | 16 | 2–29 |
-| U+EB03 | `G.emblemBig.mars` | 16 | 2–29 |
-| U+EB04 | `G.emblemBig.jupiter` | 16 | 2–29 |
-| U+EB05 | `G.emblemBig.saturn` | 16 | 2–29 |
-| U+EB06 | `G.emblemBig.uranus` | 16 | 2–29 |
-| U+EB07 | `G.emblemBig.neptune` | 16 | 2–29 |
-| U+EB08 | `G.emblemBig.sol` | 16 | 2–29 |
+| U+EB00 | `G.emblemBig.mercury` | 16 | 6–25 |
+| U+EB01 | `G.emblemBig.venus` | 16 | 6–25 |
+| U+EB02 | `G.emblemBig.earth` | 16 | 6–25 |
+| U+EB03 | `G.emblemBig.mars` | 16 | 6–25 |
+| U+EB04 | `G.emblemBig.jupiter` | 16 | 6–25 |
+| U+EB05 | `G.emblemBig.saturn` | 16 | 6–25 |
+| U+EB06 | `G.emblemBig.uranus` | 16 | 6–25 |
+| U+EB07 | `G.emblemBig.neptune` | 16 | 6–25 |
+| U+EB08 | `G.emblemBig.sol` | 16 | 6–25 |
 | U+EB10 | `G.banner.wingL` | 16 | 6–25 |
 | U+EB11 | `G.banner.wingR` | 16 | 6–25 |
 | U+EB12 | `G.banner.divider` | 16 | 10–21 |
 | U+EB13 | `G.banner.lineL` | 16 | 13–18 |
 | U+EB14 | `G.banner.lineR` | 16 | 13–18 |
-| U+EB20 | `G.iconBig.energy` | 16 | 4–27 |
-| U+EB21 | `G.iconBig.nova` | 16 | 4–27 |
-| U+EB22 | `G.iconBig.revert` | 16 | 4–25 |
-| U+EB23 | `G.iconBig.overheat` | 16 | 3–28 |
-| U+EB24 | `G.iconBig.barrier` | 16 | 4–27 |
-| U+EB25 | `G.iconBig.sync` | 16 | 7–24 |
-| U+EB26 | `G.iconBig.check` | 16 | 5–24 |
-| U+EB27 | `G.iconBig.lock` | 16 | 5–27 |
-| U+EB28 | `G.iconBig.warn` | 16 | 4–27 |
+| U+EB20 | `G.iconBig.energy` | 16 | 7–23 |
+| U+EB21 | `G.iconBig.nova` | 16 | 7–24 |
+| U+EB22 | `G.iconBig.revert` | 16 | 8–23 |
+| U+EB23 | `G.iconBig.overheat` | 16 | 7–24 |
+| U+EB24 | `G.iconBig.barrier` | 16 | 7–24 |
+| U+EB25 | `G.iconBig.sync` | 16 | 9–22 |
+| U+EB26 | `G.iconBig.check` | 16 | 8–22 |
+| U+EB27 | `G.iconBig.lock` | 16 | 8–24 |
+| U+EB28 | `G.iconBig.warn` | 16 | 7–23 |
 
 配置: EA の行 0 = バーの部品、行 1〜9 = 惑星（order 順）で 列 0 紋章 / 1〜3 星力 満・半・空 / 4〜7 技（使える: skill, dash, air, ult）/ 8〜B 技（待ち）、行 A = 赤い星力、行 B = 状態アイコン。EB の行 0 = 大きな紋章、行 1 = 飾り、行 2 = 大きなアイコン。空いているセルは将来用。
 

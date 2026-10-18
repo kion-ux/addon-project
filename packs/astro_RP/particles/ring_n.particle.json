@@ -1,0 +1,67 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "astro:ring_n",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/particle/astro_atlas"
+      }
+    },
+    "components": {
+      "minecraft:emitter_initialization": {
+        "creation_expression": "v.e_dx = (v.vx ?? 0.0); v.e_dy = (v.vy ?? 0.0); v.e_dz = (v.vz ?? 0.0); v.e_dl = math.sqrt(v.e_dx * v.e_dx + v.e_dy * v.e_dy + v.e_dz * v.e_dz); v.e_has = (v.e_dl > 0.0001) ? 1.0 : 0.0; v.e_tx = (v.e_has > 0.5) ? v.e_dx : 0.0; v.e_ty = (v.e_has > 0.5) ? v.e_dy : 1.0; v.e_tz = (v.e_has > 0.5) ? v.e_dz : 0.0; v.e_tl = (v.e_has > 0.5) ? v.e_dl : 1.0; v.e_nx = v.e_tx / math.max(v.e_tl, 0.0001); v.e_ny = v.e_ty / math.max(v.e_tl, 0.0001); v.e_nz = v.e_tz / math.max(v.e_tl, 0.0001); v.e_h = math.sqrt(v.e_nx * v.e_nx + v.e_nz * v.e_nz); v.e_ax = (v.e_h > 0.2) ? ((0.0 - v.e_nz) / v.e_h) : 1.0; v.e_ay = 0.0; v.e_az = (v.e_h > 0.2) ? (v.e_nx / v.e_h) : 0.0; v.e_bx = v.e_ny * v.e_az - v.e_nz * v.e_ay; v.e_by = v.e_nz * v.e_ax - v.e_nx * v.e_az; v.e_bz = v.e_nx * v.e_ay - v.e_ny * v.e_ax;"
+      },
+      "minecraft:emitter_rate_instant": {
+        "num_particles": "(v.count ?? 24.0)"
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0
+      },
+      "minecraft:emitter_shape_point": {
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(v.life ?? 0.5) * math.random(0.85, 1.15)"
+      },
+      "minecraft:particle_motion_parametric": {
+        "relative_position": [
+          "((v.spread ?? 1.5) + (v.speed ?? 0.0) * v.particle_age) * (math.cos((v.particle_random_1 * 360.0)) * v.e_ax + math.sin((v.particle_random_1 * 360.0)) * v.e_bx)",
+          "((v.spread ?? 1.5) + (v.speed ?? 0.0) * v.particle_age) * (math.cos((v.particle_random_1 * 360.0)) * v.e_ay + math.sin((v.particle_random_1 * 360.0)) * v.e_by)",
+          "((v.spread ?? 1.5) + (v.speed ?? 0.0) * v.particle_age) * (math.cos((v.particle_random_1 * 360.0)) * v.e_az + math.sin((v.particle_random_1 * 360.0)) * v.e_bz)"
+        ]
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "(v.size ?? 1.0) * 0.16 * (1.0 - (v.particle_age / v.particle_lifetime) * 0.5)",
+          "(v.size ?? 1.0) * 0.16 * (1.0 - (v.particle_age / v.particle_lifetime) * 0.5)"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 1024,
+          "texture_height": 1024,
+          "uv": [
+            "((v.var ?? 0.0) < 0.5 ? 325.0 : ((v.var ?? 0.0) < 1.5 ? 905.0 : ((v.var ?? 0.0) < 2.5 ? (131.0 + math.clamp(math.floor(v.particle_random_4 * 3.999), 0.0, 3.0) * 32.0) : ((v.var ?? 0.0) < 3.5 ? 391.0 : 971.0))))",
+            "((v.var ?? 0.0) < 0.5 ? 811.0 : ((v.var ?? 0.0) < 1.5 ? 813.0 : ((v.var ?? 0.0) < 2.5 ? 877.0 : ((v.var ?? 0.0) < 3.5 ? 811.0 : 813.0))))"
+          ],
+          "uv_size": [
+            "((v.var ?? 0.0) < 0.5 ? 64.0 : ((v.var ?? 0.0) < 1.5 ? 64.0 : ((v.var ?? 0.0) < 2.5 ? 32.0 : ((v.var ?? 0.0) < 3.5 ? 64.0 : 32.0))))",
+            "((v.var ?? 0.0) < 0.5 ? 64.0 : ((v.var ?? 0.0) < 1.5 ? 64.0 : ((v.var ?? 0.0) < 2.5 ? 32.0 : ((v.var ?? 0.0) < 3.5 ? 64.0 : 32.0))))"
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "math.lerp((v.cr ?? 0.47), 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 3.0, 0.0, 1.0)) * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 1.6, 0.0, 1.0)",
+          "math.lerp((v.cg ?? 0.94), 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 3.0, 0.0, 1.0)) * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 1.6, 0.0, 1.0)",
+          "math.lerp((v.cb ?? 1.0), 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 3.0, 0.0, 1.0)) * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 1.6, 0.0, 1.0)",
+          "math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 1.6, 0.0, 1.0)"
+        ]
+      }
+    }
+  }
+}

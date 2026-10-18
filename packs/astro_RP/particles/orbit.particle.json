@@ -1,0 +1,72 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "astro:orbit",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/particle/astro_atlas"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": "(v.count ?? 10.0)"
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0
+      },
+      "minecraft:emitter_shape_point": {
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(v.life ?? 0.8)"
+      },
+      "minecraft:particle_motion_parametric": {
+        "relative_position": [
+          "((v.spread ?? 1.5) * (1.0 - 0.8 * math.pow((v.particle_age / v.particle_lifetime), 1.5))) * (math.cos((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.cos((v.particle_random_3 * 360.0)) + math.sin((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.cos(((v.particle_random_2 - 0.5) * 80.0)) * math.sin((v.particle_random_3 * 360.0)))",
+          "((v.spread ?? 1.5) * (1.0 - 0.8 * math.pow((v.particle_age / v.particle_lifetime), 1.5))) * (0.0 - math.sin((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.sin(((v.particle_random_2 - 0.5) * 80.0)))",
+          "((v.spread ?? 1.5) * (1.0 - 0.8 * math.pow((v.particle_age / v.particle_lifetime), 1.5))) * (math.sin((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.cos(((v.particle_random_2 - 0.5) * 80.0)) * math.cos((v.particle_random_3 * 360.0)) - math.cos((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.sin((v.particle_random_3 * 360.0)))"
+        ]
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "(v.size ?? 1.0) * 0.34",
+          "(v.size ?? 1.0) * 0.07"
+        ],
+        "facing_camera_mode": "lookat_direction",
+        "direction": {
+          "mode": "custom",
+          "custom_direction": [
+            "math.cos((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.cos(((v.particle_random_2 - 0.5) * 80.0)) * math.sin((v.particle_random_3 * 360.0)) - math.sin((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.cos((v.particle_random_3 * 360.0))",
+            "0.0 - math.cos((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.sin(((v.particle_random_2 - 0.5) * 80.0))",
+            "math.cos((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.cos(((v.particle_random_2 - 0.5) * 80.0)) * math.cos((v.particle_random_3 * 360.0)) + math.sin((v.particle_age * (v.spin ?? 420.0) + v.particle_random_1 * 360.0)) * math.sin((v.particle_random_3 * 360.0))"
+          ]
+        },
+        "uv": {
+          "texture_width": 1024,
+          "texture_height": 1024,
+          "uv": [
+            391,
+            877
+          ],
+          "uv_size": [
+            64,
+            16
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "math.lerp((v.cr ?? 0.47), 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 1.0, 0.0, 1.0)) * math.clamp(math.min((v.particle_age / v.particle_lifetime) * 5.0, (1.0 - (v.particle_age / v.particle_lifetime)) * 2.5), 0.0, 1.0)",
+          "math.lerp((v.cg ?? 0.94), 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 1.0, 0.0, 1.0)) * math.clamp(math.min((v.particle_age / v.particle_lifetime) * 5.0, (1.0 - (v.particle_age / v.particle_lifetime)) * 2.5), 0.0, 1.0)",
+          "math.lerp((v.cb ?? 1.0), 1.0, math.clamp(1.0 - (v.particle_age / v.particle_lifetime) * 1.0, 0.0, 1.0)) * math.clamp(math.min((v.particle_age / v.particle_lifetime) * 5.0, (1.0 - (v.particle_age / v.particle_lifetime)) * 2.5), 0.0, 1.0)",
+          "math.clamp(math.min((v.particle_age / v.particle_lifetime) * 5.0, (1.0 - (v.particle_age / v.particle_lifetime)) * 2.5), 0.0, 1.0)"
+        ]
+      }
+    }
+  }
+}

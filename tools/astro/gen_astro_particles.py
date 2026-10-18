@@ -1687,8 +1687,12 @@ class FX:
         return cs
 
     def tint(self, rgb, alpha, whiten=None, white_mix=None, doc=None):
-        self.comps["minecraft:particle_appearance_tinting"] = {
-            "color": self.col(rgb, whiten, white_mix, doc) + [alpha]}
+        """色は必ず particle_appearance_tinting の中。加算では RGB にも消え方を掛ける
+        （加算の材質がアルファを見るかは確かめられないので、RGB とアルファの両方で消す）。"""
+        cs = self.col(rgb, whiten, white_mix, doc)
+        if self.material == "add":
+            cs = [f"{c} * {alpha}" for c in cs]
+        self.comps["minecraft:particle_appearance_tinting"] = {"color": cs + [alpha]}
 
     # ---- エミッタ
     def init(self, src):
@@ -1780,6 +1784,30 @@ def uv_pick(name, idx_expr, n):
         u = f"{x}.0 + math.mod({i}, 5.0) * {w}.0"
         v = f"{y}.0 + math.floor({i} / 5.0) * {h}.0"
     return {"texture_width": AW, "texture_height": AH, "uv": [u, v], "uv_size": [w, h]}
+
+
+def uv_choice(options, idx_expr):
+    """v.var などで別々のスプライトを選ぶ uv。options = [(sprite, frame_idx_expr or None)]。"""
+    def pick(vals):
+        e = num(vals[-1])
+        for i in range(len(vals) - 2, -1, -1):
+            e = f"({idx_expr} < {num(i + 0.5)} ? {num(vals[i])} : {e})"
+        return e
+    us, vs, ws, hs = [], [], [], []
+    for name, fexpr in options:
+        x, y, w, h = rect(name, 0)
+        n = SPRITES[name][2]
+        if fexpr is not None and n > 1:
+            us.append(f"({x}.0 + math.clamp(math.floor({fexpr}), 0.0, {num(n - 1)}) * {w}.0)")
+        else:
+            us.append(float(x))
+        vs.append(float(y))
+        ws.append(float(w))
+        hs.append(float(h))
+    return {"texture_width": AW, "texture_height": AH, "uv": [pick(us), pick(vs)], "uv_size": [pick(ws), pick(hs)]}
+
+
+EXTRA_IDS = ("ring_n", "line_n")      # DESIGN §4.7 に無い追加（まとめ役の依頼: 1 回の spawn で形を描く）
 
 
 def flipbook(name, n, fps=12):
@@ -2556,6 +2584,43 @@ def build_effects():
     f.tint(CYAN, f"0.8 * {clamp01(f'1.0 - {AGE}')}")
     f.cost = "1"
 
+    # ================= 1 回の spawn で形を描く（追加） =================
+    shapes = [("glow", None), ("star", None), ("nano", f"{R4} * 3.999"), ("hex", None), ("dot", None)]
+    var_note = "粒の種類: 0 発光の玉 / 1 きらめき / 2 ナノマシン / 3 六角 / 4 小さな点"
+    f = new("ring_n", "add", "粒の輪: count 個の光の粒を半径 spread の円周に散らして並べる（1 回の spawn で輪が描ける）。"
+            "輪の面の法線 = (vx,vy,vz)（既定は上 = 水平の輪）。speed で外へ広がる。粒の種類は v.var",
+            "fx.js の ring() を 1 パケットで（範囲の縁・衝撃の輪・変身の輪）",
+            "count 12〜40 / spread 0.5〜6 / life 0.3〜1")
+    S = f.S
+    target_init(f, (0, 1, 0), "輪の面の法線（向き。正規化する。未指定は上 = 水平の輪）")
+    f.instant(f.v("count", 24))
+    f.point()
+    f.lifetime(f"{f.life(0.5)} * math.random(0.85, 1.15)")
+    a = f"({R1} * 360.0)"
+    rr = f"({f.v('spread', 1.5, '輪の半径 (m)')} + {f.v('speed', 0.0, '外へ広がる速さ (m/s)')} * {PA})"
+    f.param([f"{rr} * (math.cos({a}) * v.e_a{c} + math.sin({a}) * v.e_b{c})" for c in "xyz"])
+    vidx = f.v("var", 0.0, var_note)
+    f.bb([f"{S} * 0.16 * (1.0 - {AGE} * 0.5)"] * 2, "lookat_xyz", uv_choice(shapes, vidx))
+    f.tint(CYAN, fade_out(1.6), whiten=3)
+    f.cost = "count（既定 24）"
+
+    f = new("line_n", "add", "粒の線: count 個の光の粒をエミッタから (vx,vy,vz) のずれの点までの線分上に散らして並べる"
+            "（1 回の spawn で線・軌跡が描ける）。spread で線の太さ。粒の種類は v.var",
+            "fx.js の line() を 1 パケットで（軌跡・射線・鎖・連鎖の線）",
+            "count 8〜40（長さ 1 m あたり 3〜5）/ life 0.2〜0.6")
+    S = f.S
+    target_init(f, (0, 0, 4), "線の終点（エミッタからのずれ m）。3 つとも未指定なら (0, 0, 4)")
+    f.instant(f.v("count", 16))
+    f.point()
+    f.lifetime(f"{f.life(0.35)} * math.random(0.8, 1.2)")
+    j = f.v("spread", 0.0, "線の太さ（横へのばらつき m）")
+    f.param([f"v.e_t{c} * {R1} + (({R2} * 2.0 - 1.0) * v.e_a{c} + ({R3} * 2.0 - 1.0) * v.e_b{c}) * {j}"
+             for c in "xyz"])
+    vidx = f.v("var", 0.0, var_note)
+    f.bb([f"{S} * 0.16 * (1.0 - {AGE} * 0.5)"] * 2, "lookat_xyz", uv_choice(shapes, vidx))
+    f.tint(CYAN, fade_out(1.6), whiten=3)
+    f.cost = "count（既定 16）"
+
     f = new("lens", "add", "大きく淡い光のにじみ（ゴーストの輪と六角のぼけ）", "必殺の締め・大爆発の光・black_hole の加算層",
             "size 1〜5（直径 4 × size m）/ life 0.4〜1")
     S = f.S
@@ -2711,7 +2776,7 @@ def walk(obj, path=""):
 
 def sample_contexts(script):
     """変数の組 × 乱数 × 年齢の見本（uv・大きさ・色の範囲を確かめる）。"""
-    for var in ([None] if "var" not in script else [None, 0, 3, 8, 9, -2, 14]):
+    for var in (None, 0, 1, 2, 3, 4, 8, 9, -2, 14):
         for r in (0.0, 0.37, 0.9999):
             for age in (0.0, 0.31, 0.999):
                 c = {f"variable.particle_random_{i}": (r + 0.21 * i) % 1.0 for i in range(1, 5)}
@@ -2736,7 +2801,7 @@ def self_check(E, docs):
     errors = []
     err = errors.append
     ids = [f.id for f in E]
-    want = design_ids()
+    want = design_ids() + list(EXTRA_IDS)
     if sorted(ids) != sorted(want):
         err(f"ids differ from DESIGN §4.7: missing {sorted(set(want) - set(ids))} extra {sorted(set(ids) - set(want))}")
     if len(set(ids)) != len(ids):
