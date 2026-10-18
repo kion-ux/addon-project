@@ -17,7 +17,7 @@ arm=腕の向き)。向きは体の空間: dirv(f=前, u=上, r=右)。重い武
 """
 from __future__ import annotations
 
-from astro_animlib import DOWN, LEFT, UP, H, P, aim, anim, dirv, wield
+from astro_animlib import LEFT, H, P, aim, anim, dirv, wield
 
 # ---- 三段コンボ -------------------------------------------------------------
 c1_wind = P(b=(4, 44, 0), h=(0, -34, 0), w=(6, 0, 0),
@@ -120,4 +120,3 @@ BODY_ANIMS = {
                            0.78: P(wr_roar, h=(-44, 0, 0)), 1.0: H}),
 }
 
-_ = (DOWN, UP)   # noqa: F841 （向きの定数は書き換えの時に使う）
