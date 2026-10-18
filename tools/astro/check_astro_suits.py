@@ -1,24 +1,35 @@
 # -*- coding: utf-8 -*-
-"""アストロ・ナノギア — スーツの検査（DESIGN §4.3 / §4.5 / §4.11）。
+"""アストロ・ナノギア — スーツの検査（DESIGN §4.3b / §4.5 / §4.11）。
 
     python3 tools/astro/check_astro_suits.py            # planets/<key>/suit.py がある全惑星
-    python3 tools/astro/check_astro_suits.py earth      # 1 惑星だけ
-    python3 tools/astro/check_astro_suits.py earth -v   # 外に出た点の場所も詳しく
+    python3 tools/astro/check_astro_suits.py earth      # 1 惑星だけ（複数可: earth mars）
+    python3 tools/astro/check_astro_suits.py earth -v   # 計測の詳細も
 
-調べること（どれか 1 つでも NG なら終了コード 1）:
-  モデル  * 肌の被覆: 6 部位の外側レイヤー（帽子 0.5・他 0.25。腕はスリムの腕も）を 0.5 間隔で標本化し、
-            同じトップレベル配下のキューブ（extra_*・fx_* の動く部品は除く）に 99% 以上入っていること
-          * ボーンの命名: トップレベル 6 つ（同名・同ピボット・キューブ無し・回転無し）、
+調べること（どれか 1 つでも NG なら終了コード 1。v1.1 から肌の被覆は調べない — 変身中は透明化で肌を隠す）:
+  7 頭身   立ち姿で、飾り（ornament=True / 名前に crest・horn・antenna・plume・halo・ornament）・extra_*・
+           fx_thrust_*・fx_spin_* を除いたキューブの表面を標本化して測る（astro_suit.measure）:
+          * 背丈（足の裏 → 頭頂）31〜35
+          * 頭の高さ = 背丈/7 ± 12%（首のくびれの上で断面が頭の大きさに戻る所 → 頭頂）
+          * 頭の幅 5.4 以下
+          * 胸の幅（body の y 20.5〜26.7 の最大幅）≥ 1.45 × 腰の幅（body の y 17.0〜20.3 の最小幅）
+          * 見えている脚の長さ ≥ 0.44 × 背丈（正面から見て、脚の部品が手前に見えている一番上 − 足の裏。
+            腰の装甲が腿を覆い過ぎると NG。extra_* のスカートは数えない）
+  細かさ  * キューブ数 600〜1400、3 辺とも 1.0 以下のキューブが 35% 以上、0.15 未満の辺を持つキューブが無い
+  モデル  * ボーンの命名: トップレベル 6 つ（同名・同ピボット・キューブ無し・回転無し）、
             部位ボーン `<群>_<名前>`、fx_thrust_/fx_glow_/fx_spin_ は部位ボーンの下、名前の重複なし、
             プレイヤーのボーン名（cape, helmet, waist, rightItem …）を装飾に使っていない
-          * キューブ数 250〜650、テクスチャ 1024x1024 以下、炎（flame 系の塗り）は fx_* の下（両面の材質）
+          * テクスチャ 1024x1024 以下（テクセル x3 未満は警告）、炎（flame 系の塗り）は fx_* の下（両面の材質）
           * 回転体（fx_spin_* の部分木）が idle アニメの一周の間に他の装甲へめり込まないか（警告）
   アニメ  * SUIT_ANIMS のボーンが実在、Molang が読める、部位ボーンの scale を書いていない
-            （組み上がり・解除が scale を使うため）
+            （組み上がり・解除が scale を使うため）、トップレベルを動かしていない
+          * ループするアニメ（idle / thrust / sprint / 追加）が継ぎ目なく繰り返す（q.anim_time の周波数 ×
+            ループ長が 360° の整数倍。12 秒なら 30°/秒の倍数）
   書き出し（pack に生成済みなら）
           * geo / png / アタッチャブル 3 種 / アニメ / コントローラ / レンダーコントローラが揃い JSON が読める
           * UV がテクスチャの内側、テクスチャの大きさが geo と一致
           * アニメが参照するボーンが geo に実在、アタッチャブルが参照するアニメ・コントローラが実在
+          * hide_all は `c.item_slot != 'head'` だけで判定（q.is_invisible を使うと透明化でスーツが消える）
+旧版（v1.0）の肌の被覆検査は astro_suit.coverage() に残っている（使わない）。
 """
 from __future__ import annotations
 
@@ -34,8 +45,9 @@ import astro_suit as AS  # noqa: E402
 import gen_astro_suits as G  # noqa: E402
 from astro_data import PLANETS  # noqa: E402
 
-MIN_CUBES, MAX_CUBES = 250, 650
+MIN_CUBES, MAX_CUBES = AS.LIMITS["cubes"]
 FLAME_STYLES = ("flame", "flame_core")
+MIN_TEXEL = 3.0
 
 
 class Report:
@@ -89,23 +101,31 @@ def check_model(key, verbose=False) -> Report:
     r.info(f"{len(m.bones)} bones / {n} cubes / {m.tex_w}x{m.tex_h} (texel x{m.uv_scale:g})")
     for e in AS.naming_errors(s):
         r.err(e)
-    if n < MIN_CUBES:
-        r.err(f"only {n} cubes (< {MIN_CUBES}: not detailed enough)")
-    if n > MAX_CUBES:
-        r.err(f"{n} cubes (> {MAX_CUBES}: too heavy)")
     if m.tex_w > 1024 or m.tex_h > 1024:
         r.err(f"texture {m.tex_w}x{m.tex_h} > 1024")
-    # 被覆
-    cov = AS.coverage(s)
-    ok, rep = AS.coverage_report(cov)
-    r.info("coverage:\n" + rep)
-    if not ok:
-        r.err("skin coverage below 99% (see above). Add/extend cubes, or allowlist hidden areas "
-              "with COVER_ALLOW in suit.py")
-    if verbose:
-        for top, c in cov.items():
-            if c["uncovered"]:
-                r.info(f"  {top}: {c['points'][:12].round(2).tolist()}")
+    if m.uv_scale < MIN_TEXEL:
+        r.warn(f"texel density x{m.uv_scale:g} < x{MIN_TEXEL:g} (too many / too large cubes for "
+               "1024x1024; give small parts uv_scale or trim hidden cubes)")
+    # 7 頭身のプロポーションと細かさ
+    try:
+        meas = AS.measure(s)
+    except Exception as e:  # noqa: BLE001
+        r.err(f"measure failed: {type(e).__name__}: {e}")
+        meas = None
+    if meas:
+        lines = []
+        for ok, name, msg in AS.proportion_checks(meas):
+            lines.append(f"    {'ok' if ok else 'NG'}  {name:13s} {msg}")
+            if not ok:
+                r.err(f"{name}: {msg}")
+        r.info("7-head proportions / detail:\n" + "\n".join(lines))
+        if verbose:
+            r.info(f"  measure: " + ", ".join(f"{k}={v:.2f}" if isinstance(v, float) else f"{k}={v}"
+                                              for k, v in meas.items()))
+        if not (-0.6 <= meas["ground"] <= 0.4):
+            r.warn(f"soles at y {meas['ground']:.2f} (feet should touch y 0)")
+    for e in AS.small_part_errors(s)[:12]:
+        r.err(e)
     # 炎は fx_* の下（one_sided の既定材質では裏が抜けて見えるため）
     geo = AS.geo_of(s)
     for b in m.bones:
@@ -137,6 +157,13 @@ def check_model(key, verbose=False) -> Report:
             for v in _iter_values(tr):
                 if isinstance(v, str) and not _molang_ok(v):
                     r.err(f"SUIT_ANIMS['{anim}']['{bone}']: cannot parse Molang {v!r}")
+    # 生成するアニメ（idle / thrust / sprint / 追加）がループの継ぎ目で跳ばないこと
+    try:
+        for name, a in G.suit_animations(s).items():
+            for e in G.loop_errors(name.split(".")[-1], a):
+                r.err(f"loop: {e}")
+    except Exception as e:  # noqa: BLE001
+        r.err(f"animations failed: {type(e).__name__}: {e}")
     return r
 
 
@@ -289,6 +316,9 @@ def check_files(key, r: Report):
             nm = entry if isinstance(entry, str) else list(entry)[0]
             if nm not in desc["animations"]:
                 r.err(f"{os.path.basename(p)}: animate '{nm}' is not defined")
+            if nm == "hide_all" and (isinstance(entry, str) or entry[nm] != G.HIDE_ALL):
+                r.err(f"{os.path.basename(p)}: hide_all must be gated only on {G.HIDE_ALL!r} "
+                      "(the wearer is invisible while transformed)")
         for rc in desc.get("render_controllers", []):
             if rc not in rcs:
                 r.err(f"{os.path.basename(p)}: render controller {rc} missing")

@@ -395,10 +395,10 @@ def _clear(R0, bt, want_dir, local_vec, parts, cloud, blade_l=None, tilt=True):
 
 
 REPAIR_AT = 0.6      # 補間の途中でこれより深く入り込むコマにはキーを足して直す（px）
-REPAIR_STEP = 0.04   # 直す区間で腕のねじりを選ぶ間隔（秒。足すキーの間隔はこれ以上）
+REPAIR_STEP = 0.03   # 直す区間で腕のねじりを選ぶ間隔（秒。足すキーの間隔はこれ以上）
 REPAIR_SPEED = 800.0  # ねじりの速さ（度/秒）がこれだと、体に 0.13 px 入るのと同じ重さ
 REPAIR_MAX_STEP = 90.0   # 隣り合うキーの間のねじりの差の上限（度。これを超えると補間の向きが曖昧になる）
-TWISTS = tuple(range(-180, 180, 15))
+TWISTS = tuple(range(-180, 180, 10))
 
 
 def _repair(res, cloud, hold, rounds=3, step=0.02):
@@ -454,7 +454,7 @@ def _repair(res, cloud, hold, rounds=3, step=0.02):
             # 各時刻のねじった回転（a・b はねじらない）。区間の速さの上限は arm_speeds と同じ
             RT = [_key_R(tr, mk, a)] + base + [_key_R(tr, mk, b)]
             TW = [np.stack([_axis_angle(R0 @ blade_l, phi) @ R0 for phi in TWISTS]) for R0 in RT]
-            allow = 0.75 * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
+            allow = 0.85 * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
             nt = len(TWISTS)
 
             def edge(k):

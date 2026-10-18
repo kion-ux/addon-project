@@ -97,14 +97,15 @@ function noThrusters(p) {
 /**
  * 落下の保険: 機動の後・ホバー中に速く落ちていて地面が近いなら、着地の瞬間だけ無敵（耐性 V）にする。
  * 落下ダメージは afterEvents でしか読めず、致死の落下は後から回復できないので、先に防ぐ。
+ * 落下ダメージの出る高さ（いちばん高い所から 3 ブロック超）の時だけ（低い着地で無敵を配らない）。
  */
-function fallGuard(p, vy) {
+function fallGuard(p, vy, peakY) {
   const dim = p.dimension;
   const l = p.location;
   const reach = Math.max(4, -vy * 2.5 + 2);
   const gy = groundY(dim, l, Math.ceil(reach), 0);
   if (!blocked(dim, { x: l.x, y: gy - 1, z: l.z })) return false;   // 下に地面が見つからない（まだ高い）
-  if (l.y - gy > reach) return false;
+  if (l.y - gy > reach || peakY - gy <= 3.2) return false;
   effect(p, "resistance", 4, 4);
   return true;
 }
@@ -128,6 +129,7 @@ function tickOne(p) {
   const loc = p.location;
   const moved = m.last ? Math.hypot(loc.x - m.last.x, loc.z - m.last.z) : 0;
   m.last = { x: loc.x, y: loc.y, z: loc.z };
+  m.peakY = ground ? loc.y : Math.max(m.peakY ?? loc.y, loc.y);   // 落ち始めた高さ（落下の保険用）
 
   // ---- 着地 --------------------------------------------------------------
   const ready = isReady(p);
@@ -156,7 +158,7 @@ function tickOne(p) {
   if (ground) m.boostAt = -1;
 
   // 落下の保険（変身が解けた直後の落下も含む）
-  if (!ground && (m.noFall || m.hovering) && vel.y < -0.45) fallGuard(p, vel.y);
+  if (!ground && (m.noFall || m.hovering) && vel.y < -0.45) fallGuard(p, vel.y, m.peakY);
 
   if (!ready) {
     if (m.hovering) stopHover(p, m, true);
@@ -234,7 +236,7 @@ function tickOne(p) {
 
   // ---- ブースト・ダッシュ（空中でスニーク） -----------------------------
   // スニークを押してから boostWait tick 待つ。その間に右クリック（空中のバリア・必殺）が来たら出さない（cancelBoost）
-  if (!ground && !locked && sneakEdge && m.airT >= 3 && m.dashes < mob.air_dash && m.boostAt < 0) {
+  if (!ground && !locked && sneakEdge && m.airT >= 3 && m.dashes < mob.air_dash && m.boostAt < 0 && t - (m.useAt ?? -99) > 2) {
     m.boostAt = t + TUNE.boostWait;
   }
   if (m.boostAt >= 0 && t >= m.boostAt) {
@@ -328,7 +330,7 @@ export function isHovering(p) { return !!mv.get(p.id)?.hovering; }
 /** 待っているブースト・ダッシュを取り消す（空中でスニーク＋右クリック = バリア・必殺の時。main の itemUse から）。 */
 export function cancelBoost(p) {
   const m = mv.get(p.id);
-  if (m) m.boostAt = -1;
+  if (m) { m.boostAt = -1; m.useAt = now(); }   // 同じ tick（やその直前）の右クリックの後のスニークでも出さない
 }
 
 // ---------------------------------------------------------------------------

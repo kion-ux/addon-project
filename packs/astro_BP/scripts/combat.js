@@ -163,15 +163,17 @@ export const NEUTRAL_TYPES = new Set([
   "minecraft:zombie_pigman", "minecraft:enderman", "minecraft:spider", "minecraft:cave_spider", "minecraft:piglin",
 ]);
 
-// そのプレイヤーと戦った（殴った・殴られた）mob。中立の mob もしばらくは「敵」として自動で狙ってよい。
-// 1.13.0 には「誰を狙っているか」を読む API が無いので、ダメージのやり取りで代わりにする。
+// そのプレイヤーを攻撃した mob と、そのプレイヤーが殴った中立の mob（群れで怒って襲ってくる）。
+// しばらくは「敵」として自動で狙ってよい。1.13.0 には「誰を狙っているか」を読む API が無いので、
+// ダメージのやり取りで代わりにする（殴られただけの村人・動物は敵にならない）。
 const provoked = new Map();   // `${mobId}|${playerId}` -> 期限 tick
 const PROVOKE_TICKS = 600;
 
-/** mob と player が戦った（main の entityHurt から）。 */
-export function markProvoked(mob, player) {
+/** mob と player が戦った（main の entityHurt から）。attacked = mob が player を攻撃した。 */
+export function markProvoked(mob, player, attacked = true) {
   try {
     if (!valid(mob) || !valid(player) || isPlayer(mob) || !isPlayer(player)) return;
+    if (!attacked && !NEUTRAL_TYPES.has(mob.typeId)) return;
     const t = now();
     if (provoked.size > 300) for (const [k, until] of provoked) if (until <= t) provoked.delete(k);
     provoked.set(`${mob.id}|${player.id}`, t + PROVOKE_TICKS);

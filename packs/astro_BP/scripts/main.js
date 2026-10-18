@@ -99,8 +99,8 @@ world.afterEvents.entityHurt.subscribe(guard("entityHurt", (ev) => {
   if (!valid(e)) return;
   if (valid(attacker) && attacker.id !== e.id && ev.damage > 0) {
     // プレイヤーの攻撃が通った（被弾の無敵時間の始まり。バニラの通常攻撃も）/ 戦った mob を覚える
-    if (isPlayer(attacker)) { noteHurt(e); markProvoked(e, attacker); }
-    else if (isPlayer(e)) markProvoked(attacker, e);
+    if (isPlayer(attacker)) { noteHurt(e); markProvoked(e, attacker, false); }
+    else if (isPlayer(e)) markProvoked(attacker, e, true);
   }
   const quiet = EN.onEntityHurt(e, ev.damage, src) === true;
   if (!quiet) {
