@@ -119,6 +119,21 @@ export function getEffect(entity, id) {
   try { return entity.getEffect?.(id); } catch (_) { return undefined; }
 }
 
+/**
+ * アドオンが掛けた（はずの）効果だけを外す: 残りが maxTicks 以下で、amp を渡せば強さも同じ時だけ。
+ * プレイヤーが自分で飲んだ薬・ビーコン・金リンゴの長い効果は残す。外したら true。
+ */
+export function removeOwnEffect(entity, id, maxTicks, amp) {
+  const e = getEffect(entity, id);
+  if (!e) return false;
+  try {
+    if (amp !== undefined && e.amplifier !== amp) return false;
+    if (!(e.duration <= maxTicks)) return false;
+  } catch (_) { return false; }
+  removeEffect(entity, id);
+  return true;
+}
+
 export function heal(entity, amount) {
   const h = health(entity);
   if (!h) return;
@@ -284,6 +299,26 @@ export function groundY(dim, loc, maxDown = 8, maxUp = 2) {
 /** 地面に貼り付けた位置（y を上面に）。 */
 export function onGround(dim, loc, maxDown = 8) {
   return { x: loc.x, y: groundY(dim, loc, maxDown), z: loc.z };
+}
+
+/** 足元 loc の下 depth ブロック以内に固体があるか（虚空・崖の上の空中ではない）。 */
+export function supported(dim, loc, depth = 3) {
+  for (let k = 0; k < depth; k++) {
+    if (blocked(dim, { x: loc.x, y: loc.y - 0.05 - k, z: loc.z })) return true;
+  }
+  return false;
+}
+
+/** a から b までブロックに遮られていないか（step m おきに調べる。両端のマスは見ない）。 */
+export function clearLine(dim, a, b, step = 0.4) {
+  const L = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+  if (!(L > step)) return true;
+  const n = Math.ceil(L / step);
+  for (let i = 1; i < n; i++) {
+    const t = i / n;
+    if (blocked(dim, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t })) return false;
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------------------

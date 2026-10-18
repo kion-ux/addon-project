@@ -29,8 +29,46 @@ export const IGNORE_TYPES = new Set([
 
 // ---------------------------------------------------------------------------
 //  標的
+//
+//  規則（全惑星共通）:
+//  * isTarget: 攻撃してよい相手。自分・自分のペット（tameable）・自分の馬など（tamemount）・
+//    自分が乗っている相手・自分に乗っている相手・自分の飛び道具・クリエイティブ/スペクテイターは除く。
+//    範囲技はこれで選ぶ（PvP のプレイヤーと範囲の中の生き物には当たる）。
+//  * isHostile: 自動で狙ってよい相手（パッシブ・追尾・「標的を選ぶ」処理）。monster の家族か侵略者で、
+//    中立の mob（ゾンビピグリン・エンダーマン・クモ・ピグリン）は、そのプレイヤーと戦った直後だけ。
+//    村人・動物・ゴーレム・プレイヤーは選ばない。
 // ---------------------------------------------------------------------------
-/** attacker から見て e を攻撃してよいか（自分・ペット・クリエイティブ等を除く）。 */
+/** attacker が乗っているエンティティの id（tick 内でキャッシュ）。 */
+const mountCache = new Map();   // attackerId -> { t, id }
+function mountIdOf(a) {
+  const t = now();
+  const c = mountCache.get(a.id);
+  if (c && c.t === t) return c.id;
+  let id = null;
+  try { id = a.getComponent("minecraft:riding")?.entityRidingOn?.id ?? null; } catch (_) { }
+  if (mountCache.size > 64) mountCache.clear();
+  mountCache.set(a.id, { t, id });
+  return id;
+}
+
+/** e が attacker のもの（ペット・馬・乗り物・乗り手・飛び道具）か。 */
+function ownedBy(attacker, e) {
+  const aid = attacker.id;
+  try {
+    const tame = e.getComponent("minecraft:tameable");
+    if (tame?.isTamed && tame.tamedToPlayerId === aid) return true;
+  } catch (_) { }
+  try {
+    const mount = e.getComponent("minecraft:tamemount");
+    if (mount?.isTamed && mount.tamedToPlayerId === aid) return true;
+  } catch (_) { }
+  if (mountIdOf(attacker) === e.id) return true;
+  try { if (e.getComponent("minecraft:riding")?.entityRidingOn?.id === aid) return true; } catch (_) { }
+  try { if (e.getComponent("minecraft:projectile")?.owner?.id === aid) return true; } catch (_) { }
+  return false;
+}
+
+/** attacker から見て e を攻撃してよいか（自分・自分のペットと乗り物・クリエイティブ等を除く）。 */
 export function isTarget(attacker, e) {
   if (!valid(e) || (attacker && e.id === attacker.id)) return false;
   let type;
@@ -43,10 +81,7 @@ export function isTarget(attacker, e) {
     const gm = gameMode(e);
     if (gm === "creative" || gm === "spectator") return false;
   }
-  try {
-    const tame = e.getComponent("minecraft:tameable");
-    if (tame?.isTamed && attacker && tame.tamedToPlayerId === attacker.id) return false;
-  } catch (_) { }
+  if (attacker && ownedBy(attacker, e)) return false;
   return true;
 }
 
@@ -107,7 +142,7 @@ export function enemiesOnLine(src, a, b, width) {
   });
 }
 
-/** loc から radius 以内で一番近い相手（dir と deg を渡すとその扇形の中だけ）。 */
+/** loc から radius 以内で一番近い相手（dir と deg を渡すとその扇形の中だけ）。範囲技の中心探し用（誰でも選ぶ）。 */
 export function nearestEnemy(src, loc, radius, dir, deg = 180) {
   const list = deg >= 180 || !dir ? enemiesNear(src, loc, radius) : enemiesInCone(src, loc, dir, radius, deg);
   let best, bd = Infinity;
@@ -123,10 +158,41 @@ export const HOSTILE_TYPES = new Set([
   "astro:void_drone", "astro:void_sentinel", "astro:nemesis", "astro:hologram_target",
 ]);
 
-/** 敵対的な相手か（monster の家族か侵略者）。自動で狙う技（パッシブ・追尾）はこれで絞る。 */
-export function isHostile(e) {
+/** monster の家族だが、怒らせなければ襲ってこない mob（勝手に撃つと群れごと敵になる）。 */
+export const NEUTRAL_TYPES = new Set([
+  "minecraft:zombie_pigman", "minecraft:enderman", "minecraft:spider", "minecraft:cave_spider", "minecraft:piglin",
+]);
+
+// そのプレイヤーと戦った（殴った・殴られた）mob。中立の mob もしばらくは「敵」として自動で狙ってよい。
+// 1.13.0 には「誰を狙っているか」を読む API が無いので、ダメージのやり取りで代わりにする。
+const provoked = new Map();   // `${mobId}|${playerId}` -> 期限 tick
+const PROVOKE_TICKS = 600;
+
+/** mob と player が戦った（main の entityHurt から）。 */
+export function markProvoked(mob, player) {
   try {
-    if (HOSTILE_TYPES.has(e.typeId)) return true;
+    if (!valid(mob) || !valid(player) || isPlayer(mob) || !isPlayer(player)) return;
+    const t = now();
+    if (provoked.size > 300) for (const [k, until] of provoked) if (until <= t) provoked.delete(k);
+    provoked.set(`${mob.id}|${player.id}`, t + PROVOKE_TICKS);
+  } catch (_) { }
+}
+
+function provokedBy(e, p) {
+  try { return (provoked.get(`${e.id}|${p.id}`) ?? -1) > now(); } catch (_) { return false; }
+}
+
+/**
+ * 自動で狙ってよい相手か: 侵略者・monster の家族（中立の mob は p と戦った直後だけ）。
+ * 村人・動物・ゴーレム・プレイヤーは選ばない。p を渡さないと「戦った直後」は見ない。
+ */
+export function isHostile(e, p) {
+  try {
+    const type = e.typeId;
+    if (HOSTILE_TYPES.has(type)) return true;
+    if (type === "minecraft:player") return false;
+    if (p && provokedBy(e, p)) return true;
+    if (NEUTRAL_TYPES.has(type)) return false;
     if (typeof e.matches === "function") return e.matches({ families: ["monster"] });
   } catch (_) { }
   return false;
@@ -134,15 +200,29 @@ export function isHostile(e) {
 
 /** 周りの敵対的な相手だけ（村人・動物・他のプレイヤーを自動で撃たないように）。 */
 export function hostilesNear(src, loc, radius, dim) {
-  return enemiesNear(src, loc, radius, dim).filter(isHostile);
+  const p = src?.p ?? src;
+  return enemiesNear(src, loc, radius, dim).filter((e) => isHostile(e, p));
 }
 
-/** 一番近い敵対的な相手。 */
-export function nearestHostile(src, loc, radius) {
+/**
+ * 一番近い敵対的な相手。dir と deg（半角）で扇形に、o.los（視線の元の点）で間にブロックの無い相手に絞る。
+ */
+export function nearestHostile(src, loc, radius, dir, deg = 180, o = {}) {
+  const cos = Math.cos(deg * Math.PI / 180);
+  const p = src?.p ?? src;
+  const dim = src?.dim ?? p?.dimension;
   let best, bd = Infinity;
   for (const e of hostilesNear(src, loc, radius)) {
+    const c = chest(e);
     const d = dist(e.location, loc);
-    if (d < bd) { bd = d; best = e; }
+    if (d >= bd) continue;
+    if (dir && deg < 180) {
+      const to = sub(c, loc);
+      const l = Math.hypot(to.x, to.y, to.z);
+      if (l >= 1.2 && (to.x * dir.x + to.y * dir.y + to.z * dir.z) / l < cos) continue;
+    }
+    if (o.los && dim && !clearLine(dim, o.los, c)) continue;
+    bd = d; best = e;
   }
   return best;
 }
