@@ -249,6 +249,7 @@ export function canTransform(p, key, o = {}) {
   if (st.form || st.seq) return { ok: false, why: "§7すでに変身中" };
   if (st.offUntil > now()) return { ok: false, why: "§7解除の最中" };
   if (!alive(p)) return { ok: false, why: "" };
+  try { if (p.isGliding) return { ok: false, why: "§7滑空中は変身できない" }; } catch (_) { }
   if (!o.coreless) {
     if (overheat(p) > 0) return { ok: false, why: `§r${glyph("icon.overheat", "")}§r §cオーバーヒート中 §fあと ${(overheat(p) / 20).toFixed(1)} 秒` };
     if (energy(p) < COMMON.energy_to_transform) return { ok: false, why: `§r${glyph("icon.energy", "")}§r §c星力が足りない §f${Math.floor(energy(p))}/${COMMON.energy_to_transform}` };

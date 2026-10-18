@@ -197,46 +197,52 @@ export function hit(src, target, base, o = {}) {
   const p = ctx ? ctx.p : src;
   if (!valid(p) || !isTarget(p, target)) return false;
   if (!Number.isFinite(base)) { report("combat.hit", new Error(`bad damage ${base}`)); return false; }
+  // ダメージで相手が消えても困らないよう、先に読んでおく
+  let tid, type, tdim, at, tloc;
+  try {
+    tid = target.id; type = target.typeId; tdim = target.dimension;
+    tloc = { ...target.location }; at = { x: tloc.x, y: tloc.y + 1.0, z: tloc.z };
+  } catch (_) { return false; }
   const key = ctx?.key ?? (isPlayer(p) ? formOf(p) : null);
   let amount = Math.max(0, o.raw ? base : base * damageMul(p, key));
   const crit = o.crit === true || (typeof o.crit === "number" && Math.random() < o.crit);
   if (crit) amount *= 1.5;
-  if (!rawDamage(p, target, amount)) {
-    const b = bank.get(target.id) ?? { e: target, attacker: p, pending: 0, tries: 0 };
-    b.pending = Math.min(b.pending + amount, 400);
-    b.attacker = p;
-    bank.set(target.id, b);
-  }
-  // ノックバック
+  // ノックバック（ダメージより先に。倒した相手も吹き飛ぶ）
   try {
     if (o.pull) {
-      const d = sub(o.pull, target.location);
+      const d = sub(o.pull, tloc);
       const l = Math.hypot(d.x, d.z) || 1;
       knock(target, d.x / l, d.z / l, Math.min(o.kb ?? 0.6, l * 0.3), o.up ?? 0.05);
     } else if (o.kb || o.up) {
-      const d = o.dir ?? dirTo(p.location, target.location);
+      const d = o.dir ?? dirTo(p.location, tloc);
       const l = Math.hypot(d.x, d.z) || 1;
       knock(target, d.x / l, d.z / l, o.kb ?? 0, o.up ?? 0);
     }
   } catch (_) { }
+  if (crit) crits.set(tid, now() + 30);
+  if (!rawDamage(p, target, amount)) {
+    const b = bank.get(tid) ?? { e: target, attacker: p, pending: 0, tries: 0 };
+    b.pending = Math.min(b.pending + amount, 400);
+    b.attacker = p;
+    bank.set(tid, b);
+  }
   if (!o.quiet) {
     const c = o.color ?? ctx?.c ?? [1, 1, 1];
-    const at = chest(target);
-    burst(target.dimension, at, c, o.power ?? 1);
+    burst(tdim, at, c, o.power ?? 1);
     const snd = o.sound ?? ((o.power ?? 1) >= 1.6 ? "astro.hit_heavy" : "astro.hit");
-    sound(target.dimension, snd, at, rand(0.9, 1.15), 0.9);
+    sound(tdim, snd, at, rand(0.9, 1.15), 0.9);
     if (crit) {
-      sound(target.dimension, "astro.crit", at, rand(1.0, 1.2), 0.9);
-      P(target.dimension, "star", at, { color: white(c, 0.4), count: 6, spread: 0.5, speed: 3 });
+      sound(tdim, "astro.crit", at, rand(1.0, 1.2), 0.9);
+      P(tdim, "star", at, { color: white(c, 0.4), count: 6, spread: 0.5, speed: 3 });
     }
   }
-  if (crit) crits.set(target.id, now() + 30);
-  if (isPlayer(p)) {
+  if (isPlayer(p) && valid(p)) {
     maxRecord(p, "maxHit", amount);
     if (key) {
       const isMelee = !ctx || ctx.kind === "melee";
       let nv = o.nova ?? (isMelee ? COMMON.nova_on_hit : COMMON.nova_on_skill_hit);
-      let xp = o.xp ?? COMMON.xp_on_hit;
+      // 倒れない練習台では同調率は上がらない（ゲージは試し撃ちのために溜まる）
+      let xp = type === "astro:hologram_target" ? 0 : (o.xp ?? COMMON.xp_on_hit);
       if (ctx) {
         // 一つの技で稼げる量には上限（多段・多数の敵で一気に満タンにならないように）
         const g = ctx.gain ?? (ctx.gain = { nova: 0, xp: 0 });

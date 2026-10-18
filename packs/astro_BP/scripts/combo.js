@@ -31,7 +31,7 @@ export function onMeleeHit(p, target) {
   const anim = `${key}.combo${step}`;
   if (hasBody(anim)) body(p, anim);
   addNova(p, COMMON.nova_on_hit);
-  addXp(p, key, COMMON.xp_on_hit);
+  if (target.typeId !== "astro:hologram_target") addXp(p, key, COMMON.xp_on_hit);
   BUS.emit("hit", p, target, pl.damage, null);
   const dim = p.dimension;
   const c = pl.color;
