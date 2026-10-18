@@ -110,7 +110,20 @@ nova = P(b=(-26, 0, 0), h=(-32, 0, 0),
          rA=wield(blade=dirv(r=0.55, u=0.85, f=0.05), arm=dirv(r=1.0, u=0.5, f=0.1)),
          rL=(6, 0, 20), lL=(6, 0, -20), root_pos=(0, 1.4, 0))
 
+# 共通の「投げる」を大剣用に（柄頭が兜に当たらないよう、振りかぶりで剣を右へ開く）
+th_back = P(rA=wield(blade=dirv(u=0.45, f=-0.8, r=0.55), arm=dirv(u=0.9, f=-0.2, r=0.6)),
+            lA=aim(dirv(f=1.0, u=0.15, r=-0.1)), b=(-6, 32, 0), h=(0, -26, 0), rL=(14, 0, 4),
+            lL=(-20, 0, -4))
+th_rel = P(rA=wield(blade=dirv(f=1.0, u=-0.1, r=0.1), arm=dirv(f=1.0, u=0.05, r=0.1)),
+           lA=aim(dirv(f=-0.3, u=-1.0, r=-0.4)), b=(14, -24, 0), h=(-8, 22, 0),
+           rL=(16, 0, 4), lL=(-30, 0, -4), root_pos=(0, -0.6, -1.0))
+
 BODY_ANIMS = {
+    "throw": anim(0.55, {0.0: H, 0.14: th_back, 0.26: th_rel,
+                         0.38: P(th_rel, rA=wield(blade=dirv(f=1.0, u=-0.25), arm=dirv(f=1.0, u=-0.2, r=-0.05))),
+                         0.46: P(rA=wield(blade=dirv(f=0.7, u=-0.45, r=0.45), arm=dirv(r=0.55, u=-0.8, f=0.25)),
+                                 b=(6, -8, 0), h=(-4, 8, 0)),
+                         0.55: H}),
     "combo1": anim(0.55, {0.0: H, 0.1: c1_wind, 0.21: c1_hit, 0.3: c1_follow,
                           0.42: P(c1_follow, b=(6, -42, 0)), 0.55: H}),
     "combo2": anim(0.55, {0.0: H, 0.1: c2_wind, 0.22: c2_hit, 0.32: c2_follow,
@@ -123,7 +136,13 @@ BODY_ANIMS = {
                                0.5: cd_run, 0.62: cd_rise, 0.72: cd_follow, 0.9: H}),
     "prominence": anim(1.05, {0.0: H, 0.12: pa_up, 0.24: pa_chop, 0.34: pa_up2, 0.46: pa_chop2,
                               0.58: pa_up3, 0.72: pa_slam, 0.88: P(pa_slam, w=(24, 0, 0)), 1.05: H}),
-    "nova_collapse": anim(1.7, {0.0: H, 0.3: curl, 1.2: curl2, 1.55: curl2, 1.7: H}),
+    "nova_collapse": anim(1.8, {0.0: H, 0.3: curl, 1.2: curl2, 1.5: curl2,
+                                1.64: P(b=(10, 0, 0), h=(6, 0, 0), rL=(-30, 0, 8), lL=(-30, 0, -8),
+                                        lA=aim(dirv(f=0.4, u=-1.0, r=-0.4)),
+                                        rA=wield(blade=dirv(r=0.6, u=-0.8, f=0.1),
+                                                 arm=dirv(r=0.9, u=-0.5, f=0.1)),
+                                        root_pos=(0, 0.8, 0)),
+                                1.8: H}),
     "nova_burst": anim(1.1, {0.0: curl2, 0.08: nova, 0.7: P(nova, b=(-20, 0, 0), h=(-26, 0, 0)),
                              1.1: H}),
 }
