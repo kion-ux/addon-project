@@ -6,8 +6,10 @@
     python3 tools/astro/preview_astro.py docs           # docs/astro/suits.png（ある惑星のスーツ全部）
 
 suit は planets/<key>/suit.py をその場で組み立てて塗る（pack は書き換えない）ので、作りながら何度でも回せる。
-並べ図: 正面 / 背面 / 左側面 / 斜め前 / 見下ろし / 組み上がり 0.3・0.8・1.2・1.8 秒 / 空中（スラスター・マント）/
-歩き / 解除の途中 / 一人称（fp_hide 後に残る物）。
+並べ図（プレイヤーの肌は描かない。変身中は透明なので）: 正面（7 頭身の目盛り + バニラの体の線）/ 背面 /
+左側面 / 斜め前 / 斜め後ろ / 内部フレームだけ / 組み上がり 0.45・0.95・1.35・1.8 秒 / 空中（スラスター・マント）/
+疾走 / ナノウェポン（生成済みなら）/ 見下ろし / 解除の途中 / 近接（上半身・脚・背中）/ 一人称（fp_hide 後に残る物）。
+見出しの 2 行目に計測値（背丈・頭の高さと幅・胸/腰・脚の長さ・細かい部品の割合）。
 
 拡張（ウェポン・コア・HUD の担当へ）:
   * COMMANDS に `"weapon": fn(args)` のように足す（fn は引数リストを受け取り、書いたパスを返す）
@@ -51,61 +53,106 @@ def asset(key, packed=False) -> SC.SuitAsset:
 # ===========================================================================
 #  並べ図
 # ===========================================================================
-TILE = (300, 400)
+TILE = (320, 440)
+COLS = 5
+
+
+def _measure(a):
+    s = getattr(a, "suit", None)
+    if s is None:
+        return None
+    try:
+        return AS.measure(s)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def suit_tiles(a: SC.SuitAsset, tile=TILE):
-    """スーツ 1 着ぶんのタイル（ラベル付き）。"""
+    """スーツ 1 着ぶんのタイル（ラベル付き）。プレイヤーの肌は描かない（変身中は透明）。
+    正面には 7 頭身の目盛りとバニラのプレイヤーの箱（水色の線）を重ねる。"""
     key = a.key
     P = PLANETS[key]
     tiles = []
     idle = SC.suit_anim(a, ["idle", "thrust"], 0.6)
-    for view, ja in (("front", "正面"), ("back", "背面"), ("left", "左側面"),
-                     ("q34", "斜め前"), ("high", "見下ろし")):
-        im = SC.render(a, SC.pose("stand"), idle, view, tile)
-        tiles.append(SC.label(im, ja, P["suit_ja"] if view == "front" else None))
-    for t in (0.3, 0.8, 1.2, TRANSFORM["assemble_len"]):
-        im = SC.render(a, SC.pose("stand"), SC.assembly_anim(a, t), "q34", tile)
-        tiles.append(SC.label(im, f"組み上がり {t:.1f}s"))
+    m = _measure(a)
+    H = m["height"] if m else 32.0
+    sc = tile[1] / 46.0
+    im = SC.render(a, SC.pose("stand"), idle, "front", tile, scale=sc, ghost=True, ruler=H)
+    tiles.append(SC.label(im, "正面（目盛り = 1 頭身、水色 = バニラの体）", P["suit_ja"]))
+    for view, ja in (("back", "背面"), ("left", "左側面"), ("q34", "斜め前"),
+                     ((146, -10), "斜め後ろ")):
+        im = SC.render(a, SC.pose("stand"), idle, view, tile, scale=sc)
+        tiles.append(SC.label(im, ja))
+    im = SC.render(a, SC.pose("stand"), idle, "q34", tile, scale=sc,
+                   hide=SC.hide_except_groups(a, ["inner"]))
+    tiles.append(SC.label(im, "内部フレーム（inner だけ）"))
+    for t in (0.45, 0.95, 1.35, TRANSFORM["assemble_len"]):
+        im = SC.render(a, SC.pose("stand"), SC.assembly_anim(a, t), "q34", tile, scale=sc)
+        tiles.append(SC.label(im, f"組み上がり {t:.2f}s"))
     air = SC.suit_anim(a, ["idle", "thrust"], 1.3, {"v.astro_air": 1.0})
-    im = SC.render(a, SC.pose("air"), air, (-150, -14), tile)
+    im = SC.render(a, SC.pose("air"), air, (-150, -14), tile, scale=sc)
     tiles.append(SC.label(im, "空中（スラスター）"))
     run = SC.suit_anim(a, ["idle", "thrust", "sprint"], 0.9, {"v.astro_run": 1.0})
-    im = SC.render(a, SC.pose("walk", 0.22), run, "right", tile)
+    im = SC.render(a, SC.pose("walk", 0.22), run, "right", tile, scale=sc)
     tiles.append(SC.label(im, "疾走"))
     wp = SC.load_attachable(f"weapon_{key}", ("tp", "idle"), 0.6)
     if wp:                                        # その惑星のナノウェポンが生成済みなら持たせる
-        im = SC.render(a, SC.pose("hold"), idle, (-50, -8), tile, weapon=wp)
+        im = SC.render(a, SC.pose("hold"), idle, (-50, -8), tile, scale=sc, weapon=wp)
         tiles.append(SC.label(im, "ナノウェポン"))
+    im = SC.render(a, SC.pose("stand"), idle, "high", tile, scale=sc)
+    tiles.append(SC.label(im, "見下ろし"))
     rel = SC.release_anim(a, 0.35)
-    im = SC.render(a, SC.pose("stand"), rel, "q34", tile)
+    im = SC.render(a, SC.pose("stand"), rel, "q34", tile, scale=sc)
     tiles.append(SC.label(im, "解除 0.35s"))
+    im = SC.render(a, SC.pose("stand"), idle, (-28, -8), tile, scale=sc * 2.3,
+                   centre=(-1.0, 25.0, 0))
+    tiles.append(SC.label(im, "近接: 上半身"))
+    im = SC.render(a, SC.pose("stand"), idle, (-40, -6), tile, scale=sc * 2.3,
+                   centre=(-1.5, 7.5, 0))
+    tiles.append(SC.label(im, "近接: 脚"))
+    im = SC.render(a, SC.pose("stand"), idle, (160, -6), tile, scale=sc * 2.3,
+                   centre=(-1.0, 21.0, 0))
+    tiles.append(SC.label(im, "近接: 背中"))
     fp = SC.suit_anim(a, ["idle", "thrust", "fp_hide"], 0.6)
-    im = SC.render_fp(a, fp, (tile[0] * 2, tile[1]))
+    im = SC.render_fp(a, fp, (tile[0] * 2, tile[1]), weapon=SC.load_attachable(
+        f"weapon_{key}", ("fp", "idle"), 0.6, {"v.astro_fp": 1.0}) if wp else None)
     tiles.append(SC.label(im, "一人称（fp_hide 後）"))
     return tiles
 
 
+def stat_line(a):
+    s = getattr(a, "suit", None)
+    if s is None:
+        return ""
+    m = _measure(a)
+    txt = f"{len(s.m.bones)} bones / {len(s.m.all_cubes())} cubes / {s.m.tex_w}x{s.m.tex_h} " \
+          f"texel x{s.m.uv_scale:g}"
+    if m:
+        txt += (f"   H {m['height']:.1f}  head {m['head_h']:.2f} (H/{m['height'] / max(m['head_h'], 1e-6):.2f})"
+                f" w{m['head_w']:.1f}  chest/waist {m['chest_w']:.1f}/{m['waist_w']:.1f}"
+                f"={m['chest_waist']:.2f}  legs {m['leg_vis'] / max(m['height'], 1e-6):.2f}H"
+                f"  fine {100 * m['fine_share']:.0f}%")
+    return txt
+
+
 def suit_sheet(key, packed=False, out=None):
+    from PIL import Image, ImageDraw
     a = asset(key, packed)
     tiles = suit_tiles(a)
-    # 一人称は 2 枠ぶんの横長なので、最後の行で 2 枠を使う
-    from PIL import Image
-    cols = 5
     w, h = TILE
-    fp = tiles.pop()
-    rows = (len(tiles) + 2 + cols - 1) // cols
-    sheet = Image.new("RGB", (w * cols, h * rows + 44), (12, 13, 18))
+    fp = tiles.pop()                  # 一人称は 2 枠ぶんの横長
+    n = len(tiles) + 2
+    rows = (n + COLS - 1) // COLS
+    sheet = Image.new("RGB", (w * COLS, h * rows + 44), (12, 13, 18))
     for k, t in enumerate(tiles):
-        sheet.paste(t, ((k % cols) * w, 44 + (k // cols) * h))
+        sheet.paste(t, ((k % COLS) * w, 44 + (k // COLS) * h))
     k = len(tiles)
-    sheet.paste(fp, ((k % cols) * w, 44 + (k // cols) * h))
-    s = getattr(a, "suit", None)
-    stat = (f"{len(s.m.bones)} bones / {len(s.m.all_cubes())} cubes / "
-            f"{s.m.tex_w}x{s.m.tex_h}" if s else "")
-    from PIL import ImageDraw
-    ImageDraw.Draw(sheet).text((12, 10), f"{PLANETS[key]['suit_ja']}  {PLANETS[key]['suit_en']}"
-                               f"   {stat}", font=SC.font(22), fill=(240, 244, 255))
+    if k % COLS == COLS - 1:
+        k += 1
+    sheet.paste(fp, ((k % COLS) * w, 44 + (k // COLS) * h))
+    ImageDraw.Draw(sheet).text((12, 4), f"{PLANETS[key]['suit_ja']}  {PLANETS[key]['suit_en']}",
+                               font=SC.font(20), fill=(240, 244, 255))
+    ImageDraw.Draw(sheet).text((12, 26), stat_line(a), font=SC.font(13), fill=(170, 200, 230))
     out = out or os.path.join(AC.SCRATCH, f"suit_{key}.png")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     sheet.save(out)

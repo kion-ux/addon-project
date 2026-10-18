@@ -601,46 +601,303 @@ def _densify_arms(tracks, mats):
         tr.update(add)
         for t, e in add.items():
             mats[k][t] = rot(*e)
-    refine_euler(tracks, mats)
 
 
 EULER_TOL = 6.0      # 統合版はオイラー角を成分ごとに補間する。回転のままの補間とこれ以上ずれる所にはキーを足す
+MIN_DT = 0.02        # 補間を直すために足すキーの最小の間隔（秒。1 コマ = 1/60 秒より短くしない）
+ARM_SPEED_MAX = 1500.0   # 腕の角速度の上限（度/秒）。書いたキーの間の速さの 1.6 倍まではそれを上限にする
+REFINE_MAX = 48      # 1 本のトラックに直しで足すキーの上限
 
 
 def _rot_angle(Ra, Rb):
     return math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(Ra.T @ Rb) - 1) / 2))))
 
 
-def refine_euler(tracks, mats, depth=6):
-    """腕のトラックで、オイラー角の成分ごとの補間が回転のままの補間（slerp）から EULER_TOL° 以上ずれる区間に、
-    slerp の中点のキーを足す（表し方は両端の平均に最も近い物）。ジンバルロックの近くで腕が暴れて武器が
-    体を通り抜けるのを防ぐ。行列から出したキー（aim / wield / 直し）を端に持つ区間だけ。"""
-    for k in ARMS:
+def _key_R(tr, mk, t):
+    m = mk.get(t)
+    return m if m is not None else rot(*tr[t])
+
+
+def rot_many(E) -> np.ndarray:
+    """rot() を (N, 3) の Euler にまとめて（(N, 3, 3)）。"""
+    E = np.radians(np.asarray(E, float).reshape(-1, 3))
+    ca, sa = np.cos(-E[:, 0]), np.sin(-E[:, 0])
+    cb, sb = np.cos(E[:, 1]), np.sin(E[:, 1])
+    cc, sc = np.cos(-E[:, 2]), np.sin(-E[:, 2])
+    return np.stack([
+        np.stack([cc * cb, cc * sb * sa - sc * ca, cc * sb * ca + sc * sa], -1),
+        np.stack([sc * cb, sc * sb * sa + cc * ca, sc * sb * ca - cc * sa], -1),
+        np.stack([-sb, cb * sa, cb * ca], -1)], -2)
+
+
+def angle_many(A, B) -> np.ndarray:
+    """回転行列の組 A[i], B[i] の間の角度（度）。"""
+    c = (np.einsum("nij,nij->n", A, B) - 1.0) / 2.0
+    return np.degrees(np.arccos(np.clip(c, -1.0, 1.0)))
+
+
+def _forms(R, ref):
+    """R の 2 通りのオイラー角を、それぞれ ref に最も近い巻きで。"""
+    a, b, c = euler(R)
+    ref = np.asarray(ref, float)
+    return [_unwrap(np.array([a, b, c]), ref), _unwrap(np.array([a + 180.0, 180.0 - b, c + 180.0]), ref)]
+
+
+def _catmull_many(P, s):
+    """P = (4, 3) の制御点、s = (M,) → (M, 3)。"""
+    s = np.asarray(s, float)[:, None]
+    p0, p1, p2, p3 = P
+    return 0.5 * (2 * p1 + (p2 - p0) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s
+                  + (3 * p1 - p0 - 3 * p2 + p3) * s * s * s)
+
+
+_S3 = np.array([0.25, 0.5, 0.75])
+_S8 = np.linspace(0.0, 1.0, 9)
+
+
+def _intended(Ra, Rb, ea, eb, plain_seg, s):
+    """区間の「意図した」回転（s ごと）: 書いたオイラー角どうし（自然体など）は成分ごとの補間、
+    それ以外（武器で解いた腕・足したキー）は回転のままの補間（slerp）。"""
+    if plain_seg:
+        return rot_many(ea[None] + (eb - ea)[None] * np.asarray(s)[:, None])
+    qa, qb = _quat(Ra), _quat(Rb)
+    return np.stack([_mat(_slerp(qa, qb, float(x))) for x in s])
+
+
+def _relift(tr, mk, rest):
+    """腕のトラックの各キーを、どのオイラー角の表し方（2 通りの分解 × 360° の巻き）で書くかを選び直す。
+    統合版は成分ごとに catmullrom で補間するので、隣り合うキーの表し方が違う（分解が入れ替わる・360° 巻く）と、
+    回転はほとんど同じでも成分が大きく飛び、その区間と前後の区間の接線が暴れて腕が振り回される。
+      * 書いたオイラー角のキー（自然体 H など）は書いた値のまま（最初と最後は必ず: 終わりのブレンドで
+        成分が比例して縮むので、自然体はそのままの値でないと腕が一回転する）
+      * 行列から出したキーは、その錨（書いたキー、または最初・最後のキーの 2 通り）から回転を連続に
+        たどった値（lift）のどれか
+      * 錨どうしでたどった値が食い違う時だけ、切り替える区間を Viterbi で選ぶ（成分の補間が回転の
+        補間から最もずれない・長い区間で）"""
+    ts = sorted(tr)
+    n = len(ts)
+    if n < 2 or not any(mk.get(t) is not None for t in ts):
+        return
+    Rs = [_key_R(tr, mk, t) for t in ts]
+    plain = [mk.get(t) is None for t in ts]
+    auth = [np.array(tr[t], float) for t in ts]
+
+    def lift(i0, e0):
+        out = [None] * n
+        out[i0] = np.array(e0, float)
+        for i in range(i0 + 1, n):
+            out[i] = euler_near(Rs[i], out[i - 1])
+        for i in range(i0 - 1, -1, -1):
+            out[i] = euler_near(Rs[i], out[i + 1])
+        return out
+    anchors = [(i, auth[i]) for i in range(n) if plain[i]]
+    for i in (n - 1, 0):
+        if not plain[i]:
+            anchors += [(i, f) for f in sorted(_forms(Rs[i], rest), key=lambda f: float(np.abs(f - rest).sum()))]
+    lifts = []
+    for i, e in anchors:
+        if any(np.abs(L[i] - e).max() < 0.05 for L in lifts):
+            continue
+        lifts.append(lift(i, e))
+
+    def fits(L):
+        return all(np.abs(L[i] - auth[i]).max() < 0.05 for i in range(n) if plain[i])
+    good = [L for L in lifts if fits(L)]
+    if good:
+        # 1 本の lift で全部の錨が合う（ほとんどのトラック）。最初・最後の小さい方
+        best = min(good, key=lambda L: float(np.abs(L[0] - rest).sum() + np.abs(L[-1] - rest).sum()))
+        for i, t in enumerate(ts):
+            tr[t] = tuple(float(x) for x in best[i])
+        return
+    # ---- 食い違う: Viterbi -------------------------------------------------------------
+    cands = []
+    for i in range(n):
+        c = []
+        for L in lifts:
+            if not any(np.abs(L[i] - x).max() < 0.05 for x in c):
+                c.append(L[i])
+        if plain[i] and not any(np.abs(auth[i] - x).max() < 0.05 for x in c):
+            c.append(auth[i])
+        cands.append(c)
+    INF = 1e18
+
+    def node(i, e):
+        if plain[i]:
+            if np.abs(e - auth[i]).max() < 0.05:
+                return 0.0
+            return INF if i in (0, n - 1) else 4.0
+        return 1e-3 * float(np.abs(e - rest).sum()) if i in (0, n - 1) else 0.0
+    cost = [np.array([node(0, e) for e in cands[0]])]
+    back = []
+    for i in range(1, n):
+        dt = max(ts[i] - ts[i - 1], 1e-3)
+        plain_seg = plain[i - 1] and plain[i]
+        Rint = _intended(Rs[i - 1], Rs[i], auth[i - 1], auth[i], plain_seg, _S3)
+        ci, bi = [], []
+        for e in cands[i]:
+            best = (INF, 0)
+            for j, x in enumerate(cands[i - 1]):
+                if cost[-1][j] >= INF:
+                    continue
+                path = x[None] + (e - x)[None] * _S3[:, None]
+                dev = float(angle_many(rot_many(path), Rint).max())
+                c = cost[-1][j] + (dev / EULER_TOL) ** 2 + (dev / (dt * 400.0)) ** 2 \
+                    + 1e-3 * float(np.abs(e - x).sum())
+                if c < best[0]:
+                    best = (c, j)
+            ci.append(best[0] + node(i, e))
+            bi.append(best[1])
+        cost.append(np.array(ci))
+        back.append(bi)
+    j = int(np.argmin(cost[-1]))
+    for i in range(n - 1, -1, -1):
+        tr[ts[i]] = tuple(float(x) for x in cands[i][j])
+        if i:
+            j = back[i - 1][j]
+
+
+def _seg_badness(ts, E, Rs, plain, i, limit_speed=None):
+    """区間 i（ts[i]→ts[i+1]）を統合版の catmullrom で補間した時の悪さ: max(意図した回転からのずれ / EULER_TOL,
+    角速度 / 許す速さ)。1 を超えると直す。"""
+    n = len(ts)
+    P = np.stack([E[max(0, i - 1)], E[i], E[i + 1], E[min(n - 1, i + 2)]])
+    got = rot_many(_catmull_many(P, _S8))
+    dt = max(ts[i + 1] - ts[i], 1e-4)
+    want = _intended(Rs[i], Rs[i + 1], E[i], E[i + 1], plain[i] and plain[i + 1], _S8)
+    dev = float(angle_many(got, want).max())
+    speed = float(angle_many(got[1:], got[:-1]).max()) / (dt / (len(_S8) - 1))
+    # 許す速さ: この区間と両隣の区間の、意図した速さの 1.5 倍（最低 360 度/秒）
+    v = []
+    for j in (i - 1, i, i + 1):
+        if 0 <= j < n - 1:
+            v.append(_rot_angle(Rs[j], Rs[j + 1]) / max(ts[j + 1] - ts[j], 1e-4))
+    allow = max(360.0, 1.5 * max(v))
+    if limit_speed:
+        allow = min(allow, limit_speed)
+    return max(dev / EULER_TOL, speed / allow)
+
+
+def _refine(tr, mk):
+    """統合版と同じ catmullrom で補間した腕が、意図した回転から EULER_TOL° 以上ずれる・速く回りすぎる区間に、
+    回転のまま補間した中点のキーを足す（その区間か隣の区間の、いちばん良くなる方）。足すキーは MIN_DT 以上
+    離す（近すぎるキーは、前後の長い区間に大きな接線を持ち込んで腕を振り回す）。"""
+    if not any(v is not None for v in mk.values()):
+        return
+    stuck = set()
+    added = 0
+    while added < REFINE_MAX:
+        ts = sorted(tr)
+        n = len(ts)
+        E = [np.array(tr[t], float) for t in ts]
+        Rs = [_key_R(tr, mk, t) for t in ts]
+        plain = [mk.get(t) is None for t in ts]
+        bad = [(_seg_badness(ts, E, Rs, plain, i), i) for i in range(n - 1)]
+        cand = [(b, i) for b, i in bad if b > 1.0 and ts[i] not in stuck]
+        if not cand:
+            return
+        b0, i = max(cand)
+        lo, hi = max(0, i - 2), min(n - 2, i + 2)
+        cur = max(bb for bb, j in bad if lo <= j <= hi)
+        best = None
+        for j in (i, i - 1, i + 1):
+            if not 0 <= j < n - 1 or ts[j + 1] - ts[j] < 2 * MIN_DT - 1e-6:
+                continue
+            tm = round((ts[j] + ts[j + 1]) / 2, 3)
+            if tm in tr:
+                continue
+            if plain[j] and plain[j + 1]:
+                em = (E[j] + E[j + 1]) / 2
+                Rm = rot(*em)
+            else:
+                Rm = _mat(_slerp(_quat(Rs[j]), _quat(Rs[j + 1]), 0.5))
+                em = euler_near(Rm, (E[j] + E[j + 1]) / 2)
+            ts2 = ts[:j + 1] + [tm] + ts[j + 1:]
+            E2 = E[:j + 1] + [em] + E[j + 1:]
+            R2 = Rs[:j + 1] + [Rm] + Rs[j + 1:]
+            p2 = plain[:j + 1] + [False] + plain[j + 1:]
+            new = max(_seg_badness(ts2, E2, R2, p2, k) for k in range(lo, min(len(ts2) - 2, hi + 1) + 1))
+            if best is None or new < best[0]:
+                best = (new, tm, em, Rm)
+        if best is None or best[0] >= cur - 1e-3:
+            stuck.add(ts[i])
+            continue
+        _new, tm, em, Rm = best
+        tr[tm] = tuple(float(x) for x in em)
+        mk[tm] = Rm
+        added += 1
+
+
+def _finalize_arms(tracks, mats, only=ARMS):
+    """腕のトラックの表し方を選び直し（_relift）、補間を catmullrom で確かめて直す（_refine）。"""
+    for k in only:
         if k not in tracks:
             continue
-        tr = tracks[k]
         mk = mats.setdefault(k, {})
+        rest = np.array(REST.get(k, (0.0, 0.0, 0.0)), float)
+        _relift(tracks[k], mk, rest)
+        _refine(tracks[k], mk)
+        _relift(tracks[k], mk, rest)
 
-        def split(a, b, d):
-            ea, eb = np.array(tr[a]), np.array(tr[b])
-            Ra, Rb = rot(*ea), rot(*eb)
-            qa, qb = _quat(Ra), _quat(Rb)
-            worst = max(_rot_angle(rot(*(ea + (eb - ea) * s_)), _mat(_slerp(qa, qb, s_)))
-                        for s_ in (0.25, 0.5, 0.75))
-            if worst < EULER_TOL or d == 0:
-                return
-            m = round((a + b) / 2, 3)
-            if m <= a or m >= b:
-                return
-            Rm = _mat(_slerp(qa, qb, 0.5))
-            tr[m] = tuple(float(x) for x in euler_near(Rm, (ea + eb) / 2))
-            mk[m] = Rm
-            split(a, m, d - 1)
-            split(m, b, d - 1)
-        ts = sorted(tr)
-        for a, b in zip(ts, ts[1:]):
-            if mk.get(a) is not None or mk.get(b) is not None:
-                split(a, b, depth)
+
+def arm_speeds(res, part, step=1.0 / 120.0):
+    """(時刻の中点, 角速度 度/秒, 許す速さ) の配列: 統合版の catmullrom で step 秒ごとに見た腕の角速度と、
+    その時刻の上限 max(ARM_SPEED_MAX, 書いたキーの間の速さ × 1.6)。"""
+    tr = res.tracks.get(part)
+    if not tr or len(tr) < 2:
+        return np.zeros(0), np.zeros(0), np.zeros(0)
+    keys = sorted(set(res.keys) | {0.0, round(res.length, 3)})
+    n = max(2, int(math.ceil(res.length / step)))
+    T = np.linspace(0.0, res.length, n + 1)
+    R = rot_many(np.stack([_eval_track(tr, float(t)) for t in T]))
+    w = angle_many(R[1:], R[:-1]) / (res.length / n)
+    Rk = [rot(*_eval_track(tr, t)) for t in keys]
+    seg = [_rot_angle(Rk[i], Rk[i + 1]) / max(keys[i + 1] - keys[i], 1e-3) for i in range(len(keys) - 1)]
+    tm = (T[1:] + T[:-1]) / 2
+    idx = np.clip(np.searchsorted(keys, tm, side="right") - 1, 0, len(seg) - 1)
+    allow = np.maximum(ARM_SPEED_MAX, 1.6 * np.asarray(seg)[idx])
+    return tm, w, allow
+
+
+def arm_speed_report(res, step=1.0 / 120.0):
+    """[(部位, 時刻, 角速度, 許す速さ)]: 上限を超えた腕（部位ごとに最悪の 1 つ）。"""
+    out = []
+    for k in ARMS:
+        tm, w, allow = arm_speeds(res, k, step)
+        if len(w) and (w > allow).any():
+            m = int(np.argmax(w / allow))
+            out.append((k, round(float(tm[m]), 3), float(w[m]), float(allow[m])))
+    return out
+
+
+def fp_track(res, part) -> dict:
+    """一人称の腕 {秒: (x, y, z)}: 自然体からの回転 D = R · R_rest⁻¹ を、同じ軸まわりに FPK 倍だけ回した物の
+    オイラー角（成分を 25% にするのではない — ±360° の巻きや分解の違いで一人称の腕が 90° ねじれないように）。
+    四元数の符号は最後のキー（自然体）から連続にたどり、オイラー角も隣のキーに最も近い表し方で。"""
+    tr = res.tracks.get(part)
+    if not tr:
+        return {}
+    ts = sorted(tr)
+    R0 = rot(*REST.get(part, (0.0, 0.0, 0.0)))
+    qs = [_quat(rot(*tr[t]) @ R0.T) for t in ts]
+    if qs[-1][0] < 0:
+        qs[-1] = -qs[-1]
+    for i in range(len(qs) - 2, -1, -1):
+        if float(np.dot(qs[i], qs[i + 1])) < 0:
+            qs[i] = -qs[i]
+    out = {}
+    prev = np.zeros(3)
+    for i in range(len(ts) - 1, -1, -1):
+        w, v = float(qs[i][0]), qs[i][1:]
+        s = float(np.linalg.norm(v))
+        if s < 1e-9:
+            F = np.eye(3)
+        else:
+            th = 2.0 * math.degrees(math.atan2(s, w))      # 0〜360（符号を連続にたどった角度）
+            F = _axis_angle(v / s, th * FPK)
+        e = euler_near(F, prev)
+        out[ts[i]] = tuple(float(x) for x in e)
+        prev = e
+    return out
 
 
 # ===========================================================================
@@ -664,8 +921,8 @@ def num(x):
     return s if s not in ("", "-0") else "0"
 
 
-def _chan(part, axis, value, kind):
-    """1 チャンネルの値（数か Molang）。value は絶対値。"""
+def _chan(part, axis, value, kind, fp=0.0):
+    """1 チャンネルの値（数か Molang）。value は絶対値（三人称）、fp は一人称の値（fp_track）。"""
     rest = REST.get(part, (0.0, 0.0, 0.0))[axis]
     delta = value - rest
     if part in ARMS:
@@ -674,10 +931,10 @@ def _chan(part, axis, value, kind):
             terms.append(WALK_CANCEL[(part, axis)])
         if kind == "act" and (part, axis) in ATK_CANCEL:
             terms.append(ATK_CANCEL[(part, axis)])
-        if not terms:
+        if not terms and num(fp) == "0":
             return 0
-        tp = " + ".join(terms)
-        return f"v.is_first_person ? {num(delta * FPK)} : ({tp})"
+        tp = " + ".join(terms) if terms else "0.0"
+        return f"v.is_first_person ? {num(fp)} : ({tp})"
     terms = [num(value)] if abs(value) > 1e-6 else []
     if kind == "act" and (part, axis) in ATK_CANCEL:
         terms.append(ATK_CANCEL[(part, axis)])
@@ -697,10 +954,11 @@ def to_json(res: Resolved, smooth=True) -> dict:
         if part not in res.tracks:
             continue
         tr = res.tracks[part]
+        fp = fp_track(res, part) if part in ARMS else {}
         track = {}
         moved = False
         for t in sorted(tr):
-            v = [_chan(part, i, tr[t][i], res.kind) for i in range(3)]
+            v = [_chan(part, i, tr[t][i], res.kind, fp[t][i] if fp else 0.0) for i in range(3)]
             if any(x != 0 for x in v):
                 moved = True
             track[_ts(t)] = {"post": v, "lerp_mode": "catmullrom"} if smooth else v

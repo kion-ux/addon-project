@@ -25,11 +25,15 @@
   thrust    fx_thrust_* を v.astro_air（空中で 1 に近づく）で伸ばす + SUIT_ANIMS["thrust"]
   sprint    SUIT_ANIMS["sprint"]（v.astro_run で強さを付けられる）
   fp_hide   一人称で head・body・rightLeg・leftLeg を scale 0（腕だけ残る）
-  hide_all  6 つのトップレベルを scale 0（頭スロット以外・透明化の時）
+  hide_all  6 つのトップレベルを scale 0（頭スロット以外に置かれた時だけ。v1.1: 変身中はスクリプトが
+            装着者を透明化するので q.is_invisible では隠さない。DESIGN §4.3b）
+ループするアニメ（idle / thrust / sprint / 惑星の追加）は継ぎ目なく繰り返すこと:
+  q.anim_time に掛ける周波数 × ループ長が 360° の整数倍（loop_errors() が調べる。check_astro_suits も使う）
 """
 from __future__ import annotations
 
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -50,7 +54,7 @@ RC_NAME = f"controller.render.{NS}.suit"
 IDLE_LEN = 12.0              # idle のループ長（秒）。Molang の周波数は 30°/秒の倍数で継ぎ目が出ない
 POP = (0.10, 0.25)           # 組み上がりのポップ: 0→1.15 に 0.10 秒、1.0 に戻るまで 0.25 秒
 RELEASE_LEN = 0.8
-MAX_CUBES = 650
+MAX_CUBES = 1400             # これを超えたら警告（検査は check_astro_suits。生成は止めない）
 
 FP_HIDE = ("head", "body", "rightLeg", "leftLeg")     # 一人称で隠すトップレベル
 
@@ -309,6 +313,44 @@ def suit_animations(s) -> dict:
     return A
 
 
+_ANIM_T = re.compile(r"(?:q|query)\.anim_time\s*\*\s*\(?\s*(-?[\d.]+)|(-?[\d.]+)\s*\*\s*(?:q|query)\.anim_time")
+
+
+def _strings(v):
+    if isinstance(v, str):
+        yield v
+    elif isinstance(v, dict):
+        for x in v.values():
+            yield from _strings(x)
+    elif isinstance(v, (list, tuple)):
+        for x in v:
+            yield from _strings(x)
+
+
+def loop_errors(name: str, anim: dict) -> list:
+    """ループするアニメが継ぎ目なく繰り返すか: q.anim_time に掛かる周波数 f（度/秒）が
+    f × animation_length ≡ 0 (mod 360) であること。q.anim_time を掛け算以外で使う式は警告扱いの文を返す。
+    戻り値: 問題の説明のリスト（空なら OK）。"""
+    if anim.get("loop") is not True:
+        return []
+    L = float(anim.get("animation_length", IDLE_LEN) or IDLE_LEN)
+    out = []
+    for bone, tr in (anim.get("bones") or {}).items():
+        for expr in _strings(tr):
+            for m_ in _ANIM_T.finditer(expr):
+                f = float(m_.group(1) or m_.group(2))
+                turns = f * L / 360.0
+                if abs(turns - round(turns)) > 1e-6:
+                    out.append(f"{name}: '{bone}' uses q.anim_time * {f:g} — {f:g}°/s × {L:g} s "
+                               f"is {turns:.3f} turns (not whole: jumps at the loop). Use a multiple "
+                               f"of {360.0 / L:g}°/s")
+            rest = _ANIM_T.sub("", expr)
+            if re.search(r"(?:q|query)\.anim_time", rest):
+                out.append(f"{name}: '{bone}' uses q.anim_time outside 'q.anim_time * <number>' "
+                           f"({expr[:60]!r}); make sure it is periodic over {L:g} s")
+    return out
+
+
 def controllers() -> dict:
     return {
         CTRL_ON: {
@@ -346,6 +388,7 @@ PRE = [
 PARENT_SETUP = ("v.helmet_layer_visible = 0.0; v.chest_layer_visible = 0.0; "
                 "v.leg_layer_visible = 0.0; v.boot_layer_visible = 0.0;")
 VARIANTS = ("on", "", "off")          # astro:suit_<key>_on / astro:suit_<key> / astro:suit_<key>_off
+HIDE_ALL = "c.item_slot != 'head'"
 
 
 def ident(key, variant=""):
@@ -359,8 +402,10 @@ def attachable(key, variant="", extra_anims=()):
              "fp_hide": f"{base}.fp_hide", "hide_all": f"{base}.hide_all"}
     for n in extra_anims:
         anims[n] = f"{base}.{n}"
+    # hide_all は頭スロット以外に置かれた時だけ（v1.1: 変身中は装着者が透明化されるので
+    # q.is_invisible を入れるとスーツまで消える。DESIGN §4.3b）
     tail = [{"fp_hide": "v.astro_fp > 0.5"},
-            {"hide_all": "c.item_slot != 'head' || q.is_invisible"}]
+            {"hide_all": HIDE_ALL}]
     if variant == "off":
         anims.update({"release": f"{base}.release", "gone": f"{base}.gone",
                       "controller": CTRL_OFF})

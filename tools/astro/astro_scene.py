@@ -744,8 +744,7 @@ def hide_except_groups(asset, groups):
     keep = bones_of_groups(asset, groups)
     tops = {"body", "head", "rightArm", "leftArm", "rightLeg", "leftLeg"}
     return [b["name"] for b in asset.geo["bones"]
-            if b["name"] not in keep and b["name"] not in tops
-            and b.get("parent") in tops]
+            if b["name"] not in keep and b["name"] not in tops]
 
 
 def render_fp(asset, anim=None, size=(400, 225), fov=70.0, weapon=None, show_player=False):

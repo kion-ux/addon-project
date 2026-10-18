@@ -417,8 +417,7 @@ export function tryJustDodge(p, attacker) {
   title(p, " ", `§r${glyph("icon.sync", "")}§r ${pl.tc}JUST DODGE §r${glyph("icon.sync", "")}`, { fadeIn: 0, stay: 14, fadeOut: 6 });
   // 周りの敵の時間が遅れる、自分は加速
   for (const e of entitiesNear(p.dimension, l, 7)) {
-    if (!valid(e) || e.id === p.id) continue;
-    try { if (e.typeId === "astro:dmg_text" || e.typeId === "minecraft:item") continue; } catch (_) { continue; }
+    if (!isTarget(p, e)) continue;   // 自分のペット・乗り物は鈍らせない
     effect(e, "slowness", 50, 4);
   }
   if (attacker && valid(attacker)) effect(attacker, "weakness", 60, 1);
@@ -548,7 +547,7 @@ export function forgetMobility(id) { mv.delete(id); }
 export function resetMobility(p) {
   const m = mv.get(p.id);
   if (m?.hovering) stopHover(p, m, true);
-  if (m) { m.dodgeUntil = -1; m.jumps = 0; m.dashes = 0; }
+  if (m) { m.dodgeUntil = -1; m.jumps = 0; m.dashes = 0; m.boostAt = -1; }
 }
 
 export { setNovaRaw, viewDir };
