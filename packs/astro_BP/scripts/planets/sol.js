@@ -27,7 +27,7 @@ import {
   register, lunge, hover, ultOpen, zone, dirTo,
 } from "../engine.js";
 import {
-  P, line, ring, arc, shock, emblem, flash, shake, sound, body, white, mix, afterimage, status, fxScale,
+  P, line, ring, arc, shock, emblem, flash, shake, sound, body, white, mix, afterimage, status, fxScale, glyph,
 } from "../fx.js";
 import { hit, hostilesNear, pull } from "../combat.js";
 import {
@@ -43,6 +43,8 @@ const CRIMSON = [0.78, 0.13, 0.05];
 const PLASMA = [1.0, 0.52, 0.12];
 const NOVA = [0.74, 0.9, 1.0];
 const EAST = { x: 1, y: 0, z: 0 };
+/** HUD の 2 行目（溜め・臨界のメーター）の頭に付ける太陽の紋章グリフ。 */
+const EM = () => `§r${glyph(["emblem", KEY], "§6*")}§r`;
 
 /** 相手に火をつける（setOnFire が無い版では何もしない。ブロックには燃え移らない）。 */
 function ignite(e, seconds) {
@@ -111,7 +113,7 @@ register(KEY, {
       P(dim, "converge", palm, { color: i % 2 ? SUN : HOT, count: 10, spread: 1.8, life: 0.35, size: 0.7 });
       P(dim, "ember", ctx.local(0.2, 0.4, 2.6), { color: SUN, count: 4, spread: 0.4, speed: 1.4 });
       if (i === 1 || i === 3) fanEdges(dim, ctx.ground(ctx.loc()), ctx.liveDir(), 8.5, 55, FLARE);
-      status(p, `§6☀ §fSOLAR FLARE §6${"▰".repeat(i + 1)}§8${"▱".repeat(4 - i)}`, 4);
+      status(p, `${EM()} §fSOLAR FLARE §6${"▰".repeat(i + 1)}§8${"▱".repeat(4 - i)}`, 4);
     });
     ctx.at(9, () => {
       const f = ctx.liveDir();
@@ -385,7 +387,7 @@ register(KEY, {
       if (i % 4 === 1) P(dim, "converge", c0, { color: FLARE, count: 12, spread: 4.5, life: 0.35, size: 0.9 });
       if (i % 4 === 0) {
         const fill = Math.min(5, 1 + Math.floor(i / 5));
-        status(p, `§6☀ §fSUPERNOVA §c臨界 §6${"▰".repeat(fill)}§8${"▱".repeat(5 - fill)}`, 6);
+        status(p, `${EM()} §fSUPERNOVA §c臨界 §6${"▰".repeat(fill)}§8${"▱".repeat(5 - fill)}`, 6);
       }
     });
     ctx.at(36, () => {

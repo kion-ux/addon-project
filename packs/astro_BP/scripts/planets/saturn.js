@@ -220,8 +220,8 @@ register(KEY, {
         last.set(e.id, i);
         const s = dot(sub(e.location, l), r) >= 0 ? 1 : -1;
         const away = norm({ x: r.x * s + f.x * 0.4, y: 0, z: r.z * s + f.z * 0.4 });
-        hit(ctx, e, 6, { color: ICE, kb: 1.1, up: 0.4, dir: away, power: 1.3, sound: "astro.hit_metal" });
         P(dim, "slash", chest(e), { color: ICE_HOT, rot: s > 0 ? 30 : -30, size: 0.9, life: 0.2 });
+        hit(ctx, e, 7, { color: ICE, kb: 1.1, up: 0.4, dir: away, power: 1.3, sound: "astro.hit_metal" });
       }
     });
     ctx.at(15, () => {
@@ -237,7 +237,7 @@ register(KEY, {
       ringN(dim, up(g, 0.3), 1.0, UPV, GOLD, { count: 24, speed: 6, life: 0.35, var: 1 });
       shake(dim, l, 8, 0.25, 0.2);
       for (const e of ctx.foes(2.8)) {
-        if (ctx.once(e, 1, "sweep")) hit(ctx, e, 4, { color: GOLD, kb: 1.0, up: 0.3, dir: dirTo(l, e.location) });
+        if (ctx.once(e, 1, "sweep")) hit(ctx, e, 5, { color: GOLD, kb: 1.0, up: 0.3, dir: dirTo(l, e.location) });
       }
     });
     return 19;
@@ -305,7 +305,7 @@ register(KEY, {
         if (ctx.once(e, 1, "drop")) hit(ctx, e, 6, { color: ICE, pull: g, kb: 0.4, up: 0.25, power: 1.6 });
       }
       zone(ctx, g, {
-        radius: R, ticks: 80, every: 7, damage: 2, height: 3.5,
+        radius: R, ticks: 80, every: 8, damage: 1.5, height: 3.5,
         effects: [["slowness", 24, 2]], hit: { color: ICE },
         visualEvery: 2,
         visual(d, c, age) {
@@ -321,13 +321,14 @@ register(KEY, {
           }
           if (age % 10 === 0) sound(d, "astro.wind", c, 1.1, 0.5);
         },
-        onPulse(foes) {
+        onPulse(foes, z) {
           for (const e of foes) {
+            if (!valid(e)) continue;
             const q = chest(e);
             P(dim, "slash", q, { color: ICE_HOT, rot: rand(0, 360), size: 0.7, life: 0.16 });
             P(dim, "spark", q, { color: GOLD, count: 3, speed: 4, size: 0.6 });
           }
-          if (foes.length) sound(dim, "astro.hit_metal", foes[0].location, rand(1.3, 1.6), 0.5);
+          if (foes.length) sound(dim, "astro.hit_metal", z.center, rand(1.3, 1.6), 0.5);
         },
         onEnd(z) {
           const c = z.center;
@@ -426,8 +427,8 @@ register(KEY, {
       flash(dim, C, 32, white(ICE, 0.7), 0.06, 0.5);
       for (const e of ctx.foes(R + 1.5, c)) {
         if (Math.abs(e.location.y + 1 - c.y) > 4 || !ctx.once(e, 1, "horizon")) continue;
-        hit(ctx, e, 24, { color: ICE, kb: 1.6, up: 0.35, dir: dirTo(C, e.location), power: 2.2, crit: 0.35, sound: "astro.hit_heavy" });
         P(dim, "slash", chest(e), { color: ICE_HOT, rot: 90, size: 1.6, life: 0.3 });
+        hit(ctx, e, 24, { color: ICE, kb: 1.6, up: 0.35, dir: dirTo(C, e.location), power: 2.2, crit: 0.35, sound: "astro.hit_heavy" });
       }
     });
     // 時が動き出す: 切り口が遅れて爆ぜる
@@ -437,9 +438,10 @@ register(KEY, {
       ringN(dim, up(C, 0.3), RC, UPV, VIOLET, { count: 40, speed: 3, life: 0.6, var: 3 });
       for (const e of ctx.foes(R + 4, up(C, 1))) {
         if (!ctx.once(e, 1, "sever")) continue;
+        const q = chest(e);
+        P(dim, "cross", q, { color: VIOLET, size: 1.6, life: 0.3 });
+        P(dim, "shard", q, { color: GOLD, count: 6, speed: 4 });
         hit(ctx, e, 10, { color: VIOLET, up: 0.7, kb: 0.4, dir: dirTo(C, e.location), power: 1.8, crit: true });
-        P(dim, "cross", chest(e), { color: VIOLET, size: 1.6, life: 0.3 });
-        P(dim, "shard", chest(e), { color: GOLD, count: 6, speed: 4 });
       }
     });
     // 時計の陣が砕ける
@@ -524,20 +526,22 @@ register(KEY, {
       if (!foes.length) return;
       st.cd = 20;
       for (const e of foes) {
+        const q = chest(e);
+        P(dim, "spark", q, { color: GOLD, count: 4, speed: 4, size: 0.6 });
+        P(dim, "shard", q, { color: ICE, count: 2, speed: 2 });
         selfHit = true;
         try {
           hit(p, e, 1.5 + 0.3 * (o.shards - 3), { color: GOLD, nova: 1, xp: 1, power: 0.5, kb: 0.15, sound: "astro.hit_metal" });
         } finally { selfHit = false; }
-        const q = chest(e);
-        P(dim, "spark", q, { color: GOLD, count: 4, speed: 4, size: 0.6 });
-        P(dim, "shard", q, { color: ICE, count: 2, speed: 2 });
       }
       sound(dim, "astro.ring_spin", c, 1.8, 0.3);
     },
     onHit(p, target, dmg, ctx) {
       // 当たるたびに欠片が一つ増える（技の多段は 1 技につき 1 つまで）
       if (selfHit) return;
-      if (ctx && !ctx.once(target, 1, "orbit_shard")) return;
+      try {
+        if (ctx && !ctx.once(target, 1, "orbit_shard")) return;
+      } catch (_) { return; }
       addShard(p, 1);
     },
     onHurt(p, attacker) {

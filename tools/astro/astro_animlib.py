@@ -427,6 +427,7 @@ def _repair(res, cloud, hold, rounds=16, step=0.02):
         R = _clear(R_cur, bt, R_cur @ ARM_DOWN, ARM_DOWN, parts, cloud, blade_l=blade_l)
         tr[t] = tuple(float(x) for x in euler_near(R, np.array(parts["rA"])))
         res.mats["rA"][t] = R
+        refine_euler(res.tracks, res.mats)
 
 
 def _foot_min(pose):
@@ -577,6 +578,48 @@ def _densify_arms(tracks, mats):
             if mats[k].get(b) is not None:
                 tr[b] = tuple(float(x) for x in euler_near(Rb, ref))
         tr.update(add)
+        for t, e in add.items():
+            mats[k][t] = rot(*e)
+    refine_euler(tracks, mats)
+
+
+EULER_TOL = 6.0      # 統合版はオイラー角を成分ごとに補間する。回転のままの補間とこれ以上ずれる所にはキーを足す
+
+
+def _rot_angle(Ra, Rb):
+    return math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(Ra.T @ Rb) - 1) / 2))))
+
+
+def refine_euler(tracks, mats, depth=6):
+    """腕のトラックで、オイラー角の成分ごとの補間が回転のままの補間（slerp）から EULER_TOL° 以上ずれる区間に、
+    slerp の中点のキーを足す（表し方は両端の平均に最も近い物）。ジンバルロックの近くで腕が暴れて武器が
+    体を通り抜けるのを防ぐ。行列から出したキー（aim / wield / 直し）を端に持つ区間だけ。"""
+    for k in ARMS:
+        if k not in tracks:
+            continue
+        tr = tracks[k]
+        mk = mats.setdefault(k, {})
+
+        def split(a, b, d):
+            ea, eb = np.array(tr[a]), np.array(tr[b])
+            Ra, Rb = rot(*ea), rot(*eb)
+            qa, qb = _quat(Ra), _quat(Rb)
+            worst = max(_rot_angle(rot(*(ea + (eb - ea) * s_)), _mat(_slerp(qa, qb, s_)))
+                        for s_ in (0.25, 0.5, 0.75))
+            if worst < EULER_TOL or d == 0:
+                return
+            m = round((a + b) / 2, 3)
+            if m <= a or m >= b:
+                return
+            Rm = _mat(_slerp(qa, qb, 0.5))
+            tr[m] = tuple(float(x) for x in euler_near(Rm, (ea + eb) / 2))
+            mk[m] = Rm
+            split(a, m, d - 1)
+            split(m, b, d - 1)
+        ts = sorted(tr)
+        for a, b in zip(ts, ts[1:]):
+            if mk.get(a) is not None or mk.get(b) is not None:
+                split(a, b, depth)
 
 
 # ===========================================================================
@@ -825,7 +868,7 @@ def library() -> dict:
     # ---- 投げる（0.55 秒）: 右後ろへ引き、頭の右を通して前へ投げる（長柄でも頭に当たらない横手投げ） ----
     L["throw"] = anim(0.55, {
         0.0: H,
-        0.13: P(rA=wield(blade=dirv(f=-0.85, r=0.45, u=0.2), arm=dirv(r=0.85, f=-0.35, u=0.2)),
+        0.13: P(rA=wield(blade=dirv(f=-0.45, r=0.35, u=0.8), arm=dirv(r=0.8, f=-0.3, u=0.5)),
                 lA=aim(dirv(f=1.0, u=0.15, r=-0.15)), b=(-4, 36, 0), h=(0, -30, 0), rL=(14, 0, 6),
                 lL=(-20, 0, -6), ground=True),
         0.21: P(rA=wield(blade=dirv(r=0.8, f=0.55, u=0.15), arm=dirv(r=1.0, f=0.2, u=0.25)),
@@ -849,7 +892,10 @@ def library() -> dict:
              rL=(-46, 0, 8), lL=(40, 0, -8), ground=True)
     over = P(up, rA=wield(blade=dirv(u=0.8, f=0.45, r=0.15), arm=dirv(u=0.9, f=0.45, r=0.45)), b=(-4, 0, 0),
              root_pos=(0, 1.6, 0))
-    L["slam"] = anim(0.8, {0.0: H, 0.2: up, 0.27: over, 0.34: down, 0.6: P(down, w=(28, 0, 0)), 0.8: H})
+    rise = P(rA=wield(blade=dirv(f=0.6, u=-0.45, r=0.65), arm=dirv(r=0.75, u=-0.65, f=0.1)), w=(10, 0, 0),
+             h=(-8, 0, 0), rL=(-14, 0, 6), lL=(12, 0, -6), ground=True)
+    L["slam"] = anim(0.8, {0.0: H, 0.2: up, 0.27: over, 0.34: down, 0.58: P(down, w=(28, 0, 0)), 0.7: rise,
+                           0.8: H})
 
     # ---- 突き（0.45 秒）: 踏み込んで真っすぐ ---------------------------------------------------
     pull = P(rA=wield(blade=dirv(f=1.0, u=0.05), arm=dirv(f=-0.6, u=-1.0, r=0.35)),

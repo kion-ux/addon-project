@@ -21,7 +21,7 @@ from astro_animlib import DOWN, LEFT, H, P, aim, anim, dirv, flip, wield
 
 # ---- 三段コンボ -------------------------------------------------------------
 c1_wind = P(b=(2, 44, 0), w=(4, 0, 0), h=(0, -32, 0),
-            rA=wield(blade=dirv(r=1.0, f=-0.45, u=0.25), arm=dirv(r=1.0, u=-0.2, f=-0.1)),
+            rA=wield(blade=dirv(r=0.9, f=-0.45, u=0.45), arm=dirv(r=1.0, u=0.05, f=-0.15)),
             lA=aim(dirv(f=1.0, r=-0.4, u=-0.1)),
             rL=(14, 0, 8), lL=(-18, 0, -8), ground=True)
 c1_lift = P(b=(0, 20, 0), h=(0, -14, 0),

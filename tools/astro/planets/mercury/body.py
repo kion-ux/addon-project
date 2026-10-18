@@ -60,6 +60,9 @@ fs_draw = P(w=(26, 0, 0), b=(0, 14, 0), h=(-24, -12, 0),
             rA=wield(blade=dirv(f=-0.65, r=0.85, u=-0.3), arm=dirv(f=0.1, u=-0.9, r=0.65)),
             lA=aim(dirv(f=0.8, u=-0.6, r=-0.5), twist=20),
             rL=(28, 0, 10), lL=(-40, 0, -10), ground=True)
+# 構えへ移る間は刃を体の右下へくぐらせる（胴の脇を刃が通らないように）
+fs_under = P(w=(14, 0, 0), b=(0, 8, 0),
+             rA=wield(blade=dirv(r=0.6, u=-0.8, f=-0.1), arm=dirv(r=0.65, u=-0.7, f=0.25)))
 fs_dash = P(w=(36, 0, 0), b=(0, -10, 0), h=(-34, 8, 0),
             rA=wield(blade=dirv(f=-0.9, r=0.4, u=-0.2), arm=dirv(f=-0.3, u=-1.0, r=0.5)),
             lA=aim(dirv(f=-0.6, u=-0.6, r=-0.6)),
@@ -152,7 +155,7 @@ BODY_ANIMS = {
                          0.48: P(c3_end, root=(0, -360, 0)),
                          0.6: P(c3_end, w=(12, 0, 0), root=(0, -360, 0)),
                          0.7: P(root=(0, -360, 0))}, blend=False),
-    "flash_slash": anim(0.85, {0.0: H, 0.04: out_r, 0.12: fs_draw, 0.28: P(fs_draw, w=(30, 0, 0)),
+    "flash_slash": anim(0.85, {0.0: H, 0.04: out_r, 0.08: fs_under, 0.12: fs_draw, 0.28: P(fs_draw, w=(30, 0, 0)),
                                0.34: fs_dash, 0.46: P(fs_dash, w=(32, 0, 0)), 0.52: fs_after,
                                0.72: P(fs_after, b=(4, -40, 0)), 0.85: H}),
     "hermes_wings": anim(1.2, {0.0: H, 0.04: P(c1_wind, root_pos=(0, 0.6, 0)), 0.1: hw1,
