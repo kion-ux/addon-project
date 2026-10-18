@@ -980,3 +980,633 @@ def sheet(tiles, path, cols=4, label=None):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     out.save(path)
     return path
+
+
+# ===========================================================================
+#  アニメーション（RP）。Molang の三角関数は度。q.life_time は秒。
+# ===========================================================================
+ANIMS: dict = {}
+CTRLS: dict = {}
+
+
+def f(x):
+    return f"{x:g}"
+
+
+def anim(name, bones, loop=True, length=None):
+    a = {"loop": loop, "bones": bones}
+    if length:
+        a["animation_length"] = length
+    ANIMS[f"animation.{NS}.{name}"] = a
+    return f"animation.{NS}.{name}"
+
+
+def keys(**tracks):
+    """keys(rotation={0: [..], 0.2: [..]}, position=...) → Bedrock のキーフレーム辞書。"""
+    out = {}
+    for ch, kf in tracks.items():
+        if isinstance(kf, dict):
+            out[ch] = {f"{float(t):.2f}": v for t, v in sorted(kf.items())}
+        else:
+            out[ch] = kf
+    return out
+
+
+def controller(name, states, initial="default"):
+    """states: {state: (anims, [(target, cond), ...], blend)}。"""
+    out = {}
+    for st, (anims, trans, blend) in states.items():
+        d = {}
+        if anims:
+            d["animations"] = list(anims)
+        if trans:
+            d["transitions"] = [{t: c} for t, c in trans]
+        if blend:
+            d["blend_transition"] = blend
+        out[st] = d
+    CTRLS[f"controller.animation.{NS}.{name}"] = {"initial_state": initial, "states": out}
+    return f"controller.animation.{NS}.{name}"
+
+
+# 正面から見て反時計回りに回すと外へ開くヒレ（0,2）と、時計回りで開くヒレ（1,3）
+FIN_SPREAD = (-1, 1, -1, 1)
+
+
+def drone_anims():
+    A = {}
+    A["look"] = anim("void_drone.look", {"body": {"rotation": ["q.target_x_rotation", "q.target_y_rotation", 0]}})
+    bones = {
+        "body": {"position": [0, "math.sin(q.life_time * 120.0) * 0.9", 0],
+                 "rotation": ["math.sin(q.life_time * 70.0) * 3.0", 0, "math.sin(q.life_time * 95.0) * 4.0"]},
+        "fx_flame": {"scale": [1, "0.85 + math.sin(q.life_time * 2400.0) * 0.15", 1]},
+        "fx_eye_glow": {"scale": ["1.0 + math.sin(q.life_time * 300.0) * 0.04",
+                                  "1.0 + math.sin(q.life_time * 300.0) * 0.04", 1]},
+    }
+    for i in range(4):
+        ph = i * 90
+        bones[f"fx_fin_{i}"] = {"rotation": [0, 0, f"math.sin(q.life_time * 900.0 + {ph}.0) * 5.0"]}
+        bones[f"fx_fin_{i}_tip"] = {"rotation": [0, 0, f"math.sin(q.life_time * 900.0 + {ph - 50}.0) * 7.0"]}
+    A["idle"] = anim("void_drone.idle", bones)
+    cb = {
+        "fx_eye_glow": {"scale": ["1.18 + math.sin(q.anim_time * 2200.0) * 0.12",
+                                  "1.18 + math.sin(q.anim_time * 2200.0) * 0.12", 1]},
+        "lids": {"scale": [1.2, 1.2, 1]},
+        "body": {"position": [0, 0, 0.8], "rotation": [-6, 0, 0]},
+        "cannon": {"position": [0, 0, 0.7]},
+    }
+    for i in range(4):
+        cb[f"fx_fin_{i}"] = {"rotation": [0, 0, FIN_SPREAD[i] * 14]}
+        cb[f"fx_fin_{i}_tip"] = {"rotation": [0, 0, FIN_SPREAD[i] * 10]}
+    A["charge"] = anim("void_drone.charge", cb)
+    A["fire"] = anim("void_drone.fire", {
+        "cannon": keys(position={0: [0, 0, 1.8], 0.25: [0, 0, 0]}),
+        "body": keys(position={0: [0, 0, 1.4], 0.3: [0, 0, 0]}, rotation={0: [-10, 0, 0], 0.3: [0, 0, 0]}),
+        "fx_eye_glow": keys(scale={0: [1.45, 1.45, 1], 0.35: [1, 1, 1]}),
+    }, loop="hold_on_last_frame", length=0.4)
+    A["death"] = anim("void_drone.death", {
+        "body": keys(rotation={0: [0, 0, 0], 1.0: [70, 360, 40]}, position={0: [0, 0, 0], 1.0: [0, -6, 0]}),
+        "fx_eye_glow": keys(scale={0: [1.4, 1.4, 1], 0.6: [0.2, 0.2, 1]}),
+    }, loop="hold_on_last_frame", length=1.0)
+    A["ctrl"] = controller("void_drone", {
+        "default": ([], [("dead", "!q.is_alive"), ("charge", "v.mode == 1"), ("fire", "v.mode == 2")], 0),
+        "charge": (["charge"], [("dead", "!q.is_alive"), ("fire", "v.mode == 2"), ("default", "v.mode == 0")], 0.15),
+        "fire": (["fire"], [("dead", "!q.is_alive"), ("charge", "v.mode == 1"),
+                            ("default", "v.mode == 0 && q.all_animations_finished")], 0.15),
+        "dead": (["death"], [], 0.1),
+    })
+    return A
+
+
+def sentinel_anims():
+    A = {}
+    # 歩行: 位相 v.ph（歩いた距離）、振れ幅 v.ms（速さ）。足は常に水平を保つ
+    s_th = "math.sin(v.ph) * 24.0 * v.ms"
+    lift_r = "math.max(0.0, math.cos(v.ph))"
+    lift_l = "math.max(0.0, -math.cos(v.ph))"
+    bones = {
+        "hips": {"position": [0, "-math.abs(math.cos(v.ph)) * 0.9 * v.ms", 0],
+                 "rotation": ["math.sin(q.life_time * 90.0) * 1.2", 0, "math.sin(v.ph) * 3.0 * v.ms"]},
+        "torso": {"rotation": ["math.sin(q.life_time * 90.0 + 40.0) * 1.5", "math.sin(v.ph) * 6.0 * v.ms", 0]},
+        "head": {"rotation": [0, "math.sin(q.life_time * 36.0) * 14.0 * (1.0 - v.ms)", 0]},
+        "arm_r": {"rotation": [f"-({s_th}) * 0.5", 0, 0]},
+        "arm_l": {"rotation": [f"({s_th}) * 0.5", 0, 0]},
+        "thigh_r": {"rotation": [f"-{s_th}", 0, 0]},
+        "thigh_l": {"rotation": [s_th, 0, 0]},
+        "shin_r": {"rotation": [f"{lift_r} * 34.0 * v.ms", 0, 0]},
+        "shin_l": {"rotation": [f"{lift_l} * 34.0 * v.ms", 0, 0]},
+        "ankle_r": {"rotation": [f"-{lift_r} * 22.0 * v.ms", 0, 0]},
+        "ankle_l": {"rotation": [f"-{lift_l} * 22.0 * v.ms", 0, 0]},
+        "foot_r": {"rotation": [f"({s_th}) - {lift_r} * 12.0 * v.ms", 0, 0]},
+        "foot_l": {"rotation": [f"-({s_th}) - {lift_l} * 12.0 * v.ms", 0, 0]},
+    }
+    A["walk"] = anim("void_sentinel.walk", bones)
+    A["swing"] = anim("void_sentinel.swing", {
+        "arm_r": keys(rotation={0: [0, 0, 0], 0.16: [-125, 12, -24], 0.32: [-25, -18, 8], 0.55: [0, 0, 0]}),
+        "forearm_r": keys(rotation={0: [0, 0, 0], 0.16: [-35, 0, 0], 0.32: [-10, 0, 0], 0.55: [0, 0, 0]}),
+        "torso": keys(rotation={0: [0, 0, 0], 0.16: [-4, -18, 0], 0.32: [8, 22, 0], 0.55: [0, 0, 0]}),
+    }, loop=False, length=0.55)
+    up = {0: [0, 0, 0], 0.45: [-160, 0, 0], 0.8: [-172, 0, 0]}
+    A["windup"] = anim("void_sentinel.windup", {
+        "arm_r": keys(rotation={t: [v[0], 0, 14 if t else 0] for t, v in up.items()}),
+        "arm_l": keys(rotation={t: [v[0], 0, -14 if t else 0] for t, v in up.items()}),
+        "forearm_r": keys(rotation={0: [0, 0, 0], 0.45: [-24, 0, 0]}),
+        "forearm_l": keys(rotation={0: [0, 0, 0], 0.45: [-24, 0, 0]}),
+        "torso": keys(rotation={0: [0, 0, 0], 0.45: [-16, 0, 0], 0.8: [-18, 0, 0]}),
+        "head": keys(rotation={0: [0, 0, 0], 0.45: [10, 0, 0]}),
+        "hips": keys(position={0: [0, 0, 0], 0.45: [0, -1.6, 0]}),
+        "thigh_r": keys(rotation={0: [0, 0, 0], 0.45: [-12, 0, 0]}),
+        "thigh_l": keys(rotation={0: [0, 0, 0], 0.45: [-12, 0, 0]}),
+        "shin_r": keys(rotation={0: [0, 0, 0], 0.45: [16, 0, 0]}),
+        "shin_l": keys(rotation={0: [0, 0, 0], 0.45: [16, 0, 0]}),
+    }, loop="hold_on_last_frame", length=0.8)
+    A["slam"] = anim("void_sentinel.slam", {
+        "arm_r": keys(rotation={0: [-172, 0, 14], 0.12: [-42, 0, 6], 0.5: [-42, 0, 6], 0.75: [0, 0, 0]}),
+        "arm_l": keys(rotation={0: [-172, 0, -14], 0.12: [-42, 0, -6], 0.5: [-42, 0, -6], 0.75: [0, 0, 0]}),
+        "forearm_r": keys(rotation={0: [-24, 0, 0], 0.12: [-8, 0, 0], 0.75: [0, 0, 0]}),
+        "forearm_l": keys(rotation={0: [-24, 0, 0], 0.12: [-8, 0, 0], 0.75: [0, 0, 0]}),
+        "torso": keys(rotation={0: [-18, 0, 0], 0.12: [30, 0, 0], 0.5: [26, 0, 0], 0.75: [0, 0, 0]}),
+        "head": keys(rotation={0: [10, 0, 0], 0.12: [-22, 0, 0], 0.75: [0, 0, 0]}),
+        "hips": keys(position={0: [0, -1.6, 0], 0.12: [0, -4.2, 0], 0.5: [0, -4.0, 0], 0.75: [0, 0, 0]}),
+        "thigh_r": keys(rotation={0: [-12, 0, 0], 0.12: [-30, 0, 0], 0.5: [-28, 0, 0], 0.75: [0, 0, 0]}),
+        "thigh_l": keys(rotation={0: [-12, 0, 0], 0.12: [-30, 0, 0], 0.5: [-28, 0, 0], 0.75: [0, 0, 0]}),
+        "shin_r": keys(rotation={0: [16, 0, 0], 0.12: [40, 0, 0], 0.5: [38, 0, 0], 0.75: [0, 0, 0]}),
+        "shin_l": keys(rotation={0: [16, 0, 0], 0.12: [40, 0, 0], 0.5: [38, 0, 0], 0.75: [0, 0, 0]}),
+        "ankle_r": keys(rotation={0: [0, 0, 0], 0.12: [-14, 0, 0], 0.75: [0, 0, 0]}),
+        "ankle_l": keys(rotation={0: [0, 0, 0], 0.12: [-14, 0, 0], 0.75: [0, 0, 0]}),
+        "foot_r": keys(rotation={0: [12, 0, 0], 0.12: [4, 0, 0], 0.75: [0, 0, 0]}),
+        "foot_l": keys(rotation={0: [12, 0, 0], 0.12: [4, 0, 0], 0.75: [0, 0, 0]}),
+    }, loop="hold_on_last_frame", length=0.75)
+    A["death"] = anim("void_sentinel.death", {
+        "hips": keys(position={0: [0, 0, 0], 0.7: [0, -7, 0]}),
+        "torso": keys(rotation={0: [0, 0, 0], 0.7: [38, 0, 10]}),
+        "head": keys(rotation={0: [0, 0, 0], 0.7: [30, 20, 0]}),
+        "arm_r": keys(rotation={0: [0, 0, 0], 0.7: [-30, 0, -20]}),
+        "arm_l": keys(rotation={0: [0, 0, 0], 0.7: [-20, 0, 25]}),
+        "thigh_r": keys(rotation={0: [0, 0, 0], 0.7: [-40, 0, 0]}),
+        "thigh_l": keys(rotation={0: [0, 0, 0], 0.7: [-36, 0, 0]}),
+        "shin_r": keys(rotation={0: [0, 0, 0], 0.7: [60, 0, 0]}),
+        "shin_l": keys(rotation={0: [0, 0, 0], 0.7: [56, 0, 0]}),
+    }, loop="hold_on_last_frame", length=0.7)
+    A["ctrl"] = controller("void_sentinel", {
+        "default": ([], [("dead", "!q.is_alive"), ("windup", "v.mode == 1"), ("slam", "v.mode == 2"),
+                         ("swing", "v.attack_time > 0.0")], 0),
+        "swing": (["swing"], [("dead", "!q.is_alive"), ("windup", "v.mode == 1"),
+                              ("default", "q.all_animations_finished")], 0.1),
+        "windup": (["windup"], [("dead", "!q.is_alive"), ("slam", "v.mode == 2"), ("default", "v.mode == 0")], 0.12),
+        "slam": (["slam"], [("dead", "!q.is_alive"), ("windup", "v.mode == 1"),
+                            ("default", "v.mode == 0 && q.all_animations_finished")], 0.05),
+        "dead": (["death"], [], 0.1),
+    })
+    return A
+
+
+def nemesis_anims():
+    A = {}
+    T = "q.life_time"
+    bones = {
+        "body": {"position": [0, f"math.sin({T} * 60.0) * 1.6", 0],
+                 "rotation": [f"math.sin({T} * 33.0) * 2.0", 0, f"math.sin({T} * 40.0) * 2.5"]},
+        "fx_ring_a": {"rotation": [0, f"math.mod({T} * 50.0 * v.spd, 360.0)", 0]},
+        "fx_ring_b": {"rotation": [0, f"-math.mod({T} * 74.0 * v.spd, 360.0)", 0]},
+        "fx_shards": {"rotation": [0, f"math.mod({T} * 28.0 * v.spd, 360.0)", 0]},
+        "fx_eye_ring": {"rotation": [0, 0, f"math.mod({T} * 140.0 * v.spd, 360.0)"]},
+        "core": {"scale": [f"1.0 + math.sin({T} * 180.0) * 0.015"] * 3},
+        "fx_mandible_r": {"rotation": [f"math.sin({T} * 70.0) * 3.0", 0, f"math.sin({T} * 50.0) * 4.0"]},
+        "fx_mandible_l": {"rotation": [f"math.sin({T} * 70.0 + 30.0) * 3.0", 0, f"-math.sin({T} * 50.0) * 4.0"]},
+    }
+    for i in range(NEM_SHARDS):
+        bones[f"fx_shard_{i}"] = {"position": [0, f"math.sin({T} * 90.0 + {i * 60}.0) * 1.6", 0],
+                                  "rotation": [0, f"math.mod({T} * {40 + i * 9}.0, 360.0)", 0]}
+    for i in range(NEM_SPINES):
+        bones[f"fx_spine_{i}"] = {"rotation": [f"math.sin({T} * 55.0 + {i * 40}.0) * 3.0", 0,
+                                               f"math.sin({T} * 45.0 + {i * 70}.0) * 2.5"]}
+    for i in range(NEM_TENDRILS):
+        for k in range(3):
+            amp = 7 + k * 5
+            bones[f"fx_tendril_{i}_{k}"] = {"rotation": [
+                f"math.sin({T} * 85.0 * v.spd + {i * 72 + k * 55}.0) * {amp}.0", 0,
+                f"math.cos({T} * 70.0 * v.spd + {i * 72 + k * 55}.0) * {amp * 0.7:g}"]}
+    A["idle"] = anim("nemesis.idle", bones)
+    A["look"] = anim("nemesis.look", {"body": {"rotation": ["math.clamp(q.target_x_rotation, -30.0, 30.0)", 0, 0]}})
+    spines_out = {f"fx_spine_{i}": {"scale": 1.12, "rotation": [-12, 0, 0]} for i in range(NEM_SPINES)}
+    A["charge"] = anim("nemesis.charge", dict({
+        "eye": {"scale": ["1.08 + math.sin(q.anim_time * 1800.0) * 0.06",
+                          "1.08 + math.sin(q.anim_time * 1800.0) * 0.06", 1]},
+        "lids": {"scale": [1.12, 1.3, 1]},
+        "fx_ring_a": {"rotation": [0, "q.anim_time * 420.0", 0]},
+        "fx_ring_b": {"rotation": [0, "-q.anim_time * 520.0", 0]},
+        "fx_shards": {"scale": 0.82},
+    }, **spines_out))
+    A["beam"] = anim("nemesis.beam", {
+        "eye": {"scale": [1.2, 1.2, 1]},
+        "lids": {"scale": [1.2, 1.4, 1]},
+        "body": {"rotation": [-5, 0, "math.sin(q.anim_time * 2400.0) * 1.2"]},
+        "fx_mandible_r": {"rotation": [0, -16, 18]},
+        "fx_mandible_l": {"rotation": [0, 16, -18]},
+    })
+    sm = {f"fx_tendril_{i}_0": keys(rotation={0: [0, 0, 0], 0.4: [-38, 0, 0]}) for i in range(NEM_TENDRILS)}
+    A["summon"] = anim("nemesis.summon", dict({
+        "fx_shards": keys(scale={0: [1, 1, 1], 0.4: [1.35, 1.1, 1.35]}),
+        "lids": keys(scale={0: [1, 1, 1], 0.3: [1.1, 1.3, 1]}),
+        "body": keys(rotation={0: [0, 0, 0], 0.4: [-10, 0, 0]}),
+    }, **sm), loop="hold_on_last_frame", length=1.0)
+    A["meteor"] = anim("nemesis.meteor", dict({
+        "body": keys(rotation={0: [0, 0, 0], 0.5: [-24, 0, 0]}),
+        "ring_a": keys(rotation={0: [0, 0, 0], 0.6: [-50, 0, 0]}),
+        "ring_b": keys(rotation={0: [0, 0, 0], 0.6: [40, 0, 0]}),
+    }, **{f"fx_spine_{i}": keys(scale={0: [1, 1, 1], 0.5: [1.2, 1.2, 1.2]}) for i in range(NEM_SPINES)}),
+        loop="hold_on_last_frame", length=0.8)
+    A["blackhole"] = anim("nemesis.blackhole", {
+        "fx_shards": {"scale": 0.55, "rotation": [0, "q.anim_time * 600.0", 0]},
+        "fx_ring_a": {"rotation": [0, "q.anim_time * 900.0", 0]},
+        "fx_ring_b": {"rotation": [0, "-q.anim_time * 1100.0", 0]},
+        "eye": {"scale": [0.9, 0.9, 1]},
+        "lids": {"scale": [1.0, 0.7, 1]},
+    })
+    dash = {f"fx_tendril_{i}_{k}": {"rotation": [-38 + k * 12, 0, 0]} for i in range(NEM_TENDRILS) for k in range(3)}
+    dash.update({f"fx_spine_{i}": {"rotation": [-22, 0, 0]} for i in range(NEM_SPINES)})
+    dash["body"] = {"rotation": [24, 0, 0]}
+    dash["fx_mandible_r"] = {"rotation": [0, -22, 22]}
+    dash["fx_mandible_l"] = {"rotation": [0, 22, -22]}
+    A["dash"] = anim("nemesis.dash", dash)
+    A["roar"] = anim("nemesis.roar", dict({
+        "body": {"position": ["math.sin(q.anim_time * 3000.0) * 0.8", 0, 0], "rotation": [-12, 0, 0]},
+        "lids": {"scale": [1.25, 1.5, 1]},
+        "eye": {"scale": [1.15, 1.15, 1]},
+        "fx_mandible_r": {"rotation": [0, -28, 30]},
+        "fx_mandible_l": {"rotation": [0, 28, -30]},
+    }, **{f"fx_spine_{i}": {"scale": 1.25, "rotation": [-16, 0, 0]} for i in range(NEM_SPINES)}))
+    A["death"] = anim("nemesis.death", {
+        "body": keys(position={0: [0, 0, 0], 2.0: [0, -10, 0]}, rotation={0: [0, 0, 0], 2.0: [30, 0, 20]}),
+        "ring_a": keys(scale={0: [1, 1, 1], 2.0: [1.8, 1.8, 1.8]}),
+        "ring_b": keys(scale={0: [1, 1, 1], 2.0: [2.2, 2.2, 2.2]}),
+        "fx_shards": keys(scale={0: [1, 1, 1], 2.0: [2.4, 1.6, 2.4]}),
+        "eye": keys(scale={0: [1.2, 1.2, 1], 2.0: [0.3, 0.3, 1]}),
+    }, loop="hold_on_last_frame", length=2.0)
+    modes = [("charge", 1), ("beam", 2), ("summon", 3), ("meteor", 4), ("blackhole", 5), ("dash", 6), ("roar", 7)]
+    states = {"default": ([], [("dead", "!q.is_alive")] + [(n, f"v.mode == {k}") for n, k in modes], 0)}
+    for n, k in modes:
+        tr = [("dead", "!q.is_alive")] + [(o, f"v.mode == {j}") for o, j in modes if o != n]
+        tr.append(("default", "v.mode == 0"))
+        states[n] = ([n], tr, 0.2 if n != "dash" else 0.12)
+    states["dead"] = (["death"], [], 0.2)
+    A["ctrl"] = controller("nemesis", states)
+    return A
+
+
+def hologram_anims():
+    A = {}
+    T = "q.life_time"
+    glitch = "(q.hurt_time > 0.0 ? 1.0 : (math.mod(q.life_time, 5.0) > 4.85 ? 0.5 : 0.0))"
+    A["idle"] = anim("hologram_target.idle", {
+        "holo_root": {"position": [f"math.sin({T} * 5000.0) * 0.9 * {glitch}", f"math.sin({T} * 100.0) * 0.4", 0],
+                      "scale": [f"1.0 + math.sin({T} * 3700.0) * 0.08 * {glitch}", 1, 1]},
+        "holo_scan": {"position": [0, f"math.mod({T} * 13.0, 31.0)", 0],
+                      "scale": [f"1.0 - math.mod({T} * 13.0, 31.0) / 80.0", 1,
+                                f"1.0 - math.mod({T} * 13.0, 31.0) / 80.0"]},
+        "holo_reticle": {"rotation": [0, 0, f"math.mod({T} * 90.0, 360.0)"],
+                         "scale": [f"1.0 + math.sin({T} * 240.0) * 0.06", f"1.0 + math.sin({T} * 240.0) * 0.06", 1]},
+        "holo_arm_r": {"rotation": [f"math.sin({T} * 60.0) * 3.0", 0, 0]},
+        "holo_arm_l": {"rotation": [f"-math.sin({T} * 60.0) * 3.0", 0, 0]},
+        "holo_head": {"rotation": [0, f"math.sin({T} * 30.0) * 10.0", 0]},
+    })
+    return A
+
+
+def bolt_anims():
+    return {"move": anim("void_bolt.move", {"body": {"rotation": [
+        "q.target_x_rotation", "-q.target_y_rotation", "math.mod(q.life_time * 720.0, 360.0)"]}})}
+
+
+# ===========================================================================
+#  振る舞い（BP）
+# ===========================================================================
+def _no_friendly_fire():
+    """侵略者どうし（ボルトの撃ち手を含む）は傷つけ合わない。"""
+    return {"on_damage": {"filters": {"any_of": [
+        {"test": "is_family", "subject": "other", "value": "astro_invader"},
+        {"test": "is_family", "subject": "damager", "value": "astro_invader"}]}},
+        "deals_damage": False}
+
+
+def _mode_prop(hi):
+    return {"astro:mode": {"type": "int", "range": [0, hi], "default": 0, "client_sync": True}}
+
+
+def _player_targets(dist):
+    return {"priority": 2, "must_see": True, "must_see_forget_duration": 6.0, "reselect_targets": True,
+            "within_radius": dist, "entity_types": [
+                {"filters": {"all_of": [{"test": "is_family", "subject": "other", "value": "player"},
+                                        {"test": "has_ability", "subject": "other", "operator": "!=",
+                                         "value": "instabuild"}]},
+                 "max_dist": dist}]}
+
+
+def _common(family, hp, box_w, box_h, loot, xp):
+    c = {
+        "minecraft:type_family": {"family": list(family) + ["monster", "mob"]},
+        "minecraft:collision_box": {"width": box_w, "height": box_h},
+        "minecraft:health": {"value": hp, "max": hp},
+        "minecraft:nameable": {},
+        "minecraft:breathable": {"total_supply": 15, "suffocate_time": 0, "breathes_air": True,
+                                 "breathes_water": True},
+        "minecraft:experience_reward": {"on_death": f"q.last_hit_by_player ? {xp} : 0"},
+        "minecraft:loot": {"table": f"loot_tables/entities/{NS}_{loot}.json"},
+    }
+    return c
+
+
+def entity_doc(ident, components, groups=None, events=None, props=None, spawnable=True):
+    desc = {"identifier": f"{NS}:{ident}", "is_spawnable": spawnable, "is_summonable": True,
+            "is_experimental": False}
+    if props:
+        desc["properties"] = props
+    ent = {"description": desc}
+    if groups:
+        ent["component_groups"] = groups
+    ent["components"] = components
+    if events:
+        ent["events"] = events
+    return {"format_version": ENTITY_FMT, "minecraft:entity": ent}
+
+
+def bp_drone():
+    hp = ENEMIES["void_drone"]["health"]
+    c = _common(["astro_invader", "astro_drone"], hp, 0.85, 0.95, "void_drone", 6)
+    c.update({
+        "minecraft:movement": {"value": 0.3},
+        "minecraft:flying_speed": {"value": 0.16},
+        "minecraft:movement.hover": {},
+        "minecraft:navigation.hover": {"can_path_over_water": True, "can_sink": False, "can_pass_doors": False,
+                                       "can_path_from_air": True, "avoid_water": True,
+                                       "avoid_damage_blocks": True, "avoid_sun": False},
+        "minecraft:can_fly": {},
+        "minecraft:physics": {"has_gravity": False},
+        "minecraft:jump.static": {},
+        "minecraft:pushable": {"is_pushable": True, "is_pushable_by_piston": True},
+        "minecraft:knockback_resistance": {"value": 0.15},
+        "minecraft:follow_range": {"value": 32, "max": 32},
+        "minecraft:despawn": {"despawn_from_distance": {"min_distance": 48, "max_distance": 96}},
+        "minecraft:conditional_bandwidth_optimization": {},
+        "minecraft:damage_sensor": {"triggers": [
+            _no_friendly_fire(),
+            {"cause": "fall", "deals_damage": False},
+            {"cause": "fly_into_wall", "deals_damage": False}]},
+        "minecraft:behavior.hurt_by_target": {"priority": 1},
+        "minecraft:behavior.nearest_attackable_target": _player_targets(24),
+        "minecraft:behavior.look_at_target": {"priority": 3},
+        "minecraft:behavior.look_at_player": {"priority": 6, "look_distance": 16, "probability": 0.4},
+    })
+    groups = {
+        "astro:roaming": {"minecraft:behavior.random_hover": {
+            "priority": 8, "xz_dist": 10, "y_dist": 5, "y_offset": -1, "interval": 1, "hover_height": [2, 5]}},
+    }
+    events = {
+        "minecraft:entity_spawned": {"add": {"component_groups": ["astro:roaming"]}},
+        "astro:engage": {"remove": {"component_groups": ["astro:roaming"]}},
+        "astro:disengage": {"add": {"component_groups": ["astro:roaming"]}},
+    }
+    return entity_doc("void_drone", c, groups, events, _mode_prop(3))
+
+
+def bp_sentinel():
+    hp = ENEMIES["void_sentinel"]["health"]
+    c = _common(["astro_invader", "astro_sentinel"], hp, 1.3, 2.6, "void_sentinel", 10)
+    c.update({
+        "minecraft:attack": {"damage": 6},
+        "minecraft:movement": {"value": 0.25},
+        "minecraft:movement.basic": {},
+        "minecraft:navigation.walk": {"can_path_over_water": True, "avoid_water": True, "can_walk": True,
+                                      "avoid_damage_blocks": True},
+        "minecraft:jump.static": {},
+        "minecraft:can_climb": {},
+        "minecraft:physics": {},
+        "minecraft:pushable": {"is_pushable": False, "is_pushable_by_piston": True},
+        "minecraft:knockback_resistance": {"value": 0.6},
+        "minecraft:follow_range": {"value": 32, "max": 32},
+        "minecraft:despawn": {"despawn_from_distance": {"min_distance": 48, "max_distance": 96}},
+        "minecraft:conditional_bandwidth_optimization": {},
+        "minecraft:damage_sensor": {"triggers": [
+            _no_friendly_fire(),
+            {"cause": "fall", "damage_multiplier": 0.4}]},
+        "minecraft:behavior.float": {"priority": 0},
+        "minecraft:behavior.hurt_by_target": {"priority": 1},
+        "minecraft:behavior.nearest_attackable_target": _player_targets(28),
+        "minecraft:behavior.melee_attack": {"priority": 3, "speed_multiplier": 1.15, "track_target": True,
+                                            "reach_multiplier": 1.6},
+        "minecraft:behavior.random_stroll": {"priority": 6, "speed_multiplier": 0.8},
+        "minecraft:behavior.look_at_player": {"priority": 7, "look_distance": 16},
+        "minecraft:behavior.random_look_around": {"priority": 8},
+    })
+    return entity_doc("void_sentinel", c, props=_mode_prop(3))
+
+
+def bp_nemesis():
+    hp = ENEMIES["nemesis"]["health"]
+    c = _common(["astro_invader", "astro_boss"], hp, 2.4, 3.8, "nemesis", 120)
+    c.update({
+        "minecraft:boss": {"should_darken_sky": True, "hud_range": 64},
+        "minecraft:physics": {"has_gravity": False, "has_collision": True},
+        "minecraft:pushable": {"is_pushable": False, "is_pushable_by_piston": False},
+        "minecraft:knockback_resistance": {"value": 1.0},
+        "minecraft:fire_immune": True,
+        "minecraft:persistent": {},
+        "minecraft:follow_range": {"value": 64, "max": 64},
+        "minecraft:damage_sensor": {"triggers": [
+            _no_friendly_fire(),
+            {"cause": "fall", "deals_damage": False},
+            {"cause": "suffocation", "deals_damage": False},
+            {"cause": "fly_into_wall", "deals_damage": False},
+            {"cause": "drowning", "deals_damage": False},
+            {"cause": "lava", "deals_damage": False},
+            {"cause": "magma", "deals_damage": False},
+            {"cause": "lightning", "damage_multiplier": 0.3}]},
+    })
+    props = _mode_prop(7)
+    props["astro:phase"] = {"type": "int", "range": [1, 2], "default": 1, "client_sync": True}
+    return entity_doc("nemesis", c, props=props)
+
+
+def bp_hologram():
+    hp = ENEMIES["hologram_target"]["health"]
+    c = {
+        "minecraft:type_family": {"family": ["astro_target", "mob"]},
+        "minecraft:collision_box": {"width": 0.8, "height": 2.2},
+        "minecraft:health": {"value": hp, "max": hp},
+        "minecraft:physics": {},
+        "minecraft:pushable": {"is_pushable": False, "is_pushable_by_piston": False},
+        "minecraft:knockback_resistance": {"value": 1.0},
+        "minecraft:nameable": {"always_show": True, "allow_name_tag_renaming": False},
+        "minecraft:fire_immune": True,
+        "minecraft:persistent": {},
+        "minecraft:breathable": {"total_supply": 15, "suffocate_time": 0, "breathes_air": True,
+                                 "breathes_water": True},
+        "minecraft:damage_sensor": {"triggers": [
+            {"cause": "fall", "deals_damage": False},
+            {"cause": "suffocation", "deals_damage": False},
+            {"cause": "drowning", "deals_damage": False},
+            {"cause": "fire", "deals_damage": False},
+            {"cause": "fire_tick", "deals_damage": False}]},
+    }
+    return entity_doc("hologram_target", c)
+
+
+def bp_bolt():
+    c = {
+        "minecraft:type_family": {"family": ["astro_bolt", "inanimate"]},
+        "minecraft:collision_box": {"width": 0.3, "height": 0.3},
+        "minecraft:physics": {},
+        "minecraft:pushable": {"is_pushable": False, "is_pushable_by_piston": False},
+        "minecraft:conditional_bandwidth_optimization": {"default_values": {
+            "max_optimized_distance": 80.0, "max_dropped_ticks": 5, "use_motion_prediction_hints": True}},
+        "minecraft:projectile": {
+            "on_hit": {"impact_damage": {"damage": 4, "knockback": True, "semi_random_diff_damage": False,
+                                         "destroy_on_hit": True},
+                       "remove_on_hit": {}},
+            "power": 1.0, "gravity": 0.0, "inertia": 1.0, "liquid_inertia": 1.0,
+            "uncertainty_base": 0.0, "uncertainty_multiplier": 0.0, "anchor": 1, "offset": [0, 0, 0],
+            "should_bounce": False, "multiple_targets": False},
+        "minecraft:timer": {"looping": False, "time": 4.0, "time_down_event": {"event": "astro:despawn"}},
+    }
+    return entity_doc("void_bolt", c, {"astro:despawn": {"minecraft:instant_despawn": {}}},
+                      {"astro:despawn": {"add": {"component_groups": ["astro:despawn"]}}}, spawnable=False)
+
+
+def bp_dmg_text():
+    c = {
+        "minecraft:type_family": {"family": ["astro_text", "inanimate"]},
+        "minecraft:collision_box": {"width": 0.01, "height": 0.01},
+        "minecraft:physics": {"has_gravity": False, "has_collision": False},
+        "minecraft:pushable": {"is_pushable": False, "is_pushable_by_piston": False},
+        "minecraft:damage_sensor": {"triggers": {"cause": "all", "deals_damage": False}},
+        "minecraft:health": {"value": 1, "max": 1},
+        "minecraft:nameable": {"always_show": True, "allow_name_tag_renaming": False},
+        "minecraft:fire_immune": True,
+        "minecraft:breathable": {"breathes_water": True, "breathes_air": True},
+        "minecraft:timer": {"time": 2.0, "looping": False, "time_down_event": {"event": "astro:despawn"}},
+    }
+    return entity_doc("dmg_text", c, {"astro:despawn": {"minecraft:instant_despawn": {}}},
+                      {"astro:despawn": {"add": {"component_groups": ["astro:despawn"]}}}, spawnable=False)
+
+
+def loot_tables():
+    def cells(lo, hi, looting=True):
+        fn = [{"function": "set_count", "count": {"min": lo, "max": hi}}]
+        if looting:
+            fn.append({"function": "looting_enchant", "count": {"min": 0, "max": 1}})
+        return {"type": "item", "name": f"{NS}:nano_cell", "weight": 1, "functions": fn}
+    return {
+        "void_drone": {"pools": [{"rolls": 1, "entries": [cells(1, 2)]}]},
+        "void_sentinel": {"pools": [
+            {"rolls": 1, "entries": [cells(2, 3)]},
+            {"rolls": 1, "conditions": [{"condition": "random_chance_with_looting", "chance": 0.35,
+                                         "looting_multiplier": 0.1}],
+             "entries": [{"type": "item", "name": "minecraft:iron_ingot", "weight": 1,
+                          "functions": [{"function": "set_count", "count": {"min": 1, "max": 2}}]}]}]},
+        "nemesis": {"pools": [
+            {"rolls": 1, "entries": [{"type": "item", "name": f"{NS}:solar_fragment", "weight": 1,
+                                      "functions": [{"function": "set_count", "count": 2}]}]},
+            {"rolls": 1, "entries": [cells(6, 10, looting=False)]},
+            {"rolls": 1, "entries": [{"type": "item", "name": "minecraft:diamond", "weight": 1,
+                                      "functions": [{"function": "set_count", "count": {"min": 1, "max": 3}}]}]}]},
+    }
+
+
+def spawn_rule(ident, weight, herd, density):
+    return {"format_version": "1.8.0", "minecraft:spawn_rules": {
+        "description": {"identifier": f"{NS}:{ident}", "population_control": "monster"},
+        "conditions": [{
+            "minecraft:spawns_on_surface": {},
+            "minecraft:brightness_filter": {"min": 0, "max": 7, "adjust_for_weather": True},
+            "minecraft:difficulty_filter": {"min": "easy", "max": "hard"},
+            "minecraft:weight": {"default": weight},
+            "minecraft:herd": {"min_size": herd[0], "max_size": herd[1]},
+            "minecraft:density_limit": {"surface": density},
+            "minecraft:biome_filter": {"all_of": [
+                {"test": "has_biome_tag", "operator": "==", "value": "overworld"},
+                {"test": "has_biome_tag", "operator": "!=", "value": "mushroom_island"}]},
+        }]}}
+
+
+# ===========================================================================
+#  クライアント（RP）
+# ===========================================================================
+MAT_BODY = "entity_emissive_alpha_one_sided"     # 閉じた箱だけの体（裏面は描かない）
+MAT_FX = "entity_emissive_alpha"                 # fx_* ボーン（薄いヒレ・輪・棘・触手）は両面
+MAT_HOLO = "entity_beam_additive"                # ホログラム（加算合成・自己発光）
+
+RENDER_CONTROLLERS = {
+    f"controller.render.{NS}.invader": {
+        "geometry": "Geometry.default",
+        "materials": [{"*": "Material.default"}, {"fx_*": "Material.fx"}],
+        "textures": ["Texture.default"],
+        # 被弾: 白っぽいマゼンタのフラッシュ / 溜め・第二形態: マゼンタの脈動（v.overlay）
+        "is_hurt_color": {"r": 1.0, "g": 0.55, "b": 1.0, "a": 0.5},
+        "overlay_color": {"r": 1.0, "g": 0.25, "b": 0.85, "a": "v.overlay"},
+    },
+    f"controller.render.{NS}.hologram": {
+        "geometry": "Geometry.default",
+        "materials": [{"*": "Material.default"}, {"holo*": "Material.holo"}],
+        "textures": ["Texture.default"],
+        "is_hurt_color": {"r": 1.0, "g": 0.3, "b": 0.3, "a": 0.0},
+    },
+    f"controller.render.{NS}.plain": {
+        "geometry": "Geometry.default",
+        "materials": [{"*": "Material.default"}],
+        "textures": ["Texture.default"],
+    },
+}
+
+
+def client_doc(ident, materials, anims, animate, pre, rc, egg=None):
+    d = {"identifier": f"{NS}:{ident}", "materials": materials,
+         "textures": {"default": f"textures/entity/{NS}/{ident}"},
+         "geometry": {"default": f"geometry.{NS}.{ident}"}}
+    if anims:
+        d["animations"] = anims
+    scripts = {}
+    if pre:
+        scripts["pre_animation"] = pre
+    if animate:
+        scripts["animate"] = animate
+    if scripts:
+        d["scripts"] = scripts
+    d["render_controllers"] = [rc]
+    if egg:
+        d["spawn_egg"] = {"base_color": egg[0], "overlay_color": egg[1]}
+    return {"format_version": "1.10.0", "minecraft:client_entity": {"description": d}}
+
+
+def clients():
+    out = {}
+    inv_mat = {"default": MAT_BODY, "fx": MAT_FX}
+    A = drone_anims()
+    out["void_drone"] = client_doc("void_drone", inv_mat, A, ["look", "idle", "ctrl"], [
+        "v.mode = q.property('astro:mode');",
+        "v.overlay = v.mode == 1 ? 0.16 + math.sin(q.life_time * 1440.0) * 0.12 : 0.0;",
+    ], f"controller.render.{NS}.invader", ("#241A36", "#FF3CCE"))
+    A = sentinel_anims()
+    out["void_sentinel"] = client_doc("void_sentinel", inv_mat, A, ["walk", "ctrl"], [
+        "v.mode = q.property('astro:mode');",
+        "v.ph = q.modified_distance_moved * 13.0;",
+        "v.ms = math.min(q.modified_move_speed * 1.8, 1.0);",
+        "v.overlay = v.mode == 1 ? 0.12 + math.sin(q.life_time * 1800.0) * 0.1 : 0.0;",
+    ], f"controller.render.{NS}.invader", ("#3A2E52", "#C24CFF"))
+    A = nemesis_anims()
+    out["nemesis"] = client_doc("nemesis", inv_mat, A, ["idle", "look", "ctrl"], [
+        "v.mode = q.property('astro:mode');",
+        "v.phase = q.property('astro:phase');",
+        "v.spd = v.phase >= 2 ? 1.8 : 1.0;",
+        "v.overlay = (v.mode == 1 || v.mode == 7) ? 0.18 + math.sin(q.life_time * 1600.0) * 0.12 : "
+        "(v.phase >= 2 ? 0.06 + math.sin(q.life_time * 300.0) * 0.05 : 0.0);",
+    ], f"controller.render.{NS}.invader", ("#0C0818", "#A040FF"))
+    A = hologram_anims()
+    out["hologram_target"] = client_doc("hologram_target", {"default": MAT_BODY, "holo": MAT_HOLO}, A,
+                                        ["idle"], None, f"controller.render.{NS}.hologram",
+                                        ("#1C3A48", "#6FF0FF"))
+    A = bolt_anims()
+    out["void_bolt"] = client_doc("void_bolt", {"default": MAT_FX}, A, ["move"], None,
+                                  f"controller.render.{NS}.plain")
+    out["dmg_text"] = client_doc("dmg_text", {"default": "entity_alphatest"}, None, None, None,
+                                 f"controller.render.{NS}.plain")
+    return out

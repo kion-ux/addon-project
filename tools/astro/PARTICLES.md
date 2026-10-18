@@ -98,13 +98,13 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `astro:bubble` | 泡がゆらゆら揺れながら昇り、最後に膨らんで弾ける | 加算 | `size` `count` `spread` `speed` `life` | count（既定 8） |
 | `astro:wave` ★ | 波頭: 泡の縁を持つ弧の水の壁が (vx,vy,vz) の向きへ進み、立ち上がってから崩れる | 半透明 | `size` `vx` `vy` `vz` `speed` `life` | 1 |
 | `astro:cloud` ★ | アニメ調の雲 | 半透明 | `size` `vx` `vy` `vz` `count` `life` `spread` `spin` | count（既定 5） |
-| `astro:aurora` ★ | オーロラの幕: 縦の光条の帯がエミッタを囲む半径 v.spread の輪に並び、高さ v.height で揺らぎながらゆっくり回る | 加算 | `size` `count` `life` `height` `spin` `spread` | count（既定 10） |
-| `astro:meteor` ★ | 尾を引く火球: 頭が白熱し、(vx,vy,vz) の逆向きへ v.len m の尾 | 加算 | `size` `vx` `vy` `vz` `len` `count` `life` `speed` | count（既定 16） |
+| `astro:aurora` ★ | オーロラの幕: 縦の光条の帯がエミッタを囲む半径 v.spread の輪に並び、高さ v.height で揺らぎながらゆっくり回る | 加算 | `size` `count` `life` `height` `spin` `spread` | count（既定 14） |
+| `astro:meteor` ★ | 尾を引く火球: 頭が白熱し、(vx,vy,vz) の逆向きへ v.len m の尾 | 加算 | `size` `vx` `vy` `vz` `len` `count` `life` `speed` | count（既定 20） |
 | `astro:black_hole` | ブラックホール: 黒い核 | 半透明 | `size` `life` `spin` | 1 |
 | `astro:void` | 紫黒の裂け目と触手 | 半透明 | `size` `spread` `count` `life` | count（既定 3） |
 | `astro:warning` | 攻撃予告: 地面に赤い縞の輪・内向きの警告三角・中央の ! が点滅する | 半透明 | `size` `life` `rot` `spin` | 1 |
 | `astro:afterimage` | 装甲の人型シルエットの残像 | 加算 | `size` `life` | 1 |
-| `astro:ring_n` | 粒の輪: count 個の光の粒を半径 spread の円周に散らして並べる | 加算 | `size` `vx` `vy` `vz` `count` `life` `spread` `speed` `var` | count（既定 24） |
+| `astro:ring_n` | 粒の輪: count 個の光の粒を半径 spread の円周に散らして並べる | 加算 | `size` `vx` `vy` `vz` `count` `life` `spread` `speed` `var` | count（既定 32） |
 | `astro:line_n` | 粒の線: count 個の光の粒をエミッタから (vx,vy,vz) のずれの点までの線分上に散らして並べる | 加算 | `size` `vx` `vy` `vz` `count` `life` `spread` `var` | count（既定 16） |
 | `astro:lens` | 大きく淡い光のにじみ | 加算 | `size` `life` | 1 |
 
@@ -962,14 +962,14 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 ### `astro:aurora` ★
 
 * 見た目: オーロラの幕: 縦の光条の帯がエミッタを囲む半径 v.spread の輪に並び、高さ v.height で揺らぎながらゆっくり回る（縦軸のまわりでカメラを向く）
-* 材質: 加算（光る） / 粒数: count（既定 10）
+* 材質: 加算（光る） / 粒数: count（既定 14）
 * 用途: 地球の変身・癒やしの幕・必殺の背景
 * 目安: count 8〜16 / spread 1.5〜4 / height 3〜6 / life 2〜4
 
 | 変数 | 既定 | 意味 |
 |---|---|---|
 | `size` | 1.0 | 大きさの倍率（各粒の基準の大きさに掛ける） |
-| `count` | 10.0 | 帯の数 |
+| `count` | 14.0 | 帯の数 |
 | `life` | 2.5 | 粒の寿命 (秒) |
 | `height` | 4.0 | 高さ (m) |
 | `spin` | 8.0 | 輪が回る速さ (度/秒) |
@@ -981,7 +981,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 ### `astro:meteor` ★
 
 * 見た目: 尾を引く火球: 頭が白熱し、(vx,vy,vz) の逆向きへ v.len m の尾（火球の粒の連なり）。speed を与えると向きへ飛ぶ（既定は止まった一枚絵 → 毎 tick 位置を変えて出す）
-* 材質: 加算（光る） / 粒数: count（既定 16）
+* 材質: 加算（光る） / 粒数: count（既定 20）
 * 用途: 隕石・彗星・火の弾
 * 目安: size 0.5〜3 / len 2〜8 / speed 0（毎 tick）or 10〜30 / life 0.2〜1
 
@@ -992,7 +992,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `vy` | 0.0 | 飛ぶ向き（頭の向き。未指定は斜め下） |
 | `vz` | 0.0 | 飛ぶ向き（頭の向き。未指定は斜め下） |
 | `len` | size × 3 | 尾の長さ (m) |
-| `count` | 16.0 | 尾を作る粒の数 |
+| `count` | 20.0 | 尾を作る粒の数 |
 | `life` | 0.3 | 粒の寿命 (秒) |
 | `speed` | 0.0 | 飛ぶ速さ (m/s)。0 ならその場 |
 | `cr` | 1.0 | 色の赤 (0..1) |
@@ -1067,7 +1067,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 ### `astro:ring_n`
 
 * 見た目: 粒の輪: count 個の光の粒を半径 spread の円周に散らして並べる（1 回の spawn で輪が描ける）。輪の面の法線 = (vx,vy,vz)（既定は上 = 水平の輪）。speed で外へ広がる。粒の種類は v.var
-* 材質: 加算（光る） / 粒数: count（既定 24）
+* 材質: 加算（光る） / 粒数: count（既定 32）
 * 用途: fx.js の ring() を 1 パケットで（範囲の縁・衝撃の輪・変身の輪）
 * 目安: count 12〜40 / spread 0.5〜6 / life 0.3〜1
 
@@ -1077,7 +1077,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `vx` | 0.0 | 輪の面の法線（向き。正規化する。未指定は上 = 水平の輪） |
 | `vy` | 0.0 | 輪の面の法線（向き。正規化する。未指定は上 = 水平の輪） |
 | `vz` | 0.0 | 輪の面の法線（向き。正規化する。未指定は上 = 水平の輪） |
-| `count` | 24.0 | 粒の数 |
+| `count` | 32.0 | 粒の数 |
 | `life` | 0.5 | 粒の寿命 (秒) |
 | `spread` | 1.5 | 輪の半径 (m) |
 | `speed` | 0.0 | 外へ広がる速さ (m/s) |

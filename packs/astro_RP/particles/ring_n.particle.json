@@ -13,7 +13,7 @@
         "creation_expression": "v.e_dx = (v.vx ?? 0.0); v.e_dy = (v.vy ?? 0.0); v.e_dz = (v.vz ?? 0.0); v.e_dl = math.sqrt(v.e_dx * v.e_dx + v.e_dy * v.e_dy + v.e_dz * v.e_dz); v.e_has = (v.e_dl > 0.0001) ? 1.0 : 0.0; v.e_tx = (v.e_has > 0.5) ? v.e_dx : 0.0; v.e_ty = (v.e_has > 0.5) ? v.e_dy : 1.0; v.e_tz = (v.e_has > 0.5) ? v.e_dz : 0.0; v.e_tl = (v.e_has > 0.5) ? v.e_dl : 1.0; v.e_nx = v.e_tx / math.max(v.e_tl, 0.0001); v.e_ny = v.e_ty / math.max(v.e_tl, 0.0001); v.e_nz = v.e_tz / math.max(v.e_tl, 0.0001); v.e_h = math.sqrt(v.e_nx * v.e_nx + v.e_nz * v.e_nz); v.e_ax = (v.e_h > 0.2) ? ((0.0 - v.e_nz) / v.e_h) : 1.0; v.e_ay = 0.0; v.e_az = (v.e_h > 0.2) ? (v.e_nx / v.e_h) : 0.0; v.e_bx = v.e_ny * v.e_az - v.e_nz * v.e_ay; v.e_by = v.e_nz * v.e_ax - v.e_nx * v.e_az; v.e_bz = v.e_nx * v.e_ay - v.e_ny * v.e_ax;"
       },
       "minecraft:emitter_rate_instant": {
-        "num_particles": "(v.count ?? 24.0)"
+        "num_particles": "(v.count ?? 32.0)"
       },
       "minecraft:emitter_lifetime_once": {
         "active_time": 0

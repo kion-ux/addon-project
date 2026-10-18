@@ -763,7 +763,7 @@ def sp_bolt(w, h, k):
     cy = h / 2
     pts = _bolt_pts(rng, 1, w - 1, cy, cy, 6, 0.34)
     pts = [(px, float(np.clip(py, 3, h - 3))) for px, py in pts]
-    pen.poly(pts, 2.6)
+    pen.poly(pts, 4.2)
     for _ in range(3):                                  # 枝
         i = rng.randint(8, len(pts) - 20)
         bx, by = pts[i]
@@ -772,12 +772,12 @@ def sp_bolt(w, h, k):
         ey = float(np.clip(by + rng.choice([-1, 1]) * rng.uniform(6, h / 2 - 3), 3, h - 3))
         br = _bolt_pts(rng, bx, ex, by, ey, 4, 0.3)
         br = [(px, float(np.clip(py, 2, h - 2))) for px, py in br]
-        pen.poly(br, 1.3)
+        pen.poly(br, 2.2)
     a = pen.alpha()
     core = Pen(w, h)
-    core.poly(pts, 1.0)
-    white = 0.7 + 0.3 * core.alpha()
-    return halo(a, 2.2, 0.75), white
+    core.poly(pts, 1.8)
+    white = 0.68 + 0.32 * core.alpha()
+    return halo(a, 2.6, 0.8), white
 
 
 def sp_arc(w, h, k):
@@ -790,9 +790,9 @@ def sp_arc(w, h, k):
         p0 = polar(c, rng.uniform(0, 6), a0)
         p1 = polar(c, rng.uniform(w * 0.3, w * 0.47), a0 + rng.uniform(-40, 40))
         pts = _bolt_pts(rng, p0[0], p1[0], p0[1], p1[1], 4, 0.35)
-        pen.poly(pts, 1.6)
+        pen.poly(pts, 2.6)
     a = pen.alpha()
-    return halo(a, 2.0, 0.7)
+    return halo(a, 2.4, 0.75)
 
 
 def sp_shard(w, h):
@@ -1103,7 +1103,7 @@ def sp_lens(w, h):
 SPRITES = {
     "circle": (256, 256, 1, "x", sp_circle, ()),
     "hex_circle": (256, 256, 1, "x", sp_hex_circle, ()),
-    "slash_big": (256, 256, 1, "x", sp_slash, (0.34, 220.0, 4)),
+    "slash_big": (256, 256, 1, "x", sp_slash, (0.44, 220.0, 4)),
     "black_hole": (192, 192, 1, "x", sp_black_hole, ()),
     "warning": (192, 192, 1, "x", sp_warning, ()),
     "emblem": (128, 128, 10, "grid5", sp_emblem, ()),
@@ -1118,7 +1118,7 @@ SPRITES = {
     "flare": (256, 64, 1, "x", sp_flare, ()),
     "beam": (256, 32, 1, "x", sp_beam, ()),
     "scan": (256, 32, 1, "x", sp_scan, ()),
-    "slash": (128, 128, 1, "x", sp_slash, (0.3, 200.0, 3)),
+    "slash": (128, 128, 1, "x", sp_slash, (0.4, 200.0, 3)),
     "impact": (128, 128, 1, "x", sp_impact, ()),
     "cross": (128, 128, 1, "x", sp_cross, ()),
     "ring": (128, 128, 1, "x", sp_ring, ()),
@@ -2262,7 +2262,7 @@ def build_effects():
     e = ease(AGE)
     th = f"({PA} * {f.v('spin', 900.0, '螺旋の回る速さ (度/秒)')} + math.floor({R1} * 2.999) * 120.0)"
     rad = f"({f.v('spread', 0.35, '螺旋の半径 (m)')} * math.sin({AGE} * 180.0) * (0.85 + 0.3 * {R3}))"
-    f.param([f"v.e_tx * {e} + {rad} * (math.cos({th}) * v.e_a{c} + math.sin({th}) * v.e_b{c})"
+    f.param([f"v.e_t{c} * {e} + {rad} * (math.cos({th}) * v.e_a{c} + math.sin({th}) * v.e_b{c})"
              for c in "xyz"])
     f.bb([f"{S} * 0.09 * (0.75 + 0.25 * math.sin({PA} * 1800.0 + {R4} * 720.0))"] * 2, "lookat_xyz",
          uv_pick("nano", f"{R2} * 3.999", 4))
@@ -2498,7 +2498,7 @@ def build_effects():
             "地球の変身・癒やしの幕・必殺の背景", "count 8〜16 / spread 1.5〜4 / height 3〜6 / life 2〜4",
             star=True)
     S = f.S
-    f.instant(f.v("count", 10, "帯の数"))
+    f.instant(f.v("count", 14, "帯の数"))
     f.point()
     f.lifetime(f"{f.life(2.5)} * math.random(0.85, 1.15)")
     H = f.v("height", 4.0)
@@ -2506,10 +2506,10 @@ def build_effects():
     R = f"({f.v('spread', 2.2, '幕の輪の半径 (m)。0 なら中心に一本')} * (1.0 + 0.06 * math.sin({PA} * 90.0 + {R2} * 360.0)))"
     f.param([f"math.cos({a}) * {R}", f"{H} * 0.5 + 0.15 * math.sin({PA} * 120.0 + {R3} * 360.0)",
              f"math.sin({a}) * {R}"])
-    f.bb([f"{S} * 1.5 * (0.8 + 0.4 * {R4})", f"{H} * (0.85 + 0.15 * math.sin({PA} * 150.0 + {R2} * 360.0))"],
+    f.bb([f"{S} * 1.8 * (0.8 + 0.4 * {R4})", f"{H} * (0.85 + 0.15 * math.sin({PA} * 150.0 + {R2} * 360.0))"],
          "rotate_y", uv("aurora"))
     f.tint(AURORA, f"0.8 * {fade_abs(0.5, 0.8)} * (0.75 + 0.25 * math.sin({PA} * 200.0 + {R4} * 360.0))")
-    f.cost = "count（既定 10）"
+    f.cost = "count（既定 14）"
 
     f = new("meteor", "add", "尾を引く火球: 頭が白熱し、(vx,vy,vz) の逆向きへ v.len m の尾（火球の粒の連なり）。"
             "speed を与えると向きへ飛ぶ（既定は止まった一枚絵 → 毎 tick 位置を変えて出す）",
@@ -2518,7 +2518,7 @@ def build_effects():
     S = f.S
     dir_init(f, (0.4, -1.0, 0.0), "飛ぶ向き（頭の向き。未指定は斜め下）")
     f.init(f"v.e_len = {f.v('len', f'{S} * 3.0', '尾の長さ (m)', doc_default='size × 3')};")
-    f.instant(f.v("count", 16, "尾を作る粒の数"))
+    f.instant(f.v("count", 20, "尾を作る粒の数"))
     f.point()
     f.lifetime(f.life(0.3))
     K = f"({R1} * {R1})"
@@ -2526,11 +2526,11 @@ def build_effects():
     jit = [f"({R2} * 2.0 - 1.0)", f"({R3} * 2.0 - 1.0)", f"({R2} + {R3} - 1.0)"]
     f.param([f"v.e_n{c} * ({spd} * {PA} - v.e_len * {K}) + {jit[i]} * 0.25 * {S} * {K}"
              for i, c in enumerate("xyz")], rotation=f"{R4} * 360.0 + {PA} * 200.0")
-    f.bb([f"{S} * (0.05 + 0.9 * math.pow(1.0 - {K}, 0.7)) * (1.0 - 0.25 * {AGE})"] * 2, "lookat_xyz",
-         uv("fireball"))
+    f.bb([f"{S} * (0.12 + 0.85 * math.pow(1.0 - {K}, 0.8)) * (1.0 - 0.25 * {AGE})"] * 2, "lookat_xyz",
+         uv_choice([("fireball", None), ("glow", None)], f"({K} < 0.08 ? 0.0 : 1.0)"))
     f.tint(FIRE, f"math.pow(1.0 - {K}, 0.4) * {fade_out(2.0)}",
            white_mix=f"(math.pow(1.0 - {K}, 5.0) * 0.85)")
-    f.cost = "count（既定 16）"
+    f.cost = "count（既定 20）"
 
     # ================= 虚空 =================
     f = new("black_hole", "blend", "ブラックホール: 黒い核（染まらない）+ 光子の輪 + 渦巻く降着円盤 + 淡い外光の一枚絵が"
@@ -2593,7 +2593,7 @@ def build_effects():
             "count 12〜40 / spread 0.5〜6 / life 0.3〜1")
     S = f.S
     target_init(f, (0, 1, 0), "輪の面の法線（向き。正規化する。未指定は上 = 水平の輪）")
-    f.instant(f.v("count", 24))
+    f.instant(f.v("count", 32))
     f.point()
     f.lifetime(f"{f.life(0.5)} * math.random(0.85, 1.15)")
     a = f"({R1} * 360.0)"
@@ -2602,7 +2602,7 @@ def build_effects():
     vidx = f.v("var", 0.0, var_note)
     f.bb([f"{S} * 0.16 * (1.0 - {AGE} * 0.5)"] * 2, "lookat_xyz", uv_choice(shapes, vidx))
     f.tint(CYAN, fade_out(1.6), whiten=3)
-    f.cost = "count（既定 24）"
+    f.cost = "count（既定 32）"
 
     f = new("line_n", "add", "粒の線: count 個の光の粒をエミッタから (vx,vy,vz) のずれの点までの線分上に散らして並べる"
             "（1 回の spawn で線・軌跡が描ける）。spread で線の太さ。粒の種類は v.var",
@@ -3314,6 +3314,11 @@ def preview_effects(E, docs):
             d.text((ox + 200, oy + 5), f"{info}   1m={scale:.0f}px", fill=(140, 146, 160), font=small)
         img.save(path)
 
+    only = [x for x in os.environ.get("ASTRO_PREVIEW_ONLY", "").split(",") if x]
+    if only:                     # 一部だけ（作業中の確認用）: 変数無しと見本の変数の両方
+        ent = [(f, {}) for f in E if f.id in only] + [(f, DEMO[f.id]) for f in E if f.id in only and f.id in DEMO]
+        sheet(ent, os.path.join(SCRATCH, "particles_focus.png"), cols=2)
+        return
     per = 21
     for s in range(0, len(E), per):
         sheet([(f, {}) for f in E[s:s + per]], os.path.join(SCRATCH, f"particles_sim_{s // per + 1}.png"))
