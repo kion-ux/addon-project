@@ -304,7 +304,9 @@ def arms(s):
     op = rbox(ua, (X - 1.32, 21.35, 0.0), (0.45, 3.2, 2.5), "plate2", rot=(0, 0, 3))
     line_on(ua, op, "west", (0.5, 0.12), (0.5, 0.88), 0.2, 0.16, "glow")
     rivets(ua, op, "west", 2, edge="bottom", margin=0.3, span=(0.3, 0.7))
-    rbox(ua, (X + 0.05, 21.4, -1.38), (2.2, 2.9, 0.42), "plate2", rot=(-3, 0, 0))
+    upf = rbox(ua, (X + 0.05, 21.4, -1.38), (2.2, 2.9, 0.42), "plate2", rot=(-3, 0, 0))
+    stick(ua, upf, "north", 0.5, 0.5, (0.5, 2.4, 0.16), "plate", sink=0.06)
+    sensor(ua, (X + 0.05, 22.55, -1.66), 0.22, "glow", "dark")
     rbox(ua, (X + 0.05, 21.7, 1.36), (2.0, 2.3, 0.4), "plate_b", rot=(3, 0, 0))
     octa(ua, (X, 19.72, 0.02), 2.86, 0.32, "gold", axis="y")                       # 腕輪
     # 肘当て（後ろ）
@@ -320,8 +322,11 @@ def arms(s):
     line_on(fa, ob, "west", (0.15, 0.25), (0.42, 0.8), 0.18, 0.16, "glow")
     line_on(fa, ob, "west", (0.58, 0.8), (0.85, 0.25), 0.18, 0.16, "glow")
     rivets(fa, ob, "west", 3, edge="top", margin=0.28)
-    fv = rbox(fa, (FX_ + 0.02, 16.4, -1.66), (2.2, 1.9, 0.35), "plate2", rot=(-5, 0, 0))
-    vents(fa, fv, "north", 3, box=(0.2, 0.2, 0.8, 0.8), w=0.18)
+    fv = rbox(fa, (FX_ - 0.02, 16.45, -1.62), (2.0, 2.2, 0.35), "plate2", rot=(-5, 0, 0))
+    fvb = stick(fa, fv, "north", 0.5, 0.5, (1.3, 1.7, 0.18), "plate", sink=0.06)
+    line_on(fa, fvb, "north", (0.3, 0.12), (0.55, 0.55), 0.16, 0.16, "glow")
+    line_on(fa, fvb, "north", (0.55, 0.55), (0.45, 0.9), 0.16, 0.16, "glow")
+    rivets(fa, fv, "north", 2, edge="bottom", margin=0.18, span=(0.12, 0.88), size=0.2)
     chamfer(fa, (FX_ - 0.04, 14.72, 0.0), (3.06, 0.34, 3.2), "gold", cut=0.4, axis="y")  # 袖口
     sensor(fa, (FX_ + 0.05, 15.5, 1.68), 0.26, "glow", "dark", facing=1)
     rivets(fa, lo[1], "south", 2, edge="bottom", margin=0.3, span=(0.3, 0.7))
@@ -350,7 +355,8 @@ def shoulders(s):
                  rot=(0, 0, -14))
     top = stick(p, dome[0], "up", 0.45, 0.5, (2.4, 3.7, 0.3), "plate2", sink=0.1)
     stick(p, top, "up", 0.08, 0.5, (0.26, 3.7, 0.18), "gold", sink=0.08)
-    line_on(p, top, "up", (0.55, 0.1), (0.55, 0.9), 0.2, 0.16, "glow")
+    rdg = stick(p, top, "up", 0.55, 0.5, (0.55, 3.9, 0.3), "plate", sink=0.08)       # 中央の稜
+    line_on(p, rdg, "up", (0.5, 0.08), (0.5, 0.92), 0.18, 0.16, "glow")
     rivets(p, top, "up", 6, edge="border", margin=0.25, size=0.24)
     cbox(p, (-6.4, 24.15, 0.0), (2.0, 0.5, 3.6), "dark")                              # 裏の縁
     # 外へ開いて垂れる板（白・青）と金の縁、紋章、リベットの列

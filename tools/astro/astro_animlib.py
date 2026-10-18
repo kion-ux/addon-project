@@ -52,7 +52,7 @@
     近い姿勢では 0 へ減らす。オイラー角の成分を 25% にすると ±360° の巻きが 90° のねじれになるので使わない）。
 
 ■ 公開 API
-    H, P(*bases, **parts), anim(length, frames, kind="act", loop=False, blend=None)
+    H, P(*bases, **parts), anim(length, frames, kind="act", loop=False, blend=None, strike=None)
     aim(dir, twist=0), wield(blade, arm=None, edge=None, roll=0), dirv(f, u, r), flip(...)
     resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved
                                     部位ごとのトラック（絶対値の Euler）。cloud（武器の表面の点）を渡すと
@@ -161,15 +161,20 @@ def wield(blade, arm=None, edge=None, roll=0.0):
     return Wield(blade, arm, edge, roll)
 
 
-def anim(length, frames, kind="act", loop=False, blend=None):
+def anim(length, frames, kind="act", loop=False, blend=None, strike=None):
     """モーション 1 本。frames = {秒: 姿勢}。kind = act / pose / move。
-    blend=False で終わりのブレンドをしない（一回転して終わる物。省略時は全身の 300° 以上の回転で自動）。"""
+    blend=False で終わりのブレンドをしない（一回転して終わる物。省略時は全身の 300° 以上の回転で自動）。
+    strike = 武器が当たる時刻（秒。書いたキーの時刻）。anim_meta.js の 3 番目の値になり、combo.js は
+    コンボの当たりの演出をこの時刻まで遅らせる（書かなければ combo.js の表の値）。"""
     if kind not in ("act", "pose", "move"):
         raise ValueError("kind must be act / pose / move")
     fr = {round(float(t), 3): dict(p) for t, p in frames.items()}
     if any(t < 0 or t > length + 1e-6 for t in fr):
         raise ValueError("key time outside 0..length")
-    return {"length": float(length), "frames": fr, "kind": kind, "loop": bool(loop), "blend": blend}
+    if strike is not None and not 0.0 <= float(strike) <= length + 1e-6:
+        raise ValueError("strike outside 0..length")
+    return {"length": float(length), "frames": fr, "kind": kind, "loop": bool(loop), "blend": blend,
+            "strike": None if strike is None else round(float(strike), 3)}
 
 
 def flip(t0, t1, turns=1.0, axis="x", centre=14.0, steps=8, tuck=True, base=None):
@@ -959,29 +964,6 @@ def arm_speeds(res, part, step=1.0 / 120.0):
     idx = np.clip(np.searchsorted(keys, tm, side="right") - 1, 0, len(seg) - 1)
     allow = np.maximum(ARM_SPEED_MAX, 1.6 * np.asarray(seg)[idx])
     return tm, w, allow
-
-
-def strike_time(res, hold, step=1.0 / 120.0):
-    """武器が当たる時刻（秒）: 刃先の向き（全身・腰・体・右腕の回転を通した物）が最も速く回るコマを含む、
-    書いたキーの区間の終わりのキー（振り抜いた姿勢 = c1_hit など）。右腕を wield() / aim() で書いていない
-    モーションは None。"""
-    mk = res.mats.get("rA", {})
-    if not any(mk.get(t) is not None for t in res.keys):
-        return None
-    bl = np.asarray(hold["blade_arm"], float)
-    n = max(2, int(math.ceil(res.length / step)))
-    T = np.linspace(0.0, res.length, n + 1)
-    dirs = []
-    for t in T:
-        p = sample_parts(res, float(t))
-        R = rot(*p.get("root", (0, 0, 0))) @ rot(*p.get("w", (0, 0, 0))) @ rot(*p.get("b", (0, 0, 0))) \
-            @ rot(*p["rA"])
-        dirs.append(R @ bl)
-    D = np.array(dirs)
-    w = np.degrees(np.arccos(np.clip((D[1:] * D[:-1]).sum(axis=1), -1.0, 1.0)))
-    tp = float((T[1:] + T[:-1])[int(np.argmax(w))] / 2)
-    keys = sorted(res.keys)
-    return round(min([k for k in keys if k >= tp - 1e-9] or [keys[-1]]), 3)
 
 
 def arm_speed_report(res, step=1.0 / 120.0):

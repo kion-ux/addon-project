@@ -64,6 +64,7 @@ if HERE not in sys.path:
 
 import numpy as np  # noqa: E402
 
+import astro_animcheck as AK  # noqa: E402
 import astro_common as AC  # noqa: E402
 from astro_common import (arc_points, beam, bevel, box, cbox, chamfer, lerp, octa,  # noqa: E402,F401
                           plate, polyline, rbox, tri_fan, fill_tri_yz)
@@ -499,7 +500,8 @@ def _merge(dst: dict, src: dict) -> dict:
 
 
 def spin_expr(axis="z", speed=90.0, phase=0.0):
-    """回転のチャンネル（{"rotation": [...]}）。speed は度/秒。"""
+    """回転のチャンネル（{"rotation": [...]}）。speed は度/秒。待機ループの長さは全部の速さから自動で決まる
+    （idle_loop_length。どの速さでも継ぎ目で飛ばない。整数の度/秒にしておくとループが短くて済む）。"""
     e = f"q.anim_time * {_num(speed)}" + (f" + {_num(phase)}" if phase else "")
     v = [0, 0, 0]
     v[AC.AX[axis]] = e
@@ -592,7 +594,8 @@ def weapon_animations(key: str, geo, mod=None) -> dict:
     have = set(WA.get("idle", {}))
     _merge(idle, _default_spins(geo, "z", 120.0, have))
     _merge(idle, WA.get("idle", {}))
-    A[f"{base}.idle"] = {"loop": True, "animation_length": float(WA.get("idle_length", 6.0)), "bones": idle}
+    A[f"{base}.idle"] = {"loop": True, "animation_length": idle_loop_length(idle, WA, f"{key} weapon"),
+                         "bones": idle}
     ch = swing_channels(kind, WA.get("swing_root"))
     sw = {ORIGIN: ch} if ch else {}
     _merge(sw, WA.get("swing", {}))
@@ -615,20 +618,33 @@ def core_animations(key: str, geo, mod=None) -> dict:
     have = set(CA.get("idle", {}))
     _merge(idle, _default_spins(geo, "y", 90.0, have))
     _merge(idle, CA.get("idle", {}))
-    A[f"{base}.idle"] = {"loop": True, "animation_length": float(CA.get("idle_length", 6.0)), "bones": idle}
+    A[f"{base}.idle"] = {"loop": True, "animation_length": idle_loop_length(idle, CA, f"{key} core"),
+                         "bones": idle}
     use = {ORIGIN: {"scale": "1.0 + v.astro_usew * 0.12",
                     "position": [0, "v.astro_usew * 1.2", 0]}}
     k = 0
     for b in geo_bones(geo):
         if b["name"].startswith("fx_spin_"):
             sgn = 1 if k % 2 == 0 else -1
-            use[b["name"]] = {"rotation": [0, f"q.anim_time * {sgn * 360} * v.astro_usew", 0]}
+            # v.astro_usespin は PRE_CORE が速さ 360°/秒 × v.astro_usew で積み上げる角度（0〜360）。
+            # q.anim_time × 重みだと、重みが 0〜1 の途中でループが戻った時に輪が飛ぶ
+            use[b["name"]] = {"rotation": [0, f"{'' if sgn > 0 else '-'}v.astro_usespin", 0]}
             k += 1
     _merge(use, CA.get("use", {}))
-    A[f"{base}.use"] = {"loop": True, "animation_length": 2.0, "bones": use}
+    A[f"{base}.use"] = {"loop": True, "bones": use}
     if form_bones(geo):
         A[f"{base}.form"] = form_animation(geo, CA.get("form_axes"), length=0.45)
     return A
+
+
+def idle_loop_length(bones, anims_cfg, where="") -> float:
+    """待機ループ（loop: true + animation_length）の長さ: 全ての `q.anim_time * 速さ` が 1 周期で 360° の整数倍に
+    なる最短の長さ（idle_length 以上。既定 6 秒）。統合版は animation_length ごとに q.anim_time を 0 に戻すので、
+    合わない速さの部品は毎周期ぱっと飛ぶ（DESIGN.md §4.5）。"""
+    try:
+        return AK.loop_length(bones, float(anims_cfg.get("idle_length", 6.0)))
+    except ValueError as exc:
+        raise ValueError(f"{where} idle: {exc}") from None
 
 
 def render_controller() -> dict:
@@ -661,6 +677,11 @@ PRE = [
 ]
 
 
+PRE_CORE = [
+    "v.astro_usespin = math.mod((v.astro_usespin ?? 0.0) + q.delta_time * 360.0 * v.astro_usew, 360.0);",
+]
+
+
 def attachable(key: str, what: str, anims: dict) -> dict:
     """what = "weapon" | "core"。anims は書き出すアニメの dict（名前の確認に使う）。"""
     base = anim_base(what, key)
@@ -686,7 +707,8 @@ def attachable(key: str, what: str, anims: dict) -> dict:
                 "textures": {"default": f"textures/entity/{NS}/{what}_{key}"},
                 "geometry": {"default": f"geometry.{NS}.{what}_{key}"},
                 "animations": keys,
-                "scripts": {"pre_animation": list(PRE), "animate": animate},
+                "scripts": {"pre_animation": list(PRE) + (list(PRE_CORE) if what == "core" else []),
+                            "animate": animate},
                 "render_controllers": [RENDER_CTRL],
             }
         },

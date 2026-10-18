@@ -16,8 +16,8 @@
                                         （惑星が同じ名前を BODY_ANIMS に書いていればそちらが勝つ）
       スクリプトは `${key}.${name}` が ANIM_META にあればそれを、無ければ `${name}` を再生する。
   packs/astro_BP/scripts/anim_meta.js   export const ANIM_META = {"<名前>": [長さ秒, ブレンド可否(, 当たる秒)], ...}
-      当たる秒: 技（kind act）で右腕を wield() で書いた物だけ。刃先が最も速く回る区間の終わりのキー
-      （AL.strike_time）。combo.js はこれがあれば技の当たりの演出をこの時刻まで遅らせる
+      当たる秒: anim(..., strike=秒) を書いた物だけ（書かなければ 2 つ）。combo.js はこれがあれば
+      コンボの当たりの演出をこの時刻まで遅らせる（無ければ combo.js の STRIKE 表）
 """
 from __future__ import annotations
 
@@ -131,7 +131,7 @@ def build(clear=True, only=None, jobs=None):
             results = list(ex.map(_resolve_job, range(n), chunksize=2))
     else:
         results = [_resolve_job(i) for i in range(n)]
-    for (name, spec, _kind, hold, key, _cl), res in zip(_JOBS, results):
+    for (name, spec, _kind, _hold, key, _cl), res in zip(_JOBS, results):
         js = AL.to_json(res)
         base = name.split(".", 1)[-1]
         if not only and key is not None and base in shared and spec is AL_LIB_CACHE.get(base) \
@@ -140,10 +140,8 @@ def build(clear=True, only=None, jobs=None):
         res_all[name] = res
         anims[AL.PREFIX + name] = js
         meta[name] = [round(res.length, 3), 1 if res.blend else 0]
-        if res.kind == "act" and hold is not None:
-            st = AL.strike_time(res, hold)
-            if st is not None:
-                meta[name].append(st)       # 当たる時刻（combo.js が技の当たりの演出をここまで遅らせる）
+        if spec.get("strike") is not None:
+            meta[name].append(spec["strike"])     # 当たる時刻（combo.js が当たりの演出をここまで遅らせる）
     return anims, meta, res_all
 
 
