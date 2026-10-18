@@ -51,12 +51,13 @@ const G = globalThis;
 G.__log = {
   particles: new Map(), sounds: new Map(), anims: new Map(), cmds: [], warns: [], molang: new Set(),
   items: new Set(), spawned: new Set(), icons: new Set(), forms: [], teleportFails: [], titleFails: [],
-  fadeFails: [], perTick: new Map(), budgetMax: 0,
+  fadeFails: [], perTick: new Map(), budgetMax: 0, animAt: [],
 };
 G.__handlers = {};
 G.__formAnswers = [];
 G.__items = new Set(JSON.parse(process.env.ASTRO_ITEMS || "[]"));
 G.__walls = [];   // [{x0,x1,y0,y1,z0,z1}] 試験用の壁
+G.__holes = [];   // [{x0,x1,z0,z1}] 試験用の穴（虚空。地面が無い）
 
 const sched = new Map();   // tick -> [fn]
 const intervals = [];
@@ -144,7 +145,10 @@ export class FakeContainer {
 }
 
 const FAMILIES = { "minecraft:zombie": ["monster", "zombie", "mob"], "minecraft:cow": ["cow", "mob"],
-                   "astro:void_drone": ["monster", "astro_enemy"], "astro:hologram_target": ["target"] };
+                   "astro:void_drone": ["monster", "astro_enemy"], "astro:hologram_target": ["target"],
+                   "minecraft:zombie_pigman": ["zombie_pigman", "undead", "monster", "mob"],
+                   "minecraft:villager_v2": ["villager", "mob"], "minecraft:iron_golem": ["irongolem", "mob"],
+                   "minecraft:horse": ["horse", "mob"] };
 let nextId = 1;
 export class FakeEntity {
   constructor(dim, typeId, loc, hp = 20, id) {
@@ -215,6 +219,7 @@ export class FakeEntity {
   }
   getComponent(name) {
     const e = this;
+    if (this.comps && name in this.comps) return this.comps[name];
     if (name === "minecraft:health") {
       if (!this.maxHp) return undefined;
       return { get currentValue() { return e.hp; }, get effectiveMax() { return e.maxHp; },
@@ -244,10 +249,17 @@ export class FakeEntity {
     if (!Number.isFinite(amount) || amount < 0) throw new Error("bad damage " + amount);
     if (!this.alive || this.hp <= 0) return false;
     const t = system.currentTick;
-    if (t - this.lastHurt < 10) return false;
-    this.lastHurt = t;
+    // バニラの被弾の無敵時間: 10 tick の間は前の一撃より強い分（差分）だけ通る（無敵の時計は戻らない）
+    let take = amount;
+    if (t - this.lastHurt < 10) {
+      if (!(amount > (this.lastAmt ?? 0))) return false;
+      take = amount - (this.lastAmt ?? 0);
+    } else {
+      this.lastHurt = t;
+    }
+    this.lastAmt = amount;
     const res = this.getEffect("resistance");
-    const dmg = res && res.amplifier >= 4 ? 0 : amount;
+    const dmg = res && res.amplifier >= 4 ? 0 : take;
     this.hp -= dmg;
     if (dmg > 0) G.__handlers.entityHurt?.({ hurtEntity: this, damage: dmg,
       damageSource: { cause: opts?.cause ?? "entityAttack", damagingEntity: opts?.damagingEntity } });
@@ -266,12 +278,12 @@ export class FakeEntity {
   clearVelocity() { this.vel = { x: 0, y: 0, z: 0 }; }
   addEffect(id, ticks, o) {
     if (!Number.isFinite(ticks) || ticks <= 0) throw new Error("bad effect");
-    this.effects.set(id, { amp: o?.amplifier ?? 0, until: system.currentTick + ticks });
+    this.effects.set(id, { amp: o?.amplifier ?? 0, until: system.currentTick + ticks, particles: o?.showParticles !== false });
   }
   getEffect(id) {
     const e = this.effects.get(id);
     if (!e || e.until <= system.currentTick) return undefined;
-    return { typeId: id, amplifier: e.amp, duration: e.until - system.currentTick };
+    return { typeId: id, amplifier: e.amp, duration: e.until - system.currentTick, particles: e.particles };
   }
   removeEffect(id) { return this.effects.delete(id); }
   hasEffect(id) { return !!this.getEffect(id); }
@@ -305,9 +317,12 @@ export class FakeEntity {
   playAnimation(name, o) {
     if (!this.alive) throw new Error("playAnimation on removed entity");
     G.__log.anims.set(name, (G.__log.anims.get(name) ?? 0) + 1);
+    G.__log.animAt.push([system.currentTick, name, this.id]);
+    if (G.__log.animAt.length > 400) G.__log.animAt.splice(0, 200);
   }
   getGameMode() { return this.gameMode ?? "survival"; }
   getEntitiesFromViewDirection(o) {
+    if (this.viewHits) return this.viewHits().map((entity) => ({ entity, distance: 3 }));
     return this.dimension.entities.filter((e) => e !== this && e.maxHp && e.typeId !== "astro:dmg_text" && e.alive)
       .slice(0, 1).map((entity) => ({ entity, distance: 3 }));
   }
@@ -363,6 +378,9 @@ export class FakeDimension {
   }
   getBlock(loc) {
     let solid = loc.y < 64;
+    for (const h of G.__holes) {
+      if (loc.x >= h.x0 && loc.x < h.x1 && loc.z >= h.z0 && loc.z < h.z1) solid = false;
+    }
     for (const w of G.__walls) {
       if (loc.x >= w.x0 && loc.x < w.x1 && loc.y >= w.y0 && loc.y < w.y1 && loc.z >= w.z0 && loc.z < w.z1) solid = true;
     }
@@ -623,14 +641,47 @@ async function testPlanet(key) {
     ok(ST.energy(p) < e0, `${key}: hover did not cost energy`);
     p.isJumping = false; tick(4);
     ok(p.getEffect("slow_falling") && !p.getEffect("levitation"), `${key}: hover release should glide`);
-    // ブースト（空中でスニーク）
+    // ホバー中のスニークは降りるだけ（同じ押しでブースト・ダッシュを出さない）
     const sb = G.__log.sounds.get("astro.boost") ?? 0;
     p.location.y = 68; p.isOnGround = false; tick(4);
-    p.isSneaking = true; tick(1); p.isSneaking = false; tick(1);
+    p.isSneaking = true; tick(1); p.isSneaking = false; tick(TUNE.boostWait + 2);
+    ok((G.__log.sounds.get("astro.boost") ?? 0) === sb, `${key}: sneaking to leave the hover also fired a boost dash`);
+    ok(!p.getEffect("levitation") && (!p.getEffect("slow_falling") || key === "saturn"), `${key}: sneak while hovering should drop`);
+    // ブースト（ホバーしていない空中でスニーク）
+    p.location.y = 68; p.vel.y = 0; p.isOnGround = false; tick(4);
+    p.isSneaking = true; tick(1); p.isSneaking = false; tick(TUNE.boostWait + 1);
     ok((G.__log.sounds.get("astro.boost") ?? 0) > sb, `${key}: boost dash did not trigger`);
-    ok(!p.getEffect("levitation") && !p.getEffect("slow_falling"), `${key}: sneak while hovering should drop`);
-    for (let i = 0; i < 80 && !p.isOnGround; i++) tick(1);
+    // 空中でスニーク＋右クリック（バリア）はブーストにしない
+    tick(2);
+    p.location.y = 69; p.vel.y = 0; p.isOnGround = false; tick(4);
+    const sb2 = G.__log.sounds.get("astro.boost") ?? 0, br2 = G.__log.sounds.get("astro.barrier") ?? 0;
+    ST.setNovaRaw(p, 10); p.selectedSlotIndex = 3; ST.S(p).barrierCd = -1;
+    p.isSneaking = true; tick(1); H.itemUse({ source: p, itemStack: p.inv.getItem(3) }); tick(1); p.isSneaking = false;
+    tick(TUNE.boostWait + 2);
+    ok((G.__log.sounds.get("astro.barrier") ?? 0) > br2, `${key}: air sneak+use did not raise the barrier`);
+    ok((G.__log.sounds.get("astro.boost") ?? 0) === sb2, `${key}: air sneak+use (barrier) also fired a boost dash`);
+    // はしご・飛行中はスラスターを使わない
+    p.location.y = 68; p.vel.y = 0; p.isOnGround = false; p.isClimbing = true; tick(3);
+    const sj2 = G.__log.sounds.get("astro.jump") ?? 0;
+    p.isJumping = true; tick(14);
+    ok(!p.getEffect("levitation") && (G.__log.sounds.get("astro.jump") ?? 0) === sj2, `${key}: hover/air jump fired while climbing a ladder`);
+    p.isJumping = false; p.isClimbing = false; p.isFlying = true; tick(2);
+    p.isJumping = true; tick(1); p.isJumping = false; tick(1);
+    ok((G.__log.sounds.get("astro.jump") ?? 0) === sj2, `${key}: air jump fired during creative flight`);
+    p.isFlying = false;
+    // 高いホバーからスニークで降りる → 着地の瞬間は無敵（落下死しない）
+    ground(p); tick(3);
+    p.location.y = 92; p.vel.y = 0; p.isOnGround = false; tick(5);
+    p.isJumping = true; tick(12); p.isJumping = false; tick(2);
+    p.isSneaking = true; tick(1); p.isSneaking = false;
+    // （土星はパッシブの低速落下でゆっくり降りる = 落下ダメージが無いので、それも保険とみなす）
+    let guarded = null;
+    for (let i = 0; i < 900 && !p.isOnGround; i++) {
+      tick(1);
+      if (p.isOnGround) guarded = (p.getEffect("resistance")?.amplifier ?? -1) >= 4 || !!p.getEffect("slow_falling");
+    }
     ok(p.isOnGround, `${key}: player never landed`);
+    ok(guarded === true, `${key}: a long drop after the hover lands without the fall guard (resistance V)`);
     // 落下ダメージの打ち消し
     p.hp = 20;
     H.entityHurt({ hurtEntity: p, damage: 6, damageSource: { cause: "fall" } });
