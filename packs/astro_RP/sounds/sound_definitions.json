@@ -1,0 +1,1003 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "astro.core_on": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/core_on_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/core_on_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.core_ring": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/core_ring_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/core_ring_1",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.swarm": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/swarm_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/swarm_1",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/swarm_2",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.assemble_click": {
+      "category": "player",
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/assemble_click_0",
+          "volume": 0.75
+        },
+        {
+          "name": "sounds/astro/assemble_click_1",
+          "volume": 0.75
+        },
+        {
+          "name": "sounds/astro/assemble_click_2",
+          "volume": 0.75
+        }
+      ]
+    },
+    "astro.armor_lock": {
+      "category": "player",
+      "max_distance": 28.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/armor_lock_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/armor_lock_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.visor_on": {
+      "category": "player",
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/visor_on_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/visor_on_1",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.transform_burst": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/transform_burst_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/transform_burst_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.weapon_form": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/weapon_form_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/weapon_form_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.revert": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/revert_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/revert_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.power_down": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/power_down_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/power_down_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.thrust": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/thrust_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/thrust_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/thrust_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.jump": {
+      "category": "player",
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/jump_0",
+          "volume": 0.7
+        },
+        {
+          "name": "sounds/astro/jump_1",
+          "volume": 0.7
+        },
+        {
+          "name": "sounds/astro/jump_2",
+          "volume": 0.7
+        }
+      ]
+    },
+    "astro.boost": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/boost_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/boost_1",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/boost_2",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.hover": {
+      "category": "player",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/hover_0",
+          "volume": 0.45
+        },
+        {
+          "name": "sounds/astro/hover_1",
+          "volume": 0.45
+        },
+        {
+          "name": "sounds/astro/hover_2",
+          "volume": 0.45
+        }
+      ]
+    },
+    "astro.step": {
+      "category": "player",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/step_0",
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/astro/step_1",
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/astro/step_2",
+          "volume": 0.5
+        }
+      ]
+    },
+    "astro.just_dodge": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/just_dodge_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/just_dodge_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.land": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/land_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/land_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/land_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.barrier": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/barrier_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/barrier_1",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.barrier_hit": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/barrier_hit_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/barrier_hit_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/barrier_hit_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.swing": {
+      "category": "player",
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/swing_0",
+          "volume": 0.7
+        },
+        {
+          "name": "sounds/astro/swing_1",
+          "volume": 0.7
+        },
+        {
+          "name": "sounds/astro/swing_2",
+          "volume": 0.7
+        }
+      ]
+    },
+    "astro.swing_heavy": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/swing_heavy_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/swing_heavy_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/swing_heavy_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.hit": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/hit_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/hit_1",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/hit_2",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.hit_heavy": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/hit_heavy_0",
+          "volume": 0.95
+        },
+        {
+          "name": "sounds/astro/hit_heavy_1",
+          "volume": 0.95
+        },
+        {
+          "name": "sounds/astro/hit_heavy_2",
+          "volume": 0.95
+        }
+      ]
+    },
+    "astro.hit_metal": {
+      "category": "player",
+      "max_distance": 28.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/hit_metal_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/hit_metal_1",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/hit_metal_2",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.crit": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/crit_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/crit_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.laser": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/laser_0",
+          "volume": 0.75
+        },
+        {
+          "name": "sounds/astro/laser_1",
+          "volume": 0.75
+        },
+        {
+          "name": "sounds/astro/laser_2",
+          "volume": 0.75
+        }
+      ]
+    },
+    "astro.beam_charge": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/beam_charge_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/beam_charge_1",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.beam_fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/beam_fire_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/beam_fire_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.explosion": {
+      "category": "player",
+      "min_distance": 3.0,
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/explosion_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/explosion_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/explosion_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.explosion_big": {
+      "category": "player",
+      "min_distance": 6.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/explosion_big_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/explosion_big_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.impact_heavy": {
+      "category": "player",
+      "min_distance": 3.0,
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/impact_heavy_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/impact_heavy_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/impact_heavy_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.liquid": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/liquid_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/liquid_1",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/liquid_2",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.zap": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/zap_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/zap_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/zap_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.thunder": {
+      "category": "player",
+      "min_distance": 8.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/thunder_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/thunder_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.ice_crack": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/ice_crack_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/ice_crack_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/ice_crack_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.ice_shatter": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/ice_shatter_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/ice_shatter_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.wind": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/wind_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/wind_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/wind_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.gust": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/gust_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/gust_1",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/gust_2",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.water_wave": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/water_wave_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/water_wave_1",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.splash": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/splash_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/splash_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/splash_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.gravity": {
+      "category": "player",
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/gravity_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/gravity_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.ring_spin": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/ring_spin_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/ring_spin_1",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/ring_spin_2",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.clock_tick": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/clock_tick_0",
+          "volume": 0.7
+        },
+        {
+          "name": "sounds/astro/clock_tick_1",
+          "volume": 0.7
+        },
+        {
+          "name": "sounds/astro/clock_tick_2",
+          "volume": 0.7
+        }
+      ]
+    },
+    "astro.time_stop": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/time_stop_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/time_stop_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.flare": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/flare_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/flare_1",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/astro/flare_2",
+          "volume": 0.9
+        }
+      ]
+    },
+    "astro.corona": {
+      "category": "player",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/corona_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/corona_1",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.supernova": {
+      "category": "player",
+      "min_distance": 8.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/supernova_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/supernova_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.meteor": {
+      "category": "player",
+      "min_distance": 6.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/meteor_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/meteor_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.cutin": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/cutin_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/cutin_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.ui_open": {
+      "category": "ui",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/ui_open_0",
+          "volume": 0.6
+        },
+        {
+          "name": "sounds/astro/ui_open_1",
+          "volume": 0.6
+        }
+      ]
+    },
+    "astro.ui_select": {
+      "category": "ui",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/ui_select_0",
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/astro/ui_select_1",
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/astro/ui_select_2",
+          "volume": 0.5
+        }
+      ]
+    },
+    "astro.ui_back": {
+      "category": "ui",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/ui_back_0",
+          "volume": 0.55
+        },
+        {
+          "name": "sounds/astro/ui_back_1",
+          "volume": 0.55
+        }
+      ]
+    },
+    "astro.alert": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/alert_0",
+          "volume": 0.7
+        },
+        {
+          "name": "sounds/astro/alert_1",
+          "volume": 0.7
+        }
+      ]
+    },
+    "astro.overheat": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/overheat_0",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/astro/overheat_1",
+          "volume": 0.85
+        }
+      ]
+    },
+    "astro.sync_up": {
+      "category": "player",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/sync_up_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/sync_up_1",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.drone_hum": {
+      "category": "hostile",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/drone_hum_0",
+          "volume": 0.55
+        },
+        {
+          "name": "sounds/astro/drone_hum_1",
+          "volume": 0.55
+        }
+      ]
+    },
+    "astro.drone_laser": {
+      "category": "hostile",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/drone_laser_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/drone_laser_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/drone_laser_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.sentinel_step": {
+      "category": "hostile",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/sentinel_step_0",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/sentinel_step_1",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/astro/sentinel_step_2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "astro.sentinel_slam": {
+      "category": "hostile",
+      "min_distance": 4.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/sentinel_slam_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/sentinel_slam_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.nemesis_roar": {
+      "category": "hostile",
+      "min_distance": 8.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/nemesis_roar_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/nemesis_roar_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.nemesis_charge": {
+      "category": "hostile",
+      "min_distance": 4.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/nemesis_charge_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/nemesis_charge_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "astro.nemesis_spawn": {
+      "category": "hostile",
+      "min_distance": 8.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/astro/nemesis_spawn_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/astro/nemesis_spawn_1",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

@@ -105,32 +105,34 @@ def _bone_names(m):
     return {b.name for b in m.bones}
 
 
-def part(m: Model, parent, name: str, pivot=(0, 0, 0)):
-    """parent（Bone か名前）の子ボーン。"""
+def part(m: Model, parent, name: str, pivot=(0, 0, 0), rotation=None):
+    """parent（Bone か名前）の子ボーン。rotation はボーンの静止時の回転（統合版の角度）。
+    回るボーンに静止の傾きを付けると、アニメの回転はその上に足される（傾いたまま首を振る歳差運動）。"""
     pname = parent if isinstance(parent, str) else parent.name
     if name in _bone_names(m):
         raise ValueError(f"{m.identifier}: duplicate bone {name}")
     if pname not in _bone_names(m):
         raise ValueError(f"{m.identifier}: unknown parent bone {pname}")
-    return m.bone(name, tuple(pivot), parent=pname)
+    rot_ = [round(float(a), 2) for a in rotation] if rotation is not None and any(rotation) else None
+    return m.bone(name, tuple(pivot), parent=pname, rotation=rot_)
 
 
-def form(m: Model, parent, index: int, name: str, pivot=(0, 0, 0)):
+def form(m: Model, parent, index: int, name: str, pivot=(0, 0, 0), rotation=None):
     """形成アニメの部品ボーン form_<index>_<name>。番号の小さい順に現れる（同じ番号は同時）。
     pivot は「生えてくる根元」（刃なら鍔の位置）。"""
     if not (0 <= int(index) <= 9):
         raise ValueError("form index must be 0..9")
-    return part(m, parent, f"form_{int(index)}_{name}", pivot)
+    return part(m, parent, f"form_{int(index)}_{name}", pivot, rotation)
 
 
-def spin(m: Model, parent, name: str, pivot=(0, 0, 0)):
+def spin(m: Model, parent, name: str, pivot=(0, 0, 0), rotation=None):
     """回る部品 fx_spin_<name>。回し方は WEAPON_ANIMS / CORE_ANIMS（無ければ既定の回転）。"""
-    return part(m, parent, f"fx_spin_{name}", pivot)
+    return part(m, parent, f"fx_spin_{name}", pivot, rotation)
 
 
-def glow(m: Model, parent, name: str, pivot=(0, 0, 0)):
+def glow(m: Model, parent, name: str, pivot=(0, 0, 0), rotation=None):
     """脈動する発光部品 fx_glow_<name>（既定で 1.0〜1.06 倍にゆっくり脈打つ）。"""
-    return part(m, parent, f"fx_glow_{name}", pivot)
+    return part(m, parent, f"fx_glow_{name}", pivot, rotation)
 
 
 def sphere(bone, centre, r: float, style: str, **kw):

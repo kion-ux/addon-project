@@ -1435,11 +1435,23 @@ def render(name, v):
     return master(spec["fn"](v, rng), spec)
 
 
-def write_ogg(path, x):
+def _encode(path, x):
     pcm = np.round(np.clip(x, -1, 1) * 32767).astype("<i2")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "s16le", "-ar", str(SR), "-ac", "1", "-i", "pipe:0",
                     "-c:a", "libvorbis", "-q:a", OGG_Q, "-fflags", "+bitexact", "-flags:a", "+bitexact",
                     "-map_metadata", "-1", path], input=pcm.tobytes(), check=True)
+
+
+def write_ogg(path, x):
+    """書き出して復号し、Vorbis の量子化でピークが -1 dBFS を越えたら下げて書き直す（割れ防止）。"""
+    target = 10 ** (PEAK_DB / 20)
+    g = 1.0
+    for _ in range(5):
+        _encode(path, x * g)
+        pk = float(np.max(np.abs(decode(path))))
+        if pk <= target * 1.03:
+            break
+        g *= target / pk * 0.995
 
 
 def decode(path):
