@@ -40,8 +40,8 @@ import numpy as np  # noqa: E402
 
 import astro_common as AC  # noqa: E402
 from astro_common import NS, Bone, Cube, Model, cbox, cube_matrix  # noqa: E402
-from astro_data import ASSEMBLE_ORDER, PLANETS  # noqa: E402
-from hd_space import bone_local, mat4, rot  # noqa: E402
+from astro_data import PLANETS  # noqa: E402
+from hd_space import bone_local  # noqa: E402
 
 # ---------------------------------------------------------------------------
 #  骨格と肌

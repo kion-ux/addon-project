@@ -25,7 +25,7 @@ import math
 import os
 import re
 import sys
-from typing import Dict, List, Optional
+from typing import Dict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -34,9 +34,9 @@ import numpy as np  # noqa: E402
 from PIL import Image, ImageDraw, ImageFilter, ImageFont  # noqa: E402
 
 import astro_common as AC  # noqa: E402
-from astro_suit import TOP, suit_world  # noqa: E402
+from astro_suit import suit_world  # noqa: E402
 from hd_scene import FACES, SKELETON, skeleton_world  # noqa: E402
-from hd_space import FP_ARM_POS, FP_ARM_ROT, FP_EYE, OFF_L, OFF_R, Rx, Ry, mat4, rot  # noqa: E402
+from hd_space import FP_ARM_POS, FP_ARM_ROT, FP_EYE, Rx, Ry, mat4, rot  # noqa: E402
 
 VIEWS = {
     "front": (0, -4), "back": (180, -4), "left": (90, -4), "right": (-90, -4),

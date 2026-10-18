@@ -12,8 +12,8 @@ rz 正 = 上端が +X へ（右側の部品なら下端が外へ開く）。
 """
 from __future__ import annotations
 
-from astro_common import (bevel, beam, cbox, line3, line_on, octa, polyline, rbox, ring,
-                          stick, taper)
+from astro_common import (bevel, beam, cbox, line_on, octa, polyline, rbox, ring, stick,
+                          taper)
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 
 GOLD_W = 0.42          # 縁取りの幅
@@ -23,7 +23,6 @@ GOLD_W = 0.42          # 縁取りの幅
 #  塗り（astro_paint.suit_styles("earth") への上書き・追加）
 # ===========================================================================
 SUIT_STYLES = {
-    "plate": {"panel": 1},
     "visor": {"glow": (80, 255, 196), "light": (226, 255, 244), "deep": (8, 96, 86),
               "emit": 20},
     "flame": {"glow": (96, 236, 255), "light": (236, 255, 255), "deep": (30, 120, 200)},
