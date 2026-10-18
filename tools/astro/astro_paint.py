@@ -538,7 +538,9 @@ class AstroPainter(HDPainter):
         S = h if w >= h else w
         t = abs(across - 0.5) * 2
         if S <= 2:
-            col = mix(lt, glow, 0.35)
+            col = mix(glow, lt, 0.3)
+        elif S <= 4:                                  # 細い線は色を残す（芯だけ明るく）
+            col = mix(lt, glow, 0.25) if t < 0.4 else mix(glow, shade(glow, 0.8), t - 0.4)
         else:
             col = mix(WHITE, lt, smooth(0.0, 0.35, t))
             col = mix(col, glow, smooth(0.3, 1.0, t))
