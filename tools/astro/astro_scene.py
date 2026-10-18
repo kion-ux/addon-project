@@ -778,6 +778,9 @@ def suit_anim(asset, names, t=0.0, env=None) -> dict:
     """スーツのアニメ（短い名前のリスト、例 ["idle","thrust"]）を t 秒で評価して合成。"""
     e = {"v.astro_air": 0.0, "v.astro_run": 0.0, "v.astro_fp": 0.0, "q.is_on_ground": 1.0}
     e.update(env or {})
+    # 累積の位相（gen_astro_suits の PRE）。プレビューでは t 秒ぶん、その時の空中・疾走の速さで進んだとみなす
+    e.setdefault("v.astro_t", t)
+    e.setdefault("v.astro_spin", t * (1.0 + e["v.astro_air"] * 1.5 + e["v.astro_run"] * 2.0))
     return combine(*[eval_animation(asset.anim(n), t, e) for n in names])
 
 

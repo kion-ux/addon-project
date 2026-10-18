@@ -403,6 +403,12 @@ PRE = [
     " * math.min(1.0, q.delta_time * 6.0);",
     "v.astro_run = (v.astro_run ?? 0.0) + ((q.is_sprinting ? 1.0 : 0.0) - (v.astro_run ?? 0.0))"
     " * math.min(1.0, q.delta_time * 6.0);",
+    # 累積の位相（秒）。ループの継ぎ目が無く、速さを変えても角度が飛ばない:
+    #   v.astro_t    … ただの経過時間
+    #   v.astro_spin … 空中で 2.5 倍・疾走で 3 倍まで速く進む時間（回る環・タービン・衛星はこれに角速度を掛ける）
+    # q.anim_time * v.astro_run のように「時間 × 変わる重み」にすると、重みが変わる瞬間に角度が大きく飛ぶので使わない。
+    "v.astro_t = (v.astro_t ?? 0.0) + q.delta_time;",
+    "v.astro_spin = (v.astro_spin ?? 0.0) + q.delta_time * (1.0 + v.astro_air * 1.5 + v.astro_run * 2.0);",
 ]
 PARENT_SETUP = ("v.helmet_layer_visible = 0.0; v.chest_layer_visible = 0.0; "
                 "v.leg_layer_visible = 0.0; v.boot_layer_visible = 0.0;")
