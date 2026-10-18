@@ -15,7 +15,7 @@
 """
 from __future__ import annotations
 
-from astro_animlib import DOWN, LEFT, H, P, aim, anim, dirv, wield
+from astro_animlib import LEFT, H, P, aim, anim, dirv, wield
 
 # ---- 三段コンボ -------------------------------------------------------------
 c1_wind = P(b=(0, 38, 0), h=(0, -28, 0),
@@ -45,7 +45,7 @@ c3_up = P(b=(-14, 0, 0), h=(-16, 0, 0),
           lA=aim(dirv(u=0.55, f=1.0, r=-0.25)),
           rL=(-34, 0, 0), lL=(-10, 0, 0), root_pos=(0, 1.8, 0))
 c3_hit = P(w=(28, 0, 0), h=(-24, 0, 0),
-           rA=wield(blade=dirv(f=1.0, u=-0.6), edge=DOWN),
+           rA=wield(blade=dirv(f=1.0, u=-0.22), arm=dirv(f=0.75, u=-0.66)),
            lA=aim(dirv(f=-0.4, u=-1.0, r=-0.5)),
            rL=(30, 0, 8), lL=(-44, 0, -8), root_pos=(0, 0, -2.0), ground=True)
 
@@ -87,12 +87,21 @@ BODY_ANIMS = {
     "combo2": anim(0.5, {0.0: H, 0.08: c2_wind, 0.2: c2_hit, 0.3: c2_follow,
                          0.38: P(c2_follow, b=(-8, 30, 0)), 0.5: H}),
     "combo3": anim(0.7, {0.0: H, 0.16: c3_up, 0.3: c3_hit, 0.5: P(c3_hit, w=(26, 0, 0)), 0.7: H}),
-    "tidal_slash": anim(0.85, {0.0: H, 0.12: ts_wind, 0.3: ts_mid, 0.42: ts_follow,
+    "tidal_slash": anim(0.85, {0.0: H,
+                               0.05: P(rA=wield(blade=dirv(r=0.6, u=0.6, f=0.3), arm=dirv(r=1.0, u=-0.55, f=0.2)),
+                                       b=(2, 24, 0), h=(0, -18, 0)),
+                               0.12: ts_wind, 0.3: ts_mid, 0.42: ts_follow,
                                0.66: P(ts_follow, b=(6, -58, 0)), 0.85: H}),
     "charge": anim(0.9, {0.0: H, 0.1: charge, 0.45: P(charge, rL=(-30, 0, 2), lL=(26, 0, -2)),
-                         0.75: charge, 0.9: H}),
+                         0.72: charge,
+                         0.81: P(w=(10, 0, 0), h=(-10, 0, 0),
+                                 rA=wield(blade=dirv(f=0.5, u=-0.5, r=0.6), arm=dirv(r=0.6, u=-0.8, f=0.1))),
+                         0.9: H}),
     "luna_call": anim(0.9, {0.0: H, 0.16: luna_up, 0.45: P(luna_up, h=(-34, 0, 0)), 0.6: luna_down,
                             0.75: P(luna_down, b=(10, 0, 0)), 0.9: H}),
-    "plant_sword": anim(1.4, {0.0: H, 0.28: ps_raise, 0.52: ps_plant, 1.15: P(ps_plant, w=(22, 0, 0)),
+    "plant_sword": anim(1.4, {0.0: H, 0.28: ps_raise, 0.52: ps_plant, 1.12: P(ps_plant, w=(22, 0, 0)),
+                              1.26: P(w=(10, 0, 0), h=(-8, 0, 0), rL=(20, 0, 6), lL=(-20, 0, -6), ground=True,
+                                      rA=wield(blade=dirv(f=0.6, u=-0.75, r=0.35),
+                                               arm=dirv(f=0.5, u=-0.8, r=0.35))),
                               1.4: H}),
 }

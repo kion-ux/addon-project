@@ -831,6 +831,8 @@ def library() -> dict:
         0.38: P(rA=wield(blade=dirv(f=1.0, u=-0.25), arm=dirv(f=1.0, u=-0.2, r=-0.05)),
                 lA=aim(dirv(f=-0.3, u=-1.0, r=-0.4)), b=(14, -22, 0), h=(-8, 20, 0),
                 rL=(16, 0, 4), lL=(-28, 0, -4), root_pos=(0, -0.6, -1.0)),
+        0.46: P(rA=wield(blade=dirv(f=0.7, u=-0.45, r=0.45), arm=dirv(r=0.55, u=-0.8, f=0.25)),
+                b=(6, -8, 0), h=(-4, 8, 0)),
         0.55: H,
     })
 
@@ -840,7 +842,9 @@ def library() -> dict:
     down = P(rA=wield(blade=dirv(f=1.0, u=-0.95), arm=dirv(f=1.0, u=-0.75)),
              lA=aim(dirv(f=0.7, u=-1.0, r=0.15)), w=(30, 0, 0), h=(-24, 0, 0),
              rL=(-46, 0, 8), lL=(40, 0, -8), ground=True)
-    L["slam"] = anim(0.8, {0.0: H, 0.2: up, 0.34: down, 0.6: P(down, w=(28, 0, 0)), 0.8: H})
+    over = P(up, rA=wield(blade=dirv(u=0.8, f=0.45, r=0.15), arm=dirv(u=0.9, f=0.45, r=0.45)), b=(-4, 0, 0),
+             root_pos=(0, 1.6, 0))
+    L["slam"] = anim(0.8, {0.0: H, 0.2: up, 0.27: over, 0.34: down, 0.6: P(down, w=(28, 0, 0)), 0.8: H})
 
     # ---- 突き（0.45 秒）: 踏み込んで真っすぐ ---------------------------------------------------
     pull = P(rA=wield(blade=dirv(f=1.0, u=0.05), arm=dirv(f=-0.6, u=-1.0, r=0.35)),
