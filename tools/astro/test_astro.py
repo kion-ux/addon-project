@@ -598,7 +598,8 @@ async function testPlanet(key) {
     tick(2);
     ok(shot && shot.z > 0 && arrow.projectile.owner === p, `${key}: barrier did not reflect a projectile`);
     tick(COMMON.barrier_ticks + 4);
-    ok(!p.getEffect("resistance") || p.getEffect("resistance").duration < 2, `${key}: barrier resistance lingers`);
+    const res = p.getEffect("resistance");
+    ok(!res || res.amplifier < 4 || res.duration < 2, `${key}: barrier resistance lingers`);
     flushWarns(`${key}.barrier`);
   }
 

@@ -1,0 +1,134 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "astro:nemesis",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false,
+      "properties": {
+        "astro:mode": {
+          "type": "int",
+          "range": [
+            0,
+            7
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "astro:phase": {
+          "type": "int",
+          "range": [
+            1,
+            2
+          ],
+          "default": 1,
+          "client_sync": true
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "astro_invader",
+          "astro_boss",
+          "monster",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 2.4,
+        "height": 3.8
+      },
+      "minecraft:health": {
+        "value": 480,
+        "max": 480
+      },
+      "minecraft:nameable": {},
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_air": true,
+        "breathes_water": true
+      },
+      "minecraft:experience_reward": {
+        "on_death": "q.last_hit_by_player ? 120 : 0"
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/astro_nemesis.json"
+      },
+      "minecraft:boss": {
+        "should_darken_sky": true,
+        "hud_range": 64
+      },
+      "minecraft:physics": {
+        "has_gravity": false,
+        "has_collision": true
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:fire_immune": true,
+      "minecraft:persistent": {},
+      "minecraft:follow_range": {
+        "value": 64,
+        "max": 64
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "any_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "astro_invader"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "damager",
+                    "value": "astro_invader"
+                  }
+                ]
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          },
+          {
+            "cause": "fly_into_wall",
+            "deals_damage": false
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": false
+          },
+          {
+            "cause": "lava",
+            "deals_damage": false
+          },
+          {
+            "cause": "magma",
+            "deals_damage": false
+          },
+          {
+            "cause": "lightning",
+            "damage_multiplier": 0.3
+          }
+        ]
+      }
+    }
+  }
+}

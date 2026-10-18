@@ -1,0 +1,199 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "astro:void_drone",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false,
+      "properties": {
+        "astro:mode": {
+          "type": "int",
+          "range": [
+            0,
+            3
+          ],
+          "default": 0,
+          "client_sync": true
+        }
+      }
+    },
+    "component_groups": {
+      "astro:roaming": {
+        "minecraft:behavior.random_hover": {
+          "priority": 8,
+          "xz_dist": 10,
+          "y_dist": 5,
+          "y_offset": -1,
+          "interval": 1,
+          "hover_height": [
+            2,
+            5
+          ]
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "astro_invader",
+          "astro_drone",
+          "monster",
+          "mob"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.85,
+        "height": 0.95
+      },
+      "minecraft:health": {
+        "value": 20,
+        "max": 20
+      },
+      "minecraft:nameable": {},
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_air": true,
+        "breathes_water": true
+      },
+      "minecraft:experience_reward": {
+        "on_death": "q.last_hit_by_player ? 6 : 0"
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/astro_void_drone.json"
+      },
+      "minecraft:movement": {
+        "value": 0.3
+      },
+      "minecraft:flying_speed": {
+        "value": 0.16
+      },
+      "minecraft:movement.hover": {},
+      "minecraft:navigation.hover": {
+        "can_path_over_water": true,
+        "can_sink": false,
+        "can_pass_doors": false,
+        "can_path_from_air": true,
+        "avoid_water": true,
+        "avoid_damage_blocks": true,
+        "avoid_sun": false
+      },
+      "minecraft:can_fly": {},
+      "minecraft:physics": {
+        "has_gravity": false
+      },
+      "minecraft:jump.static": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:knockback_resistance": {
+        "value": 0.15
+      },
+      "minecraft:follow_range": {
+        "value": 32,
+        "max": 32
+      },
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "min_distance": 48,
+          "max_distance": 96
+        }
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "any_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "astro_invader"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "damager",
+                    "value": "astro_invader"
+                  }
+                ]
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "fly_into_wall",
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": true,
+        "must_see_forget_duration": 6.0,
+        "reselect_targets": true,
+        "within_radius": 24,
+        "entity_types": [
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "player"
+                },
+                {
+                  "test": "has_ability",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "instabuild"
+                }
+              ]
+            },
+            "max_dist": 24
+          }
+        ]
+      },
+      "minecraft:behavior.look_at_target": {
+        "priority": 3
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 6,
+        "look_distance": 16,
+        "probability": 0.4
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "astro:roaming"
+          ]
+        }
+      },
+      "astro:engage": {
+        "remove": {
+          "component_groups": [
+            "astro:roaming"
+          ]
+        }
+      },
+      "astro:disengage": {
+        "add": {
+          "component_groups": [
+            "astro:roaming"
+          ]
+        }
+      }
+    }
+  }
+}

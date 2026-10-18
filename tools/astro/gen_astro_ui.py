@@ -1362,8 +1362,8 @@ def emblem_frame(cv, key, cx, cy, R, detail=1.0):
     c = HUD_COL[key]
     rx = R * 1.16
     outer = cv.poly(hex_pts(cx, cy, rx, R))
-    inner = cv.poly(hex_pts(cx, cy, rx - R * 0.17, R * 0.85))
-    glow_in = cv.poly(hex_pts(cx, cy, rx - R * 0.24, R * 0.79))
+    inner = cv.poly(hex_pts(cx, cy, rx - R * 0.22, R * 0.81))
+    glow_in = cv.poly(hex_pts(cx, cy, rx - R * 0.30, R * 0.74))
     cv.fill(outer, (0, 0, 0), 0.0)
     metal = cv.grad((cx - rx, cy - R), (cx + rx, cy + R), None, None,
                     [(0.0, (236, 242, 250)), (0.35, (164, 178, 198)), (0.55, (96, 108, 130)),
@@ -1385,8 +1385,8 @@ def emblem_frame(cv, key, cx, cy, R, detail=1.0):
 
 def emblem_big(key):
     cv = Canvas(32, ss=8)
-    emblem_frame(cv, key, 16, 16, 11.6)
-    rad = {"saturn": 5.6, "sol": 6.4, "uranus": 7.0}.get(key, 7.4)
+    emblem_frame(cv, key, 16, 16, 12.4)
+    rad = {"saturn": 5.6, "sol": 5.4, "uranus": 7.0}.get(key, 7.6)
     pl = render_planet(key, 32, rad, ss=6, detail=0.7)
     cv.paste(pl, 0, 0)
     # 4..27 行に収める（縁取り込み）
@@ -1394,31 +1394,30 @@ def emblem_big(key):
 
 
 def wing(side):
-    """カットインの翼（左向き）。side="R" は左右反転。"""
+    """カットインの翼（左向き。付け根が右端）。side="R" は左右反転。尖った 3 枚の刃と付け根の金具。"""
     cv = Canvas(32, ss=8)
     blades = [
-        # (付け根の上, 付け根の下, 先端の上, 先端の下) 右端が付け根
-        [(31.5, 11.0), (31.5, 14.6), (6.0, 9.0), (2.5, 7.4)],
-        [(31.5, 15.2), (31.5, 18.2), (9.5, 16.8), (6.0, 15.4)],
-        [(31.5, 18.8), (31.5, 21.6), (15.0, 24.2), (12.0, 23.6)],
+        # 付け根の上, 付け根の下, 先端, 下の縁の折れ点
+        ((30, 11.2), (30, 15.0), (1.5, 6.0), (7.5, 11.0)),
+        ((30, 15.6), (30, 18.8), (4.5, 15.4), (9.5, 18.0)),
+        ((30, 19.4), (30, 22.2), (10.0, 25.2), (14.5, 23.6)),
     ]
-    for i, (a, b, tb, ta) in enumerate(blades):
-        pts = [a, ta, tb, b]
-        m = cv.poly(pts)
-        metal = cv.grad((a[0], a[1] - 2), (b[0], b[1] + 2), None, None,
-                        [(0.0, (250, 252, 255)), (0.4, (176, 190, 212)), (1.0, (84, 96, 122))])
+    for a, b, tip, knee in blades:
+        m = cv.poly([a, tip, knee, b])
+        metal = cv.grad((a[0], a[1] - 1), (b[0], b[1] + 2), None, None,
+                        [(0.0, (252, 254, 255)), (0.35, (186, 200, 222)), (0.7, (110, 124, 152)),
+                         (1.0, (70, 80, 104))])
         cv.fill(m, metal)
-        # 前縁の発光線
-        cv.fill(cv.line([a, ta], 0.9), (150, 236, 255))
-        cv.fill(cv.line([(a[0] - 2, a[1] + 0.4), (ta[0] + 2.4, ta[1] + 0.9)], 0.35), WHITE)
-        # 刻み（パネルライン）
-        mx = (a[0] + ta[0]) / 2
-        my = (a[1] + ta[1]) / 2 + 0.8
-        cv.fill(cv.line([(mx, my), (mx + 1.4, (b[1] + tb[1]) / 2 - 0.6)], 0.4), (60, 70, 92))
-    hub = cv.poly([(26, 9.5), (32, 9.5), (32, 23), (26, 23), (24, 19.5), (24, 13)])
-    cv.fill(hub, cv.grad((24, 9), (32, 23), (210, 222, 238), (76, 88, 112)))
-    cv.fill(cv.poly([(27.5, 14), (30.5, 14), (30.5, 18.6), (27.5, 18.6)]), (150, 236, 255))
-    cv.fill(cv.poly([(28.2, 14.6), (29.6, 14.6), (29.6, 16), (28.2, 16)]), WHITE)
+        cv.fill(cv.line([a, tip], 0.8), (150, 236, 255))                    # 前縁の発光
+        cv.fill(cv.line([(a[0] - 1.5, a[1] + 0.35), ((a[0] + tip[0]) / 2, (a[1] + tip[1]) / 2 + 0.3)], 0.35),
+                WHITE, 0.9)
+        cv.fill(cv.line([knee, ((knee[0] + b[0]) / 2, (knee[1] + b[1]) / 2 - 0.2)], 0.35), (50, 58, 80), 0.9)
+    hub = cv.poly([(25, 9.8), (32, 9.8), (32, 23.2), (25, 23.2), (23, 19.6), (23, 13.4)])
+    cv.fill(hub, cv.grad((23, 9.8), (32, 23.2), (220, 230, 244), (70, 82, 108)))
+    cv.fill(cv.line([(25, 10.4), (31.5, 10.4)], 0.5), WHITE, 0.8)
+    cv.fill(cv.poly([(26.6, 13.6), (30.2, 13.6), (30.2, 19.4), (26.6, 19.4)]), (16, 22, 36))
+    cv.fill(cv.poly([(27.2, 14.2), (29.6, 14.2), (29.6, 18.8), (27.2, 18.8)]), (150, 236, 255))
+    cv.fill(cv.poly([(27.6, 14.6), (28.6, 14.6), (28.6, 16.2), (27.6, 16.2)]), WHITE)
     a = soft_outlined(cv.result(), INK, 210)
     if side == "R":
         a = a[:, ::-1].copy()

@@ -1,0 +1,404 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.astro.nemesis": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "beam": "v.mode == 2"
+            },
+            {
+              "summon": "v.mode == 3"
+            },
+            {
+              "meteor": "v.mode == 4"
+            },
+            {
+              "blackhole": "v.mode == 5"
+            },
+            {
+              "dash": "v.mode == 6"
+            },
+            {
+              "roar": "v.mode == 7"
+            }
+          ]
+        },
+        "charge": {
+          "animations": [
+            "charge"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "beam": "v.mode == 2"
+            },
+            {
+              "summon": "v.mode == 3"
+            },
+            {
+              "meteor": "v.mode == 4"
+            },
+            {
+              "blackhole": "v.mode == 5"
+            },
+            {
+              "dash": "v.mode == 6"
+            },
+            {
+              "roar": "v.mode == 7"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "beam": {
+          "animations": [
+            "beam"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "summon": "v.mode == 3"
+            },
+            {
+              "meteor": "v.mode == 4"
+            },
+            {
+              "blackhole": "v.mode == 5"
+            },
+            {
+              "dash": "v.mode == 6"
+            },
+            {
+              "roar": "v.mode == 7"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "summon": {
+          "animations": [
+            "summon"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "beam": "v.mode == 2"
+            },
+            {
+              "meteor": "v.mode == 4"
+            },
+            {
+              "blackhole": "v.mode == 5"
+            },
+            {
+              "dash": "v.mode == 6"
+            },
+            {
+              "roar": "v.mode == 7"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "meteor": {
+          "animations": [
+            "meteor"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "beam": "v.mode == 2"
+            },
+            {
+              "summon": "v.mode == 3"
+            },
+            {
+              "blackhole": "v.mode == 5"
+            },
+            {
+              "dash": "v.mode == 6"
+            },
+            {
+              "roar": "v.mode == 7"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "blackhole": {
+          "animations": [
+            "blackhole"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "beam": "v.mode == 2"
+            },
+            {
+              "summon": "v.mode == 3"
+            },
+            {
+              "meteor": "v.mode == 4"
+            },
+            {
+              "dash": "v.mode == 6"
+            },
+            {
+              "roar": "v.mode == 7"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "dash": {
+          "animations": [
+            "dash"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "beam": "v.mode == 2"
+            },
+            {
+              "summon": "v.mode == 3"
+            },
+            {
+              "meteor": "v.mode == 4"
+            },
+            {
+              "blackhole": "v.mode == 5"
+            },
+            {
+              "roar": "v.mode == 7"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.12
+        },
+        "roar": {
+          "animations": [
+            "roar"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "beam": "v.mode == 2"
+            },
+            {
+              "summon": "v.mode == 3"
+            },
+            {
+              "meteor": "v.mode == 4"
+            },
+            {
+              "blackhole": "v.mode == 5"
+            },
+            {
+              "dash": "v.mode == 6"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "dead": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    },
+    "controller.animation.astro.void_drone": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "fire": "v.mode == 2"
+            }
+          ]
+        },
+        "charge": {
+          "animations": [
+            "charge"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "fire": "v.mode == 2"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "fire": {
+          "animations": [
+            "fire"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "charge": "v.mode == 1"
+            },
+            {
+              "default": "v.mode == 0 && q.all_animations_finished"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "dead": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.1
+        }
+      }
+    },
+    "controller.animation.astro.void_sentinel": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "windup": "v.mode == 1"
+            },
+            {
+              "slam": "v.mode == 2"
+            },
+            {
+              "swing": "v.attack_time > 0.0"
+            }
+          ]
+        },
+        "swing": {
+          "animations": [
+            "swing"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "windup": "v.mode == 1"
+            },
+            {
+              "default": "q.all_animations_finished"
+            }
+          ],
+          "blend_transition": 0.1
+        },
+        "windup": {
+          "animations": [
+            "windup"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "slam": "v.mode == 2"
+            },
+            {
+              "default": "v.mode == 0"
+            }
+          ],
+          "blend_transition": 0.12
+        },
+        "slam": {
+          "animations": [
+            "slam"
+          ],
+          "transitions": [
+            {
+              "dead": "!q.is_alive"
+            },
+            {
+              "windup": "v.mode == 1"
+            },
+            {
+              "default": "v.mode == 0 && q.all_animations_finished"
+            }
+          ],
+          "blend_transition": 0.05
+        },
+        "dead": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.1
+        }
+      }
+    }
+  }
+}

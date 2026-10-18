@@ -1,0 +1,44 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "astro:void_drone",
+      "materials": {
+        "default": "entity_emissive_alpha_one_sided",
+        "fx": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/astro/void_drone"
+      },
+      "geometry": {
+        "default": "geometry.astro.void_drone"
+      },
+      "animations": {
+        "look": "animation.astro.void_drone.look",
+        "idle": "animation.astro.void_drone.idle",
+        "charge": "animation.astro.void_drone.charge",
+        "fire": "animation.astro.void_drone.fire",
+        "death": "animation.astro.void_drone.death",
+        "ctrl": "controller.animation.astro.void_drone"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.mode = q.property('astro:mode');",
+          "v.overlay = v.mode == 1 ? 0.16 + math.sin(q.life_time * 1440.0) * 0.12 : 0.0;"
+        ],
+        "animate": [
+          "look",
+          "idle",
+          "ctrl"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.astro.invader"
+      ],
+      "spawn_egg": {
+        "base_color": "#241A36",
+        "overlay_color": "#FF3CCE"
+      }
+    }
+  }
+}

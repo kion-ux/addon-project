@@ -81,7 +81,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `astro:orbit` ★ | 光の筋が傾いた軌道で中心のまわりを回りながら螺旋状に縮む | 加算 | `size` `count` `life` `spin` `spread` | count（既定 10） |
 | `astro:aura` | 足元の円から炎の舌のような闘気が立ち昇る | 加算 | `size` `count` `spread` `life` | count（既定 6） |
 | `astro:nano` ★ | ナノマシンの粒 | 加算 | `size` `vx` `vy` `vz` `count` `life` `spread` `speed` | count（既定 16） |
-| `astro:nano_stream` ★ | ナノマシンの奔流: 粒の列が三本の螺旋を描きながら、エミッタから (vx,vy,vz) のずれの点へ流れ込む | 加算 | `size` `vx` `vy` `vz` `rate` `count` `life` `spin` `spread` | count（既定 24）、同時最大 120 |
+| `astro:nano_stream` ★ | ナノマシンの奔流: 粒の列が三本の螺旋を描きながら、エミッタから (vx,vy,vz) のずれの点へ流れ込む | 加算 | `size` `vx` `vy` `vz` `rate` `count` `life` `spin` `spread` | count（既定 36）、同時最大 120 |
 | `astro:smoke` | 灰色の煙の塊が膨らみながら昇る | 半透明 | `size` `count` `spread` `speed` `life` | count（既定 6） |
 | `astro:dust` | 土煙が地面に沿って輪状に広がる | 半透明 | `size` `count` `spread` `speed` `life` | count（既定 12） |
 | `astro:debris` ★ | 岩の破片 | 半透明 | `size` `count` `speed` `grav` `life` | count（既定 8）。地形との衝突あり |
@@ -99,7 +99,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `astro:wave` ★ | 波頭: 泡の縁を持つ弧の水の壁が (vx,vy,vz) の向きへ進み、立ち上がってから崩れる | 半透明 | `size` `vx` `vy` `vz` `speed` `life` | 1 |
 | `astro:cloud` ★ | アニメ調の雲 | 半透明 | `size` `vx` `vy` `vz` `count` `life` `spread` `spin` | count（既定 5） |
 | `astro:aurora` ★ | オーロラの幕: 縦の光条の帯がエミッタを囲む半径 v.spread の輪に並び、高さ v.height で揺らぎながらゆっくり回る | 加算 | `size` `count` `life` `height` `spin` `spread` | count（既定 14） |
-| `astro:meteor` ★ | 尾を引く火球: 頭が白熱し、(vx,vy,vz) の逆向きへ v.len m の尾 | 加算 | `size` `vx` `vy` `vz` `len` `count` `life` `speed` | count（既定 20） |
+| `astro:meteor` ★ | 尾を引く火球: 白熱した頭 | 加算 | `size` `vx` `vy` `vz` `len` `count` `life` `speed` | count（既定 12） |
 | `astro:black_hole` | ブラックホール: 黒い核 | 半透明 | `size` `life` `spin` | 1 |
 | `astro:void` | 紫黒の裂け目と触手 | 半透明 | `size` `spread` `count` `life` | count（既定 3） |
 | `astro:warning` | 攻撃予告: 地面に赤い縞の輪・内向きの警告三角・中央の ! が点滅する | 半透明 | `size` `life` `rot` `spin` | 1 |
@@ -645,9 +645,9 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 ### `astro:nano_stream` ★
 
 * 見た目: ナノマシンの奔流: 粒の列が三本の螺旋を描きながら、エミッタから (vx,vy,vz) のずれの点へ流れ込む。最初の粒は v.life 秒で着き、count / rate 秒のあいだ出続ける
-* 材質: 加算（光る） / 粒数: count（既定 24）、同時最大 120
+* 材質: 加算（光る） / 粒数: count（既定 36）、同時最大 120
 * 用途: 変身の奔流（コア → 各部位）・ナノの移送・吸収
-* 目安: count 16〜40 / rate 40〜80 / life 0.4〜0.9 / spread 0.2〜0.6
+* 目安: count 24〜60 / rate 50〜100 / life 0.4〜0.9 / spread 0.2〜0.6
 
 | 変数 | 既定 | 意味 |
 |---|---|---|
@@ -655,8 +655,8 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `vx` | 0.0 | 流れ込む先（エミッタからのずれ m）。3 つとも未指定なら (0, 2, 0) |
 | `vy` | 0.0 | 流れ込む先（エミッタからのずれ m）。3 つとも未指定なら (0, 2, 0) |
 | `vz` | 0.0 | 流れ込む先（エミッタからのずれ m）。3 つとも未指定なら (0, 2, 0) |
-| `rate` | 60.0 | 放出レート (粒/秒) |
-| `count` | 24.0 | 流す粒の総数（放出時間 = count / rate 秒） |
+| `rate` | 72.0 | 放出レート (粒/秒) |
+| `count` | 36.0 | 流す粒の総数（放出時間 = count / rate 秒） |
 | `life` | 0.6 | 1 粒が流れ着くまでの時間 (秒) |
 | `spin` | 900.0 | 螺旋の回る速さ (度/秒) |
 | `spread` | 0.35 | 螺旋の半径 (m) |
@@ -776,7 +776,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 * 見た目: 稲妻: エミッタから (vx,vy,vz) の向きへ v.len m のぎざぎざの雷光（3 種の形がちらついて入れ替わる。向きを軸にカメラへ回る）
 * 材質: 加算（光る） / 粒数: 1
 * 用途: 落雷（地面の点から上へ len 12）・連鎖放電（A から B へ、向き = B − A、len = 距離）
-* 目安: size 0.5〜2（幅 0.9 × size m）/ len 2〜16 / life 0.15〜0.3
+* 目安: size 0.5〜2（幅 1.2 × size m）/ len 2〜16 / life 0.15〜0.3
 
 | 変数 | 既定 | 意味 |
 |---|---|---|
@@ -980,8 +980,8 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 
 ### `astro:meteor` ★
 
-* 見た目: 尾を引く火球: 頭が白熱し、(vx,vy,vz) の逆向きへ v.len m の尾（火球の粒の連なり）。speed を与えると向きへ飛ぶ（既定は止まった一枚絵 → 毎 tick 位置を変えて出す）
-* 材質: 加算（光る） / 粒数: count（既定 20）
+* 見た目: 尾を引く火球: 白熱した頭（火球）と、頭から (vx,vy,vz) の逆向きへ伸びる長さの違う炎の筋の重なり（頭側ほど太く明るい尾）。speed を与えると向きへ飛ぶ（既定は止まった一枚絵 → 毎 tick 位置を変えて出す）。筋は向きを軸にカメラへ回る
+* 材質: 加算（光る） / 粒数: count（既定 12）
 * 用途: 隕石・彗星・火の弾
 * 目安: size 0.5〜3 / len 2〜8 / speed 0（毎 tick）or 10〜30 / life 0.2〜1
 
@@ -992,7 +992,7 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `vy` | 0.0 | 飛ぶ向き（頭の向き。未指定は斜め下） |
 | `vz` | 0.0 | 飛ぶ向き（頭の向き。未指定は斜め下） |
 | `len` | size × 3 | 尾の長さ (m) |
-| `count` | 20.0 | 尾を作る粒の数 |
+| `count` | 12.0 | 粒の数（約 1/3 が頭、残りが尾の筋） |
 | `life` | 0.3 | 粒の寿命 (秒) |
 | `speed` | 0.0 | 飛ぶ速さ (m/s)。0 ならその場 |
 | `cr` | 1.0 | 色の赤 (0..1) |

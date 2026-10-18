@@ -1,0 +1,51 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "astro:nemesis",
+      "materials": {
+        "default": "entity_emissive_alpha_one_sided",
+        "fx": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/astro/nemesis"
+      },
+      "geometry": {
+        "default": "geometry.astro.nemesis"
+      },
+      "animations": {
+        "idle": "animation.astro.nemesis.idle",
+        "look": "animation.astro.nemesis.look",
+        "charge": "animation.astro.nemesis.charge",
+        "beam": "animation.astro.nemesis.beam",
+        "summon": "animation.astro.nemesis.summon",
+        "meteor": "animation.astro.nemesis.meteor",
+        "blackhole": "animation.astro.nemesis.blackhole",
+        "dash": "animation.astro.nemesis.dash",
+        "roar": "animation.astro.nemesis.roar",
+        "death": "animation.astro.nemesis.death",
+        "ctrl": "controller.animation.astro.nemesis"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.mode = q.property('astro:mode');",
+          "v.phase = q.property('astro:phase');",
+          "v.spd = v.phase >= 2 ? 1.8 : 1.0;",
+          "v.overlay = (v.mode == 1 || v.mode == 7) ? 0.18 + math.sin(q.life_time * 1600.0) * 0.12 : (v.phase >= 2 ? 0.06 + math.sin(q.life_time * 300.0) * 0.05 : 0.0);"
+        ],
+        "animate": [
+          "idle",
+          "look",
+          "ctrl"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.astro.invader"
+      ],
+      "spawn_egg": {
+        "base_color": "#0C0818",
+        "overlay_color": "#A040FF"
+      }
+    }
+  }
+}

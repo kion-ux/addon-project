@@ -1,0 +1,45 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "astro:void_sentinel",
+      "materials": {
+        "default": "entity_emissive_alpha_one_sided",
+        "fx": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/astro/void_sentinel"
+      },
+      "geometry": {
+        "default": "geometry.astro.void_sentinel"
+      },
+      "animations": {
+        "walk": "animation.astro.void_sentinel.walk",
+        "swing": "animation.astro.void_sentinel.swing",
+        "windup": "animation.astro.void_sentinel.windup",
+        "slam": "animation.astro.void_sentinel.slam",
+        "death": "animation.astro.void_sentinel.death",
+        "ctrl": "controller.animation.astro.void_sentinel"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.mode = q.property('astro:mode');",
+          "v.ph = q.modified_distance_moved * 13.0;",
+          "v.ms = math.min(q.modified_move_speed * 1.8, 1.0);",
+          "v.overlay = v.mode == 1 ? 0.12 + math.sin(q.life_time * 1800.0) * 0.1 : 0.0;"
+        ],
+        "animate": [
+          "walk",
+          "ctrl"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.astro.invader"
+      ],
+      "spawn_egg": {
+        "base_color": "#3A2E52",
+        "overlay_color": "#C24CFF"
+      }
+    }
+  }
+}

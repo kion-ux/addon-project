@@ -1187,7 +1187,8 @@ def nemesis_anims():
                 f"math.sin({T} * 85.0 * v.spd + {i * 72 + k * 55}.0) * {amp}.0", 0,
                 f"math.cos({T} * 70.0 * v.spd + {i * 72 + k * 55}.0) * {amp * 0.7:g}"]}
     A["idle"] = anim("nemesis.idle", bones)
-    A["look"] = anim("nemesis.look", {"body": {"rotation": ["math.clamp(q.target_x_rotation, -30.0, 30.0)", 0, 0]}})
+    A["look"] = anim("nemesis.look", {"body": {"rotation": ["math.clamp(q.target_x_rotation, -30.0, 30.0)",
+                                                         "q.target_y_rotation", 0]}})
     spines_out = {f"fx_spine_{i}": {"scale": 1.12, "rotation": [-12, 0, 0]} for i in range(NEM_SPINES)}
     A["charge"] = anim("nemesis.charge", dict({
         "eye": {"scale": ["1.08 + math.sin(q.anim_time * 1800.0) * 0.06",
@@ -1610,3 +1611,338 @@ def clients():
     out["dmg_text"] = client_doc("dmg_text", {"default": "entity_alphatest"}, None, None, None,
                                  f"controller.render.{NS}.plain")
     return out
+
+
+# ===========================================================================
+#  書き出し
+# ===========================================================================
+BUILDERS = {
+    "void_drone": (build_drone, inv_styles, 11),
+    "void_sentinel": (build_sentinel, inv_styles, 23),
+    "nemesis": (build_nemesis, inv_styles, 37),
+    "hologram_target": (build_hologram, holo_styles, 5),
+    "void_bolt": (build_bolt, inv_styles, 3),
+    "dmg_text": (build_dmg_text, None, 0),
+}
+BEHAVIOURS = {
+    "void_drone": bp_drone, "void_sentinel": bp_sentinel, "nemesis": bp_nemesis,
+    "hologram_target": bp_hologram, "void_bolt": bp_bolt, "dmg_text": bp_dmg_text,
+}
+SPAWN_RULES = {"void_drone": (12, (1, 2), 4), "void_sentinel": (5, (1, 1), 2)}
+
+
+def write_models(only):
+    models = {}
+    for ident, (fn, styles, seed) in BUILDERS.items():
+        if only and ident not in only:
+            continue
+        m = fn()
+        geo_path = os.path.join(GEO_DIR, f"{NS}_{ident}.geo.json")
+        tex_path = os.path.join(TEX_DIR, f"{ident}.png")
+        os.makedirs(GEO_DIR, exist_ok=True)
+        os.makedirs(TEX_DIR, exist_ok=True)
+        if styles is None:
+            write_json(geo_path, {"format_version": "1.12.0", "minecraft:geometry": [m.to_json()]})
+            Image.new("RGBA", (16, 16), (0, 0, 0, 0)).save(tex_path)
+        else:
+            m.write(geo_path)
+            p = InvaderPainter(m.tex_w, m.tex_h, seed)
+            p.paint_model(m, styles())
+            p.save(tex_path)
+        models[ident] = m
+        print(f"  {ident:16s} {len(m.bones):3d} bones {len(m.all_cubes()):4d} cubes  {m.tex_w}x{m.tex_h}"
+              f" @x{m.uv_scale}")
+    return models
+
+
+def write_data():
+    ANIMS.clear()
+    CTRLS.clear()
+    cl = clients()
+    for ident, doc in cl.items():
+        write_json(os.path.join(RP, "entity", f"{ident}.entity.json"), doc)
+    write_json(ANIM_FILE, {"format_version": "1.8.0", "animations": dict(sorted(ANIMS.items()))})
+    write_json(CTRL_FILE, {"format_version": "1.10.0", "animation_controllers": dict(sorted(CTRLS.items()))})
+    write_json(RC_FILE, {"format_version": "1.10.0", "render_controllers": RENDER_CONTROLLERS})
+    for ident, fn in BEHAVIOURS.items():
+        write_json(os.path.join(BP, "entities", f"{ident}.json"), fn())
+    for name, doc in loot_tables().items():
+        write_json(os.path.join(BP, "loot_tables", "entities", f"{NS}_{name}.json"), doc)
+    for ident, (w, herd, dens) in SPAWN_RULES.items():
+        write_json(os.path.join(BP, "spawn_rules", f"{ident}.json"), spawn_rule(ident, w, herd, dens))
+    print(f"  {len(cl)} client entities, {len(ANIMS)} animations, {len(CTRLS)} controllers, "
+          f"{len(RENDER_CONTROLLERS)} render controllers, {len(loot_tables())} loot tables, "
+          f"{len(SPAWN_RULES)} spawn rules")
+
+
+# ===========================================================================
+#  検査（validate_astro より細かい、このファイルの生成物だけの検査）
+# ===========================================================================
+def _molang_ok(sx):
+    depth = 0
+    for ch in sx:
+        depth += ch == "("
+        depth -= ch == ")"
+        if depth < 0:
+            return False
+    return depth == 0
+
+
+def _strings(o):
+    if isinstance(o, str):
+        yield o
+    elif isinstance(o, dict):
+        for k, v in o.items():
+            yield from _strings(v)
+    elif isinstance(o, list):
+        for v in o:
+            yield from _strings(v)
+
+
+def check():
+    errs = []
+
+    def load(path):
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+
+    anims = load(ANIM_FILE)["animations"]
+    ctrls = load(CTRL_FILE)["animation_controllers"]
+    rcs = load(RC_FILE)["render_controllers"]
+    items = set()
+    for fn in os.listdir(os.path.join(BP, "items")):
+        if fn.endswith(".json"):
+            items.add(load(os.path.join(BP, "items", fn))["minecraft:item"]["description"]["identifier"])
+    for ident in BUILDERS:
+        geo = load(os.path.join(GEO_DIR, f"{NS}_{ident}.geo.json"))["minecraft:geometry"][0]
+        tw, th = geo["description"]["texture_width"], geo["description"]["texture_height"]
+        im = Image.open(os.path.join(TEX_DIR, f"{ident}.png"))
+        if im.size != (tw, th):
+            errs.append(f"{ident}: texture {im.size} != {tw}x{th}")
+        bones = {b["name"] for b in geo["bones"]}
+        if geo["description"]["identifier"] != f"geometry.{NS}.{ident}":
+            errs.append(f"{ident}: geometry id {geo['description']['identifier']}")
+        for b in geo["bones"]:
+            if b.get("parent") and b["parent"] not in bones:
+                errs.append(f"{ident}: {b['name']} parent {b['parent']} missing")
+            for c in b.get("cubes", []):
+                for face, fuv in c["uv"].items():
+                    u, v = fuv["uv"]
+                    w, h = fuv["uv_size"]
+                    if u < 0 or v < 0 or u + w > tw or v + h > th:
+                        errs.append(f"{ident}: {b['name']} {face} uv outside")
+        cl = load(os.path.join(RP, "entity", f"{ident}.entity.json"))["minecraft:client_entity"]["description"]
+        beh = load(os.path.join(BP, "entities", f"{ident}.json"))["minecraft:entity"]
+        props = set(beh["description"].get("properties", {}))
+        amap = cl.get("animations", {})
+        for key, aname in amap.items():
+            if aname.startswith("controller."):
+                if aname not in ctrls:
+                    errs.append(f"{ident}: controller {aname} missing")
+                    continue
+                st = ctrls[aname]["states"]
+                if ctrls[aname]["initial_state"] not in st:
+                    errs.append(f"{aname}: initial state missing")
+                for sn, sd in st.items():
+                    for a in sd.get("animations", []):
+                        if a not in amap:
+                            errs.append(f"{aname}.{sn}: plays {a} which {ident} does not map")
+                    for tr in sd.get("transitions", []):
+                        for tgt in tr:
+                            if tgt not in st:
+                                errs.append(f"{aname}.{sn}: transition to unknown {tgt}")
+                reach = {ctrls[aname]["initial_state"]}
+                changed = True
+                while changed:
+                    changed = False
+                    for sn in list(reach):
+                        for tr in st[sn].get("transitions", []):
+                            for tgt in tr:
+                                if tgt not in reach:
+                                    reach.add(tgt)
+                                    changed = True
+                for sn in st:
+                    if sn not in reach:
+                        errs.append(f"{aname}: state {sn} unreachable")
+            elif aname not in anims:
+                errs.append(f"{ident}: animation {aname} missing")
+            else:
+                for bn in anims[aname]["bones"]:
+                    if bn not in bones:
+                        errs.append(f"{ident}: {aname} animates missing bone {bn}")
+        for key in cl.get("scripts", {}).get("animate", []):
+            if key not in amap:
+                errs.append(f"{ident}: animate {key} not mapped")
+        for rc in cl["render_controllers"]:
+            if rc not in rcs:
+                errs.append(f"{ident}: render controller {rc} missing")
+                continue
+            for mm in rcs[rc]["materials"]:
+                for mat in mm.values():
+                    if mat.split(".", 1)[1] not in cl["materials"]:
+                        errs.append(f"{ident}: {rc} uses {mat} but the client entity has no such material")
+            for sx in _strings(rcs[rc]):
+                for var in __import__("re").findall(r"v\.(\w+)", sx):
+                    pre = " ".join(cl.get("scripts", {}).get("pre_animation", []))
+                    if f"v.{var} =" not in pre:
+                        errs.append(f"{ident}: {rc} reads v.{var} which pre_animation never sets")
+        for sx in _strings(cl):
+            if not _molang_ok(sx):
+                errs.append(f"{ident}: unbalanced molang {sx[:60]}")
+            for pn in __import__("re").findall(r"q\.property\('([^']+)'\)", sx):
+                if pn not in props:
+                    errs.append(f"{ident}: q.property('{pn}') not declared in BP")
+        txt = json.dumps(beh)
+        for lt in __import__("re").findall(r'"table": "([^"]+)"', txt):
+            path = os.path.join(BP, lt)
+            if not os.path.exists(path):
+                errs.append(f"{ident}: loot {lt} missing")
+                continue
+            for sx in _strings(load(path)):
+                if sx.startswith(f"{NS}:") and sx not in items:
+                    errs.append(f"{lt}: unknown item {sx}")
+        evs = beh.get("events", {})
+        groups = beh.get("component_groups", {})
+        for en, ev in evs.items():
+            for op in ("add", "remove"):
+                for g in ev.get(op, {}).get("component_groups", []):
+                    if g not in groups:
+                        errs.append(f"{ident}: event {en} uses unknown group {g}")
+        for sx in _strings(beh):
+            if sx.startswith("astro:") and sx not in evs and sx not in groups and sx not in props \
+                    and sx != f"{NS}:{ident}":
+                pass
+    for name, a in anims.items():
+        for sx in _strings(a):
+            if not _molang_ok(sx):
+                errs.append(f"{name}: unbalanced molang {sx[:60]}")
+    for name, c in ctrls.items():
+        for sx in _strings(c):
+            if not _molang_ok(sx):
+                errs.append(f"{name}: unbalanced molang {sx[:60]}")
+    for fn in os.listdir(os.path.join(BP, "spawn_rules")):
+        ident = load(os.path.join(BP, "spawn_rules", fn))["minecraft:spawn_rules"]["description"]["identifier"]
+        if ident.startswith(f"{NS}:") and not os.path.exists(os.path.join(BP, "entities", ident[6:] + ".json")):
+            errs.append(f"spawn rule {fn}: unknown entity {ident}")
+    for e in errs:
+        print("  ERROR", e)
+    print(f"  check: {len(errs)} error(s)")
+    return not errs
+
+
+# ===========================================================================
+#  プレビュー（build_preview/astro/enemy_<id>.png）
+# ===========================================================================
+def molang(expr, env):
+    """プレビュー用の小さな Molang 評価（数式と三項演算子だけ）。失敗したら 0。"""
+    if isinstance(expr, (int, float)):
+        return float(expr)
+    import re
+    py = expr
+    for a, b in (("math.sin(", "_sin("), ("math.cos(", "_cos("), ("math.max(", "max("), ("math.min(", "min("),
+                 ("math.abs(", "abs("), ("math.mod(", "_mod("), ("math.clamp(", "_clamp("), ("&&", " and "),
+                 ("||", " or ")):
+        py = py.replace(a, b)
+    py = re.sub(r"\b([qv])\.(\w+)", r"\1_\2", py)
+    # a ? b : c → (b if a else c)（入れ子なし）
+    for _ in range(4):
+        m = re.search(r"\(([^()?:]+)\?([^()?:]+):([^()?:]+)\)", py)
+        if not m:
+            break
+        py = py[:m.start()] + f"(({m.group(2)}) if ({m.group(1)}) else ({m.group(3)}))" + py[m.end():]
+    g = {"_sin": lambda d: math.sin(math.radians(d)), "_cos": lambda d: math.cos(math.radians(d)),
+         "_mod": math.fmod, "_clamp": lambda x, a, b: max(a, min(b, x)), "max": max, "min": min, "abs": abs}
+    try:
+        return float(eval(py, g, dict(env)))  # noqa: S307 (自分で書いた式だけ)
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
+def sample_pose(names, t, env):
+    """ANIMS の名前の列を時刻 t で評価して足し合わせたボーンの姿勢。"""
+    out = {}
+    env = dict(env, q_anim_time=t)
+    for n in names:
+        a = ANIMS.get(f"animation.{NS}.{n}", {})
+        for bone, tr in a.get("bones", {}).items():
+            e = out.setdefault(bone, {"rotation": [0, 0, 0], "position": [0, 0, 0], "scale": [1, 1, 1]})
+            for ch, v in tr.items():
+                if isinstance(v, dict):
+                    ts = sorted(v, key=float)
+                    prev = max([k for k in ts if float(k) <= t] or [ts[0]], key=float)
+                    nxt = min([k for k in ts if float(k) >= t] or [ts[-1]], key=float)
+                    a0, a1 = v[prev], v[nxt]
+                    k = 0.0 if nxt == prev else (t - float(prev)) / (float(nxt) - float(prev))
+                    v = [molang(x, env) * (1 - k) + molang(y, env) * k for x, y in zip(a0, a1)] \
+                        if isinstance(a0, list) else molang(a0, env)
+                if not isinstance(v, list):
+                    v = [v, v, v]
+                vals = [molang(x, env) for x in v]
+                if ch == "scale":
+                    e["scale"] = [e["scale"][i] * vals[i] for i in range(3)]
+                else:
+                    e[ch] = [e[ch][i] + vals[i] for i in range(3)]
+    return out
+
+
+PREVIEWS = {
+    # (yaw, pitch, [アニメ名], 時刻, 環境)
+    "void_drone": [(0, -8, ["idle"], 0, {}), (35, -18, ["idle"], 0.4, {}), (100, -6, ["idle", "charge"], 0.3, {}),
+                   (200, -12, ["idle"], 0, {}), (25, -10, ["idle", "fire"], 0.05, {})],
+    "void_sentinel": [(0, -6, ["walk"], 0, {}), (35, -10, ["walk"], 0, {}),
+                      (90, -4, ["walk"], 0, {"v_ph": 90, "v_ms": 1}), (200, -10, ["walk"], 0, {}),
+                      (40, -8, ["windup"], 0.8, {}), (70, -6, ["slam"], 0.14, {}), (25, -10, ["swing"], 0.16, {})],
+    "nemesis": [(0, -6, ["idle"], 0, {"q_life_time": 0.0}), (35, -14, ["idle"], 0, {"q_life_time": 1.2}),
+                (90, -4, ["idle"], 0, {"q_life_time": 2.5}), (200, -14, ["idle"], 0, {"q_life_time": 3.1}),
+                (30, -10, ["idle", "roar"], 0.5, {"q_life_time": 0.7}),
+                (80, -6, ["idle", "dash"], 0.2, {"q_life_time": 1.7})],
+    "hologram_target": [(0, -8, ["idle"], 0, {"q_life_time": 1.0}), (35, -16, ["idle"], 0, {"q_life_time": 1.4}),
+                        (90, -4, ["idle"], 0, {"q_life_time": 0.2}), (200, -14, ["idle"], 0, {"q_life_time": 2.1})],
+    "void_bolt": [(0, -8, [], 0, {}), (60, -30, [], 0, {}), (90, 0, [], 0, {})],
+}
+ENV0 = {"q_life_time": 0.0, "q_anim_time": 0.0, "v_ph": 0.0, "v_ms": 0.0, "v_spd": 1.0, "q_hurt_time": 0.0,
+        "q_target_x_rotation": 0.0, "q_target_y_rotation": 0.0, "v_attack_time": 0.0, "v_mode": 0, "v_phase": 1}
+
+
+def preview(only):
+    if not ANIMS:
+        write_data()
+    os.makedirs(SCRATCH, exist_ok=True)
+    for ident, views in PREVIEWS.items():
+        if only and ident not in only:
+            continue
+        geo = json.load(open(os.path.join(GEO_DIR, f"{NS}_{ident}.geo.json"), encoding="utf-8"))
+        geo = geo["minecraft:geometry"][0]
+        tex = Image.open(os.path.join(TEX_DIR, f"{ident}.png"))
+        tiles = []
+        for yaw, pitch, names, t, env in views:
+            pose = sample_pose(names, t, dict(ENV0, **env))
+            tiles.append(render(geo, tex, yaw, pitch, 380, pose=pose))
+        path = os.path.join(SCRATCH, f"enemy_{ident}.png")
+        sheet(tiles, path, cols=min(4, len(tiles)), label=f"{NS}:{ident}")
+        print(f"  preview {path}")
+
+
+def main(argv):
+    only = None
+    for a in argv:
+        if a.startswith("--only"):
+            only = set(a.split("=", 1)[1].split(",")) if "=" in a else None
+    if only:
+        only = {k for k in BUILDERS if any(o in k for o in only)}
+    write_models(only)
+    write_data()
+    ok = check()
+    if "--preview" in argv:
+        preview(only)
+    if "--test" in argv:
+        ok = run_js_test() and ok
+    return 0 if ok else 1
+
+
+def run_js_test():
+    return js_smoke_test()
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -35,8 +35,8 @@
       },
       "minecraft:particle_appearance_billboard": {
         "size": [
-          "(v.size ?? 1.0) * 0.6 * (1.0 - (v.particle_age / v.particle_lifetime) * 0.4)",
-          "(v.size ?? 1.0) * 0.14"
+          "(v.size ?? 1.0) * 0.8 * (1.0 - (v.particle_age / v.particle_lifetime) * 0.3)",
+          "(v.size ?? 1.0) * 0.09"
         ],
         "facing_camera_mode": "lookat_direction",
         "direction": {
@@ -51,12 +51,12 @@
           "texture_width": 1024,
           "texture_height": 1024,
           "uv": [
-            877,
-            747
+            389,
+            877
           ],
           "uv_size": [
-            128,
-            64
+            64,
+            16
           ]
         }
       },

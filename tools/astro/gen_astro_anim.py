@@ -243,6 +243,8 @@ def preview(name, planet=None, frames=8, view=None, out=None):
         idx = np.linspace(0, len(keys) - 1, frames).round().astype(int)
         keys = [keys[i] for i in sorted(set(idx))]
     tiles = []
+    if isinstance(view, str) and "," in view:
+        view = tuple(float(x) for x in view.split(","))
     views = [view] if view else ["q34", "left"]
     suit = None
     try:
@@ -270,8 +272,9 @@ def preview(name, planet=None, frames=8, view=None, out=None):
                                centre=(0, 14, 0), scale=7.0)
             else:
                 import hd_scene as S
-                yaw, pitch = {"q34": (-34, -10), "left": (90, -4), "front": (0, -4), "back": (180, -4),
-                              "q34l": (34, -10), "right": (-90, -4)}.get(v, (-34, -10))
+                yaw, pitch = v if isinstance(v, tuple) else {
+                    "q34": (-34, -10), "left": (90, -4), "front": (0, -4), "back": (180, -4),
+                    "q34l": (34, -10), "right": (-90, -4)}.get(v, (-34, -10))
                 a = item["anim"] if item else {}
                 im = S.tp(item["geo"] if item else g, item["tex"] if item else tx, pose, a, yaw=yaw,
                           pitch=pitch, size=(260, 340), scale=7.0, centre=(0, 14, 0)) if item else None

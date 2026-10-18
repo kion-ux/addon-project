@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "astro:hologram_target",
+      "materials": {
+        "default": "entity_emissive_alpha_one_sided",
+        "holo": "entity_beam_additive"
+      },
+      "textures": {
+        "default": "textures/entity/astro/hologram_target"
+      },
+      "geometry": {
+        "default": "geometry.astro.hologram_target"
+      },
+      "animations": {
+        "idle": "animation.astro.hologram_target.idle"
+      },
+      "scripts": {
+        "animate": [
+          "idle"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.astro.hologram"
+      ],
+      "spawn_egg": {
+        "base_color": "#1C3A48",
+        "overlay_color": "#6FF0FF"
+      }
+    }
+  }
+}

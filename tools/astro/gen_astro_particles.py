@@ -763,7 +763,7 @@ def sp_bolt(w, h, k):
     cy = h / 2
     pts = _bolt_pts(rng, 1, w - 1, cy, cy, 6, 0.34)
     pts = [(px, float(np.clip(py, 3, h - 3))) for px, py in pts]
-    pen.poly(pts, 4.2)
+    pen.poly(pts, 5.5)
     for _ in range(3):                                  # 枝
         i = rng.randint(8, len(pts) - 20)
         bx, by = pts[i]
@@ -772,10 +772,10 @@ def sp_bolt(w, h, k):
         ey = float(np.clip(by + rng.choice([-1, 1]) * rng.uniform(6, h / 2 - 3), 3, h - 3))
         br = _bolt_pts(rng, bx, ex, by, ey, 4, 0.3)
         br = [(px, float(np.clip(py, 2, h - 2))) for px, py in br]
-        pen.poly(br, 2.2)
+        pen.poly(br, 2.8)
     a = pen.alpha()
     core = Pen(w, h)
-    core.poly(pts, 1.8)
+    core.poly(pts, 2.4)
     white = 0.68 + 0.32 * core.alpha()
     return halo(a, 2.6, 0.8), white
 
@@ -950,12 +950,24 @@ def sp_fireball(w, h):
     x, y = grid(w, h)
     r = np.hypot(x, y)
     th = np.arctan2(y, x)
-    edge = 0.62 + 0.1 * np.sin(th * 7) + 0.06 * np.sin(th * 13 + 1.3)
-    flame = hard(r < edge) * 0.92
+    edge = 0.6 + 0.05 * np.sin(th * 7) + 0.03 * np.sin(th * 13 + 1.3)
+    flame = sat((edge - r) / 0.06) * 0.9
     core = sat((0.34 - r) / 0.05)
     hal = sat(1 - r) ** 2 * 0.5
     a = np.maximum(np.maximum(flame, core), hal)
     return down(a), down(np.where(r < 0.36, 1.0, 0.8))
+
+
+def sp_streak(w, h):
+    """尾の筋（横長、左右対称の細いレンズ形に縦の筋目）。重ねると頭側が太く明るい尾になる。"""
+    x, y = ngrid(w, h)
+    ay = np.abs(y)
+    hw = 0.8 * sat(1 - x * x) ** 1.1
+    body = sat((hw - ay) / 0.12)
+    stri = 0.72 + 0.28 * np.cos(y * 13 + np.sin(x * 6) * 2.2)
+    core = hard(ay < hw * 0.28)
+    a = np.maximum(body * stri * 0.85, core)
+    return down(a), down(0.7 + 0.3 * core)
 
 
 def sp_black_hole(w, h):
@@ -1117,6 +1129,7 @@ SPRITES = {
     "thrust": (256, 64, 1, "x", sp_thrust, ()),
     "flare": (256, 64, 1, "x", sp_flare, ()),
     "beam": (256, 32, 1, "x", sp_beam, ()),
+    "streak": (256, 32, 1, "x", sp_streak, ()),
     "scan": (256, 32, 1, "x", sp_scan, ()),
     "slash": (128, 128, 1, "x", sp_slash, (0.4, 200.0, 3)),
     "impact": (128, 128, 1, "x", sp_impact, ()),
@@ -2174,7 +2187,7 @@ def build_effects():
     rr = f"({f.v('spread', 1.2, '渦の半径 (m)。上ほど広がる')} * (0.35 + 0.65 * {AGE}))"
     H = f.v("height", 3.5)
     f.param([f"math.cos({th}) * {rr}", f"{AGE} * {H}", f"math.sin({th}) * {rr}"])
-    f.bb([f"{S} * 0.6 * (1.0 - {AGE} * 0.4)", f"{S} * 0.14"], "lookat_direction", uv("wind"),
+    f.bb([f"{S} * 0.8 * (1.0 - {AGE} * 0.3)", f"{S} * 0.09"], "lookat_direction", uv("spark"),
          {"mode": "custom", "custom_direction": [f"0.0 - math.sin({th})", "0.35", f"math.cos({th})"]})
     f.tint(CYAN, fade_io(5, 3), whiten=2)
     f.cost = "rate × life（既定 70）、同時最大 160"
@@ -2252,11 +2265,11 @@ def build_effects():
     f = new("nano_stream", "add", "ナノマシンの奔流: 粒の列が三本の螺旋を描きながら、エミッタから "
             "(vx,vy,vz) のずれの点へ流れ込む。最初の粒は v.life 秒で着き、count / rate 秒のあいだ出続ける",
             "変身の奔流（コア → 各部位）・ナノの移送・吸収",
-            "count 16〜40 / rate 40〜80 / life 0.4〜0.9 / spread 0.2〜0.6", star=True)
+            "count 24〜60 / rate 50〜100 / life 0.4〜0.9 / spread 0.2〜0.6", star=True)
     S = f.S
     target_init(f, (0, 2.0, 0), "流れ込む先（エミッタからのずれ m）。3 つとも未指定なら (0, 2, 0)")
-    rate = f.v("rate", 60.0)
-    f.steady(rate, 120, f"{f.v('count', 24.0, '流す粒の総数（放出時間 = count / rate 秒）')} / math.max({rate}, 1.0)")
+    rate = f.v("rate", 72.0)
+    f.steady(rate, 120, f"{f.v('count', 36.0, '流す粒の総数（放出時間 = count / rate 秒）')} / math.max({rate}, 1.0)")
     f.point()
     f.lifetime(f.life(0.6, "1 粒が流れ着くまでの時間 (秒)"))
     e = ease(AGE)
@@ -2264,10 +2277,10 @@ def build_effects():
     rad = f"({f.v('spread', 0.35, '螺旋の半径 (m)')} * math.sin({AGE} * 180.0) * (0.85 + 0.3 * {R3}))"
     f.param([f"v.e_t{c} * {e} + {rad} * (math.cos({th}) * v.e_a{c} + math.sin({th}) * v.e_b{c})"
              for c in "xyz"])
-    f.bb([f"{S} * 0.09 * (0.75 + 0.25 * math.sin({PA} * 1800.0 + {R4} * 720.0))"] * 2, "lookat_xyz",
+    f.bb([f"{S} * 0.11 * (0.75 + 0.25 * math.sin({PA} * 1800.0 + {R4} * 720.0))"] * 2, "lookat_xyz",
          uv_pick("nano", f"{R2} * 3.999", 4))
     f.tint(CYAN, f"{fade_io(10, 6)} * {blink}", whiten=1)
-    f.cost = "count（既定 24）、同時最大 120"
+    f.cost = "count（既定 36）、同時最大 120"
 
     # ================= 煙・土・破片 =================
     f = new("smoke", "blend", "灰色の煙の塊が膨らみながら昇る（半透明）", "爆発の後・焦げ・排気",
@@ -2353,7 +2366,7 @@ def build_effects():
     f = new("bolt", "add", "稲妻: エミッタから (vx,vy,vz) の向きへ v.len m のぎざぎざの雷光（3 種の形が"
             "ちらついて入れ替わる。向きを軸にカメラへ回る）",
             "落雷（地面の点から上へ len 12）・連鎖放電（A から B へ、向き = B − A、len = 距離）",
-            "size 0.5〜2（幅 0.9 × size m）/ len 2〜16 / life 0.15〜0.3", star=True)
+            "size 0.5〜2（幅 1.2 × size m）/ len 2〜16 / life 0.15〜0.3", star=True)
     S = f.S
     dir_init(f, (0, 1, 0), "雷光の向き（正規化する。未指定は上 = 地面の点から空へ）")
     f.init(f"v.e_len = {f.v('len', 6.0, '雷光の長さ (m)')};")
@@ -2362,7 +2375,7 @@ def build_effects():
     f.lifetime(f.life(0.22))
     f.param(["v.e_nx * v.e_len * 0.5", "v.e_ny * v.e_len * 0.5", "v.e_nz * v.e_len * 0.5"])
     idx = f"math.mod({f.v('var', f'({PA} * 30.0 + v.emitter_random_1 * 3.0)', '形 0..2 を固定（未指定なら時間で入れ替わる）', doc_default='時間で切り替え')}, 3.0)"
-    f.bb(["v.e_len", f"{S} * 0.9"], "lookat_direction", uv_pick("bolt", idx, 3), dict(CUSTOM_N))
+    f.bb(["v.e_len", f"{S} * 1.2"], "lookat_direction", uv_pick("bolt", idx, 3), dict(CUSTOM_N))
     f.tint(ELEC, f"(math.mod(math.floor({PA} * 40.0), 2.0) > 0.5 ? 0.5 : 1.0) * {fade_out(1.3)}", whiten=1.2)
     f.cost = "1"
 
@@ -2511,26 +2524,29 @@ def build_effects():
     f.tint(AURORA, f"0.8 * {fade_abs(0.5, 0.8)} * (0.75 + 0.25 * math.sin({PA} * 200.0 + {R4} * 360.0))")
     f.cost = "count（既定 14）"
 
-    f = new("meteor", "add", "尾を引く火球: 頭が白熱し、(vx,vy,vz) の逆向きへ v.len m の尾（火球の粒の連なり）。"
-            "speed を与えると向きへ飛ぶ（既定は止まった一枚絵 → 毎 tick 位置を変えて出す）",
+    f = new("meteor", "add", "尾を引く火球: 白熱した頭（火球）と、頭から (vx,vy,vz) の逆向きへ伸びる長さの違う"
+            "炎の筋の重なり（頭側ほど太く明るい尾）。speed を与えると向きへ飛ぶ（既定は止まった一枚絵 → 毎 tick 位置を"
+            "変えて出す）。筋は向きを軸にカメラへ回る",
             "隕石・彗星・火の弾", "size 0.5〜3 / len 2〜8 / speed 0（毎 tick）or 10〜30 / life 0.2〜1",
             star=True)
     S = f.S
     dir_init(f, (0.4, -1.0, 0.0), "飛ぶ向き（頭の向き。未指定は斜め下）")
     f.init(f"v.e_len = {f.v('len', f'{S} * 3.0', '尾の長さ (m)', doc_default='size × 3')};")
-    f.instant(f.v("count", 20, "尾を作る粒の数"))
+    f.instant(f.v("count", 12, "粒の数（約 1/3 が頭、残りが尾の筋）"))
     f.point()
     f.lifetime(f.life(0.3))
-    K = f"({R1} * {R1})"
+    head = f"({R1} < 0.34)"
     spd = f.v("speed", 0.0, "飛ぶ速さ (m/s)。0 ならその場")
-    jit = [f"({R2} * 2.0 - 1.0)", f"({R3} * 2.0 - 1.0)", f"({R2} + {R3} - 1.0)"]
-    f.param([f"v.e_n{c} * ({spd} * {PA} - v.e_len * {K}) + {jit[i]} * 0.25 * {S} * {K}"
-             for i, c in enumerate("xyz")], rotation=f"{R4} * 360.0 + {PA} * 200.0")
-    f.bb([f"{S} * (0.12 + 0.85 * math.pow(1.0 - {K}, 0.8)) * (1.0 - 0.25 * {AGE})"] * 2, "lookat_xyz",
-         uv_choice([("fireball", None), ("glow", None)], f"({K} < 0.08 ? 0.0 : 1.0)"))
-    f.tint(FIRE, f"math.pow(1.0 - {K}, 0.4) * {fade_out(2.0)}",
-           white_mix=f"(math.pow(1.0 - {K}, 5.0) * 0.85)")
-    f.cost = "count（既定 20）"
+    tl = f"(v.e_len * (0.45 + 0.55 * {R2}))"
+    jit = [f"({R3} * 2.0 - 1.0)", f"({R4} * 2.0 - 1.0)", f"({R3} + {R4} - 1.0)"]
+    f.param([f"v.e_n{c} * ({spd} * {PA} - ({head} ? 0.0 : {tl} * 0.5)) + {jit[i]} * 0.08 * {S}"
+             for i, c in enumerate("xyz")],
+            rotation=f"({head} ? ({R4} * 360.0 + {PA} * 240.0) : 0.0)")
+    f.bb([f"({head} ? {S} * 0.95 : {tl}) * (1.0 - 0.2 * {AGE})",
+          f"({head} ? {S} * 0.95 : {S} * (0.22 + 0.4 * {R3})) * (1.0 - 0.2 * {AGE})"], "lookat_direction",
+         uv_choice([("fireball", None), ("streak", None)], f"({head} ? 0.0 : 1.0)"), dict(CUSTOM_N))
+    f.tint(FIRE, f"({head} ? 1.0 : 0.75) * {fade_out(2.0)}", white_mix=f"({head} ? 0.75 : 0.12)")
+    f.cost = "count（既定 12）"
 
     # ================= 虚空 =================
     f = new("black_hole", "blend", "ブラックホール: 黒い核（染まらない）+ 光子の輪 + 渦巻く降着円盤 + 淡い外光の一枚絵が"

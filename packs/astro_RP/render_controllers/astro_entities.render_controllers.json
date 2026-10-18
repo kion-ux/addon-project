@@ -1,0 +1,62 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.astro.invader": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        },
+        {
+          "fx_*": "Material.fx"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "is_hurt_color": {
+        "r": 1.0,
+        "g": 0.55,
+        "b": 1.0,
+        "a": 0.5
+      },
+      "overlay_color": {
+        "r": 1.0,
+        "g": 0.25,
+        "b": 0.85,
+        "a": "v.overlay"
+      }
+    },
+    "controller.render.astro.hologram": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        },
+        {
+          "holo*": "Material.holo"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "is_hurt_color": {
+        "r": 1.0,
+        "g": 0.3,
+        "b": 0.3,
+        "a": 0.0
+      }
+    },
+    "controller.render.astro.plain": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ]
+    }
+  }
+}

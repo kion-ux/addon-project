@@ -38,7 +38,7 @@
       "minecraft:particle_appearance_billboard": {
         "size": [
           "v.e_len",
-          "(v.size ?? 1.0) * 0.9"
+          "(v.size ?? 1.0) * 1.2"
         ],
         "facing_camera_mode": "lookat_direction",
         "direction": {

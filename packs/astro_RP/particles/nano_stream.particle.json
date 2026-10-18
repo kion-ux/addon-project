@@ -13,11 +13,11 @@
         "creation_expression": "v.e_dx = (v.vx ?? 0.0); v.e_dy = (v.vy ?? 0.0); v.e_dz = (v.vz ?? 0.0); v.e_dl = math.sqrt(v.e_dx * v.e_dx + v.e_dy * v.e_dy + v.e_dz * v.e_dz); v.e_has = (v.e_dl > 0.0001) ? 1.0 : 0.0; v.e_tx = (v.e_has > 0.5) ? v.e_dx : 0.0; v.e_ty = (v.e_has > 0.5) ? v.e_dy : 2.0; v.e_tz = (v.e_has > 0.5) ? v.e_dz : 0.0; v.e_tl = (v.e_has > 0.5) ? v.e_dl : 2.0; v.e_nx = v.e_tx / math.max(v.e_tl, 0.0001); v.e_ny = v.e_ty / math.max(v.e_tl, 0.0001); v.e_nz = v.e_tz / math.max(v.e_tl, 0.0001); v.e_h = math.sqrt(v.e_nx * v.e_nx + v.e_nz * v.e_nz); v.e_ax = (v.e_h > 0.2) ? ((0.0 - v.e_nz) / v.e_h) : 1.0; v.e_ay = 0.0; v.e_az = (v.e_h > 0.2) ? (v.e_nx / v.e_h) : 0.0; v.e_bx = v.e_ny * v.e_az - v.e_nz * v.e_ay; v.e_by = v.e_nz * v.e_ax - v.e_nx * v.e_az; v.e_bz = v.e_nx * v.e_ay - v.e_ny * v.e_ax;"
       },
       "minecraft:emitter_rate_steady": {
-        "spawn_rate": "(v.rate ?? 60.0)",
+        "spawn_rate": "(v.rate ?? 72.0)",
         "max_particles": 120
       },
       "minecraft:emitter_lifetime_once": {
-        "active_time": "(v.count ?? 24.0) / math.max((v.rate ?? 60.0), 1.0)"
+        "active_time": "(v.count ?? 36.0) / math.max((v.rate ?? 72.0), 1.0)"
       },
       "minecraft:emitter_shape_point": {
         "offset": [
@@ -38,16 +38,16 @@
       },
       "minecraft:particle_appearance_billboard": {
         "size": [
-          "(v.size ?? 1.0) * 0.09 * (0.75 + 0.25 * math.sin(v.particle_age * 1800.0 + v.particle_random_4 * 720.0))",
-          "(v.size ?? 1.0) * 0.09 * (0.75 + 0.25 * math.sin(v.particle_age * 1800.0 + v.particle_random_4 * 720.0))"
+          "(v.size ?? 1.0) * 0.11 * (0.75 + 0.25 * math.sin(v.particle_age * 1800.0 + v.particle_random_4 * 720.0))",
+          "(v.size ?? 1.0) * 0.11 * (0.75 + 0.25 * math.sin(v.particle_age * 1800.0 + v.particle_random_4 * 720.0))"
         ],
         "facing_camera_mode": "lookat_xyz",
         "uv": {
           "texture_width": 1024,
           "texture_height": 1024,
           "uv": [
-            "131.0 + math.clamp(math.floor(v.particle_random_2 * 3.999), 0.0, 3.0) * 32.0",
-            877.0
+            "749.0 + math.clamp(math.floor(v.particle_random_2 * 3.999), 0.0, 3.0) * 32.0",
+            879.0
           ],
           "uv_size": [
             32,
