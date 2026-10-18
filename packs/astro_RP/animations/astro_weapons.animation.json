@@ -190,6 +190,180 @@
         }
       }
     },
+    "animation.astro.core.jupiter.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.47,
+      "bones": {
+        "form_0_globe": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_cage": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.135": [
+              0,
+              0,
+              0
+            ],
+            "0.267": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.355": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_2_rings": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.23": [
+              0,
+              0,
+              0
+            ],
+            "0.362": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.45": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.core.jupiter.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -76.49,
+            -56.69,
+            102.45
+          ],
+          "position": [
+            -1.9,
+            22.9,
+            -3.61
+          ],
+          "scale": 0.85
+        }
+      }
+    },
+    "animation.astro.core.jupiter.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 110.0) * 0.35",
+            0
+          ],
+          "rotation": [
+            0,
+            "math.sin(q.anim_time * 40.0) * 8.0",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 40.0",
+            0
+          ]
+        },
+        "fx_spin_ring": {
+          "rotation": [
+            0,
+            "-q.anim_time * 70.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.core.jupiter.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            18.0,
+            -0.0,
+            -0.0
+          ],
+          "position": [
+            -0.4,
+            22.62,
+            -4.82
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "animation.astro.core.jupiter.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "origin": {
+          "scale": "1.0 + v.astro_usew * 0.12",
+          "position": [
+            0,
+            "v.astro_usew * 1.2",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_ring": {
+          "rotation": [
+            0,
+            "q.anim_time * -360 * v.astro_usew",
+            0
+          ]
+        }
+      }
+    },
     "animation.astro.core.neptune.form": {
       "loop": "hold_on_last_frame",
       "animation_length": 0.47,
@@ -730,6 +904,227 @@
             44.28,
             4.88,
             1.59
+          ],
+          "position": [
+            -0.6,
+            21.85,
+            1.0
+          ],
+          "scale": 0.9
+        }
+      }
+    },
+    "animation.astro.weapon.jupiter.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.62,
+      "bones": {
+        "form_0_grip": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_haft": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.125": [
+              0.35,
+              0.35,
+              0.0
+            ],
+            "0.257": [
+              1.08,
+              1.08,
+              1.15
+            ],
+            "0.345": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "form_2_head": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.21": [
+              0,
+              0,
+              0
+            ],
+            "0.342": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.43": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_3_strike": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.295": [
+              0,
+              0,
+              0
+            ],
+            "0.427": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.515": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_4_fins": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.38": [
+              0,
+              0,
+              0
+            ],
+            "0.512": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.6": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.weapon.jupiter.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -43.22,
+            4.26,
+            -169.99
+          ],
+          "position": [
+            -0.39,
+            26.08,
+            1.69
+          ],
+          "scale": 0.6
+        }
+      }
+    },
+    "animation.astro.weapon.jupiter.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 90.0) * 0.1",
+            0
+          ]
+        },
+        "fx_spin_emit_hi": {
+          "rotation": [
+            0,
+            "q.anim_time * 180.0",
+            0
+          ]
+        },
+        "fx_spin_emit_lo": {
+          "rotation": [
+            0,
+            "-q.anim_time * 180.0",
+            0
+          ]
+        },
+        "fx_glow_emit_hi": {
+          "scale": "1 + math.sin(q.anim_time * 360) * 0.08"
+        },
+        "fx_glow_emit_lo": {
+          "scale": "1 + math.sin(q.anim_time * 360) * 0.08"
+        }
+      }
+    },
+    "animation.astro.weapon.jupiter.swing": {
+      "loop": true,
+      "bones": {
+        "origin": {
+          "rotation": [
+            "(v.astro_fp > 0.5 ? 60 : 40) * (math.sin(math.pow(v.astro_sw, 0.6) * 180.0) - 0.18 * math.sin(v.astro_sw * 360.0))",
+            0,
+            0
+          ]
+        },
+        "fx_spin_emit_hi": {
+          "rotation": [
+            0,
+            "v.astro_sw * 540.0",
+            0
+          ]
+        },
+        "fx_spin_emit_lo": {
+          "rotation": [
+            0,
+            "-v.astro_sw * 540.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.weapon.jupiter.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -5.76,
+            5.72,
+            -0.58
           ],
           "position": [
             -0.6,

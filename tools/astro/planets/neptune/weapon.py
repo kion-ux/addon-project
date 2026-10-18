@@ -28,6 +28,12 @@ Z_BUTT = 15.0           # 石突きの端
 EDGE = (96, 236, 255)   # 水色の刃
 
 
+def dia_yz(bone, centre, d, t, style, **kw):
+    """YZ 平面（穂先の開く面）の菱形: 対角線 d・厚み t（X）。"""
+    s = d / 2 ** 0.5
+    return W.cbox(bone, centre, (t, s, s), style, rotation=(45, 0, 0), **kw)
+
+
 def build_weapon(m, root):
     # =====================================================================
     #  form_0_grip — 柄巻（篭手に隠れる）と口金
@@ -81,12 +87,15 @@ def build_weapon(m, root):
     for s in (-1, 1):
         W.cbox(sock, (0, s * 3.2, Z_BAR), (1.3, 1.0, 1.5), "pearl", uv_scale=10)
         # 波頭の白い鍔: 横木の端から後ろへ巻く（YZ 平面のヒレ）
-        fan_fin(sock, (0, s * 3.2, Z_BAR + 0.1), (0, s * 1.3, Z_BAR + 1.3),
-                [(0, s * 5.6, -16.0), (0, s * 4.6, -14.6), (0, s * 3.0, -14.2)], 0.6, "fin",
-                uv_scale=8)
-        W.beam(sock, (0, s * 3.2, Z_BAR + 0.1), (0, s * 5.6, -16.0), 0.7, 0.6, "pearl",
-               extend=0.2, uv_scale=10)
-        W.beam(sock, (0, s * 5.5, -16.1), (0, s * 5.0, -17.4), 0.5, 0.5, "pearl", uv_scale=10)
+        # 波頭: 横木の端から外後ろへ張り、先が内へ巻き込む（砕ける波の形）
+        fan_fin(sock, (0, s * 3.4, Z_BAR + 0.2), (0, s * 1.4, Z_BAR + 1.6),
+                [(0, s * 5.5, -16.4), (0, s * 4.4, -15.2), (0, s * 2.8, -15.4)], 0.5, "fin",
+                styles=FIN, width=[0.9, 0.9, 0.8], uv_scale=8)
+        W.polyline(sock, [(0, s * 3.4, Z_BAR + 0.2), (0, s * 5.0, -17.8), (0, s * 5.7, -16.2),
+                          (0, s * 5.2, -15.0), (0, s * 4.3, -14.9)],
+                   [0.7, 0.62, 0.55, 0.45], [0.62, 0.55, 0.5, 0.4], "pearl", uv_scale=10)
+        W.cbox(sock, (0, s * 4.75, -17.1), (0.62, 0.3, 1.5), "glow", rotation=(s * 30, 0, 0),
+               uv_scale=12)
     # 衛星トリトン: 付け根の下の傾いた軌道を逆向きに回る（WEAPON_ANIMS）
     orbit = W.part(m, sock, "orbit", (0, 0, -12.6), rotation=(0, 18, 0))
     W.ring(orbit, (0, 0, -12.6), 2.7, 10, (0, 0.14, 0.16), "glow_soft", axis="z", uv_scale=10)
@@ -103,9 +112,9 @@ def build_weapon(m, root):
     for s in (-1, 1):
         W.beam(pr, (0, s * 0.72, Z_BAR - 0.8), (0, s * 0.5, -28.4), 0.56, 0.3, "edge",
                uv_scale=8)
-    diamond(pr, (0, 0, -30.0), 3.8, 0.8, "prong", tilt=90, uv_scale=8)       # 鏃（YZ 平面の菱形）
-    diamond(pr, (0, 0, -30.0), 2.4, 0.92, "edge", tilt=90, uv_scale=10)
-    diamond(pr, (0, 0, -30.0), 1.0, 1.0, "prong", tilt=90, uv_scale=12)
+    dia_yz(pr, (0, 0, -30.0), 3.8, 0.8, "prong", uv_scale=8)       # 鏃（YZ 平面の菱形）
+    dia_yz(pr, (0, 0, -30.0), 2.4, 0.92, "edge", uv_scale=10)
+    dia_yz(pr, (0, 0, -30.0), 1.0, 1.0, "prong", uv_scale=12)
     taper(pr, (0, 0, -31.8), (0, 0, Z_TIP), 0.9, 0.2, 2, "prong", round_=False, uv_scale=10)
     # 左右の穂: 外へ張ってから前へ。先に鏃と外向きの返し
     for s in (-1, 1):
@@ -114,8 +123,8 @@ def build_weapon(m, root):
         W.polyline(pr, pts, [1.1, 1.0, 0.9], [1.1, 1.0, 0.9], "prong", uv_scale=8)
         W.polyline(pr, [(0, s * 4.6, -23.0), (0, s * 4.45, -26.2)], 0.62, 0.34, "edge",
                    uv_scale=8)
-        diamond(pr, (0, s * 3.3, -29.0), 2.7, 0.7, "prong", tilt=90, uv_scale=8)
-        diamond(pr, (0, s * 3.3, -29.0), 1.6, 0.82, "edge", tilt=90, uv_scale=10)
+        dia_yz(pr, (0, s * 3.3, -29.0), 2.7, 0.7, "prong", uv_scale=8)
+        dia_yz(pr, (0, s * 3.3, -29.0), 1.6, 0.82, "edge", uv_scale=10)
         taper(pr, (0, s * 3.3, -30.3), (0, s * 3.1, -31.8), 0.65, 0.16, 1, "prong",
               round_=False, uv_scale=10)
         W.beam(pr, (0, s * 3.9, -28.2), (0, s * 5.0, -26.8), 0.55, 0.5, "prong", uv_scale=10)

@@ -111,20 +111,20 @@ def _dir(deg, side=-1):
     return (side * math.sin(a), math.cos(a), 0.0)
 
 
-def crystal(bone, base, d, length, w, style="ice", tip=0.4):
+def crystal(bone, base, d, length, w, style="ice", tip=0.4, **kw):
     """氷晶: 45° ずらして重ねた角柱の胴（六角柱に見える）+ 尖った先。d は向き（正規化不要）。6 個。"""
     d = np.asarray(d, float)
     d = d / np.linalg.norm(d)
     b = np.asarray(base, float)
     mid = b + d * length * (1 - tip)
-    out = [beam(bone, b, mid, w, w, style), beam(bone, b, mid, w * 0.9, w * 0.9, style, roll=45)]
-    out += taper(bone, mid - d * 0.05, b + d * length, w * 0.95, 0.08, 2, style)
+    out = [beam(bone, b, mid, w, w, style, **kw), beam(bone, b, mid, w * 0.9, w * 0.9, style, roll=45, **kw)]
+    out += taper(bone, mid - d * 0.05, b + d * length, w * 0.95, 0.08, 2, style, **kw)
     return out
 
 
-def diamond(bone, centre, size, depth, style, tilt=(0, 0, 0)):
+def diamond(bone, centre, size, depth, style, tilt=(0, 0, 0), **kw):
     """面の中で 45° 回した正方形（◆）を tilt（統合版の角度）で傾けて置く。"""
-    return mat_cube(bone, centre, (size, size, depth), style, rot(*tilt) @ rot(0, 0, 45))
+    return mat_cube(bone, centre, (size, size, depth), style, rot(*tilt) @ rot(0, 0, 45), **kw)
 
 
 # ---------------------------------------------------------------------------

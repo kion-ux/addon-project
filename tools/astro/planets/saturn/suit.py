@@ -360,7 +360,7 @@ def back(s):
     dial_ticks(bk, (0, 19.4, 4.5), 2.5, "z", size=(0.24, 0.55, 0.16), big_size=(0.4, 0.9, 0.18))
     octa(bk, (0, 19.4, 4.55), 0.9, 0.3, "gem_accent", axis="z")
     sr = s.fx("spin", "bring", bk, pivot=D)
-    ring(sr, (0, 19.4, 4.1), 3.85, 16, (0, 0.32, 0.34), "ring_b", axis="z")
+    ring(sr, (0, 19.4, 4.45), 3.95, 16, (0, 0.32, 0.3), "ring_b", axis="z")
     hh = s.fx("spin", "bhour", bk, pivot=D)
     cbox(hh, (0, 20.1, 4.68), (0.36, 1.4, 0.12), "hand")
     mh = s.fx("spin", "bmin", bk, pivot=D)

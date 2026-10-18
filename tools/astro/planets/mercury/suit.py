@@ -329,14 +329,13 @@ def torso(s):
     obl = line_on(c, ob, "north", (0.5, 0.05), (0.5, 0.95), 0.2, 0.16, "glow_day")
     mx(c, ob, obl)
     # 胸甲: 肩の付け根で広く、星核の脇で細くなる鏡面の三角（V 字に絞る）。外の斜辺に発光線
-    top_in, top_out, tip = (-1.95, 24.45, -3.05), (-4.75, 24.45, -2.95), (-2.05, 18.3, -3.15)
-    pecs = wing(c, top_in, top_out, tip, 0.6, "chrome", n=4, curve=0.2)
+    top_in, top_out, tip = (-0.45, 24.45, -3.05), (-4.75, 24.45, -2.95), (-1.95, 18.2, -3.15)
+    pecs = wing(c, top_in, top_out, tip, 0.6, "chrome", n=5, curve=0.17)
     edge = beam(c, np.add(top_out, (0.08, -0.2, -0.32)), np.add(tip, (0.25, 0.9, -0.3)),
                 0.24, 0.24, "glow_day")
-    flow = beam(c, (-2.6, 23.6, -3.42), (-2.45, 20.4, -3.42), 0.5, 0.14, "quick")
+    flow = beam(c, (-2.0, 23.9, -3.42), (-2.3, 20.6, -3.42), 0.5, 0.14, "quick")
     mx(c, pecs, edge, flow)
-    cbox(c, (0, 23.5, -3.0), (1.1, 2.0, 0.6), "chrome2")                       # 喉元の稜
-    cbox(c, (0, 23.45, -3.32), (0.3, 1.6, 0.1), "glow_white")
+    cbox(c, (0, 23.4, -3.42), (0.3, 1.8, 0.1), "glow_white")                   # 喉元の光
     # 胸の下: 星核の下で V に絞る細い板
     low = rbox(c, (-1.6, 18.0, -2.85), (2.6, 1.0, 0.5), "gun", rot=(-8, 14, 22))
     lol = line_on(c, low, "north", (0.05, 0.5), (0.95, 0.5), 0.18, 0.14, "glow_soft_day")
@@ -418,8 +417,8 @@ def droplets(s):
 # ---------------------------------------------------------------------------
 def arms(s):
     ar = s.part("arms", "upper_r", "rightArm", pivot=(ARM_X, 20.0, 0))
-    cbox(ar, (-6.0, 20.6, 0.0), (5.2, 4.8, 5.3), "gun")
-    op = rbox(ar, (-8.66, 20.2, 0.2), (0.3, 3.6, 3.4), "stripe_day", rot=(0, 0, 3))
+    cbox(ar, (-6.0, 20.6, 0.0), (5.2, 4.8, 5.3), "chrome2")
+    op = rbox(ar, (-8.66, 20.4, 0.2), (0.3, 4.0, 3.4), "stripe_day", rot=(0, 0, 3))
     cbox(ar, (-6.0, 18.05, 0.0), (5.35, TRIM_W, 5.4), "chrome")
     el = s.part("arms", "elbow_r", "rightArm", pivot=(ARM_X, 16.8, 0))
     cbox(el, (-6.0, 16.95, 0.0), (5.25, 1.4, 5.35), "frame")
