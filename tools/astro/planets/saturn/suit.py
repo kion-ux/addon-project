@@ -83,6 +83,8 @@ SUIT_STYLES = {
     "gem_accent": {"glow": (168, 150, 255), "deep": (52, 36, 120)},
     "gem": {"glow": (190, 236, 255), "deep": (40, 80, 150)},
     "core": {"emit": 150},
+    "orb": {"kind": "planet", "planet": "saturn", "bevel": False, "outline": False, "radius": 1.45,
+            "vary": 0},
     "face": {"kind": "armor", "base": (236, 226, 204), "panel": 0, "line": (96, 80, 60)},
 }
 
@@ -417,7 +419,7 @@ def arms(s):
 # ---------------------------------------------------------------------------
 def shoulders(s):
     p = s.part("shoulders", "pauldron_r", "rightArm")
-    dome = bevel(p, (-7.0, 24.0, 0.0), (5.8, 3.0, 7.0), "plate2", cut=1.1, axis="x",
+    dome = bevel(p, (-7.0, 24.0, 0.0), (5.8, 3.0, 7.0), "plate2", cut=1.1, axis="z",
                  rot=(0, 0, -12))
     top = stick(p, dome[0], "up", 0.45, 0.5, (3.4, 4.8, 0.4), "plate", sink=0.12)
     line_on(p, top, "up", (0.5, 0.1), (0.5, 0.9), 0.26, 0.2, "glow")
@@ -431,9 +433,6 @@ def shoulders(s):
     cbox(hr, (-10.42, 22.7, 0.0), (0.1, 1.0, 0.28), "hand")
     mn = s.fx("spin", "min_r", p, pivot=C)
     cbox(mn, (-10.47, 22.2, -0.7), (0.08, 0.2, 1.4), "hand")
-    # 上の縁: 外へ反る金の環の縁（土星の環の意匠）
-    rim = rbox(p, (-9.6, 25.1, 0.0), (0.8, 1.2, 7.4), "plate", rot=(0, 0, -32))
-    stick(p, rim, "up", 0.5, 0.5, (0.8, 7.4, 0.24), "band", sink=0.05)
     # 垂れる板（金・アイボリー）と褐色の縁
     l1 = rbox(p, (-9.85, 19.75, 0.0), (0.9, 1.6, 6.4), "plate", rot=(0, 0, 16))
     stick(p, l1, "west", 0.5, 0.08, (6.0, 0.3, 0.18), "band", sink=0.05)
@@ -476,14 +475,14 @@ def helmet(s):
     # 頭頂: 金の段の上に、小さな土星の宝珠（光輪がその環になる）
     bevel(hm, (0, 33.55, 0.15), (6.4, 0.7, 6.6), "plate", cut=1.5, axis="y")
     octa(hm, (0, 34.05, 0.15), 1.6, 0.4, "band", axis="y")
-    cbox(hm, (0, 35.0, 0.15), (1.7, 1.7, 1.7), "planet")
-    rbox(hm, (0, 35.0, 0.15), (1.6, 1.6, 1.6), "planet", rot=(0, 45, 0))
+    cbox(hm, (0, 35.0, 0.15), (1.7, 1.7, 1.7), "orb")
+    rbox(hm, (0, 35.0, 0.15), (1.5, 1.5, 1.5), "orb", rot=(0, 45, 0))
     # 眉庇
     br = rbox(hm, (-2.3, 29.25, -5.0), (4.6, 0.9, 1.0), "plate", rot=(-12, 6, 6))
     mirror_x(hm, br)
     # 面頬: 中央で鋭く折れた金の二枚（下縁は褐色）・アイボリーの稜・顎
-    cbox(hm, (0, 25.7, -4.62), (7.6, 3.6, 0.5), "frame")                   # 顔の奥
-    mg = rbox(hm, (-1.3, 25.65, -5.0), (2.7, 2.9, 0.6), "plate", rot=(0, 36, 0))
+    cbox(hm, (0, 25.7, -4.62), (7.6, 3.6, 0.5), "dark")                    # 顔の奥
+    mg = rbox(hm, (-1.45, 25.65, -5.0), (3.0, 2.9, 0.6), "plate", rot=(0, 28, 0))
     mt = stick(hm, mg, "north", 0.5, 0.08, (2.5, 0.4, 0.16), "band", sink=0.04)
     ml = line_on(hm, mg, "north", (0.2, 0.62), (0.85, 0.62), 0.18, 0.16, "glow_soft")
     mirror_x(hm, mg, mt, ml)
