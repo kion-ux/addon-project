@@ -89,7 +89,7 @@ def suit_tiles(a: SC.SuitAsset, tile=TILE):
     H = m["height"] if m else 32.0
     sc = tile[1] / 46.0
     im = SC.render(a, SC.pose("stand"), idle, "front", tile, scale=sc, ghost=True, ruler=H)
-    tiles.append(SC.label(im, "正面（目盛り = 1 頭身、水色 = バニラの体）", P["suit_ja"]))
+    tiles.append(SC.label(im, "正面（7 頭身の目盛り）", "水色の線 = バニラのプレイヤーの体"))
     for view, ja in (("back", "背面"), ("left", "左側面"), ("q34", "斜め前"),
                      ((146, -10), "斜め後ろ")):
         im = SC.render(a, SC.pose("stand"), idle, view, tile, scale=sc)
@@ -118,8 +118,8 @@ def suit_tiles(a: SC.SuitAsset, tile=TILE):
     im = SC.render(a, SC.pose("stand"), idle, (-28, -8), tile, scale=sc * 2.3,
                    centre=(-1.0, 25.0, 0))
     tiles.append(SC.label(im, "近接: 上半身"))
-    im = SC.render(a, SC.pose("stand"), idle, (-40, -6), tile, scale=sc * 2.3,
-                   centre=(-1.5, 7.5, 0))
+    im = SC.render(a, SC.pose("stand"), idle, (-40, -6), tile, scale=sc * 1.75,
+                   centre=(-1.2, 8.2, 0))
     tiles.append(SC.label(im, "近接: 脚"))
     im = SC.render(a, SC.pose("stand"), idle, (160, -6), tile, scale=sc * 2.3,
                    centre=(-1.0, 21.0, 0))

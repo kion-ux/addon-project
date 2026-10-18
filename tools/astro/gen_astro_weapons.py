@@ -32,6 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+import astro_animcheck as AK  # noqa: E402
 import astro_common as AC  # noqa: E402
 import astro_weapon as W  # noqa: E402
 
@@ -133,6 +134,13 @@ def check(keys) -> list:
         for s in _strings(doc):
             if not _balanced(s):
                 errors.append(f"unbalanced molang: {s[:80]}")
+    # 待機などのループは継ぎ目（animation_length ごとに q.anim_time が 0 に戻る所）で飛ばないこと
+    errors += AK.seam_errors(anims)
+    # 振り（v.astro_sw = 持ち主の attack_time。1.21.130 より前の統合版では読めず常に 0 — DESIGN.md §4.5）は
+    # 0（振り始め・読めない時）と 1（振り終わり）で自然体: 読めない版でも武器は持ち姿勢のまま壊れて見えない
+    for name, a in sorted(anims.items()):
+        if name.endswith(".swing"):
+            errors += AK.rest_errors(a, "v.astro_sw", where=f"{name} ")
     for key in keys:
         for what in ("weapon", "core"):
             geo_path, tex_path, icon_path = W.paths(key, what)

@@ -202,8 +202,8 @@ WEAPON_ANIMS = {
     },
     "swing": {
         # 振るたびに放電の輪が一気に回る
-        "fx_spin_emit_hi": {"rotation": [0, "v.astro_sw * 540.0", 0]},
-        "fx_spin_emit_lo": {"rotation": [0, "-v.astro_sw * 540.0", 0]},
+        "fx_spin_emit_hi": {"rotation": [0, "v.astro_sw * 720.0", 0]},   # 振り終わり（1）で整数周
+        "fx_spin_emit_lo": {"rotation": [0, "-v.astro_sw * 720.0", 0]},
     },
     "form_axes": {"form_1_haft": "z"},
 }
