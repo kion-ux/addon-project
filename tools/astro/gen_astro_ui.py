@@ -1761,6 +1761,304 @@ def compose_line(text, glyphs, S=4, shadow=True, title=1):
     return out[:, :max(1, x - U)], (x - U) / U
 
 
+# ===========================================================================
+#  glyphs.js
+# ===========================================================================
+G_ORDER = ["emblem", "emblemBig", "energy", "energyLow", "nova", "move", "icon", "iconBig", "sync", "progress",
+           "banner"]
+
+
+def _js_str(ch):
+    return '"' + "".join(f"\\u{ord(c):04X}" for c in ch) + '"'
+
+
+def _js_obj(v, ind=1):
+    pad = "  " * ind
+    if isinstance(v, str):
+        return _js_str(v)
+    flat = all(isinstance(x, str) for x in v.values())
+    if flat:
+        return "{ " + ", ".join(f"{k}: {_js_str(x)}" for k, x in v.items()) + " }"
+    inner = ",\n".join(f"{pad}  {k}: {_js_obj(x, ind + 1)}" for k, x in v.items())
+    return "{\n" + inner + f",\n{pad}}}"
+
+
+def write_glyphs_js(G, pages):
+    widths = {}
+    for pg in pages:
+        for idx, m in sorted(pg.meta.items()):
+            x0, x1 = m["span"]
+            widths[chr(pg.cp(idx))] = round((x1 - x0) * 16 / pg.cell)
+    body = ",\n".join(f"  {k}: {_js_obj(G[k], 1)}" for k in G_ORDER)
+    wlist = ", ".join(f"[{_js_str(ch)}, {w}]" for ch, w in widths.items())
+    js = f"""// 自動生成（tools/astro/gen_astro_ui.py）。手で編集しない。説明は tools/astro/UI.md
+// HUD のグリフ: RP の font/glyph_EA.png（U+EA00–EAFF、16 px セル = 約 16 GUI px）と
+//               font/glyph_EB.png（U+EB00–EBFF、32 px セル、タイトル・カットイン用）。
+// § の色コードはグリフを染めない（惑星ごとに色違いのグリフがある）。グリフの前は §r、§l（太字）を隣に置かない。
+
+export const GLYPH_PAGES = {{ hud: "EA", art: "EB" }};
+
+export const G = {{
+{body},
+}};
+
+/** 各グリフの送り幅（GUI px。実際にはこの後に約 1 px の隙間が入る）。 */
+export const WIDTH = new Map([{wlist}]);
+
+const clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
+
+/**
+ * セルを並べたバー。set = {{full, half?, empty, capL?, capR?}}（G.energy[key] / G.energyLow / G.nova /
+ * G.progress / G.sync）。frac = 0..1、cells = セル数。half があれば半セル単位で丸める。
+ * 0 より大きければ最低でも半セル（half が無ければ 1 セル）、1 未満なら最後のセルは満たさない。
+ * caps = false で両端を付けない。
+ */
+export function bar(set, frac, cells, caps = true) {{
+  const f = clamp01(frac);
+  const step = set.half ? 0.5 : 1;
+  let units = Math.round((f * cells) / step) * step;
+  if (f > 0 && units <= 0) units = step;
+  if (f < 1 && units >= cells) units = cells - step;
+  let s = caps && set.capL ? set.capL : "";
+  for (let i = 0; i < cells; i++) {{
+    s += units >= i + 1 ? set.full : units >= i + 0.5 && set.half ? set.half : set.empty;
+  }}
+  return s + (caps && set.capR ? set.capR : "");
+}}
+
+/** 星力バー（惑星色。frac < 0.2 で赤と惑星色が 8 tick ごとに入れ替わって点滅）。tick = system.currentTick。 */
+export function energyBar(key, frac, cells = 16, tick = 0) {{
+  const low = clamp01(frac) < 0.2 && Math.floor(tick / 8) % 2 === 0;
+  return bar(low ? G.energyLow : G.energy[key] ?? G.energy.mercury, frac, cells);
+}}
+
+/** 超新星バー。満タンの時は白熱のセル 3 つが左から右へ流れる（4 tick で 1 セル進む）。 */
+export function novaBar(frac, cells = 10, tick = 0) {{
+  if (clamp01(frac) < 1) return bar(G.nova, frac, cells);
+  const head = Math.floor(tick / 4) % (cells + 4);
+  let s = G.nova.capL;
+  for (let i = 0; i < cells; i++) {{
+    const d = head - i;
+    s += d >= 0 && d < 3 ? G.nova.flow : G.nova.full;
+  }}
+  return s + G.nova.capR;
+}}
+
+/** 変身・解除の進み具合（CORE SYNC n%）。 */
+export function progressBar(frac, cells = 20) {{
+  return bar(G.progress, frac, cells);
+}}
+
+/** 同調率の XP（次の Lv までの割合）。 */
+export function syncBar(frac, cells = 10) {{
+  return bar(G.sync, frac, cells);
+}}
+
+/** 同調率 Lv の粒（◆◆◆◇◇）。 */
+export function pips(n, max = 5) {{
+  const k = Math.max(0, Math.min(max, n | 0));
+  return G.icon.pipOn.repeat(k) + G.icon.pipOff.repeat(max - k);
+}}
+
+/** 技アイコン。ready = 使える（明るい枠）／ false = 待ち（灰色に惑星色の芯）。 */
+export function moveIcon(key, kind, ready) {{
+  const m = (G.move[key] ?? G.move.mercury)[kind] ?? G.move.mercury.skill;
+  return ready ? m.ready : m.wait;
+}}
+
+/** グリフと ASCII の幅（GUI px）の目安。日本語は 1 字 9 px として数える。 */
+export function textWidth(str) {{
+  let w = 0;
+  const s = String(str).replace(/§./g, "");
+  for (const ch of s) {{
+    const g = WIDTH.get(ch);
+    if (g !== undefined) w += g + 1;
+    else if (ch === " ") w += 4;
+    else if (ch.charCodeAt(0) < 128) w += "il.,:;!'|".includes(ch) ? 2 : "It[]".includes(ch) ? 4 : 6;
+    else w += 9;
+  }}
+  return w;
+}}
+"""
+    os.makedirs(os.path.dirname(GLYPHS_JS), exist_ok=True)
+    with open(GLYPHS_JS, "w", encoding="utf-8") as fh:
+        fh.write(js)
+    return GLYPHS_JS
+
+
+# ===========================================================================
+#  UI.md（グリフの一覧と HUD の組み方）
+# ===========================================================================
+def _g_shape(G):
+    """G のキー構造を 1 行ずつの文字列に。"""
+    def keys(v):
+        return "{" + ", ".join(v.keys()) + "}"
+    k0 = KEYS[0]
+    return [
+        f"emblem:    {{<key>: 文字}}                       （惑星 9 つ: {', '.join(KEYS)}）",
+        "emblemBig: {<key>: 文字}",
+        f"energy:    {{<key>: {keys(G['energy'][k0])}}}",
+        f"energyLow: {keys(G['energyLow'])}",
+        f"nova:      {keys(G['nova'])}",
+        f"move:      {{<key>: {{<kind>: {keys(G['move'][k0]['skill'])}}}}}   kind = {', '.join(KINDS)}",
+        f"icon:      {keys(G['icon'])}",
+        f"iconBig:   {keys(G['iconBig'])}",
+        f"sync:      {keys(G['sync'])}",
+        f"progress:  {keys(G['progress'])}",
+        f"banner:    {keys(G['banner'])}",
+    ]
+
+
+def write_ui_md(G, pages, widths_note):
+    hud, art = pages
+    lines = []
+    w = lines.append
+    w("# アストロ・ナノギア — HUD グリフと UI 素材")
+    w("")
+    w("`tools/astro/gen_astro_ui.py` が書き出す（この文書も自動生成。直すときは生成スクリプトの `write_ui_md` を直す）。")
+    w("見本: `docs/astro/hud.png`（HUD・カットイン・ターミナルの見本）、`build_preview/astro/glyphs_EA.png` / "
+      "`glyphs_EB.png`（全セルを 4 倍・2 倍にして番号を付けたもの。桃色の線 = 送り幅、緑の印 = 文字の高さ 4〜11 行）。")
+    w("")
+    w("## 1. 統合版のグリフの規則（このアドオンで守っていること）")
+    w("")
+    w("* `U+XXRC` → `RP/font/glyph_XX.png` の R 行 C 列（16×16 マス）。**EA = HUD（256×256、16 px セル）**、"
+      "**EB = 大きな絵（512×512、32 px セル）**。E0/E1（バニラ）・E2/E3（他パックと衝突しやすい）・2E–9F と F9–FF"
+      "（日本語・繁体字ロケールのページ）は使わない。")
+    w("* 送り幅 = セルの不透明な列の範囲（空の列は詰められる）＋約 1 GUI px の隙間。負の字間は無い。"
+      "幅を決めたいグリフは両端の列にかすかな画素（アルファ 20）を置いてある（下の表の「幅」）。")
+    w("* 16 px セルはほぼ 16 GUI px（ASCII の約 2 倍の高さの箱）で描かれる。絵は文字の高さ（4〜11 行）に置き、"
+      "技アイコンと紋章でも 3〜12 行に収めた（2 行のアクションバーで上下の行に被らない）。")
+    w("* 512 のページ（EB）は 16 px と同じ大きさで細かく描かれる（たぶん）か、2 倍の大きさ（不確か）。"
+      "どちらでも崩れないように EB はタイトル・サブタイトル専用にしている（HUD の行には入れない）。")
+    w("* **§ の色はグリフを染めない** → 惑星ごとに色違いのグリフを用意した。§ の色はグリフの後ろの文字にだけ効く。")
+    w("* **グリフの並びの前に `§r`** を置く（太字・斜体が残っていると崩れる）。**`§l`（太字）をグリフの隣に置かない**"
+      "（太字はグリフをずらして二重に描く）。")
+    w("* アクションバーは表示が数秒で消えるので **40 tick 以内ごとに送り直す**（HUD は 4 tick ごとなので問題ない）。"
+      "各行は中央揃え。行の間は約 10 GUI px。空白は 4 GUI px。")
+    w("* グリフはアクションバー・タイトル／サブタイトル・チャット・アイテム名／説明・server-ui のフォーム・"
+      "エンティティの nameTag で描かれる。")
+    w("")
+    w("## 2. `glyphs.js` の形")
+    w("")
+    w("```js")
+    w('import { G, bar, energyBar, novaBar, progressBar, syncBar, pips, moveIcon, textWidth, WIDTH } from "./glyphs.js";')
+    w("```")
+    w("")
+    w("```")
+    for ln in _g_shape(G):
+        w("G." + ln)
+    w("```")
+    w("")
+    w("* `G.energy[key].capL/capR` は全惑星で同じ金属の端（`G.energyLow` は赤い LED の端）。")
+    w("* `G.sync` = 同調率（XP）の細い紫のバー、`G.progress` = 変身・解除の進み具合（CORE SYNC n%）の白いバー（half あり）。")
+    w("* `G.icon.sep` は斜めの区切り（│ の代わり）、`G.icon.arrow` はメニュー用の小さな ▶。")
+    w("* `G.banner.wingL/wingR`（翼）・`divider`（中央にひし形の線）・`lineL/lineR`（文字を挟む線）と `G.emblemBig`・"
+      "`G.iconBig` は EB（タイトル用）。")
+    w("")
+    w("関数:")
+    w("")
+    w("| 関数 | 中身 |")
+    w("|---|---|")
+    w("| `bar(set, frac, cells, caps = true)` | `capL + セル×cells + capR`。`set.half` があれば半セル単位。0 < frac なら最低半セル、frac < 1 なら最後のセルは空ける |")
+    w("| `energyBar(key, frac, cells = 16, tick)` | 星力。frac < 0.2 で `G.energyLow`（赤）と惑星色が 8 tick ごとに点滅 |")
+    w("| `novaBar(frac, cells = 10, tick)` | 超新星。100% で白熱のセル 3 つが流れる（4 tick で 1 セル） |")
+    w("| `progressBar(frac, cells = 20)` / `syncBar(frac, cells = 10)` | 進捗・同調率 |")
+    w("| `pips(n, max = 5)` | 同調率 Lv の粒 ◆◆◆◇◇ |")
+    w("| `moveIcon(key, kind, ready)` | 技アイコン（ready = 明るい枠、false = 灰色に惑星色の芯） |")
+    w("| `textWidth(str)` | GUI px の幅の目安（グリフは表の幅＋1、ASCII 約 6、日本語 9、空白 4） |")
+    w("")
+    w("## 3. HUD の組み方（アクションバー 2 行）")
+    w("")
+    w("```js")
+    w("const pl = PLANETS[key];                       // data.js")
+    w("const t = system.currentTick;")
+    w("const line1 = `§r${G.emblem[key]} ${pl.tc}${pl.form_ja} §fLv${lv} ${G.icon.sep} ` +")
+    w("  `${G.icon.energy}${energyBar(key, st.energy / maxE, 16, t)} §f${Math.floor(st.energy)} ${G.icon.sep} ` +")
+    w("  `${G.icon.nova}${novaBar(st.nova / 100, 10, t)} ${st.nova >= 100 ? \"§e\" : \"§7\"}${Math.floor(st.nova)}%`;")
+    w("")
+    w("// 技: アイコン + 再使用の残り秒 / ✔ / READY（間は空白 2 つ）")
+    w("const cell = (kind) => {")
+    w("  const left = cdLeft(kind);                   // tick")
+    w('  const ok = left <= 0 && (kind !== "ult" || st.nova >= 100);')
+    w('  const tail = left > 0 ? `§7${(left / 20).toFixed(1)}s` : kind === "ult" ? (ok ? "§6READY" : `§7${Math.floor(st.nova)}%`) : `${G.icon.check}`;')
+    w("  return `${moveIcon(key, kind, ok)} ${tail}`;")
+    w("};")
+    w('const line2 = `§r${cell("skill")}  ${cell("dash")}  ${cell("air")}  ${cell("ult")}`;')
+    w('p.onScreenDisplay.setActionBar(`${line1}\\n${line2}`);')
+    w("```")
+    w("")
+    w("2 行目の差し替え（優先順に 1 つ）:")
+    w("")
+    w("| 状態 | 2 行目 |")
+    w("|---|---|")
+    w("| 解除の長押し中 | `` `§r${G.icon.revert} §cREVERT ${progressBar(hold / 40)} §f${pct}%` `` |")
+    w("| オーバーヒート中 | `` `§r${G.icon.overheat} §cOVERHEAT §f${sec}s ${G.icon.lock}` ``（変身していない時は 1 行目の代わりに） |")
+    w("| ナノ・バリア中 | `` `§r${G.icon.barrier} §bNANO BARRIER ${bar(G.progress, left / 14, 10)}` `` |")
+    w("| 溜め中 | `` `§r${G.icon.energy} §eCHARGE ${progressBar(c)} §f${pct}%` `` |")
+    w("| 星力 20% 未満 | 1 行目の数字の後に `` ` ${G.icon.warn}` `` |")
+    w("")
+    w("同調率の表示（ターミナルやチャット）: `` `${G.icon.sync} §dSYNC Lv${lv} ${pips(lv)} ${syncBar(xpFrac)}` ``。")
+    w("")
+    w(f"幅の目安（見本の行を実測）: {widths_note}。GUI の幅は 1080p・GUI 倍率 3 で約 640 px、スマホでは 400〜480 px 程度なので"
+      "1 行目は 16 + 10 セルで収まる。狭い端末向けに設定で 12 + 8 セルへ減らせるようにしておくとよい。")
+    w("")
+    w("## 4. タイトル・カットイン（EB）")
+    w("")
+    w("```js")
+    w("// 変身の進捗（TRANSFORM の各段で）")
+    w('p.onScreenDisplay.setTitle(`§fCORE SYNC §b${pct}%`, { subtitle: `§r${progressBar(pct / 100, 20)}`,')
+    w("  fadeInDuration: 0, stayDuration: 12, fadeOutDuration: 4 });")
+    w("// 締め（planet_burst）: 翼＋大きな紋章、サブタイトルに形態名")
+    w("p.onScreenDisplay.setTitle(`§r${G.banner.wingL}${G.emblemBig[key]}${G.banner.wingR}`, {")
+    w("  subtitle: `§r${G.banner.lineL} ${pl.tc}${pl.form_ja} §7| ${pl.tc}${pl.form_en} §r${G.banner.lineR}`,")
+    w("  fadeInDuration: 2, stayDuration: 30, fadeOutDuration: 10 });")
+    w("// 必殺技のカットイン")
+    w("p.onScreenDisplay.setTitle(`§r${G.iconBig.nova}`, { subtitle: `§r${G.banner.divider} §6${pl.moves.ult.ja} §r${G.banner.divider}`,")
+    w("  fadeInDuration: 0, stayDuration: 24, fadeOutDuration: 6 });")
+    w("// 警告（オーバーヒート）")
+    w("p.onScreenDisplay.setTitle(`§r${G.iconBig.overheat}`, { subtitle: \"§cOVERHEAT\", stayDuration: 30 });")
+    w("```")
+    w("")
+    w("## 5. フォーム（server-ui）の素材")
+    w("")
+    w("| パス | 大きさ | 用途 |")
+    w("|---|---|---|")
+    w("| `textures/ui/astro/emblem_<key>` | 128×128 | 惑星図鑑のボタン（機械の輪の枠に惑星。背景は透明） |")
+    w("| `textures/ui/astro/{status,codex,revert,settings,guide,records,back}` | 64×64 | トップのボタン（状態・惑星図鑑・解除・設定・操作説明・記録・戻る） |")
+    w("| `textures/items/astro/{nano_cell,core_frame,solar_fragment,terminal,void_signal}` | 64×64 | 素材・道具のアイコン |")
+    w("| `textures/items/astro/suit_<key>` | 64×64 | スーツのアイコン（スーツのモデルがあれば兜と胸を描き、無ければ紋章付きの兜の絵） |")
+    w("")
+    w("ボタン: `form.button(`${pl.tc}${pl.form_ja}\\n§8${pl.ja}`, `textures/ui/astro/emblem_${key}`)`。"
+      "ボタンの文字にもグリフを使える（例: `` `${G.emblem[key]} ${pl.form_ja}` ``、`` `${G.icon.lock} §8???` `` = 未入手）。")
+    w("")
+    w("## 6. グリフの一覧")
+    w("")
+    for pg, title in ((hud, "glyph_EA（HUD、16 px セル）"), (art, "glyph_EB（大きな絵、32 px セル）")):
+        w(f"### {title}")
+        w("")
+        w("| 番号 | G のキー | 幅 (GUI px) | 行 |")
+        w("|---|---|---|---|")
+        for idx, m in sorted(pg.meta.items()):
+            x0, x1 = m["span"]
+            width = round((x1 - x0) * 16 / pg.cell)
+            r = m["rows"]
+            rows = f"{r[0]}–{r[1]}" if r else "-"
+            w(f"| U+{pg.cp(idx):04X} | `G.{m['name']}` | {width} | {rows} |")
+        w("")
+    w("配置: EA の行 0 = バーの部品、行 1〜9 = 惑星（order 順）で 列 0 紋章 / 1〜3 星力 満・半・空 / 4〜7 技（使える: "
+      "skill, dash, air, ult）/ 8〜B 技（待ち）、行 A = 赤い星力、行 B = 状態アイコン。EB の行 0 = 大きな紋章、行 1 = 飾り、"
+      "行 2 = 大きなアイコン。空いているセルは将来用。")
+    w("")
+    w("## 7. 確かめていないこと")
+    w("")
+    w("* 実機の行間（見本は 10 GUI px で描いた）と、アクションバーの背景の濃さ。グリフに文字の影が付くか。")
+    w("* EB（512×512）の表示の大きさ（16 px 相当か 32 px 相当か）。")
+    w("* かすかな画素（アルファ 20）が明るい空の上でうっすら見えるか（見えても 1 画素の暗い点）。")
+    with open(UI_MD, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+    return UI_MD
+
+
 def save_png(img, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if isinstance(img, np.ndarray):

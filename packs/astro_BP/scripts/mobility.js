@@ -120,7 +120,7 @@ function tickOne(p) {
   m.jumpHeld = jump ? m.jumpHeld + 1 : 0;
 
   if (!ready) {
-    if (m.hovering) stopHover(p, m);
+    if (m.hovering) stopHover(p, m, true);
     st.revertHold = 0;
     return;
   }
@@ -159,10 +159,11 @@ function tickOne(p) {
     }
   }
 
-  // ---- ホバー（空中でジャンプ長押し） -------------------------------------
+  // ---- ホバー（空中でジャンプ長押し → 浮遊、離すと低速落下、スニークで降りる） ----
   if (m.hovering) {
-    if (ground || !jump || energy(p) <= 0 || inWater) stopHover(p, m);
-    else tickHover(p, m, pl);
+    if (ground || inWater) stopHover(p, m, false);
+    else if (sneakEdge) stopHover(p, m, true);
+    else tickHover(p, m, pl, jump && energy(p) > 0);
   } else if (!ground && jump && m.jumpHeld >= TUNE.hoverDelay && m.airT >= 4 && energy(p) > 1 && !inWater) {
     startHover(p, m, pl);
   }
@@ -223,31 +224,46 @@ function tickOne(p) {
 function startHover(p, m, pl) {
   m.hovering = true;
   m.hoverT = 0;
+  m.lifting = false;
   m.noFall = true; m.used = true;
   sound(p.dimension, "astro.hover", p.location, 1.0, 0.8);
   sound(p.dimension, "astro.thrust", p.location, 1.1, 0.6);
   body(p, "hover", "astro.pose");
 }
 
-function tickHover(p, m, pl) {
+/** ホバーの上昇力（0..1）→ 浮遊の Lv（amp 0..2 = Lv1..3）。 */
+export function hoverAmp(h) { return h >= 0.85 ? 2 : h >= 0.55 ? 1 : 0; }
+
+function tickHover(p, m, pl, lifting) {
   m.hoverT++;
-  const h = pl.mobility.hover ?? 0.5;
-  // 強いホバーは浮遊（ゆっくり上昇）、弱いホバーは低速落下（滞空）
-  if (m.hoverT % 2 === 1) {
-    if (h >= 0.45) effect(p, "levitation", 5, h >= 0.85 ? 1 : 0);
-    else effect(p, "slow_falling", 6, 0);
-  }
-  if (h < 0.45 && m.hoverT % 4 === 1) knock(p, 0, 0, 0, 0.04 + h * 0.12);
-  addEnergy(p, -COMMON.hover_cost / 20);
   m.minVy = 0;
-  if (m.hoverT % 2 === 0) thrustFx(p, pl, { x: 0, y: -1, z: 0 }, 0.7);
-  if (m.hoverT % 10 === 0) sound(p.dimension, "astro.hover", p.location, 0.9 + Math.random() * 0.2, 0.45);
+  m.noFall = true;
+  const h = pl.mobility.hover ?? 0.5;
+  if (lifting) {
+    // 効果はクライアント側で動くので、ラグがあってもなめらか
+    if (!m.lifting || m.hoverT % 3 === 0) {
+      removeEffect(p, "slow_falling");
+      effect(p, "levitation", 6, hoverAmp(h));
+    }
+    addEnergy(p, -COMMON.hover_cost / 20);
+    if (m.hoverT % 2 === 0) thrustFx(p, pl, { x: 0, y: -1, z: 0 }, 0.6 + h * 0.4);
+    if (m.hoverT % 8 === 0) sound(p.dimension, "astro.hover", p.location, 0.9 + Math.random() * 0.2, 0.45);
+  } else {
+    if (m.lifting || m.hoverT % 4 === 0) {
+      removeEffect(p, "levitation");
+      effect(p, "slow_falling", 8, 0);
+    }
+    if (m.hoverT % 4 === 0) thrustFx(p, pl, { x: 0, y: -1, z: 0 }, 0.35);
+  }
+  m.lifting = lifting;
 }
 
-function stopHover(p, m) {
+/** ホバーをやめる。drop = スニークで降りる（効果を両方外す）。 */
+function stopHover(p, m, drop = false) {
   m.hovering = false;
+  m.lifting = false;
   removeEffect(p, "levitation");
-  effect(p, "slow_falling", 10, 0);
+  if (drop) removeEffect(p, "slow_falling");
   m.noFall = true;
   bodyStop(p, "astro.pose");
 }
@@ -452,7 +468,7 @@ export function forgetMobility(id) { mv.delete(id); }
 /** 変身・解除の時に機動の状態を戻す（ホバーを止める）。 */
 export function resetMobility(p) {
   const m = mv.get(p.id);
-  if (m?.hovering) stopHover(p, m);
+  if (m?.hovering) stopHover(p, m, true);
   if (m) { m.dodgeUntil = -1; m.jumps = 0; m.dashes = 0; }
 }
 

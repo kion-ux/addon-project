@@ -501,9 +501,12 @@ def raster(quads, textures, size, project, bg=None, ss=2, bloom=True, ink=True,
         if any(s is None for s in scr):
             continue
         n = q["n"]
-        lit = 0.62 + 0.38 * max(0.0, float(np.dot(n, LIGHT)))
+        d = float(np.dot(n, LIGHT))
         if q.get("two_sided"):
-            lit = 0.62 + 0.38 * abs(float(np.dot(n, LIGHT)))
+            d = abs(d)
+        # 統合版の実体の陰影に近い、上から強めで裏も暗くなりすぎない当て方
+        lit = 0.74 + 0.26 * d + 0.08 * float(n[1])
+        lit = max(0.55, min(1.06, lit))
         uvs = q["uvs"]
         tx = tpx.get(q["tex"]) if q["tex"] is not None else None
         for tri in ((0, 1, 2), (0, 2, 3)):
@@ -600,11 +603,11 @@ def scene_quads(asset, pose_, anim, weapon=None, extra=None, show_player=True,
 
 
 def render(asset, pose_=None, anim=None, view="front", size=(300, 400), scale=None,
-           centre=(0, 16.5, 0), weapon=None, extra=None, show_player=True, hide=(),
+           centre=(0, 17.5, 0), weapon=None, extra=None, show_player=True, hide=(),
            ss=2, bloom=True, shadow=True):
     """三人称（正射影）。view は VIEWS の名前か (yaw, pitch)。"""
     yaw, pitch = VIEWS[view] if isinstance(view, str) else view
-    scale = scale or size[1] / 40.0
+    scale = scale or size[1] / 46.0
     quads, textures = scene_quads(asset, pose_ if pose_ is not None else pose("stand"),
                                   anim or {}, weapon, extra, show_player, hide)
     proj = ortho(yaw, pitch, centre, scale, size)

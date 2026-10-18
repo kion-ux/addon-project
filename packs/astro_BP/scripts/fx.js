@@ -250,14 +250,30 @@ export function shake(dim, loc, radius, intensity, seconds = 0.3) {
   }
 }
 
-/** 色付きのフラッシュ（camera fade）。大技の決め所で使う。color は 0..1。 */
+/**
+ * 色付きのフラッシュ（カメラのフェード）。大技の決め所で使う。color は 0..1。
+ * フェードは合計 0.5 秒以上でないと出ないので、足りなければ out を伸ばす。
+ */
 export function flash(dim, loc, radius, color, hold = 0.08, out = 0.35) {
-  const [r, g, b] = color.map((c) => Math.round(Math.max(0, Math.min(1, c)) * 255));
+  const fin = 0.05;
+  if (fin + hold + out < 0.5) out = 0.5 - fin - hold;
+  const col = color.map((c) => Math.max(0, Math.min(1, c)));
   for (const p of allPlayers()) {
     try {
       if (p.dimension?.id !== dim.id) continue;
       if (dist(p.location, loc) > radius) continue;
-      cmd(p, `camera @s fade time 0.04 ${fmt(hold)} ${fmt(out)} color ${r} ${g} ${b}`);
+      let ok = false;
+      try {
+        if (typeof p.camera?.fade === "function") {
+          p.camera.fade({ fadeTime: { fadeInTime: fin, holdTime: hold, fadeOutTime: out },
+                          fadeColor: { red: col[0], green: col[1], blue: col[2] } });
+          ok = true;
+        }
+      } catch (_) { }
+      if (!ok) {
+        const [r, g, b] = col.map((c) => Math.round(c * 255));
+        cmd(p, `camera @s fade time ${fmt(fin)} ${fmt(hold)} ${fmt(out)} color ${r} ${g} ${b}`);
+      }
     } catch (_) { }
   }
 }
@@ -287,7 +303,18 @@ export function announce(p, text, ticks = 30) {
   try { p.onScreenDisplay.setActionBar(text); } catch (_) { }
 }
 export function hudHeld(p) { return (hold.get(p.id) ?? 0) > now(); }
-export function forgetFx(id) { hold.delete(id); }
+
+const statusMap = new Map();   // playerId -> { text, until }
+/**
+ * HUD の 2 行目を ticks の間だけ text に差し替える（溜め中の表示など。1 行目はそのまま）。
+ * 例: status(p, "§e溜め ▰▰▱", 6) を毎 tick 呼ぶ。
+ */
+export function status(p, text, ticks = 10) { statusMap.set(p.id, { text, until: now() + ticks }); }
+export function statusOf(p) {
+  const s = statusMap.get(p.id);
+  return s && s.until > now() ? s.text : null;
+}
+export function forgetFx(id) { hold.delete(id); statusMap.delete(id); }
 
 /** 画面中央のタイトル（失敗しても無視）。 */
 export function title(p, text, sub, o = {}) {

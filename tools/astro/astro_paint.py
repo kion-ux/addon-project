@@ -444,9 +444,9 @@ class AstroPainter(HDPainter):
         col = shade(base, 1.08 - 0.16 * v)
         cell = hash2(rx, rz, c["seed"] % 97)
         if e > inr - 0.75:
-            if cell > 1.0 - st.get("seam", 0.06):
-                return mix(glow, WHITE, 0.15), SOFT
-            return mix(col, (150, 170, 200), 0.22), 255
+            if cell > 1.0 - st.get("seam", 0.012):
+                return mix(glow, col, 0.35), SOFT
+            return mix(col, (150, 170, 200), 0.16), 255
         # 六角の内側: 上が少し明るい（膨らみ）
         if ddy < -inr * 0.3:
             col = mix(col, WHITE, 0.06)
@@ -515,8 +515,8 @@ class AstroPainter(HDPainter):
             col = mix(base, dk, (t - 0.55) / 0.45)
         if S >= 5 and across == S // 2:
             col = shade(col, 0.72)
-        if (along + c["key"]) % 11 == 0 and S >= 3:
-            col = mix(col, WHITE, 0.5)
+        if S >= 3 and (along + c["key"] * 7) % 23 == 0:
+            col = mix(col, WHITE, 0.35)
         return col, 255
 
     # ==================================================================
