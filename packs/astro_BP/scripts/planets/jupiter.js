@@ -78,7 +78,7 @@ function zapLine(dim, a, b, color = VOLT, size = 0.5) {
 
 /** 掲げた鎚頭のあたり（頭上やや前）。 */
 function hammerTop(ctx) {
-  return ctx.local(0.35, 0.25, 2.85);
+  return ctx.local(0.3, 0.3, 3.0);
 }
 
 /** 嵐の渦（大赤斑）: 錆色の渦 + クリームの雲の帯 + 中の電光。center は足元。 */
@@ -374,7 +374,7 @@ register(KEY, {
         }
         // 残った渦（2 秒）: 吸い込み + 雷
         zone(ctx, g, {
-          radius: 4.2, ticks: 40, every: 10, delay: 6, damage: 1, pull: 0.45, color: GRS,
+          radius: 4.2, ticks: 40, every: 12, delay: 6, damage: 1, pull: 0.45, color: GRS,
           hit: { color: VOLT, sound: "astro.zap", power: 0.8 },
           visual(d, c, age) {
             stormFx(d, c, age, 3.0);
@@ -433,13 +433,13 @@ register(KEY, {
         const q = moonOrbitPos(base, k, now());
         fired[k] = true;
         const tgt = pickTarget(k);
-        const tl = tgt?.location ?? tgt;
+        const tl = tgt && valid(tgt) ? { ...tgt.location } : (tgt && Number.isFinite(tgt.x) ? tgt : null);
         if (!tl) return;
         const g = onGround(dim, tl);
         const h = Math.max(5, q.y - g.y);
         sound(dim, "astro.swing", q, 0.6 + k * 0.1, 0.8);
         P(dim, "flare", q, { color: white(m.color, 0.4), size: 1.6, life: 0.2 });
-        meteor(ctx, tgt, {
+        meteor(ctx, tl, {
           delay: 8, fall: 6, height: h, from: { x: (q.x - g.x) / h, z: (q.z - g.z) / h },
           color: m.color, size: 1.8 + k * 0.25, quiet: true, ...o,
         });
@@ -693,8 +693,10 @@ register(KEY, {
       const ps = staticOf(p);
       const n = (ps.charge ?? 0) + 1;
       if (valid(target)) P(p.dimension, "arc", chest(target), { color: VOLT, count: 1, spread: 0.3, size: 0.6, life: 0.15 });
-      if (n < 5) { ps.charge = n; return; }
+      // 5 回目で放電。放電の後 1 秒は溜まっても 4 で止まる（多段の技で放電が続かないように）
+      if (n < 5 || now() < (ps.dischargeAt ?? -99) + 20) { ps.charge = Math.min(4, n); return; }
       ps.charge = 0;
+      ps.dischargeAt = now();
       discharge(p, target);
     },
     onHurt(p, attacker, dmg) {
