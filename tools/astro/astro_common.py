@@ -29,6 +29,20 @@
   ring(bone, centre, radius, n, seg, style, axis)  輪をセグメントで（axis 方向が輪の軸）
   taper(bone, p0, p1, w0, w1, n, style)            先細りの段（炎・トゲ・角。45° の段も重ねて丸く）
   fill_tri_yz(bone, apex, a, b, x_w, layer_h, style) YZ 平面の三角形を角柱で埋める
+
+細かい部品（v1.1。ファイルの末尾。astro_suit からも同じ名前で使える）:
+  rod(bone, p0, p1, w, style, sides=8)             p0→p1 の丸棒（八角柱）
+  ball(bone, centre, r, style, style2=None)        球関節（4 個）
+  piston(bone, p0, p1, r=0.42, style, rod_style, cap_style, split=0.55)  油圧シリンダー（筒+ロッド+締め輪+目）
+  cable(bone, pts, w=0.26, style, sag=0, seg=0.8, rib=None)  垂れるケーブル・蛇腹のホース
+  rivets(bone, cube, face, n, edge="bottom"|"top"|"left"|"right"|"border", margin, size, style, line=)
+  vents(bone, cube, face, n, box=(a0,b0,a1,b1), axis="h"|"v", w, style="vent", rim=None)  排気スリット
+  layered_plate(bone, centre, size, style, top, rot, face, inset, trim, trim_edge, rivet, n_rivets)
+  joint_drum(bone, centre, r, length, axis, style, cap, hub, glow, caps=(-1, 1), bolts=0)  関節ドラム
+  finger_chain(bone, pts, w, h, style, knuckle, tip=None)  指の関節の連なり
+  greebles(bone, cube, face, n, seed, styles, size, h, region)  パネルの小物
+  sensor(bone, centre, size, style="glow", bezel="dark", axis="z", facing=-1)  センサーの灯り
+  mx(p)                                            点の X を反転
 """
 from __future__ import annotations
 
@@ -405,3 +419,318 @@ def cube_matrix(c) -> np.ndarray:
         Rm[:3, :3] = rot(*r)
         M = T @ Rm @ Ti
     return M
+
+
+# ===========================================================================
+#  細かい部品（v1.1 の 7 頭身スーツ用。ウェポンでも使える）
+#  どれも作ったキューブのリストを返す（stick 系の面の座標 (a, b) は surface() と同じ 0..1）
+# ===========================================================================
+MIN_PART = 0.15            # これより細い部品は作らない（DESIGN §4.3b）
+
+
+def _v(p):
+    return np.asarray(p, float)
+
+
+def rod(bone, p0, p1, w, style, sides=8, style2=None, roll=0.0, extend=0.0, h=None, **kw):
+    """p0→p1 の丸棒。sides=8 で八角柱（角柱 + 45° 回した角柱の 2 個）、4 で角柱 1 個。
+    w は太さ（h を渡すと縦横を変えた楕円っぽい棒）。"""
+    h = w if h is None else h
+    out = [beam(bone, p0, p1, w, h, style, roll=roll, extend=extend, **kw)]
+    if sides >= 8:
+        out.append(beam(bone, p0, p1, w * 0.94, h * 0.94, style2 or style, roll=roll + 45.0,
+                        extend=extend - 2 * ZF_INSET, **kw))
+    return out
+
+
+def ball(bone, centre, r, style, style2=None, **kw):
+    """丸い球関節（4 個: 立方体 + 3 軸それぞれの 45° の棒）。肩・股関節・首の付け根に。"""
+    c = _v(centre)
+    s2 = style2 or style
+    out = [cbox(bone, c, (1.62 * r, 1.62 * r, 1.62 * r), style, **kw)]
+    out.append(rbox(bone, c, (2 * r, 1.16 * r, 1.16 * r), s2, rot=(45, 0, 0), **kw))
+    out.append(rbox(bone, c, (1.16 * r, 2 * r - 0.04, 1.16 * r), s2, rot=(0, 45, 0), **kw))
+    out.append(rbox(bone, c, (1.16 * r, 1.16 * r, 2 * r - 0.08), s2, rot=(0, 0, 45), **kw))
+    return out
+
+
+def piston(bone, p0, p1, r=0.42, style="frame", rod_style="chrome", cap_style="dark",
+           split=0.55, rod_r=None, eyes=True, gland=True, sides=8, **kw):
+    """油圧シリンダー: p0 側の太い筒（半径 r、全長の split まで）+ p1 側から差し込まれた細いロッド
+    + 筒の口の締め輪（gland）+ 両端の取り付け目（eyes）。肘・膝・足首・首の後ろ・腹の脇に。
+    伸び縮みに見せたい時は p0, p1 を関節の両側（別の部位）に置く。6〜8 個。"""
+    p0, p1 = _v(p0), _v(p1)
+    d = p1 - p0
+    L = float(np.linalg.norm(d))
+    if L < 0.6:
+        raise ValueError("piston too short (< 0.6)")
+    u = d / L
+    rr = rod_r if rod_r is not None else max(MIN_PART / 2, r * 0.48)
+    m = p0 + u * L * split
+    out = []
+    out += rod(bone, p0 + u * 0.1, m, 2 * r, style, sides=sides, **kw)
+    out += rod(bone, m - u * 0.35, p1 - u * 0.05, 2 * rr, rod_style, sides=4, **kw)
+    if gland:
+        out += rod(bone, m - u * 0.16, m + u * 0.1, 2 * r * 1.2, cap_style, sides=sides, **kw)
+    if eyes:
+        R = frame_to(d)
+        out.append(mat_cube(bone, p0, (2 * r * 1.15, 2 * r * 1.15, max(MIN_PART, 2 * r * 0.7)),
+                            cap_style, R, **kw))
+        out.append(mat_cube(bone, p1, (max(MIN_PART, 2 * rr * 1.7), max(MIN_PART, 2 * rr * 1.7),
+                                       max(MIN_PART, 2 * rr * 1.2)), cap_style, R, **kw))
+    return out
+
+
+def _catmull(pts, n_per=8):
+    """一様 Catmull-Rom で点列を細かく（端は複製）。"""
+    P = [_v(p) for p in pts]
+    if len(P) < 3:
+        return P
+    ext = [P[0] + (P[0] - P[1]) * 0.0] + P + [P[-1]]
+    out = []
+    for i in range(1, len(ext) - 2):
+        p0, p1, p2, p3 = ext[i - 1], ext[i], ext[i + 1], ext[i + 2]
+        for k in range(n_per):
+            t = k / n_per
+            t2, t3 = t * t, t * t * t
+            out.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2
+                              + (-p0 + 3 * p1 - 3 * p2 + p3) * t3))
+    out.append(P[-1])
+    return out
+
+
+def cable(bone, pts, w=0.26, style="dark", sag=0.0, seg=0.8, h=None, rib=None, rib_every=2,
+          rib_scale=1.45, **kw):
+    """ケーブル・ホース: 点列を滑らかに通る細い角柱の列（1 区間 ≈ seg、継ぎ目は少し重ねる）。
+    2 点だけなら sag ぶん下（-Y）へ垂れる（放物線）。3 点以上は Catmull-Rom で滑らかに通り、
+    sag は各区間に足す。rib に塗りの名前を渡すと rib_every 区間ごとに太い輪（蛇腹）を付ける。
+    1 区間が 1.0 以下になるので「細かい部品」に数えられる。"""
+    P = [_v(p) for p in pts]
+    if len(P) == 2:
+        p0, p1 = P
+        c = (p0 + p1) / 2 - np.array([0.0, 2.0 * sag, 0.0])
+        dense = [(1 - t) ** 2 * p0 + 2 * (1 - t) * t * c + t * t * p1
+                 for t in np.linspace(0, 1, 24)]
+    else:
+        dense = _catmull(P, 10)
+        if sag:
+            # 元の各区間に sag の垂れを足す（端点は動かさない）
+            n_seg = len(P) - 1
+            for i in range(len(dense)):
+                s = i / max(1, len(dense) - 1) * n_seg
+                f = s - math.floor(s)
+                dense[i] = dense[i] - np.array([0.0, sag * 4 * f * (1 - f), 0.0])
+    # 弧長で seg ごとに取り直す
+    acc = [0.0]
+    for i in range(1, len(dense)):
+        acc.append(acc[-1] + float(np.linalg.norm(dense[i] - dense[i - 1])))
+    total = acc[-1]
+    if total < 1e-6:
+        return []
+    n = max(1, int(math.ceil(total / seg)))
+    samples = []
+    j = 0
+    for k in range(n + 1):
+        target = total * k / n
+        while j < len(acc) - 2 and acc[j + 1] < target:
+            j += 1
+        span = (acc[j + 1] - acc[j]) or 1.0
+        t = (target - acc[j]) / span
+        samples.append(dense[j] + (dense[j + 1] - dense[j]) * t)
+    h = w if h is None else h
+    ov = min(w, h, 0.18) * 0.8
+    out = []
+    for i in range(len(samples) - 1):
+        a, b = samples[i], samples[i + 1]
+        if np.linalg.norm(b - a) < 1e-4:
+            continue
+        out.append(beam(bone, a, b, w, h, style, extend=ov, **kw))
+        if rib and i % rib_every == rib_every - 1 and i < len(samples) - 2:
+            out.append(mat_cube(bone, b, (w * rib_scale, h * rib_scale, max(MIN_PART, w * 0.6)),
+                                rib, frame_to(samples[i + 2] - a), **kw))
+    return out
+
+
+def _face_dims(c, face):
+    ia, ib, _inn, _sg = FACE_AXES[face]
+    return c.size[ia] + 2 * c.inflate, c.size[ib] + 2 * c.inflate
+
+
+def rivets(bone, c, face, n=4, edge="bottom", margin=0.3, size=0.26, h=0.16, style="silver",
+           line=None, span=(0.14, 0.86), sink=0.06, **kw):
+    """ボルト・リベットの列をキューブ c の面 face に打つ（面と同じ傾き）。
+    edge: "bottom" / "top"（b 方向の端。側面なら下・上）/ "left" / "right"（a 方向の端）/ "border"（四辺）。
+    margin は端からの距離（単位）、span は列の範囲（0..1）。line=((a0,b0),(a1,b1)) で自由な直線。
+    size × size × h（h ≥ 0.15）。1 個 1 キューブの細かい部品。"""
+    sa, sb = _face_dims(c, face)
+    ma, mb = min(0.45, margin / max(sa, 1e-6)), min(0.45, margin / max(sb, 1e-6))
+    pts = []
+    if line is not None:
+        (a0, b0), (a1, b1) = line
+        pts = [(a0 + (a1 - a0) * i / max(1, n - 1), b0 + (b1 - b0) * i / max(1, n - 1))
+               for i in range(n)]
+    elif edge == "border":
+        corners = [(ma, mb), (1 - ma, mb), (1 - ma, 1 - mb), (ma, 1 - mb)]
+        per = max(0, (n - 4) // 4)
+        for k in range(4):
+            (a0, b0), (a1, b1) = corners[k], corners[(k + 1) % 4]
+            for i in range(per + 1):
+                t = i / (per + 1)
+                pts.append((a0 + (a1 - a0) * t, b0 + (b1 - b0) * t))
+    else:
+        lo, hi = span
+        ts = [lo + (hi - lo) * i / max(1, n - 1) for i in range(n)] if n > 1 else [0.5]
+        for t in ts:
+            if edge == "bottom":
+                pts.append((t, mb))
+            elif edge == "top":
+                pts.append((t, 1 - mb))
+            elif edge == "left":
+                pts.append((ma, t))
+            elif edge == "right":
+                pts.append((1 - ma, t))
+            else:
+                raise ValueError(f"edge must be bottom/top/left/right/border, not {edge!r}")
+    hh = max(MIN_PART, h)
+    return [stick(bone, c, face, a, b, (size, size, hh), style, sink=sink, **kw) for a, b in pts]
+
+
+def vents(bone, c, face, n=4, box=(0.15, 0.18, 0.85, 0.82), axis="h", w=0.2, depth=0.16,
+          style="vent", rim=None, rim_w=0.16, sink=0.1, **kw):
+    """排気スリット: 面 face の box=(a0,b0,a1,b1) の中に n 本の細い帯（axis "h" は a 方向に長い帯を
+    b 方向へ並べる、"v" はその逆）。style は vent（奥が光る暗い溝）など。rim に塗りを渡すと枠も付ける。"""
+    a0, b0, a1, b1 = box
+    sa, sb = _face_dims(c, face)
+    out = []
+    dd = max(MIN_PART, depth)
+    for i in range(n):
+        t = (i + 0.5) / n
+        if axis == "h":
+            out.append(stick(bone, c, face, (a0 + a1) / 2, b0 + (b1 - b0) * t,
+                             (max(MIN_PART, sa * (a1 - a0)), max(MIN_PART, w), dd), style,
+                             sink=sink, **kw))
+        else:
+            out.append(stick(bone, c, face, a0 + (a1 - a0) * t, (b0 + b1) / 2,
+                             (max(MIN_PART, w), max(MIN_PART, sb * (b1 - b0)), dd), style,
+                             sink=sink, **kw))
+    if rim:
+        rw = max(MIN_PART, rim_w)
+        fa, fb = sa * (a1 - a0) + 2 * rw, sb * (b1 - b0) + 2 * rw
+        da, db = rw / max(sa, 1e-6) / 2, rw / max(sb, 1e-6) / 2
+        out.append(stick(bone, c, face, (a0 + a1) / 2, b0 - db, (fa, rw, dd), rim, sink=sink - 0.03, **kw))
+        out.append(stick(bone, c, face, (a0 + a1) / 2, b1 + db, (fa, rw, dd), rim, sink=sink - 0.03, **kw))
+        out.append(stick(bone, c, face, a0 - da, (b0 + b1) / 2, (rw, fb - 2 * rw, dd), rim,
+                         sink=sink - 0.03, **kw))
+        out.append(stick(bone, c, face, a1 + da, (b0 + b1) / 2, (rw, fb - 2 * rw, dd), rim,
+                         sink=sink - 0.03, **kw))
+    return out
+
+
+def layered_plate(bone, centre, size, style, top="plate2", rot=(0, 0, 0), face="north",
+                  inset=0.35, thick=0.22, top_ab=(0.5, 0.5), trim="gold", trim_edge="bottom",
+                  trim_w=0.26, rivet=None, n_rivets=0, rivet_edge="top", **kw):
+    """縁取りのある多層の装甲板: 下の板（style）→ 面 face に一回り小さい上の板（top。inset だけ内側、
+    厚み thick）→ 下の板の縁に金の帯（trim、trim_edge 側）→ 上の板にリベット（rivet / n_rivets）。
+    戻り値 {"base", "top", "trim", "rivets"}（上に更に stick / line_on で重ねられる）。"""
+    base = rbox(bone, centre, size, style, rot=rot, **kw)
+    sa, sb = _face_dims(base, face)
+    out = {"base": base, "top": None, "trim": None, "rivets": []}
+    if top:
+        out["top"] = stick(bone, base, face, top_ab[0], top_ab[1],
+                           (max(MIN_PART, sa - 2 * inset), max(MIN_PART, sb - 2 * inset),
+                            max(MIN_PART, thick)), top, sink=0.05, **kw)
+    if trim:
+        tw = max(MIN_PART, trim_w)
+        if trim_edge in ("bottom", "top"):
+            b = tw / 2 / sb if trim_edge == "bottom" else 1 - tw / 2 / sb
+            out["trim"] = stick(bone, base, face, 0.5, b, (sa + 0.04, tw, max(MIN_PART, thick * 0.9)),
+                                trim, sink=0.06, **kw)
+        else:
+            a = tw / 2 / sa if trim_edge == "left" else 1 - tw / 2 / sa
+            out["trim"] = stick(bone, base, face, a, 0.5, (tw, sb + 0.04, max(MIN_PART, thick * 0.9)),
+                                trim, sink=0.06, **kw)
+    if rivet and n_rivets and out["top"] is not None:
+        out["rivets"] = rivets(bone, out["top"], face, n_rivets, edge=rivet_edge, margin=0.25,
+                               style=rivet, **kw)
+    return out
+
+
+def joint_drum(bone, centre, r, length, axis="x", style="frame", cap="chrome", hub="dark",
+               glow=None, caps=(-1, 1), bolts=0, bolt_style="silver", **kw):
+    """八角柱の関節ドラム（肘・膝・足首・手首）。軸 axis、半径 r、長さ length。
+    caps: 端の蓋を付ける側（-1 = 軸の負の端、+1 = 正の端。右側の部品の外側は -1）。蓋は一回り小さい
+    八角の円盤＋中央の軸受け（hub）。glow に塗りを渡すと軸受けの真ん中が光る。bolts で蓋の縁にボルト。"""
+    c = _v(centre)
+    i = AX[axis]
+    e = np.zeros(3)
+    e[i] = 1.0
+    out = octa(bone, c, 2 * r, length, style, axis=axis, **kw)
+    for sg in caps:
+        cc = c + e * sg * (length / 2 + 0.05)
+        out += octa(bone, cc, 2 * r * 0.76, 0.3, cap, axis=axis, **kw)
+        hs = [max(MIN_PART, r * 0.62)] * 3
+        hs[i] = 0.24
+        hc = c + e * sg * (length / 2 + 0.2)
+        out.append(cbox(bone, hc, hs, hub, **kw))
+        if glow:
+            gs = [max(MIN_PART, r * 0.3)] * 3
+            gs[i] = 0.16
+            out.append(cbox(bone, c + e * sg * (length / 2 + 0.3), gs, glow, **kw))
+        if bolts:
+            out += ring(bone, tuple(cc + e * sg * 0.12), r * 0.62, bolts,
+                        (0.18, 0.18, 0.16), bolt_style, axis=axis, **kw)
+    return out
+
+
+def finger_chain(bone, pts, w=0.5, h=None, style="frame", knuckle="dark", kscale=1.14,
+                 tip=None, **kw):
+    """指（関節の連なり）: 点列の区間ごとに角柱、内側の関節ごとに一回り太い関節の箱。
+    w は幅（局所 X、水平）、h は厚み。tip に塗りを渡すと先端に小さな爪。"""
+    P = [_v(p) for p in pts]
+    h = w if h is None else h
+    out = []
+    for i in range(len(P) - 1):
+        out.append(beam(bone, P[i], P[i + 1], w, h, style, extend=-0.02, **kw))
+    for i in range(1, len(P) - 1):
+        d = (P[i + 1] - P[i - 1])
+        out.append(mat_cube(bone, P[i], (w * kscale, h * kscale, max(MIN_PART, min(w, h) * 0.8)),
+                            knuckle, frame_to(d), **kw))
+    if tip:
+        d = P[-1] - P[-2]
+        L = float(np.linalg.norm(d))
+        out.append(mat_cube(bone, P[-1] - d / L * 0.12, (w * 0.8, max(MIN_PART, h * 0.5), 0.3),
+                            tip, frame_to(d), **kw))
+    return out
+
+
+def greebles(bone, c, face, n=5, seed=0, styles=("frame", "dark", "silver"), size=(0.22, 0.6),
+             h=(0.15, 0.24), region=(0.12, 0.12, 0.88, 0.88), **kw):
+    """パネルの小物（グリーブル）: 面の region の中に n 個の小箱を決定的な乱数で散らす。"""
+    import random as _random
+    rng = _random.Random(seed)
+    out = []
+    for _ in range(n):
+        a = rng.uniform(region[0], region[2])
+        b = rng.uniform(region[1], region[3])
+        sz = (rng.uniform(*size), rng.uniform(*size), max(MIN_PART, rng.uniform(*h)))
+        out.append(stick(bone, c, face, a, b, sz, rng.choice(styles), sink=0.05, **kw))
+    return out
+
+
+def sensor(bone, centre, size=0.36, style="glow", bezel="dark", axis="z", facing=-1, **kw):
+    """小さなセンサーの灯り（暗い縁 + 発光の点、2 個）。axis と facing（-1/+1）で向く方向。
+    例: 正面向き axis="z", facing=-1 / 右外向き axis="x", facing=-1。"""
+    c = _v(centre)
+    i = AX[axis]
+    e = np.zeros(3)
+    e[i] = facing
+    bs = [size * 1.6] * 3
+    bs[i] = 0.2
+    ls = [max(MIN_PART, size)] * 3
+    ls[i] = 0.2
+    return [cbox(bone, c, bs, bezel, **kw), cbox(bone, c + e * 0.06, ls, style, **kw)]
+
+
+def mx(p):
+    """点の X を反転（右 → 左）。"""
+    return (-p[0], p[1], p[2])
