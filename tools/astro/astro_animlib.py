@@ -393,7 +393,6 @@ REPAIR_AT = 0.6      # 補間の途中でこれより深く入り込むコマに
 REPAIR_STEP = 0.04   # 直す区間で腕のねじりを選ぶ間隔（秒。足すキーの間隔はこれ以上）
 REPAIR_SPEED = 800.0  # ねじりの速さ（度/秒）がこれだと、体に 0.13 px 入るのと同じ重さ
 REPAIR_MAX_STEP = 90.0   # 隣り合うキーの間のねじりの差の上限（度。これを超えると補間の向きが曖昧になる）
-TWIST_RATE_MAX = 1000.0  # ねじる速さの上限（度/秒）。もとの動きと足して腕の速さの上限を超える速さも使わない
 TWISTS = tuple(range(-180, 180, 15))
 
 
@@ -447,17 +446,23 @@ def _repair(res, cloud, hold, rounds=3, step=0.02):
             T = [a] + S + [b]
             ph = np.array(TWISTS, float)
             diff = (ph[None, :] - ph[:, None] + 180.0) % 360.0 - 180.0     # diff[i, j] = 前 i → 次 j
-
-            # ねじる速さの上限: 腕の速さの上限（arm_speeds と同じ）から、もとの動きの速さを引いた残り
+            # 各時刻のねじった回転（a・b はねじらない）。区間の速さの上限は arm_speeds と同じ
             RT = [_key_R(tr, mk, a)] + base + [_key_R(tr, mk, b)]
+            TW = [np.stack([_axis_angle(R0 @ blade_l, phi) @ R0 for phi in TWISTS]) for R0 in RT]
             allow = 0.85 * max(ARM_SPEED_MAX, 1.6 * _rot_angle(RT[0], RT[-1]) / max(b - a, 1e-3))
+            nt = len(TWISTS)
 
             def edge(k):
+                """k → k+1 の 24×24 の重さ: もとの動きより速く回る分と、上限を超える組・ねじりの差が大きい組は不可。"""
                 dt = max(T[k + 1] - T[k], 1e-3)
-                cap = min(TWIST_RATE_MAX, allow - _rot_angle(RT[k], RT[k + 1]) / dt)
-                rate = np.abs(diff) / dt
-                e = (rate / REPAIR_SPEED) ** 2
-                e[(np.abs(diff) > REPAIR_MAX_STEP + 1e-6) | (rate > max(cap, 0.0) + 1e-6)] = INF
+                A = np.repeat(TW[k], nt, axis=0)
+                B = np.tile(TW[k + 1], (nt, 1, 1))
+                ang = angle_many(A, B).reshape(nt, nt)
+                base_ang = _rot_angle(RT[k], RT[k + 1])
+                e = (np.maximum(0.0, ang - base_ang) / dt / REPAIR_SPEED) ** 2
+                # 上限を超える組は不可（もとの動きが既に上限より速い所では、それより速くしない組だけ）
+                fast = (ang / dt > allow) & (ang > base_ang * 1.02 + 0.5)
+                e[(np.abs(diff) > REPAIR_MAX_STEP + 1e-6) | fast] = INF
                 return e
             i0 = TWISTS.index(0)
             cost = edge(0)[i0] + node[0]

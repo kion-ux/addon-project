@@ -490,8 +490,8 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
     if want("chest"):
         c = part("chest", "body", (0.0, A.CHEST_Y, 0.0))
         F["chest"] = c
-        chamfer(c, (0, 24.85, 0.05), (8.0 * k, 2.7, 4.5), SU, cut=0.75, axis="y")   # 上が広い
-        chamfer(c, (0, 22.15, 0.1), (6.6 * k, 2.9, 4.1), SU, cut=0.7, axis="y")
+        chamfer(c, (0, 24.85, 0.05), (7.3 * k, 2.7, 4.4), SU, cut=0.75, axis="y")   # 上が広い
+        chamfer(c, (0, 22.15, 0.1), (6.0 * k, 2.9, 4.0), SU, cut=0.7, axis="y")
         cbox(c, (0, 23.1, -2.3), (0.9, 4.6, 0.5), ME)                               # 胸骨
         sensor(c, (0, 24.6, -2.58), 0.34, GL, DK)
         for i, y in enumerate((24.7, 23.5, 22.3)):                                  # 肋骨
