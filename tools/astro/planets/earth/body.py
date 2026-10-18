@@ -67,7 +67,7 @@ charge = P(w=(26, 0, 0), h=(-28, 0, 0),
            rL=(-34, 0, 2), lL=(30, 0, -2))
 
 luna_up = P(b=(-8, 0, 0), h=(-30, 0, 0),
-            lA=aim(dirv(u=1.0, f=0.25, r=0.15)),
+            lA=aim(dirv(u=1.0, f=0.35, r=-0.45)),
             rA=wield(blade=dirv(r=0.8, u=-0.6, f=0.25), arm=dirv(r=0.8, u=-0.6)),
             rL=(-6, 0, 8), lL=(6, 0, -8), ground=True)
 luna_down = P(luna_up, b=(12, 0, 0), h=(8, 0, 0),
