@@ -19,7 +19,10 @@ import math
 
 import numpy as np
 
-from astro_common import (_group, cbox, line_on, rbox, ring, stick, surface, taper)
+from astro_common import (_group, cbox, line_on, rbox, stick, surface, taper)
+# 輪は astro_weapon.ring（各セグメントを接線の向きに置く版）を使う。astro_common.ring は axis="z" の
+# セグメントが接線に沿わない（斜めの破線になる）ため
+from astro_weapon import ring
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 from hd_space import rot as _rot
 
