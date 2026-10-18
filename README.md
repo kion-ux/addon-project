@@ -1,6 +1,7 @@
 # 怪獣8号 アドオン (Kaiju No.8 Add-on)
 
 > このリポジトリには、オリジナルのアニメ風 PvP アドオン **超次元バトルアーツ** も入っています → [README_HYPERDIM.md](README_HYPERDIM.md)
+> 宇宙テーマの変身アドオン **アストロ・ナノギア**（惑星の星核で 9 形態のメカ装甲に変身）も入っています → [README_ASTRO.md](README_ASTRO.md)
 
 Minecraft **統合版 (Bedrock Edition)** 用の非公式ファンメイド・アドオンです。
 アニメ『怪獣8号』の世界 —— 日本防衛隊、識別怪獣、解放戦力、原作の技、そして
