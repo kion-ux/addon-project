@@ -20,7 +20,7 @@
 //  上限: 同時に動く危険物（光線・隕石・衝撃波・黒孔）は HAZARD_CAP、ボルトは BOLT_CAP、
 //        ボスの子機は MINION_CAP まで。ブロックは一切壊さない（爆発もパーティクルと自前のダメージだけ）。
 // ===========================================================================
-import { world, system, MolangVariableMap } from "@minecraft/server";
+import { world, system, MolangVariableMap, ItemStack } from "@minecraft/server";
 import * as FX from "./fx.js";
 
 // ---------------------------------------------------------------------------
@@ -52,9 +52,16 @@ export const CFG = {
     range: 48, hover: 2.2, keep: 9, maxSpeed: [0, 0.22, 0.3], gap: [0, [46, 66], [26, 38]],
     beamDamage: [0, 7, 8], meteorDamage: [0, 8, 9], meteorCount: [0, 5, 8], meteorRadius: 2.6,
     holeDamage: [0, 7, 8], dashDamage: [0, 10, 11], summon: [0, 2, 3],
+    // 体力が dyingHp 以下になったら生きたまま崩れる演出（mode 8）へ。nemesis.json の damage_sensor も
+    // この値以下では全てのダメージを止める（gen_astro_entities.NEM_DYING_HP と同じ値）。
+    // dyingLen tick 後（bossDeath の大爆発の直後）にドロップと経験値を出して remove()。
+    dyingHp: 40, dyingLen: 54, xp: 120,
   },
   target: { window: 100 },
 };
+// 虚星王を演出で消す時のドロップ（loot_tables/entities/astro_nemesis.json と同じ。[id, 最小, 最大]）
+const BOSS_LOOT = [["astro:solar_fragment", 2, 2], ["astro:nano_cell", 6, 10], ["minecraft:diamond", 1, 3]];
+const MODE_DYING = 8;
 const HAZARD_CAP = 18;          // 同時に動く危険物（光線・隕石・衝撃波・黒孔）
 const BOLT_CAP = 24;            // 飛んでいるボルト
 const MINION_CAP = 6;           // ボス 1 体あたりの子機
@@ -121,6 +128,11 @@ function alive(e) {
 }
 function velocity(e) {
   try { return e.getVelocity(); } catch (_) { return { x: 0, y: 0, z: 0 }; }
+}
+function sameEntity(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  try { return a.id === b.id; } catch (_) { return false; }
 }
 function setMode(e, m) {
   try { if (e.getProperty?.("astro:mode") !== m) e.setProperty("astro:mode", m); } catch (_) { }
@@ -697,8 +709,11 @@ function bossTick(r, t, dt) {
   const st = r.st;
   const C = CFG.boss;
   const dim = e.dimension;
-  // ---- 形態 ----
   const h = hp(e);
+  // ---- 撃破（体力が閾値を切った。被弾の通知を取りこぼしても、ここで拾う） ----
+  if (!st.dying && h && h.cur > 0 && h.cur <= C.dyingHp) bossStartDying(r);
+  if (st.dying) { bossDyingTick(r, t, h); return; }
+  // ---- 形態 ----
   if (st.phase === 1 && h && h.cur <= h.max * 0.5 && !st.act?.locked) {
     st.phase = 2;
     try { e.setProperty("astro:phase", 2); } catch (_) { }
@@ -1344,7 +1359,11 @@ export function onInvaderHurt(e, damage, source, opts = {}) {
     }
     // ドローンは殴られた相手を狙い直す
     const atk = source?.damagingEntity;
-    if (r && valid(atk) && typeOf(atk) === "minecraft:player") { r.st.tgt = atk; r.st.retarget = t + 40; }
+    if (r && valid(atk) && typeOf(atk) === "minecraft:player") { r.st.tgt = atk; r.st.retarget = t + 40; r.st.lastPlayer = atk; }
+    if (r && kind === "boss" && !r.st.dying) {
+      const h = hp(e);
+      if (h && h.cur > 0 && h.cur <= CFG.boss.dyingHp) bossStartDying(r);
+    }
   } catch (err) { report("hurt", err); }
   return false;
 }
@@ -1373,6 +1392,7 @@ export function onInvaderDie(e, source) {
     const kind = KIND[type];
     if (!kind) return;
     reg.delete(id);
+    if (r?.st.dying) return;      // 崩れる演出の最中（ドロップと経験値はバニラが出す。bossVanish は何もしない）
     if (kind === "drone") {
       const c = up(loc, 0.6);
       blast(dim, c, 1.0, MAG);
@@ -1389,6 +1409,61 @@ export function onInvaderDie(e, source) {
       bossDeath(e, dim, loc);
     }
   } catch (err) { report("die", err); }
+}
+
+/**
+ * 体力が CFG.boss.dyingHp を切った: 生きたまま mode 8（崩れるアニメ）に入れ、ダメージを受け付けない
+ * 成分グループ（astro:dying）を付けて bossDeath の演出を流す。dyingLen tick 後に bossVanish。
+ * 一撃で閾値の上から倒された時は、これまでどおり entityDie → bossDeath（バニラの死のアニメ）。
+ */
+function bossStartDying(r) {
+  const e = r.e;
+  const st = r.st;
+  if (st.dying) return;
+  let loc, dim;
+  try { loc = e.location; dim = e.dimension; } catch (_) { return; }
+  st.dying = now();
+  st.act = null;
+  st.bag = [];
+  const h = hp(e);
+  st.dyingFrom = h ? h.cur : 1;
+  event(e, "astro:dying");
+  setMode(e, MODE_DYING);
+  try { e.clearVelocity?.(); } catch (_) { }
+  bossDeath(e, dim, loc);
+  later(CFG.boss.dyingLen, null, () => bossVanish(r, dim, loc));
+}
+
+/** 崩れている間: 状態を保ち、ボスバーを 1 まで減らしていく（その場に浮いたまま）。 */
+function bossDyingTick(r, t, h) {
+  const st = r.st;
+  const e = r.e;
+  setMode(e, MODE_DYING);
+  const k = t - st.dying;
+  if (h && h.cur > 1) {
+    const want = Math.max(1, Math.round(st.dyingFrom * (1 - k / (CFG.boss.dyingLen - 6))));
+    if (want < h.cur) { try { h.h.setCurrentValue(want); } catch (_) { } }
+  }
+  steer(e, { x: 0, y: 0.01, z: 0 }, 0.3);
+}
+
+/** 崩れ終わった: ルートテーブルと同じドロップ・倒したプレイヤーへの経験値・remove()。 */
+function bossVanish(r, dim, loc) {
+  const e = r.e;
+  if (!alive(e)) return;          // 途中で普通に死んだ（バニラがドロップを出した）
+  let at = loc;
+  try { at = e.location; } catch (_) { }
+  const drop = up(at, 1.4);
+  for (const [id, lo, hi] of BOSS_LOOT) {
+    const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+    try { dim.spawnItem(new ItemStack(id, n), drop); } catch (err) { report("loot", err); }
+  }
+  const k = r.st.lastPlayer;
+  if (alive(k)) {
+    try { k.addExperience(CFG.boss.xp); } catch (err) { report("xp", err); }
+  }
+  reg.delete(e.id);
+  try { e.remove(); } catch (err) { report("vanish", err); }
 }
 
 function bossDeath(e, dim, loc) {
@@ -1408,8 +1483,12 @@ function bossDeath(e, dim, loc) {
       } catch (_) { }
     });
   }
-  // 予定と危険物は打ち切る（落下中の隕石も消す）
-  for (let i = hazards.length - 1; i >= 0; i--) if (hazards[i].owner && !alive(hazards[i].owner)) hazards.splice(i, 1);
+  // 予定と危険物は打ち切る（落下中の隕石も消す）。生きたまま崩れる時もボスの持ち物は全部
+  for (let i = hazards.length - 1; i >= 0; i--) {
+    const o = hazards[i].owner;
+    if (o && (sameEntity(o, e) || !alive(o))) hazards.splice(i, 1);
+  }
+  for (let i = tasks.length - 1; i >= 0; i--) if (tasks[i].owner && sameEntity(tasks[i].owner, e)) tasks.splice(i, 1);
   snd(dim, "nemesis_roar", core, 0.6, 1.0);
   shake(dim, core, 40, 1.2, 1.0);
   // 連鎖爆発 → 最後の大爆発 → タイトル

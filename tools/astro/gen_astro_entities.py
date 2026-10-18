@@ -1186,6 +1186,7 @@ def sentinel_anims():
 NEM_DEATH = 0.9         # 普通の死のアニメ（秒）。死んだ mob が消えるまでの 1 秒より短く
 NEM_DYING = 2.6         # スクリプトで死なせる時のアニメ（秒）= invaders.bossDeath の最後の大爆発（52 tick）
 NEM_MODE_DYING = 8      # astro:mode の値（スクリプトが致命傷を止めて生きたまま入れる）
+NEM_DYING_HP = 40       # この体力以下ではダメージを受けず、invaders.bossStartDying が崩れる演出へ（CFG.boss.dyingHp）
 
 
 def nemesis_anims():
@@ -1454,6 +1455,11 @@ def bp_nemesis():
         "minecraft:persistent": {},
         "minecraft:follow_range": {"value": 64, "max": 64},
         "minecraft:damage_sensor": {"triggers": [
+            # 体力が閾値以下なら全て止めて崩れる演出へ（スクリプトが被弾の通知で拾う前の連撃も止める）
+            {"on_damage": {"filters": {"test": "actor_health", "subject": "self", "operator": "<=",
+                                       "value": NEM_DYING_HP},
+                           "event": "astro:dying", "target": "self"},
+             "deals_damage": False},
             _no_friendly_fire(),
             {"cause": "fall", "deals_damage": False},
             {"cause": "suffocation", "deals_damage": False},
@@ -1465,7 +1471,10 @@ def bp_nemesis():
     })
     props = _mode_prop(NEM_MODE_DYING)
     props["astro:phase"] = {"type": "int", "range": [1, 2], "default": 1, "client_sync": True}
-    return entity_doc("nemesis", c, props=props)
+    # 崩れている間（invaders.bossStartDying がイベントで付ける）: どんなダメージも受けない
+    groups = {"astro:dying": {"minecraft:damage_sensor": {"triggers": [{"cause": "all", "deals_damage": False}]}}}
+    events = {"astro:dying": {"add": {"component_groups": ["astro:dying"]}}}
+    return entity_doc("nemesis", c, groups, events, props=props)
 
 
 def bp_hologram():
@@ -2026,7 +2035,7 @@ def run_js_test():
 JS_SERVER = r"""
 const G = globalThis;
 G.__log = { particles: new Map(), sounds: new Map(), warns: [], props: new Map(), events: new Map(),
-            dmg: new Map(), titles: [] };
+            dmg: new Map(), titles: [], drops: [] };
 G.__handlers = {};
 const timeouts = [];
 const intervals = [];
@@ -2153,6 +2162,8 @@ export class FakeEntity {
   getDynamicProperty(k) { return this.dyn.get(k); } setDynamicProperty(k, v) { this.dyn.set(k, v); }
   remove() { this.alive = false; const a = this.dimension.entities; const i = a.indexOf(this); if (i >= 0) a.splice(i, 1); }
   kill() { this.hp = 0; }
+  addExperience(n) { if (!Number.isFinite(n) || n <= 0) throw new Error("bad xp"); this.xp = (this.xp ?? 0) + n; return this.xp; }
+  clearVelocity() { this.vel = { x: 0, y: 0, z: 0 }; }
   runCommand(c) { return {}; }
   getGameMode() { return this.mode; }
   sendMessage(m) { this.lastMessage = m; }
@@ -2185,6 +2196,12 @@ export class FakeDimension {
     for (const k of ["x", "y", "z"]) if (!Number.isFinite(loc[k])) throw new Error("bad spawn loc");
     if (!G.__entityIds.has(type)) throw new Error(`unknown entity ${type}`);
     return new FakeEntity(this, type, loc);
+  }
+  spawnItem(stack, loc) {
+    for (const k of ["x", "y", "z"]) if (!Number.isFinite(loc[k])) throw new Error("bad item loc");
+    if (!stack || !stack.typeId || !(stack.amount >= 1)) throw new Error("bad item stack");
+    G.__log.drops.push([stack.typeId, stack.amount]);
+    return {};
   }
   getBlock(loc) {
     const solid = loc.y < 64 || (G.__ceiling && loc.y >= 70 && loc.y < 71);
@@ -2275,7 +2292,7 @@ function run(n, every = 1, each) {
 }
 function clear() {
   for (const d of Object.values(G.__dims)) for (const e of [...d.entities]) e.remove();
-  G.__log.dmg.clear(); G.__log.props.clear(); G.__log.events.clear(); G.__log.titles.length = 0;
+  G.__log.dmg.clear(); G.__log.props.clear(); G.__log.events.clear(); G.__log.titles.length = 0; G.__log.drops.length = 0;
 }
 function dmgFrom(type) { let s = 0; for (const [k, v] of G.__log.dmg) if (k.startsWith(type + "|")) s += v; return s; }
 function invWarns() { return G.__log.warns.filter((w) => w.includes("[astro] invaders") || w.includes("Error")); }
@@ -2298,7 +2315,7 @@ for (const [label, every, noShoot] of [["every tick", 1, false], ["every 2 ticks
     p.location.x = Math.cos(k / 120) * 2; p.location.z = Math.sin(k / 120) * 2;
     if (k % 97 === 0) { p.vel.y = 0.42; }
     if (k === 500) { boss.hp = boss.maxHp * 0.45; INV.onInvaderHurt(boss, 1, { cause: "entityAttack", damagingEntity: p }); }
-    if (boss.hp < 20) boss.hp = 200;     // テスト中に落ちないように
+    if (boss.hp < 60) boss.hp = 200;     // テスト中に落ちない（崩れる演出に入らない）ように
   });
   const w = invWarns().slice(0, 5);
   if (G.__log.warns.length > warns0 && w.length) fail(`[${label}] warnings: ${w.join(" / ").slice(0, 800)}`);
@@ -2330,6 +2347,34 @@ for (const [label, every, noShoot] of [["every tick", 1, false], ["every 2 ticks
   // ドローンの撃破
   for (const e of ow.entities.filter((x) => x.typeId === "astro:void_drone")) { e.hp = 1; e.applyDamage(3, { cause: "entityAttack", damagingEntity: p }); }
   run(20, every);
+}
+
+// ---- 1b) 体力が閾値を切った虚星王: 生きたまま崩れる演出（mode 8）→ ドロップと経験値 → remove ----------
+for (const via of ["hurt", "tick"]) {
+  clear();
+  const p = new FakeEntity(ow, "minecraft:player", { x: 0, y: 64, z: 0 }, 1e6);
+  const boss = new FakeEntity(ow, "astro:nemesis", { x: 0, y: 66, z: 10 });
+  INV.onInvaderSpawn(boss);
+  run(30);
+  INV.onInvaderHurt(boss, 8, { cause: "entityAttack", damagingEntity: p });   // 倒した人を覚える
+  boss.hp = 30;
+  if (via === "hurt") INV.onInvaderHurt(boss, 8, { cause: "entityAttack", damagingEntity: p });
+  run(2);
+  if (boss.props.get("astro:mode") !== 8) fail(`[dying/${via}] nemesis not in mode 8 (${boss.props.get("astro:mode")})`);
+  if (!G.__log.events.get("astro:nemesis|astro:dying")) fail(`[dying/${via}] astro:dying event not sent`);
+  run(30);
+  if (!boss.alive) fail(`[dying/${via}] nemesis vanished too early`);
+  else if (!(boss.hp >= 1 && boss.hp < 30)) fail(`[dying/${via}] boss bar did not drain (${boss.hp})`);
+  if (boss.props.get("astro:mode") !== 8) fail(`[dying/${via}] left mode 8 while dying`);
+  run(40);
+  if (boss.alive) fail(`[dying/${via}] nemesis was not removed`);
+  if (!G.__log.titles.some((t) => t.includes("撃破"))) fail(`[dying/${via}] no defeat title`);
+  const got = Object.fromEntries(G.__log.drops);
+  for (const [id, lo, hi] of JSON.parse(process.env.ASTRO_BOSS_LOOT)) {
+    if (!(got[id] >= lo && got[id] <= hi)) fail(`[dying/${via}] drop ${id} = ${got[id]} (want ${lo}..${hi})`);
+  }
+  if (p.xp !== 120) fail(`[dying/${via}] killer got ${p.xp} xp`);
+  if (invWarns().length) fail(`[dying/${via}] warnings: ${invWarns().join(" / ").slice(0, 600)}`);
 }
 
 // ---- 2) ヴォイド・シグナルの決まり --------------------------------------------------------
@@ -2386,6 +2431,40 @@ process.exit(fails ? 1 : 0);
 """
 
 
+def _boss_loot_ranges():
+    """loot_tables()["nemesis"] を [id, 最小, 最大] の並びに（invaders.js の BOSS_LOOT と照合する）。"""
+    out = []
+    for pool in loot_tables()["nemesis"]["pools"]:
+        for ent in pool["entries"]:
+            lo = hi = 1
+            for fn in ent.get("functions", []):
+                if fn["function"] == "set_count":
+                    c = fn["count"]
+                    lo, hi = (c["min"], c["max"]) if isinstance(c, dict) else (c, c)
+            out.append([ent["name"], lo, hi])
+    return out
+
+
+def _boss_contract_errors(js_path, loot):
+    """スクリプトで消す時のドロップ・閾値が、ルートテーブル・damage_sensor と食い違っていないか。"""
+    import re
+    src = open(js_path, encoding="utf-8").read()
+    errs = []
+    m = re.search(r"const BOSS_LOOT = (\[.*?\]);", src)
+    if not m or json.loads(m.group(1)) != loot:
+        errs.append(f"invaders.js BOSS_LOOT differs from loot_tables/entities/{NS}_nemesis.json ({loot})")
+    m = re.search(r"dyingHp: (\d+)", src)
+    if not m or int(m.group(1)) != NEM_DYING_HP:
+        errs.append(f"invaders.js CFG.boss.dyingHp differs from NEM_DYING_HP ({NEM_DYING_HP})")
+    m = re.search(r"const MODE_DYING = (\d+);", src)
+    if not m or int(m.group(1)) != NEM_MODE_DYING:
+        errs.append(f"invaders.js MODE_DYING differs from NEM_MODE_DYING ({NEM_MODE_DYING})")
+    m = re.search(r"dyingLen: (\d+)", src)
+    if not m or int(m.group(1)) < round(NEM_DYING * 20):
+        errs.append(f"invaders.js CFG.boss.dyingLen must be >= the dying animation ({round(NEM_DYING * 20)} ticks)")
+    return errs
+
+
 def js_smoke_test():
     scripts = os.path.join(BP, "scripts")
     if not os.path.exists(os.path.join(scripts, "invaders.js")):
@@ -2415,8 +2494,10 @@ def js_smoke_test():
         shutil.copytree(scripts, os.path.join(tmp, "s"))
         with open(os.path.join(tmp, "s", "__test_invaders.js"), "w", encoding="utf-8") as fh:
             fh.write(JS_TEST)
+        loot = _boss_loot_ranges()
+        env = dict(os.environ, ASTRO_BOSS_LOOT=json.dumps(loot))
         r = subprocess.run(["node", os.path.join(tmp, "s", "__test_invaders.js")], capture_output=True, text=True,
-                           timeout=300, cwd=tmp)
+                           timeout=300, cwd=tmp, env=env)
         used = None
         for line in r.stdout.splitlines():
             if line.startswith("__USED__"):
@@ -2426,7 +2507,7 @@ def js_smoke_test():
         if r.returncode:
             print(r.stderr[-3000:])
             return False
-        errs = []
+        errs = _boss_contract_errors(os.path.join(scripts, "invaders.js"), loot)
         pdir = os.path.join(RP, "particles")
         particles = set()
         if os.path.isdir(pdir):

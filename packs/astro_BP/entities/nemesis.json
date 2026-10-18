@@ -27,6 +27,18 @@
         }
       }
     },
+    "component_groups": {
+      "astro:dying": {
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "all",
+              "deals_damage": false
+            }
+          ]
+        }
+      }
+    },
     "components": {
       "minecraft:type_family": {
         "family": [
@@ -83,6 +95,19 @@
           {
             "on_damage": {
               "filters": {
+                "test": "actor_health",
+                "subject": "self",
+                "operator": "<=",
+                "value": 40
+              },
+              "event": "astro:dying",
+              "target": "self"
+            },
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
                 "any_of": [
                   {
                     "test": "is_family",
@@ -128,6 +153,15 @@
             "damage_multiplier": 0.3
           }
         ]
+      }
+    },
+    "events": {
+      "astro:dying": {
+        "add": {
+          "component_groups": [
+            "astro:dying"
+          ]
+        }
       }
     }
   }
