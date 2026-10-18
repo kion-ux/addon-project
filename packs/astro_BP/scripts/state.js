@@ -28,6 +28,7 @@ export const PROP = {
   coreless: "astro:coreless",  // コア無しで変身した（解除でコアを渡さない）
   deadForm: "astro:dead_form", // 変身中に死んだ（リスポーンで解除）
   last: "astro:last",          // 最後に変身した惑星（未変身時の最大星力）
+  invis: "astro:invis",        // スーツの透明化をこのアドオンが掛けた（外す時に自分の薬を消さないため）
   gotTerminal: "astro:got_terminal",
 };
 

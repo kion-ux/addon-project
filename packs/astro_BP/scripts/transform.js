@@ -38,7 +38,7 @@ import {
   valid, alive, cmd, now, getProp, setProp, jsonProp, setJsonProp, container, getEquip, setEquip,
   selectedSlot, findSlots, firstEmpty, emptySlots, lockItem, lockModeOf, effect, removeEffect,
   flatDir, rightOf, add, up, blocked, lerp3, fmt, report, allPlayers, BUS, give, ARMOR_SLOTS, world,
-  dist,
+  dist, getEffect, removeOwnEffect,
 } from "./util.js";
 
 const LOCK_SLOT = "slot";
@@ -94,8 +94,41 @@ export function unfreeze(p, force = false) {
   if (!valid(p)) return;
   if (!force && getProp(p, PROP.frozen, false) !== true) return;
   setMovement(p, true);
-  removeEffect(p, "slowness");
+  removeOwnEffect(p, "slowness", TRANSFORM.freeze + 6, 9);   // 入力ロックの代わりに掛けた鈍化だけ
   setProp(p, PROP.frozen, false);
+}
+
+// ---------------------------------------------------------------------------
+//  透明化（DESIGN §4.3b）
+//  7 頭身のスーツはプレイヤーの 4 頭身の肌を覆わないので、スーツ（組み上がり・装着中・分解中）が頭に
+//  ある間は本体を透明にする（粒なし。スーツのアタッチャブルは透明でも描かれる）。60 tick を毎秒掛け直す。
+//  掛けた印を動的プロパティに残し、外す時は残りが掛け直しの長さ以下の時だけ外す（自分で飲んだ透明化の
+//  薬は残す）。
+// ---------------------------------------------------------------------------
+/** 透明化の 1 回の長さ（tick）。 */
+export const CLOAK_TICKS = 60;
+
+/** 透明化を掛ける（掛け直す）。プレイヤー自身のもっと長い透明化は短くしない。 */
+export function cloak(p) {
+  if (!valid(p)) return;
+  if (getProp(p, PROP.invis, false) !== true) setProp(p, PROP.invis, true);
+  const cur = getEffect(p, "invisibility");
+  if (cur && cur.duration > CLOAK_TICKS + 5) return;
+  effect(p, "invisibility", CLOAK_TICKS, 0, false);
+}
+
+/** 掛けた透明化を外す（掛けていなければ何もしない。長い薬の透明化は残す）。 */
+export function uncloak(p) {
+  if (!valid(p) || getProp(p, PROP.invis, false) !== true) return;
+  setProp(p, PROP.invis, false);
+  removeOwnEffect(p, "invisibility", CLOAK_TICKS + 5);
+}
+
+/** 毎秒（main から）: 頭にスーツがあれば掛け直し、無ければ外す。 */
+export function tickCloak(p) {
+  if (!alive(p)) return;
+  if (isOurSuit(headItem(p))) cloak(p);
+  else uncloak(p);
 }
 
 function easeType() {
@@ -172,6 +205,27 @@ function stashArmor(p) {
   setJsonProp(p, PROP.armor, rec);
   return true;
 }
+
+/**
+ * 退避の後に着けられた防具を外してインベントリへ（入らなければ足元へ）移し、退避の記録に足す
+ * （解除の時に restoreArmor が着せ直す）。外せたら true。
+ */
+function stowWorn(p, slot, it) {
+  if (!it || isOurSuit(it)) return false;
+  if (!setEquip(p, slot, undefined)) return false;   // 先に外す（失敗しても増えない）
+  const inv = container(p);
+  const i = firstEmpty(inv);
+  let placed = false;
+  if (i >= 0) { try { inv.setItem(i, it); placed = true; } catch (_) { } }
+  if (!placed) give(p, it);
+  const rec = jsonProp(p, PROP.armor, []) || [];
+  rec.push({ slot, id: it.typeId, inv: placed ? i : -1 });
+  setJsonProp(p, PROP.armor, rec);
+  return true;
+}
+
+/** 変身中に着けられない装備（防御点の無いエリトラは着けたままでよい）。 */
+const STOW_EXEMPT = new Set(["minecraft:elytra"]);
 
 /** 退避した防具を着せ直す（同じスロット → 同じ種類の順に探す）。 */
 export function restoreArmor(p) {
@@ -400,7 +454,10 @@ function buildSequence(p, key, slot, coreless) {
   // ---- 14: スーツを置く（組み上がり） -------------------------------------
   add_(T.suit_equip, "suit_equip", () => {
     const it = makeItem(pl.suitOn ?? pl.suit, LOCK_SLOT, true);
-    if (it) setEquip(p, "Head", it);
+    // 0〜13 tick の間に頭へ着け直された防具は、上書きで消さずにしまい直す
+    const worn = getEquip(p, "Head");
+    if (it && worn && !isOurSuit(worn)) stowWorn(p, "Head", worn);
+    if (it && setEquip(p, "Head", it)) cloak(p);
     sound(dim, "astro.armor_lock", p.location, 1.2, 0.6);
     P(dim, "scan", { ...base, y: base.y + 0.05 }, { color: hot, size: 1.6, height: 2.2, life: 1.8 });
   });
@@ -577,6 +634,7 @@ export function revert(p, reason = "manual", o = {}) {
   const key = st.form ?? st.seq?.key ?? (PLANETS[seqProp] ? seqProp : null) ?? headKey ?? st.deadForm;
   if (!key) {
     unfreeze(p); camClear(p);
+    if (!headKey) uncloak(p);
     return false;
   }
   const pl = PLANETS[key];
@@ -602,9 +660,11 @@ export function revert(p, reason = "manual", o = {}) {
   st.revertHold = 0;
   st.passive = {};
   clearBusy(p);
-  for (const [id] of pl.passive?.effects ?? []) removeEffect(p, id);
-  removeEffect(p, "levitation");
-  removeEffect(p, "resistance");
+  // このアドオンが掛けた効果だけを外す（同じ強さで、残りが掛け直しの長さ以下）。プレイヤーが自分で
+  // 飲んだ薬・ビーコン・金リンゴの長い効果は残す
+  for (const [id, amp] of pl.passive?.effects ?? []) removeOwnEffect(p, id, (id === "night_vision" ? 400 : 260) + 5, amp);
+  removeOwnEffect(p, "levitation", 10);
+  removeOwnEffect(p, "resistance", 200);
   resetMobility(p);
   clearShots(p.id);
   clearZones(p.id);
@@ -620,6 +680,7 @@ export function revert(p, reason = "manual", o = {}) {
   } else {
     if (headKey) setEquip(p, "Head", undefined);
     st.offUntil = -1;
+    uncloak(p);
     restoreArmor(p);
   }
   if (reason !== "silent") revertFx(p, pl, reason);
@@ -672,6 +733,7 @@ function finishOff(p) {
   st.offUntil = -1;
   const head = headItem(p);
   if (isOurSuit(head) && !st.form) setEquip(p, "Head", undefined);
+  if (!isOurSuit(headItem(p))) uncloak(p);
   restoreArmor(p);
   st.offKey = null;
 }
@@ -695,6 +757,14 @@ export function sweep(p) {
       return;
     }
     if (pl.suitOn && head.typeId === pl.suitOn) steadySuit(p, st.form);
+    // 変身中は胴・脚・足の防具を着けられない（§2.3。スーツの防御点と重ねない）→ 外して退避の記録に足す
+    let stowed = 0;
+    for (const slot of ARMOR_SLOTS) {
+      if (slot === "Head") continue;
+      const it = getEquip(p, slot);
+      if (it && !STOW_EXEMPT.has(it.typeId) && stowWorn(p, slot, it)) stowed++;
+    }
+    if (stowed) announce(p, "§7変身中は防具を着けられない §8（解除で着せ直す）", 30);
     // 別の形態のウェポン → それぞれのコア／自分のウェポンの 2 本目以降は消す
     let mine = 0;
     for (const i of findSlots(inv, (it) => !!WEAPON_TO_PLANET[it.typeId])) {
@@ -708,7 +778,7 @@ export function sweep(p) {
     return;
   }
   // 変身していない
-  if (headKey && !(st.offUntil > now())) { setEquip(p, "Head", undefined); }
+  if (headKey && !(st.offUntil > now())) { setEquip(p, "Head", undefined); uncloak(p); }
   for (const i of findSlots(inv, (it) => !!WEAPON_TO_PLANET[it.typeId] || isOurSuit(it))) {
     try {
       const it = inv.getItem(i);
@@ -847,12 +917,14 @@ export function restoreOnJoin(p) {
     st.gen++;
     if (head.typeId === pl.suitOn) steadySuit(p, headKey);
     if (energy(p) <= 0) setEnergy(p, 1);
+    cloak(p);
     save(p);
     BUS.emit("transformed", p, headKey);
     try { p.sendMessage?.(`${pl.tc}${pl.form_ja}§r の変身状態を復元した`); } catch (_) { }
     return;
   }
   if (st.form) revert(p, "silent", { instant: true });
+  uncloak(p);
 }
 
 /** スクリプトの読み込み直後: いるプレイヤー全員の後始末。 */
