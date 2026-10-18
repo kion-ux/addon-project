@@ -62,8 +62,8 @@ FP_HIDE = ("head", "body", "rightLeg", "leftLeg")     # 一人称で隠すトッ
 # ===========================================================================
 #  モデル
 # ===========================================================================
-def build_suit(key: str, packed=True) -> AS.Suit:
-    s = AS.build(key)
+def build_suit(key: str, packed=True, module=None) -> AS.Suit:
+    s = AS.build(key, module=module)
     if packed:
         AS.pack(s)
     return s

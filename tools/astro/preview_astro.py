@@ -3,6 +3,8 @@
 
     python3 tools/astro/preview_astro.py suit earth     # build_preview/astro/suit_earth.png
     python3 tools/astro/preview_astro.py suit earth --packed   # 生成済みの pack の物を読む
+    python3 tools/astro/preview_astro.py suit mars --module=path/to/draft.py
+                                                        # 下書きの suit.py を mars の配色で描く（suit_mars_draft.png）
     python3 tools/astro/preview_astro.py docs           # docs/astro/suits.png（ある惑星のスーツ全部）
 
 suit は planets/<key>/suit.py をその場で組み立てて塗る（pack は書き換えない）ので、作りながら何度でも回せる。
@@ -34,9 +36,18 @@ from astro_data import PLANETS, TRANSFORM  # noqa: E402
 # ===========================================================================
 #  スーツの資産（その場で組み立てる / pack から読む）
 # ===========================================================================
-def build_asset(key) -> SC.SuitAsset:
+def load_module_file(path):
+    """suit.py を任意の場所から読む（--module=PATH。下書きを今の suit.py と差し替えずに見る時）。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("suit_draft", os.path.abspath(path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def build_asset(key, module=None) -> SC.SuitAsset:
     import gen_astro_suits as G
-    s = G.build_suit(key)
+    s = G.build_suit(key, module=module)
     p = G.paint(s)
     anims = G.suit_animations(s)
     pre = f"animation.{AC.NS}.suit.{key}."
@@ -46,8 +57,8 @@ def build_asset(key) -> SC.SuitAsset:
     return a
 
 
-def asset(key, packed=False) -> SC.SuitAsset:
-    return SC.load_suit(key) if packed else build_asset(key)
+def asset(key, packed=False, module=None) -> SC.SuitAsset:
+    return SC.load_suit(key) if packed else build_asset(key, module)
 
 
 # ===========================================================================
@@ -135,9 +146,9 @@ def stat_line(a):
     return txt
 
 
-def suit_sheet(key, packed=False, out=None):
+def suit_sheet(key, packed=False, out=None, module=None):
     from PIL import Image, ImageDraw
-    a = asset(key, packed)
+    a = asset(key, packed, module)
     tiles = suit_tiles(a)
     w, h = TILE
     fp = tiles.pop()                  # 一人称は 2 枠ぶんの横長
@@ -198,7 +209,13 @@ DOC_SECTIONS = [suits_doc]          # 他の担当は fn() -> [paths] を足す
 
 def cmd_suit(args):
     packed = "--packed" in args
+    mod = [a.split("=", 1)[1] for a in args if a.startswith("--module=")]
     keys = [a for a in args if not a.startswith("-")] or AS.available()
+    if mod:                      # 下書きの suit.py を <key> の配色で描く: suit <key> --module=path.py
+        m = load_module_file(mod[0])
+        name = os.path.splitext(os.path.basename(mod[0]))[0]
+        return [suit_sheet(k, out=os.path.join(AC.SCRATCH, f"suit_{k}_{name}.png"), module=m)
+                for k in keys[:1]]
     return [suit_sheet(k, packed) for k in keys]
 
 

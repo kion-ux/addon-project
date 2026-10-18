@@ -1,126 +1,227 @@
-# 惑星スーツの作り方（planets/<key>/suit.py）
+# 惑星スーツの作り方（v1.1: 7 頭身・細かい部品）
 
-このフォルダは雛形です。`tools/astro/planets/<key>/` を作り、`__init__.py`（空）と、ここの `suit.py` を
-コピーして書き始めてください（`<key>` は `astro_data.PLANETS` のキー: mercury venus earth mars jupiter
-saturn uranus neptune sol）。**お手本は `planets/earth/suit.py`（蒼星機装 ガイア）** です。迷ったらそれを読んでください。
+このフォルダは雛形です。`tools/astro/planets/<key>/` に `__init__.py`（空）と、ここの `suit.py` をコピーして
+書き始めてください（`<key>`: mercury venus earth mars jupiter saturn uranus neptune sol）。
+**お手本は `planets/earth/suit.py`（蒼星機装 ガイア、約 1060 キューブ）** です。迷ったらそれを読んでください。
 
 自分の惑星のフォルダ以外（`astro_suit.py` などの共通部分・他の惑星）は編集しないでください。
 足りない機能があればまとめ役に伝えてください。
 
 ---
 
+## 0. v1.0 から変わったこと（必読）
+
+| | v1.0 | v1.1 |
+|---|---|---|
+| 体型 | プレイヤーの肌（4 頭身の箱）を覆う | **7 頭身の全身像**（背丈 32、頭 4.6、長い脚、逆三角形の胴） |
+| 肌 | `s.inner_suit()` で全部覆い、被覆検査 | 変身中はスクリプトが **透明化** するので覆わない。被覆検査は無い |
+| 土台 | inner_suit の黒い殻 | **`s.frame7()`** の暗い機械の骨格（関節・ピストン・指まで） |
+| 寸法 | `ARM_X` `LEG_X` `HAND_Y` | **`A.*`**（解剖の目安。`from astro_suit import A`） |
+| 細かさ | 250〜650 キューブ | **600〜1400**（目安 850〜1150）、うち **35% 以上が 3 辺とも 1.0 以下** |
+| 検査 | 被覆・命名・数 | **プロポーション**（背丈・頭の高さと幅・胸/腰・見えている脚）・細かさ・命名・アニメ |
+
+骨格（トップレベル 6 ボーンの名前とピボット）は **変わらない**。プレイヤーの動き（歩き・振り・全身モーション）は
+そのままスーツに伝わる。だから「腕の付け根の球（肩関節）」や「腿の上端」はピボットより **上** にあり、
+腕・脚が回るとピボットを中心に振れる（§11）。
+
 ## 1. 作業の流れ
 
 ```sh
 python3 tools/astro/preview_astro.py suit <key>     # 組み立てて塗って描く → build_preview/astro/suit_<key>.png
-python3 tools/astro/check_astro_suits.py <key>      # 被覆・命名・キューブ数・アニメの検査（NG なら終了コード 1）
+python3 tools/astro/check_astro_suits.py <key>      # 7 頭身・細かさ・命名・アニメの検査（NG なら終了コード 1）
 python3 tools/astro/gen_astro_suits.py <key>        # pack へ書き出す（geo / png / アタッチャブル 3 種 / 共有アニメ）
 ```
 
-* プレビューは pack を書き換えないので、何度でも回して **必ず絵を見て** 直す（正面・背面・側面・斜め・見下ろし・
-  組み上がり 0.3/0.8/1.2/1.8 秒・空中・疾走・解除・一人称）。
+* プレビューは pack を書き換えないので、何度でも回して **必ず PNG を開いて見る**。並べ図（プレイヤーの肌は描かない）:
+  正面（7 頭身の目盛り = 1 頭身ごとの横線、水色の線 = バニラのプレイヤーの箱）/ 背面 / 左側面 / 斜め前 / 斜め後ろ /
+  **内部フレームだけ** / 組み上がり 0.45・0.95・1.35・1.8 秒 / 空中 / 疾走 / ナノウェポン / 見下ろし / 解除 /
+  **近接（上半身・脚・背中）** / 一人称。見出しの 2 行目に計測値（背丈 H、頭の高さ（H/7 に近いこと）と幅、
+  胸/腰、見えている脚の長さ（×H）、細かい部品の割合）が出る。
+* 正面の目盛りで、頭がちょうど一番上の 1 マス（1 頭身）に収まり、股（腿の付け根）が 4 マス目の下あたりに来るのが目安。
 * `gen_astro_suits.py` は共有のアニメ／コントローラを「planets/ にある全惑星」から毎回作り直すので、
-  自分の惑星だけを指定して回してよい（他の惑星のファイルは壊れない）。
-* 最後に `check_astro_suits.py <key>` が `[OK]` になり、警告（warning）も無いこと。
-* その惑星のナノウェポン（`attachables/weapon_<key>.attachable.json`）が生成済みなら、並べ図に
-  「ナノウェポン」を持った絵も出る（`astro_scene.load_attachable("weapon_<key>")`）。
+  自分の惑星だけを指定して回してよい。最後に `check_astro_suits.py <key>` が `[OK]` で、警告も無いこと。
+* 1 回のプレビューは 40 秒ほど（CPU を他の人と分け合っているので、むやみに並列で回さない）。
 
 ## 2. suit.py に書くもの
 
 | 名前 | 必須 | 内容 |
 |---|---|---|
-| `build_suit(s)` | ○ | `s: astro_suit.Suit` に部位ボーンとキューブを足す |
-| `SUIT_STYLES` | | 塗りの上書き・追加 `{"スタイル名": {キー: 値}}`（§5） |
-| `SUIT_ANIMS` | | 部位アニメ `{"idle"/"thrust"/"sprint": {ボーン: {rotation/position: [...]}}}`（§6） |
-| `MIRROR` | | 既定 True。False にすると `_r` の自動鏡映をしない（左右非対称のスーツ） |
+| `build_suit(s)` | ○ | `s: astro_suit.Suit`。最初に `s.frame7(...)`、その上に部位ボーンとキューブを足す |
+| `SUIT_STYLES` | | 塗りの上書き・追加 `{"スタイル名": {キー: 値}}`（§8） |
+| `SUIT_ANIMS` | | 部位アニメ `{"idle"/"thrust"/"sprint"/他: {ボーン: {rotation/position: [...]}}}`（§9） |
+| `MIRROR` | | 既定 True。False で `_r` の自動鏡映をしない（左右非対称のスーツ。frame7 の骨格だけは常に左右対称） |
 | `MIRROR_STYLES` | | 鏡映した左側で塗りを替える `{"glow_hot": "glow_cold"}`（水星の左右の色分けなど） |
-| `COVER_ALLOW` | | 被覆検査の除外 `[("rightArm", "east")]` や `[("body", (x0,y0,z0), (x1,y1,z1))]` |
-| `UV_SCALE` | | テクスチャ密度の基準（既定 4。1024x1024 に収まる最大まで自動で上げる） |
+| `ORNAMENTS` | | 計測から外す飾りのボーン名のリスト（`s.part(..., ornament=True)` と同じ） |
+| `UV_SCALE` | | テクスチャ密度の基準（既定 4。1024x1024 に収まる最大まで自動で上げ下げ。earth は x7 になった） |
 
-## 3. 座標・回転・骨格
+## 3. 7 頭身の寸法（`astro_suit.A`）
 
-* 16 単位 = 1 ブロック。プレイヤーは **-Z が正面、右手が -X**、+Y が上。足の裏が y=0、頭の上が y=32。
-* 肌の箱（この外側レイヤー = 帽子 +0.5・他 +0.25 より外を覆う）:
+座標: 16 単位 = 1 ブロック、**-Z が正面、右手が -X**、+Y が上、足の裏が y=0。点のタプルは **右側の値**
+（右側だけ作れば左は自動で鏡映）。表は DESIGN §4.3b と同じ。
 
-| 部位 | 箱 (原点)+(大きさ) | ピボット |
+| 部位 | ボーン | 定数（右側） |
 |---|---|---|
-| head | (-4,24,-4)+(8,8,8) | (0,24,0) |
-| body | (-4,12,-2)+(8,12,4) | (0,24,0) |
-| rightArm | (-8,12,-2)+(4,12,4)（スリムは幅 3・y 11.5〜） | (-5,22,0) |
-| rightLeg | (-3.9,0,-2)+(4,12,4) | (-1.9,12,0) |
+| 背丈・1 頭身 | | `A.H = 32`、`A.UNIT = 4.571` |
+| 頭（兜） | head | `A.HEAD_TOP 32.0` `A.HEAD_BOT 27.4` `A.HEAD_Y 29.7` `A.HEAD_Z -0.25` `A.HEAD_W 4.6`（検査 ≤ 5.4）`A.HEAD_D 5.0` `A.EYE_Y 29.5` `A.FACE_Z -2.75` `A.CHIN_Y 27.4` |
+| 首 | head | `A.NECK_BOT 25.6` `A.NECK_TOP 27.8` `A.NECK_W 2.4` `A.NECK_Z 0.15` |
+| 肩の線 | body | `A.SHOULDER_Y 26.0` `A.DELTOID_X -7.5`（肩当ての外の目安 -7.0〜-8.0） |
+| 胸 | body | `A.CHEST_TOP 26.2` `A.CHEST_BOT 20.5` `A.CHEST_Y 23.4` `A.CHEST_W 9.8` `A.CHEST_D 5.2` `A.CHEST_FRONT -2.6` `A.CHEST_BACK 2.6` |
+| 腰（くびれ） | body | `A.WAIST_TOP 20.5` `A.WAIST_BOT 16.8` `A.WAIST_Y 18.6` `A.WAIST_W 6.0` `A.WAIST_D 3.9` `A.WAIST_Z 0.15` |
+| 骨盤 | body | `A.PELVIS_TOP 17.0` `A.PELVIS_BOT 13.6` `A.PELVIS_Y 15.3` `A.PELVIS_W 7.4` `A.PELVIS_D 4.4` `A.CROTCH_Y 13.6` |
+| 背中 | body | `A.BACKPACK (0, 22.2, 3.4)`（バックパック・スラスターの付け根） |
+| 股関節 | rightLeg | `A.HIP (-2.2, 14.6, 0)` `A.HIP_Y`（ピボット y12 より上。骨盤・草摺で隠す） |
+| 脚の軸 | rightLeg | `A.LEG_X -2.15`（腿・膝・脛・足の中心の X） |
+| 腿 | rightLeg | `A.THIGH_TOP 15.0` `A.THIGH_BOT 9.0` `A.THIGH_W 3.3` |
+| 膝 | rightLeg | `A.KNEE (-2.15, 8.5, -0.05)` `A.KNEE_Y` `A.KNEE_TOP 9.4` `A.KNEE_BOT 7.6` |
+| 脛 | rightLeg | `A.SHIN_TOP 7.8` `A.SHIN_BOT 1.8` `A.SHIN_W 2.9` `A.CALF_Y 5.8` |
+| 足首・足 | rightLeg | `A.ANKLE (-2.15, 2.1, 0.3)` `A.FOOT_TOP 1.8` `A.TOE_Z -4.0` `A.HEEL_Z 1.6` `A.FOOT_W 2.7` |
+| 肩関節 | rightArm | `A.SHOULDER (-6.4, 24.4, 0)`（ピボット (-5,22) より上。肩当てで隠す） |
+| 二の腕 | rightArm | `A.UPPER_ARM_TOP 24.0` `A.UPPER_ARM_BOT 19.0` `A.UPPER_ARM_W 2.6` `A.UPPER_ARM_X -6.3` |
+| 肘 | rightArm | `A.ELBOW (-6.2, 18.5, 0.1)` `A.ELBOW_Y` `A.ELBOW_TOP 19.2` `A.ELBOW_BOT 17.8` |
+| 前腕（籠手） | rightArm | `A.FOREARM_TOP 18.2` `A.FOREARM_BOT 14.6` `A.FOREARM_W 2.9` `A.FOREARM_X -6.1` |
+| 手首・拳 | rightArm | `A.WRIST (-6.05, 14.75, 0)` `A.FIST (-6, 13, 0)` `A.FIST_TOP 14.6` `A.FIST_BOT 11.4` `A.FIST_W 2.6` `A.FIST_D 2.8` |
+| 武器の握り | rightArm | `A.GRIP (-6, 13.2, 0)`（武器の柄は Z 方向にここを通る。拳はこれを包む） |
 
-  左腕・左脚は X を反転。`astro_suit` の定数: `ARM_X = -6`（右腕の中心）・`LEG_X = -1.9`（右脚の中心）・`HAND_Y = 13.2`。
-* **回転**（キューブ・ボーンの `rotation [rx, ry, rz]`、統合版の値そのまま。`R = Rz(-rz)·Ry(ry)·Rx(-rx)`）:
+`A.left(p)` / `mx(p)` で点の X を反転できる。
+
+## 4. 回転
+
+キューブ・ボーンの `rotation [rx, ry, rz]` は統合版の値そのまま（`R = Rz(-rz)·Ry(ry)·Rx(-rx)`）:
 
 | 値 | 見え方 |
 |---|---|
 | rx > 0 | 上端が前（-Z）へ倒れる。**rx < 0 は面が前上を向く**（つま先・斜めの胸板・額の斜面） |
 | ry > 0 | 正面（-Z）を向いていた面が右（-X）を向く ＝ +X の端が前へ出る（右胸板を V 字にする向き） |
-| rz > 0 | 上端が +X へ、下端が -X へ ＝ **右側の部品なら下端が外へ開く**（草摺・肩の垂れ）。横板の外（-X）の端を下げたい時は rz < 0 |
+| rz > 0 | 上端が +X へ、下端が -X へ ＝ **右側の部品なら下端が外へ開く**（草摺・肩の垂れ）。下端を内へ絞るなら rz < 0 |
 
-  右側だけ作れば、左は `(rx, -ry, -rz)` に自動で直る。
+右側だけ作れば、左は `(rx, -ry, -rz)` に自動で直る。
 
-## 4. 部位ボーンと命名（いちばん大事）
+## 5. 部位ボーンと命名（いちばん大事）
 
 * **キューブは必ず部位ボーンへ**。トップレベル（body / head / rightArm / leftArm / rightLeg / leftLeg）に直接置かない。
-* 部位ボーンは `s.part(群, 名前, 親, pivot=None)` で作る → 名前は `<群>_<名前>`。群は組み上がりの順番
-  （`astro_data.ASSEMBLE_ORDER`、秒）:
+* `s.part(群, 名前, 親, pivot=None, rotation=None, ornament=False)` → 名前は `<群>_<名前>`。群 = 組み上がりの順番（秒）:
 
-| 群 | 開始 | 例 |
+| 群 | 開始 | 例（既定の pivot） |
 |---|---|---|
-| inner | 0.00（一瞬で） | `s.inner_suit()` が作る黒いボディスーツ |
-| boots | 0.00 | 足首から |
-| legs | 0.20 | 膝・腿 |
-| waist | 0.40 | ベルト・草摺 |
-| torso | 0.55 | 胸・腹・襟・星核 |
-| back | 0.75 | 背板・バックパック・スラスター |
-| arms | 0.85 | 上腕・肘・篭手・拳 |
-| shoulders | 1.00 | 肩当て |
-| helmet | 1.20 | 兜 |
-| extra | 1.30 | 環・衛星・マント・光輪（動く飾り） |
-| visor | 1.50 | バイザー（+ 閃光） |
+| inner | 0.00（一瞬） | `s.frame7()` が作る骨格（`inner_*`。自分では作らない） |
+| boots | 0.00 | サバトン（`A.ANKLE`） |
+| legs | 0.20 | 腿・膝・脛の装甲（`A.KNEE`） |
+| waist | 0.40 | ベルト・前垂れ・草摺・後ろ垂れ（(0, 17, 0)） |
+| torso | 0.55 | 胸・腹・襟・星核（(0, 22.4, 0)） |
+| back | 0.75 | バックパック・スラスター・翼（(0, 22.2, 2.6)） |
+| arms | 0.85 | 二の腕・肘・篭手・手の甲（`A.ELBOW`） |
+| shoulders | 1.00 | 肩当て（`A.SHOULDER`） |
+| helmet | 1.20 | 兜・角（(0, 27.8, 0)） |
+| extra | 1.30 | マント・環・衛星・光輪（動く飾り） |
+| visor | 1.50 | バイザー（+ 閃光）（(0, 29.5, -2.75)） |
 
-* **pivot は「生えてくる根元」**（組み上がりは pivot を中心に 0→1.15→1.0 とポップする）。省略すると群と親から既定値
-  （ブーツは足首、脚は膝、腕は前腕、肩当ては肩の付け根、兜は頭の中心…）。同じ群の中は低い所から順に少しずつずれて出る。
-* 親は トップレベル名・別の部位ボーン名・Bone のどれでもよい。同じ群の子は親と一緒に出る（群が違う子は自分の時刻に出る）。
-* **右側だけ作り、名前の末尾を `_r` にする**（例 `s.part("arms", "gauntlet_r", "rightArm")`）。
-  `build()` が最後に `_l` を作る（X 反転・回転 (rx,-ry,-rz)・デカールの east/west 入れ替え）。
+* **pivot は「生えてくる根元」**（組み上がりは pivot を中心に 0→1.15→1.0 とポップする）。
+* **右側だけ作り、名前の末尾を `_r`** にする（`s.part("arms", "gauntlet_r", "rightArm")`）。`build()` が最後に `_l` を作る。
   鏡映する部分木の中のボーンは **全部** `_r` で終わること（`fx_thrust_r` など）。片側だけの部品は `_r` を付けない。
-* 胸・兜など中央の部品の左右対称は `mirror_x(bone, cube, cube...)`（同じボーンの中で X 反転を足す）。
-  脚の中心で対称にするなら `mirror_x(bone, cube, about=LEG_X)`。
-* 動かす部品はさらに子ボーン `s.fx(種類, 名前, 親)` → `fx_<種類>_<名前>`:
-  * `fx_thrust_*` スラスターの炎。**局所 -Y（下）へ伸ばして作る**（斜めのノズルはボーンの rotation で傾ける）。
-    生成器が空中で伸ばし（長さ ×1）、地上で縮める（×0.22 の種火）。炎は全長で作っておく。
-  * `fx_glow_*` 発光の脈動（生成器が待機中ゆっくり 3.5% 脈打たせる）。visor 群の下の `fx_glow_*` は変身時に閃光。
-  * `fx_spin_*` 回転体（動きは SUIT_ANIMS で書く）。
-  * **材質**: スーツの既定は片面（`entity_emissive_alpha_one_sided`。一人称で兜の内側が画面を覆わないため）。
-    `fx_*` ボーンだけ両面。炎・輪・薄い板は fx_* に入れる（検査が警告する）。
+* 胸・兜など中央の部品の左右対称は `mirror_x(bone, cube, [cubes], {dict}...)`（同じボーンの中で X 反転を足す。
+  リストや layered_plate の辞書もそのまま渡せる）。脚の中心で対称にするなら `mirror_x(bone, cube, about=A.LEG_X)`。
+* 動かす部品は `s.fx(種類, 名前, 親)` → `fx_<種類>_<名前>`: `fx_thrust_*`（炎。局所 -Y へ全長で作る。空中で伸びる）/
+  `fx_glow_*`（脈動。visor 群の下はバイザーの閃光）/ `fx_spin_*`（回転体。動きは SUIT_ANIMS）。
+  `fx_*` は両面の材質（炎・輪・薄い板は fx_* に入れる）。それ以外は片面（一人称で兜の内側が画面を覆わないため）。
+* **飾り（角・鶏冠・アンテナ・背中の翼）は `ornament=True`**（または名前に crest / horn / antenna / plume / halo /
+  ornament を含める）。背丈・頭・胸の計測から外れる（入れたままだと背丈が 35 を超えたり、頭の高さが NG になる）。
 * **プレイヤーのボーン名を付けない**: cape hat jacket waist root rightItem leftItem helmet bodyArmor belt
   leftSleeve rightSleeve leftPants rightPants rightSock leftSock rightBoot leftBoot leftLegging rightLegging
-  leftArmArmor rightArmArmor（大文字小文字を区別しない）。付けるとそのボーンに付いて動いてしまう。`helmet_crest` のように
-  群の接頭辞が付いていれば問題ない。
+  leftArmArmor rightArmArmor（大文字小文字を区別しない）。`helmet_crest` のように群の接頭辞が付いていれば問題ない。
 
-## 5. 形を作る道具（`from astro_common import ...`）
+## 6. 内部フレーム `s.frame7()`
+
+最初に呼ぶ。これだけで「装甲を外した 7 頭身のロボ」になる（約 420 キューブ、うち 36% が細かい部品）:
+兜の芯（顔の板・目の溝・耳のセンサー）と首（喉の輪・腱・首の後ろのピストン）、胸郭（4 段の肋骨の籠・鎖骨・胸骨・
+胸の板・灯り・肩の受け）、背骨（9 個の椎骨と 2 本のケーブル）、細い腰（腹の節・腰椎・脇の油圧シリンダー）、
+骨盤（股の箱・股関節の受け・腰の帯）、肩と股の球関節、肘・膝・足首・手首の八角の関節ドラム、節のある二の腕・
+前腕・腿・脛（芯 + 支柱 + 輪）、二の腕の裏・膝裏・足首の後ろのピストン、**4 本 × 3 節の指と 2 節の親指の拳**
+（`A.GRIP` を包む）、つま先の板が 2 枚の足。
+
+```python
+f = s.frame7()                                   # 既定
+f = s.frame7(bulk=0.9)                           # 細身（手足と胸の太さ ×0.9。0.8〜1.25）
+f = s.frame7(bulk=1.15, skip=("foot",))          # 巨体。足は自分のサバトンで包むので省く
+f = s.frame7(style={"suit": "inner", "metal": "frame", "band": "frame_lt", "dark": "dark",
+                    "joint": "chrome", "glow": "glow_soft"})  # 塗りの役割（既定値）
+f = s.frame7(style="inner_hot", fingers=False)   # 文字列 = ボディスーツの塗り。fingers=False で指を省く
+```
+
+* `skip` に渡せる名前: head neck chest spine waist pelvis shoulder upper_arm elbow forearm wrist hand hip thigh knee
+  shin ankle foot pistons cables。**装甲で完全に包む所は省く**とキューブとテクスチャの節約になる（earth は "foot"）。
+  見える関節（肘・膝・足首のドラム、腰の脇、膝裏・ふくらはぎ）は残すこと — そこが 7 頭身のメカらしさの見せ場。
+* 戻り値 `f` は役割名 → Bone の辞書（"head" "neck" "chest" "spine" "waist" "pelvis" "shoulder_r" "upper_arm_r"
+  "forearm_r" "hand_r" "thigh_r" "knee_r" "shin_r" "foot_r"）。装甲は普通はトップレベル（"rightArm" など）の下に
+  自分の部位ボーンを作って置く。**inner_* のボーンにキューブを足さない**（左右の鏡映がずれる・inner の時刻に出る）。
+* 骨格の外形（右側。装甲はこれより 0.05 以上外か、わざと見せる）:
+
+| ボーン | x | y | z |
+|---|---|---|---|
+| inner_head | ±2.14 | 27.3..31.8 | -2.58..1.95 |
+| inner_neck | ±1.61 | 25.1..28.3 | -1.46..1.92 |
+| inner_chest | ±4.68（肋骨） | 20.7..26.2 | -2.88..2.15 |
+| inner_spine | ±1.2 | 15.5..25.8 | 1.8..2.9 |
+| inner_waist | ±3.12（脇のピストン） | 16.45..21.3 | -1.8..2.2 |
+| inner_pelvis | ±3.2 | 13.4..17.2 | -2.18..2.2 |
+| inner_shoulder_r | -7.62..-5.05 | 23.2..25.6 | ±1.2 |
+| inner_upper_arm_r（肘を含む） | -7.93..-4.67 | 16.8..23.6 | -1.58..1.76 |
+| inner_forearm_r（手首を含む） | -7.84..-4.36 | 13.6..18.1 | ±1.76 |
+| inner_hand_r | -7.49..-4.83 | 11.36..14.62 | -1.93..1.31 |
+| inner_thigh_r（股関節の球を含む） | -4.11..-0.19 | 9.1..15.7 | ±1.96 |
+| inner_knee_r（膝裏のピストン） | -3.90..-0.40 | 6.2..11.4 | -1.78..1.88 |
+| inner_shin_r（足首を含む） | -3.80..-0.50 | 0.9..8.0 | -1.53..1.96 |
+| inner_foot_r | -3.45..-0.85 | 0..2.34 | -4.08..1.65 |
+
+## 7. 形を作る道具（`from astro_suit import ...`。astro_common の物も同じ名前で使える）
 
 | 関数 | 使い方 |
 |---|---|
 | `cbox(bone, 中心, 大きさ, スタイル, rotation=…, pivot=…)` | 基本の箱 |
 | `rbox(bone, 中心, 大きさ, スタイル, rot=(rx,ry,rz))` | 傾けた箱（中心まわり）。`plate(..., tilt=)` は同じ物 |
-| `bevel(bone, 中心, 大きさ, スタイル, cut, axis, rot=)` | 45° 面取りの箱（6 個）。肩当て・兜・胸郭に。戻り値の [0][1] が本体 |
+| `bevel(bone, 中心, 大きさ, スタイル, cut, axis, rot=, edge_style=)` | 45° 面取り（6 個）。戻り値の [0][1] が本体（stick の土台に） |
 | `chamfer(...)` | 段々の面取り（2 個） |
-| `octa(bone, 中心, 幅, 長さ, スタイル, axis)` | 八角柱（2 個）。ノズル・関節の円盤・宝玉の台 |
-| `beam(bone, p0, p1, 幅, 高さ, スタイル, roll=)` / `polyline(bone, 点列, 幅, 高さ, スタイル)` | 2 点を結ぶ角柱 / 折れ線（角・アンテナ・翼の骨） |
-| `taper(bone, p0, p1, 根元の幅, 先の幅, 段数, スタイル)` | 先細り（炎・トゲ・角）。45° の段も重ねて丸く見せる |
-| `ring(bone, 中心, 半径, 個数, (接線長 or 0, 厚み, 幅), スタイル, axis)` | 輪（環・光の輪・ノズルの縁） |
-| `stick(bone, 板, 面, a, b, (a 方向, b 方向, 厚み), スタイル, sink=)` | 傾いた板の面に、同じ傾きで小物を貼る（縁取り・ボルト・重ね板） |
+| `octa(bone, 中心, 幅, 長さ, スタイル, axis)` | 八角柱（2 個）。輪・ノズル・腕輪（長さ 0.24 以上） |
+| `beam(bone, p0, p1, 幅, 高さ, スタイル)` / `polyline(bone, 点列, 幅, 高さ, スタイル)` | 2 点を結ぶ角柱 / 折れ線 |
+| `taper(bone, p0, p1, 根元の幅, 先の幅, 段数, スタイル)` | 先細り（炎・トゲ・角） |
+| `ring(bone, 中心, 半径, 個数, (接線長 or 0, 厚み, 幅), スタイル, axis)` | 輪（環・光の輪・ボルトの輪） |
+| `stick(bone, 板, 面, a, b, (a 方向, b 方向, 厚み), スタイル, sink=)` | 傾いた板の面に同じ傾きで小物を貼る |
 | `line_on(bone, 板, 面, (a0,b0), (a1,b1), 幅, 厚み, スタイル)` | 傾いた板の面の上を走る線（発光ライン・金の縁） |
-| `surface(板, 面, a, b)` | 面の上の点と法線（自分で配置したい時） |
-| `fill_tri_yz(...)` | YZ 平面の三角形を埋める（hyperdim と同じ） |
+| **`rod(bone, p0, p1, 太さ, スタイル, sides=8)`** | 丸棒（八角柱 2 個 / 角柱 1 個） |
+| **`ball(bone, 中心, 半径, スタイル, style2)`** | 球関節（4 個） |
+| **`piston(bone, p0, p1, r=0.42, style="frame", rod_style="chrome", cap_style="dark", split=0.55)`** | 油圧シリンダー（筒 + ロッド + 締め輪 + 両端の目、約 7 個）。肘・膝・足首・首・腹の脇に |
+| **`cable(bone, 点列, w=0.26, style="dark", sag=0, seg=0.8, rib=None, rib_every=2)`** | ケーブル・ホース。2 点なら sag ぶん垂れ、3 点以上は滑らかに通る。rib で蛇腹。1 区間 ≤ 1.0 なので細かい部品に数える |
+| **`rivets(bone, 板, 面, n, edge="bottom"\|"top"\|"left"\|"right"\|"border", margin=0.3, size=0.26, style="silver", line=((a0,b0),(a1,b1)))`** | ボルト・リベットの列（1 個 1 キューブ。0.26×0.26×0.16） |
+| **`vents(bone, 板, 面, n, box=(a0,b0,a1,b1), axis="h"\|"v", w=0.2, style="vent", rim=None)`** | 排気スリット（rim に塗りを渡すと枠も） |
+| **`layered_plate(bone, 中心, 大きさ, 下の塗り, top="plate2", rot=, face="north", inset=0.35, trim="gold", trim_edge="bottom", rivet=None, n_rivets=0)`** | 縁取りのある多層の板。戻り値 `{"base","top","trim","rivets"}` |
+| **`joint_drum(bone, 中心, r, 長さ, axis="x", style, cap, hub, glow=None, caps=(-1, 1), bolts=0)`** | 関節ドラム（八角柱 + 蓋 + 軸受け + 灯り）。右側の外側は caps=(-1,) |
+| **`finger_chain(bone, 点列, w=0.5, h=None, style, knuckle, tip=None)`** | 指の関節の連なり |
+| **`greebles(bone, 板, 面, n, seed, styles, size=(0.22,0.6), h=(0.15,0.24))`** | パネルの小物を散らす |
+| **`sensor(bone, 中心, size=0.36, style="glow", bezel="dark", axis="z", facing=-1)`** | 小さなセンサーの灯り（2 個）。axis/facing で向き |
+| `mx(p)` / `A.left(p)` | 点の X 反転 |
 
-`stick` / `line_on` の (a, b) は面の 0..1 の座標: north/south は (x, y)、east/west は (z, y)、up/down は (x, z)。
-**重ねて奥行きを出す**: 下の板（青）→ 少しずらした上の板（白）→ 縁の金 → 発光線、の順に重ねると一気にそれらしくなる。
+`stick` / `line_on` / `rivets` / `vents` の (a, b) は面の 0..1 の座標: north/south は (x, y)、east/west は (z, y)、
+up/down は (x, z)。**面の向き**: north = 前（-Z）、south = 後ろ、west = -X（右側の部品の外側）、east = +X。
 
-## 6. 塗り（SUIT_STYLES）
+例（earth から）:
+```python
+# 縁取りのある腿の板: 白の下板 → 青の上板（inset 0.3）→ 金の下縁 → 上板の上辺にリベット 3 個 → 緑の線
+fr = layered_plate(t, (A.LEG_X, 11.75, -1.82), (2.85, 4.3, 0.55), "plate2", top="plate",
+                   rot=(-3, 0, 0), inset=0.3, trim="gold", rivet="rivet", n_rivets=3, rivet_edge="top")
+line_on(t, fr["top"], "north", (0.74, 0.1), (0.74, 0.6), 0.18, 0.16, "glow")
+# 膝の外の油圧シリンダー（腿から脛へ）
+piston(k, (A.LEG_X - 1.62, 10.9, 0.55), (A.LEG_X - 1.5, 6.3, 0.45), r=0.27)
+# バックパックから腰の脇へ垂れる蛇腹のホース（中央の部品なので mirror_x）
+hs = cable(bk, [(-1.6, 19.9, 3.6), (-2.9, 17.6, 2.4)], 0.3, "dark", sag=0.35, rib="frame_lt")
+mirror_x(bk, hs)
+# 肩当ての上板の縁にリベット 6 個、外の垂れ板の上辺に 5 個
+rivets(p, top, "up", 6, edge="border", margin=0.25, size=0.24)
+rivets(p, l1, "west", 5, edge="top", margin=0.24, size=0.22)
+# ふくらはぎの排気口 3 本 / バックパックの枠付きスリット 4 本
+vents(g, calf, "south", 3, box=(0.2, 0.2, 0.8, 0.8))
+vents(bk, pk[0], "south", 4, box=(0.25, 0.3, 0.75, 0.7), rim="frame")
+```
+
+## 8. 塗り（SUIT_STYLES）
 
 `astro_paint.suit_styles(key)` が `astro_data.PLANETS[key]["colors"]` から一式を作る。使えるスタイル名:
 
@@ -128,98 +229,92 @@ python3 tools/astro/gen_astro_suits.py <key>        # pack へ書き出す（geo
 |---|---|---|
 | `plate` / `plate_b` | armor | 主装甲 / 一段暗い奥の板（パネル線なし） |
 | `plate2` / `plate2_b` | armor | 副装甲（白など）/ その奥の板 |
-| `accent` | armor | 差し色の装甲 |
-| `plain` / `plain2` | armor | パネル線も照りも無い板 |
-| `inner` | inner | 黒いインナー（六角メッシュ・ごく稀に光る継ぎ目） |
+| `accent` / `plain` / `plain2` | armor | 差し色 / パネル線も照りも無い板 |
+| `inner` | inner | 黒いボディスーツ（六角メッシュ）。frame7 の筋肉の芯 |
 | `frame` / `dark` | frame | 関節・フレームの暗い金属（溝あり / 無地） |
-| `chrome` / `gold` / `silver` | chrome / trim | 鏡面 / 金具（縁取り） |
+| `frame_lt` / `steel` | frame / chrome | **v1.1**: 少し明るい溝の金属（frame7 の輪・肋骨）/ 落ち着いた鏡面 |
+| `chrome` / `gold` / `silver` / `rivet` | chrome / trim | 鏡面 / 金具（縁取り）/ **リベット**（小さくても読める銀） |
 | `visor` | visor | バイザー（発光・照り返し・走査線） |
 | `glow` / `glow_soft` / `glow_accent` | glowline | 発光ライン（全発光 / 半発光 / 差し色） |
-| `vent` / `thruster` / `flame` | vent / thruster / flame | 排気口 / ノズル（下面に同心円）/ 炎 |
-| `core` / `planet` | core / planet | 惑星の星核（発光）/ 同じ模様の差し色（非発光） |
+| `vent` / `thruster` / `flame` | vent / thruster / flame | 排気口 / ノズル / 炎 |
+| `core` / `planet` / `luna` | core / planet | 惑星の星核（発光）/ 同じ模様の差し色 / 月 |
 | `gem` / `gem_accent` / `crystal` / `ice` / `energy` | | 宝玉・結晶・氷・プラズマ |
-| `cloth` | cloth | マント（ひだ・下端の雲の縁取り `cloud`・上端の縁 `hem`） |
-| `hazard` / `serial` / `emblem` | decal | 警告ストライプ / 型番 / 惑星の紋章を板に描いた物 |
-| `luna` | planet | 月（クレーター） |
+| `cloth` | cloth | マント（ひだ・雲の縁取り `cloud`・上端の縁 `hem`） |
+| `hazard` / `serial` / `emblem` | decal | 警告ストライプ / 型番 / 惑星の紋章 |
 
-上書き・追加の例:
-```python
-SUIT_STYLES = {
-    "plate": {"panel": 0},                                   # パネル線を消す
-    "plate2": {"stripe": {"dir": "h", "period": 8, "width": 3, "color": (176, 112, 70)}},  # 縞（木星）
-    "flame": {"glow": (255, 140, 40), "deep": (160, 40, 10)},  # 炎の色
-    "hot": {"kind": "glowline", "glow": (255, 150, 60), "light": (255, 240, 200)},  # 新しいスタイル
-    "rim": {"kind": "trim", "base": (220, 226, 240)},          # 銀の縁取り
-}
-```
-主なキー: `base light dark line`（色）、`panel`（0 でパネル線なし）、`bolts`、`sheen`、`stripe`、`trim`（下辺の帯の色）、
-`emit`（発光の強さ: アルファ。**低いほど強く光る**、12 ≈ 全発光、150 ≈ 半発光、255 = 光らない）、
-`bevel` / `outline`（False で面取り・輪郭を消す）。core / planet は `planet="mars"` 等で模様を選べる。
+上書き・追加は v1.0 と同じ（`{"plate": {"panel": 0}, "hot": {"kind": "glowline", "glow": (255,150,60)}}`）。
+デカールはキューブに `decals={"west": {"decal": "serial", "text": "AR-04"}}`。
+**発光ラインは暗い・濃い色の板の上に**（白い板の上の発光は白飛びして読めない。earth は青の板に緑の線）。
 
-**デカール**（1 つの面にだけ描く）: キューブに `decals={"west": {"decal": "serial", "text": "AR-04"}}`。
-種類: `hazard`（c1, c2, band=full/top/bottom）、`serial`（text, ink, x, y）、`emblem`（color, size）、
-`stripe`（color, dir, pos, width, emit）、`chevron`、`lights`（count, color）、`bolt`。
-
-## 7. 部位アニメ（SUIT_ANIMS）
+## 9. 部位アニメ（SUIT_ANIMS）
 
 ```python
 SUIT_ANIMS = {
     "idle": {                                   # 常に再生（12 秒でループ）
         "extra_cape_r": {"rotation": ["3.0 + math.sin(q.anim_time * 90.0) * 2.0", 0, 0]},
         "fx_spin_ring": {"rotation": [0, "q.anim_time * 60.0", 0]},
-        "extra_moon": {"position": [0, "math.sin(q.anim_time * 120.0) * 0.4", 0]},
     },
-    "thrust": {                                 # 常に再生。v.astro_air（空中で 0→1 になめらかに）で強さを付ける
-        "extra_cape_r": {"rotation": ["v.astro_air * 34.0", 0, "-v.astro_air * 7.0"]},
-    },
-    "sprint": {                                 # 疾走中。v.astro_run（0→1）
-        "extra_cape_r": {"rotation": ["v.astro_run * 28.0", 0, 0]},
-    },
+    "thrust": {"extra_cape_r": {"rotation": ["v.astro_air * 26.0", 0, 0]}},   # 空中 0..1
+    "sprint": {"extra_cape_r": {"rotation": ["v.astro_run * 24.0", 0, 0]}},   # 疾走 0..1
 }
 ```
-* 値は数か Molang の文字列。`math.sin/cos` は **度**。`q.anim_time` は 12 秒でループするので、周波数は
-  **30°/秒の倍数**（30, 60, 90, 120, 180, 360, 720…）にすると継ぎ目が出ない。
-* 使える変数: `q.anim_time`、`v.astro_air`（空中 0..1）、`v.astro_run`（疾走 0..1）、`v.astro_fp`（一人称 1）。
-  アタッチャブルの中の素の `q.*`（`q.is_on_ground` `q.is_sneaking` `q.modified_move_speed` …）は装着者を指す。
-* 同じボーンの回転・位置は全部のアニメの和になる（idle の揺れ + thrust の跳ね上げ）。
-* `_r` のボーンのトラックは左（`_l`）へ自動で鏡映される（rotation は (rx,-ry,-rz)、position は (-x,y,z)）。
-  左だけ違う動きにしたい時は `_l` を自分で書く（位相をずらす等）。
-* **部位ボーン（`<群>_<名前>`）の scale は書かない**（組み上がり・解除が scale を使う）。大きさを変えたい物は
-  `fx_*` の子ボーンにする。トップレベルのボーンも動かさない。
-* `idle` / `thrust` / `sprint` 以外の名前を足すと `animation.astro.suit.<key>.<名前>` として書き出され、
-  アタッチャブルの animations にも載る（スクリプトや他のアニメから使う時に）。
-* 回転体の例: 傾いた軌道は「傾けた部位ボーン（rotation）→ fx_spin の子（rotation を回す）→ その中に衛星」
-  （earth の `luna_bit()` を参照）。
+* `math.sin/cos` は **度**。ループは 12 秒なので、`q.anim_time` に掛ける周波数は **30°/秒の倍数**（30, 60, 90, 120,
+  180, 360, 720, 900…）。**検査が継ぎ目を調べる**（`gen_astro_suits.loop_errors`。100 などは NG）。
+  `animation_length` を変えたら周波数 × 長さが 360 の整数倍になるように。
+* 変数: `q.anim_time`、`v.astro_air`、`v.astro_run`、`v.astro_fp`。アタッチャブルの中の素の `q.*` は装着者を指す。
+* `_r` のトラックは左（`_l`）へ自動で鏡映（rotation は (rx,-ry,-rz)、position は (-x,y,z)）。
+* **部位ボーン（`<群>_<名前>`）の scale は書かない**（組み上がり・解除が使う）。トップレベルも動かさない。
 
-## 8. 被覆（肌が見えないこと）
+## 10. 予算と検査（`check_astro_suits.py`）
 
-* `s.inner_suit(gap=0.3)` を最初に呼ぶ。6 部位の外側レイヤーより `gap` 外に黒いインナーの殻を張るので、
-  これだけで検査は通る（スリムの腕の y 11.25 まで覆う）。装甲はその上に重ねる。
-* 殻の範囲は `s.inner_box[部位] = ((x0,y0,z0), (x1,y1,z1))`（gap=0.3 で body ±4.55 / y 11.45..24.55 / z ±2.55、
-  右腕 x -8.55..-3.45 / y 10.95..24.55、右脚 x -4.45..0.65 / y -0.55..12.55、頭 ±4.65 / y 23.35..32.65）。
-  **装甲の箱は殻より 0.05 以上外へ出す**。殻の内側に入った面は見えず、黒い六角メッシュが見えてしまう
-  （earth の拳は最初これで黒く見えた）。面取り（bevel）は角が削れるので、殻より cut ぶん大きくする。
-* 関節（肘・膝）を `frame` の帯で巻くと、六角メッシュではなく溝のある金属が見えて締まる。
-* 被覆の検査は extra_* と fx_*（動く部品）を数えない。トップレベルごとに、**同じトップレベルの下の**
-  キューブだけで覆う（腕の装甲で胴を覆うことはできない）。
-* 一人称では head / body / 脚が隠れ、**腕（rightArm / leftArm の下）だけが見える**。肩当てや篭手が大きすぎると
-  一人称の画面を塞ぐので、プレビューの「一人称」の絵を確かめる。
+| 項目 | 閾値 | earth |
+|---|---|---|
+| 背丈（飾りを除く足の裏 → 頭頂） | 31〜35 | 32.2 |
+| 頭の高さ | 背丈/7 ± 12%（首のくびれの上で断面が頭の大きさに戻る所 → 頭頂） | 4.96（H/6.5） |
+| 頭の幅 | ≤ 5.4（耳・頬を含む。角とアンテナは ornament で外す） | 5.29 |
+| 胸の幅 / 腰の幅 | ≥ 1.45（body だけ。胸 = y 20.5〜26.7 の最大、腰 = y 17.0〜20.3 の最小） | 9.96 / 5.38 = 1.85 |
+| 見えている脚 | ≥ 0.44 × 背丈（正面から見て脚が手前に見えている一番上。extra_* は数えない） | 0.46H |
+| キューブ数 | 600〜1400（目安 850〜1150） | 1062 |
+| 細かい部品 | 3 辺とも 1.0 以下のキューブが 35% 以上 | 38% |
+| 最小の部品 | どの辺も 0.15 以上 | |
+| テクスチャ | 1024x1024 に収まる（テクセル x3 未満は警告） | x7 |
 
-## 9. 予算と品質の目安
+その他: 命名、炎は fx_* の下、回転体のめり込み（警告）、SUIT_ANIMS のボーン・Molang・scale、ループの継ぎ目、
+生成済みファイルの相互参照、`hide_all` が `c.item_slot != 'head'` だけで判定されていること。
 
-* キューブ 350〜550 を目安（検査は 250〜650 の外を NG）。テクスチャは自動で 1024x1024 に収まる最大の密度。
-  小さく細かい部品（宝玉・顔）は `uv_scale=8` などで個別に細かくできる。
-* 「箱を積んだ」見た目を避ける: 面取り（bevel）・傾き（rbox）・重ね（stick）・先細り（taper）・縁取り（gold の line_on）。
-  胴は上が広く腰が細い逆三角形、兜は額・屋根の斜面と中央の稜で箱の輪郭を崩す。
-* 色の配分: 主装甲（plate）と副装甲（plate2）を交互に、発光（glow）は細く要所だけ、金（gold）は縁取りに。
+**細かさの稼ぎ方**（earth の内訳の目安: リベット 約 120、指・関節 約 60、センサー 約 30、ケーブルの区間 約 40、
+スリット・小板・宝玉 約 100）: 大きな板を減らして、縁（金の帯）・リベットの列・スリット・センサー・小さな重ね板・
+指の甲当てを足す。テクスチャ密度はキューブが増えてもほとんど下がらない（小物は 1〜2 px）。
 
-## 10. よくある落とし穴
+## 11. 作り込みの手順（おすすめ）
 
-* 中央の部品を左右対称にしようとして `_r` を付けない部品を X 反転し忘れる → `mirror_x` を使う。
-* 同じ平面に色の違う面が重なる（Z ファイト）→ 0.05 以上ずらす。`inner_suit` は左脚の殻を少し厚くして避けている。
-* 頭の帽子レイヤーの角（±4.5, 32.5, ±4.5）は必ず内側に入るので、兜の上を大きく面取りすると角が突き抜ける →
-  屋根の板は角より上に置く（earth の兜を参照）。
-* 衛星・環の軌道が頭や肩当てに当たる → `check_astro_suits.py` が fx_spin_* の部分木を idle で 6 秒回して
-  めり込みを警告する。正射影の絵は重なって見えるだけのこともあるので、警告の有無で判断する。
-* `fx_thrust_*` の炎を横向きに作る → 炎は局所 -Y に伸ばし、向きはボーンの rotation で。
-* SUIT_ANIMS で `math.sin(q.anim_time * 100)` のような 30 の倍数でない周波数 → 12 秒ごとに跳ぶ。
+1. `s.frame7()` だけでプレビュー → 目盛りと水色の線（バニラの体）で大きさを掴む。
+2. シルエットの大物: 兜（`A.HEAD_*` の箱に収める）→ 胸（上が広い。`A.CHEST_W` 9.2〜10.5）→ 肩当て（外は ±8.0〜8.8）→
+   腰（くびれは見せる）→ 腿・脛・サバトン → 篭手。ここで正面・側面の絵を見て、7 頭身に見えるか確かめる。
+3. 層: 下の板 → 一回り小さい上の板（色違い）→ 金の縁 → 発光線 → リベット・センサー。
+4. 関節を見せる: 肘・膝・足首のドラムは隠さない。その横にピストン、膝裏・ふくらはぎ・腰の脇は骨格が見える隙間を残す。
+5. 背中（三人称ではいつも見える）: バックパック・スラスター（fx_thrust）・スリット・ボルト・ホース・マント。
+6. 惑星の意匠（環・衛星・光輪・翼・炎）は extra_* / fx_spin_* / ornament で。
+7. `check_astro_suits.py` → 数字を見て直す → 近接の絵で細部を見る → 組み上がりと一人称を確かめる。
+
+## 12. よくある落とし穴
+
+* **手足のピボットより上の部品は、手足が回ると大きく振れる**: 腕のピボットは (-5, 22, 0)、脚は (±1.9, 12, 0)。
+  肩関節の球（y 24.4）・腿の上端（〜15.7）・肩当ては腕／脚と一緒にピボットの周りを回る（前へ 60° 振ると肩の球は
+  後ろへ 2 ずれる）。**ピボットより上に出す物は小さくまとめ、肩当て（腕に付く）・骨盤と草摺（胴に付く）の内側に隠す**。
+  腿の上端を太くしたり、腕の付け根に大きな板を付けると、歩くだけで胴を突き抜ける。
+* 腕を横に 90° 上げる（T ポーズ）と、ピボットより上の肩の球と肩当ては胴の方へ回り込む。これは骨格の制約（避けられない）。
+* **腰の装甲で腿の前を覆わない**: 前垂れは細く（幅 2 前後）、草摺は横に。腿の前が股の上まで見えないと
+  「見えている脚」が NG。長いスカート（金星の花弁など）は extra_* にして揺らす（計測から外れる）か、前を割る。
+* **頭を大きくしない**: 頭の幅 5.4・高さ H/7（≈ 4.6）。耳・頬当ての張り出しも幅に入る。角・鶏冠・アンテナは
+  `ornament=True` のボーンへ（入れたままだと背丈と頭の高さが NG）。兜の下端（顎・しころ）は y 27.3 より上に。
+* 0.15 未満の辺は作らない（`octa` の長さ 0.22 以下・`bevel` の cut が大きすぎる時にできる。検査が NG にする）。
+* **Z ファイト**: 同じ平面に色の違う面が重なるとちらつく → 0.04 以上ずらす（`stick` の sink、`octa` は自動）。
+* 中央の部品の左右対称を忘れる → `mirror_x`。`_r` ボーンの中身は鏡映されるので mirror_x しない。
+* マント（extra）とスラスターの炎・推進剤タンクの位置関係: マントは thrust/sprint で後ろへ 25〜35° はね上がる。
+  バックパックの横の物は x をずらしてマントの軌跡に入れない。
+* 一人称では **腕（rightArm / leftArm の下）だけ** が見え、画面の右下に篭手と拳が少し出る（バニラの腕と同じ場所）。
+  肩当てや篭手に大きな板を付けすぎると画面を塞ぐので「一人称」の絵を確かめる。
+* 衛星・環（fx_spin）の軌道が肩当てに当たる → 検査の警告（6 秒回して調べる）を見て軌道か装甲をずらす。
+* 発光ラインを白い板に置くと白飛びする → 青・暗い板に置く。
+* `fx_thrust_*` の炎は局所 -Y に伸ばして作り、向きはボーンの rotation で。
