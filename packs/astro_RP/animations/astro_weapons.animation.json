@@ -364,6 +364,194 @@
         }
       }
     },
+    "animation.astro.core.mars.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.47,
+      "bones": {
+        "form_0_globe": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_cage": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.135": [
+              0,
+              0,
+              0
+            ],
+            "0.267": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.355": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_2_rings": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.23": [
+              0,
+              0,
+              0
+            ],
+            "0.362": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.45": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.core.mars.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -76.49,
+            -56.69,
+            102.45
+          ],
+          "position": [
+            -1.9,
+            22.9,
+            -3.61
+          ],
+          "scale": 0.85
+        }
+      }
+    },
+    "animation.astro.core.mars.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 110.0) * 0.35",
+            0
+          ],
+          "rotation": [
+            0,
+            "math.sin(q.anim_time * 40.0) * 8.0",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 60.0",
+            0
+          ]
+        },
+        "fx_spin_ring_a": {
+          "rotation": [
+            0,
+            "-q.anim_time * 120.0",
+            0
+          ]
+        },
+        "fx_spin_moons": {
+          "rotation": [
+            0,
+            "q.anim_time * 180.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.core.mars.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            18.0,
+            -0.0,
+            -0.0
+          ],
+          "position": [
+            -0.4,
+            22.62,
+            -4.82
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "animation.astro.core.mars.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "origin": {
+          "scale": "1.0 + v.astro_usew * 0.12",
+          "position": [
+            0,
+            "v.astro_usew * 1.2",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_ring_a": {
+          "rotation": [
+            0,
+            "q.anim_time * -360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_moons": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        }
+      }
+    },
     "animation.astro.core.neptune.form": {
       "loop": "hold_on_last_frame",
       "animation_length": 0.47,
@@ -544,6 +732,194 @@
           ]
         },
         "fx_spin_triton": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.core.saturn.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.47,
+      "bones": {
+        "form_0_globe": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_cage": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.135": [
+              0,
+              0,
+              0
+            ],
+            "0.267": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.355": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_2_rings": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.23": [
+              0,
+              0,
+              0
+            ],
+            "0.362": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.45": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.core.saturn.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -76.49,
+            -56.69,
+            102.45
+          ],
+          "position": [
+            -1.9,
+            22.9,
+            -3.61
+          ],
+          "scale": 0.85
+        }
+      }
+    },
+    "animation.astro.core.saturn.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 110.0) * 0.35",
+            0
+          ],
+          "rotation": [
+            0,
+            "math.sin(q.anim_time * 40.0) * 8.0",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 45.0",
+            0
+          ]
+        },
+        "fx_spin_rings": {
+          "rotation": [
+            0,
+            "q.anim_time * 60.0",
+            0
+          ]
+        },
+        "fx_spin_gyro_a": {
+          "rotation": [
+            0,
+            "q.anim_time * 90.0",
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.core.saturn.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            18.0,
+            -0.0,
+            -0.0
+          ],
+          "position": [
+            -0.4,
+            22.62,
+            -4.82
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "animation.astro.core.saturn.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "origin": {
+          "scale": "1.0 + v.astro_usew * 0.12",
+          "position": [
+            0,
+            "v.astro_usew * 1.2",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_rings": {
+          "rotation": [
+            0,
+            "q.anim_time * -360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_gyro_a": {
           "rotation": [
             0,
             "q.anim_time * 360 * v.astro_usew",
@@ -1310,6 +1686,200 @@
         }
       }
     },
+    "animation.astro.weapon.mars.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.62,
+      "bones": {
+        "form_0_grip": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_haft": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.153": [
+              0.35,
+              0.35,
+              0.0
+            ],
+            "0.285": [
+              1.08,
+              1.08,
+              1.15
+            ],
+            "0.373": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "form_2_head": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.267": [
+              0,
+              0,
+              0
+            ],
+            "0.399": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.487": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_3_blade": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.38": [
+              0.35,
+              0.0,
+              0.35
+            ],
+            "0.512": [
+              1.08,
+              1.15,
+              1.08
+            ],
+            "0.6": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.weapon.mars.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -43.22,
+            4.26,
+            -169.99
+          ],
+          "position": [
+            -0.39,
+            26.08,
+            1.69
+          ],
+          "scale": 0.62
+        }
+      }
+    },
+    "animation.astro.weapon.mars.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 90.0) * 0.1",
+            0
+          ]
+        },
+        "fx_glow_heat": {
+          "scale": "1 + math.sin(q.anim_time * 150) * 0.06"
+        },
+        "fx_spin_gear": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 120.0"
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            "q.anim_time * 60.0",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.weapon.mars.swing": {
+      "loop": true,
+      "bones": {
+        "origin": {
+          "rotation": [
+            "(v.astro_fp > 0.5 ? 64 : 40) * (math.sin(math.pow(v.astro_sw, 0.6) * 180.0) - 0.18 * math.sin(v.astro_sw * 360.0))",
+            0,
+            0
+          ]
+        },
+        "pile": {
+          "position": [
+            0,
+            0,
+            "-math.pow(math.sin(v.astro_sw * 180.0), 3.0) * 2.4"
+          ]
+        },
+        "fx_spin_gear": {
+          "rotation": [
+            0,
+            0,
+            "v.astro_sw * 360.0"
+          ]
+        }
+      }
+    },
+    "animation.astro.weapon.mars.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -5.76,
+            5.72,
+            -0.58
+          ],
+          "position": [
+            -0.6,
+            21.85,
+            1.0
+          ],
+          "scale": 0.9
+        }
+      }
+    },
     "animation.astro.weapon.neptune.form": {
       "loop": "hold_on_last_frame",
       "animation_length": 0.62,
@@ -1520,6 +2090,204 @@
             1.0
           ],
           "scale": 0.88
+        }
+      }
+    },
+    "animation.astro.weapon.saturn.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.62,
+      "bones": {
+        "form_0_grip": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_bar": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.153": [
+              0.35,
+              0.35,
+              0.0
+            ],
+            "0.285": [
+              1.08,
+              1.08,
+              1.15
+            ],
+            "0.373": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "form_2_ring": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.267": [
+              0,
+              0,
+              0
+            ],
+            "0.399": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.487": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_3_saw": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.38": [
+              0,
+              0,
+              0
+            ],
+            "0.512": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.6": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.weapon.saturn.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -57.88,
+            -4.75,
+            149.22
+          ],
+          "position": [
+            -1.15,
+            24.64,
+            1.38
+          ],
+          "scale": 0.6
+        }
+      }
+    },
+    "animation.astro.weapon.saturn.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 90.0) * 0.1",
+            0
+          ]
+        },
+        "fx_spin_saw": {
+          "rotation": [
+            "q.anim_time * 120.0",
+            0,
+            0
+          ]
+        },
+        "fx_spin_hour": {
+          "rotation": [
+            "q.anim_time * 30.0",
+            0,
+            0
+          ]
+        },
+        "fx_spin_min": {
+          "rotation": [
+            "q.anim_time * 360.0",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.weapon.saturn.swing": {
+      "loop": true,
+      "bones": {
+        "origin": {
+          "rotation": [
+            "(v.astro_fp > 0.5 ? 54 : 30) * (math.sin(math.pow(v.astro_sw, 0.6) * 180.0) - 0.18 * math.sin(v.astro_sw * 360.0))",
+            0,
+            0
+          ]
+        },
+        "fx_spin_saw": {
+          "rotation": [
+            "v.astro_sw * 720.0",
+            0,
+            0
+          ]
+        },
+        "fx_spin_min": {
+          "rotation": [
+            "v.astro_sw * 360.0",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.weapon.saturn.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            12.36,
+            4.35,
+            1.42
+          ],
+          "position": [
+            -0.6,
+            21.85,
+            1.0
+          ],
+          "scale": 0.8
         }
       }
     },
