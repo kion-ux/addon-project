@@ -51,11 +51,16 @@
 ■ 公開 API
     H, P(*bases, **parts), anim(length, frames, kind="act", loop=False, blend=None)
     aim(dir, twist=0), wield(blade, arm=None, edge=None, roll=0), dirv(f, u, r), flip(...)
-    resolve(spec, kind_of_weapon="sword") -> Resolved   名前付きの部位トラック（絶対値の Euler）
+    resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved
+                                    部位ごとのトラック（絶対値の Euler）。cloud（武器の表面の点）を渡すと
+                                    wield の腕を体に入らない向きへ回し、補間の途中で入るコマにキーを足す
     to_json(res) -> 統合版のアニメーション dict
-    sample(res, t) -> hd_scene の姿勢 {bone: {rotation, position}}（三人称・物を持った自然体の上で）
+    sample(res, t) / sample_parts(res, t)   その時刻の姿勢（三人称・物を持った自然体の上で）
+    clip_depth(pose, cloud) -> (深さ px, 部位)   スーツを着た体への武器の入り込み
+    describe(res) -> [str]          書いたキーごとの腕・刃先の向き（gen_astro_anim --describe）
     uses_wield(spec) -> bool
-    library() -> {名前: spec}                         共通モーション（DESIGN.md §4.6）
+    library() -> {名前: spec}       共通モーション（DESIGN.md §4.6）
+    TR                              astro_data.TRANSFORM を秒に（TR["weapon_form"] = 2.0 …）
     PREFIX = "animation.astro.p."
 """
 from __future__ import annotations
@@ -418,12 +423,10 @@ def _repair(res, cloud, hold, rounds=16, step=0.02):
         tried.add(t)
         parts = sample_parts(res, t)
         R_cur = rot(*parts["rA"])
-        Rp = _parent_R(parts)
         bt = R_cur @ blade_l
         R = _clear(R_cur, bt, R_cur @ ARM_DOWN, ARM_DOWN, parts, cloud, blade_l=blade_l)
         tr[t] = tuple(float(x) for x in euler_near(R, np.array(parts["rA"])))
         res.mats["rA"][t] = R
-        _ = Rp
 
 
 def _foot_min(pose):

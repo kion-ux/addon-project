@@ -182,7 +182,7 @@ def _common(key):
         fin_m={"kind": "armor", "base": (190, 222, 250), "light": (236, 248, 255),
                "dark": (140, 186, 236), "line": (110, 150, 214), "panel": 0, "bolts": False,
                "sheen": False, "outline_k": 0.3, "bevel_lo": 0.92, "unlit": True},
-        globe=W.globe_style("neptune", emit=34),
+        globe=W.globe_style("neptune", emit=34, spin=-180),   # 大暗斑がアイコンの正面に来る経度
         triton=W.globe_style("luna", emit=255, halo=(255, 214, 228)),
     )
 

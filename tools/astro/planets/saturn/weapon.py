@@ -74,16 +74,18 @@ def build_weapon(m, root):
     # =====================================================================
     #  form_1_bar — 襟と二本の軌条（中央の柄）。環の直径を貫いて前の縁まで
     # =====================================================================
-    bar = W.form(m, root, 1, "bar", (0, 0, -3.4))
-    W.bevel(bar, (0, 0, -4.1), (2.4, 2.6, 1.4), "plate", cut=0.45, axis="z", uv_scale=8)
-    W.cbox(bar, (0, 0, -4.1), (2.5, 0.3, 1.0), "band", uv_scale=10)
-    z0, z1 = -4.7, C_Z - R_BAND - 0.2
+    bar = W.form(m, root, 1, "bar", (0, 0, -3.3))
+    # 二股の襟（外刃の後ろの縁がこの間を通る）
+    for s in (-1, 1):
+        W.cbox(bar, (s * 0.8, 0, -4.45), (0.6, 2.6, 2.3), "plate", uv_scale=8)
+        W.cbox(bar, (s * 1.12, 0, -4.45), (0.1, 1.9, 1.6), "band", uv_scale=10)
+    z0, z1 = -5.4, C_Z - R_BAND - 0.15
     for s in (-1, 1):
         x = s * RAIL_X
         W.cbox(bar, (x, 0, (z0 + z1) / 2), (0.5, 1.1, z0 - z1), "plate", uv_scale=6)
         W.cbox(bar, (x + s * 0.27, 0, (z0 + z1) / 2), (0.08, 0.36, z0 - z1 - 0.6), "glow", uv_scale=8)
-    # 前の縁を留める金具（軌条の先）
-    W.cbox(bar, (0, 0, z1 - 0.1), (1.9, 1.3, 0.7), "gold", uv_scale=10)
+    W.cbox(bar, (0, 0, z1 + 0.2), (1.9, 1.3, 0.4), "gold", uv_scale=10)      # 前の留め金
+
 
     # =====================================================================
     #  form_2_ring — 内側の金の環・目盛り・中心の土星・時針と分針
@@ -97,18 +99,18 @@ def build_weapon(m, root):
         R = np.column_stack([tan, rad, np.cross(tan, rad)])
         AC.mat_cube(rg, p, (0.42 if big else 0.26, 1.0 if big else 0.6, 1.3 if big else 1.16),
                     "gem_v" if big else "hand", R, uv_scale=12)
-    # 中心: 土星の球と、傾いた小さな環（静止の傾きの骨に入れる）
+    # 中心: 土星の球と、傾いた小さな環（静止）
     W.sphere(rg, (0, 0, C_Z), 1.55, "globe", uv_scale=14)
-    tilt = W.part(m, rg, "hub_tilt", (0, 0, C_Z), rotation=(0, 0, 0))
-    hub = W.spin(m, tilt, "hub", (0, 0, C_Z), rotation=(0, 26, 0))
-    W.ring(hub, (0, 0, C_Z), 2.45, 14, (0, 0.75, 0.16), "ring_ice", axis="z",
+    hub = W.part(m, rg, "hub_ring", (0, 0, C_Z), rotation=(22, 0, 26))
+    W.ring(hub, (0, 0, C_Z), 2.45, 14, (0, 0.75, 0.16), "ring_ice", axis="y",
            styles=["ring_ice", "ring_ivory"], uv_scale=10)
-    # 時針・分針（両面から見えるよう、x に貫く薄い板）
+    # 時針・分針（軌条の外側、両面に一本ずつ）
     hr = W.spin(m, rg, "hour", (0, 0, C_Z))
-    W.cbox(hr, (0, 2.6, C_Z), (2.2, 2.6, 0.32), "hand", uv_scale=10)
-    W.cbox(hr, (0, 3.95, C_Z), (2.3, 0.4, 0.5), "gem_v", uv_scale=12)
     mn = W.spin(m, rg, "min", (0, 0, C_Z))
-    W.cbox(mn, (0, 0, C_Z - 3.0), (2.0, 0.22, 3.4), "hand", uv_scale=10)
+    for s in (-1, 1):
+        W.cbox(hr, (s * 1.0, 2.55, C_Z), (0.14, 2.3, 0.36), "hand", uv_scale=10)
+        W.cbox(mn, (s * 1.05, 0, C_Z - 2.95), (0.12, 0.24, 3.3), "hand", uv_scale=10)
+
 
     # =====================================================================
     #  form_3_saw — 外刃（回る）: アイボリーの鋼・氷青の刃・歯
@@ -217,7 +219,6 @@ WEAPON_ANIMS = {
         "fx_spin_saw": {"rotation": ["q.anim_time * 120.0", 0, 0]},
         "fx_spin_hour": {"rotation": ["q.anim_time * 30.0", 0, 0]},
         "fx_spin_min": {"rotation": ["q.anim_time * 360.0", 0, 0]},
-        "fx_spin_hub": {"rotation": [0, 0, "q.anim_time * 60.0"]},
     },
     "swing": {
         # 振るたびに外刃が一気に一回転、針が進む

@@ -67,8 +67,8 @@ roll_frames = flip(0.04, 0.46, -1.0, "z", centre=15.0, steps=8, tuck=False, base
 roll_frames[0.0] = H
 roll_frames[0.56] = P(rA=wield(blade=dirv(f=1.0, r=0.3, u=-0.2), arm=dirv(r=0.8, u=-0.6, f=0.2)),
                       lA=aim(dirv(r=-0.9, u=-0.5, f=0.2)), rL=(-20, 0, 12), lL=(20, 0, -12),
-                      root=(0, 0, 0), ground=True)
-roll_frames[0.7] = H
+                      root=(0, 0, -360), ground=True)
+roll_frames[0.7] = P(root=(0, 0, -360))
 
 # ---- 空中技: 前上方へ二連射 ----------------------------------------------------
 rain_aim = P(b=(-12, 6, 0), h=(-24, -4, 0),
@@ -102,7 +102,7 @@ BODY_ANIMS = {
                           0.48: P(c3_kick, b=(-6, -8, 0)), 0.65: H}),
     "aim_shot": anim(0.9, {0.0: H, 0.12: aim_raise, 0.3: aim_hold, 0.4: aim_hold, 0.46: aim_fire,
                            0.66: P(aim_hold, b=(-2, 16, 0)), 0.9: H}),
-    "roll": anim(0.7, roll_frames, kind="act", blend=True),
+    "roll": anim(0.7, roll_frames, kind="act"),
     "rain_shot": anim(0.8, {0.0: H, 0.1: rain_aim, 0.28: rain_aim, 0.33: rain_kick, 0.48: rain_aim,
                             0.56: rain_kick, 0.68: P(rain_aim, b=(-8, 6, 0)), 0.8: H}),
     "tilt_cast": anim(1.2, {0.0: H, 0.18: tilt_reach, 0.5: P(tilt_reach, b=(-4, -22, -16)),

@@ -30,7 +30,6 @@ python3 tools/astro/astro_hold.py sword ...  種類を絞る
 """
 from __future__ import annotations
 
-import math
 import os
 import sys
 
