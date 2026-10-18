@@ -271,12 +271,12 @@ def holo_styles():
                     "under": base},
         "pserial": {"kind": "decal", "decal": "serial", "text": "TGT-01", "color": CYAN_L, "emit": SOFT,
                     "under": dict(base, panel=0)},
-        "holo": {"kind": "holo", "glow": CYAN, "light": CYAN_L, "bevel": False, "outline": False},
+        "holo": {"kind": "holo", "glow": CYAN, "light": CYAN_L, "bevel": False, "outline": False, "k": 0.62},
         "holo_dim": {"kind": "holo", "glow": CYAN, "light": CYAN_L, "bevel": False, "outline": False,
-                     "k": 0.55},
-        "holo_red": {"kind": "holo", "glow": (255, 80, 90), "light": (255, 210, 210), "bevel": False,
-                     "outline": False},
-        "holo_fill": {"kind": "holo_fill", "glow": CYAN, "bevel": False, "outline": False, "k": 0.16},
+                     "k": 0.36},
+        "holo_red": {"kind": "holo", "glow": (255, 60, 70), "light": (255, 170, 170), "bevel": False,
+                     "outline": False, "k": 0.7},
+        "holo_fill": {"kind": "holo_fill", "glow": CYAN, "bevel": False, "outline": False, "k": 0.12},
     })
     return st
 
@@ -867,7 +867,7 @@ def build_bolt():
     cbox(b, (0, 2.0, 0), (0.8, 0.8, 7.6), "glow")
     for k in range(2):
         cbox(b, (0, 2.0, -1.4 + k * 2.8), (2.4 - k * 0.8, 2.4 - k * 0.8, 0.4), "glow_soft",
-             rotation=(0, 0, 45 * k))
+             rotation=(0, 0, 45))
     fit_density(m, 8, (128, 128), ks=(1.0, 0.75, 0.5))
     return m
 
