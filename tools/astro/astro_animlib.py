@@ -482,7 +482,7 @@ def _repair(res, cloud, hold, rounds=3, step=0.02):
                 R = _axis_angle(R0 @ blade_l, TWISTS[i]) @ R0
                 tr[t] = tuple(float(x) for x in euler(R))
                 mk[t] = R
-        _finalize_arms(res.tracks, res.mats, only=("rA",))
+        _finalize_arms(res.tracks, res.mats, res.plain, only=("rA",))
 
 
 def _foot_min(pose):
@@ -514,6 +514,7 @@ def resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved:
         parts |= set(ARMS)                 # 打ち消しのトラックが要る
     tracks = {k: {} for k in parts}
     mats = {k: {} for k in ARMS}
+    plains = {k: {} for k in ARMS}     # 腕の書いたオイラー角のキー（_relift の錨）
     has_pos = any("root_pos" in f or f.get("ground") for f in frames.values())
     if has_pos:
         tracks["root_pos"] = {}
@@ -538,6 +539,7 @@ def resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved:
                 e = np.array(v, float)
                 if k in mats:
                     mats[k][t] = None
+                    plains[k][t] = tuple(float(x) for x in e)
             prev[k] = e
             pose[k] = tuple(float(x) for x in e)
             tracks[k][t] = pose[k]
@@ -548,7 +550,7 @@ def resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved:
                 rp[1] = -_foot_min(dict(pose, root_pos=tuple(rp)))
             tracks["root_pos"][t] = tuple(float(x) for x in rp)
     _densify_arms(tracks, mats)
-    _finalize_arms(tracks, mats)
+    _finalize_arms(tracks, mats, plains)
     blend = spec["blend"]
     if blend is None:
         rt = tracks.get("root", {})
@@ -559,8 +561,17 @@ def resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved:
         blend = span < 300.0
     res = Resolved(name, spec["length"], spec["kind"], spec["loop"], blend, tracks, mats, wkind)
     res.keys = list(times)
+    res.plain = plains
     if cloud is not None:
         _repair(res, cloud, hold if hold is not None else _hold_info(wkind))
+    for k in ARMS:
+        # 腕が一回転して終わる（最後の自然体のキーが 360° 巻いた・分解の違う値で終わる）なら、終わりのブレンドを
+        # しない（ブレンドは成分を比例して縮めるので、巻いた分だけ腕が回ってしまう。回転は自然体と同じなので
+        # ブレンドしなくても見た目は飛ばない）
+        tr = tracks.get(k)
+        if tr and max(tr) in plains[k] and \
+                max(abs(a - b) for a, b in zip(tr[max(tr)], plains[k][max(tr)])) > 0.05:
+            res.blend = False
     return res
 
 
@@ -642,6 +653,7 @@ EULER_TOL = 6.0      # 統合版はオイラー角を成分ごとに補間する
 MIN_DT = 0.02        # 補間を直すために足すキーの最小の間隔（秒。1 コマ = 1/60 秒より短くしない）
 ARM_SPEED_MAX = 1500.0   # 腕の角速度の上限（度/秒）。書いたキーの間の速さの 1.6 倍まではそれを上限にする
 REFINE_MAX = 48      # 1 本のトラックに直しで足すキーの上限
+END_WRAP = 2.0       # 最初・最後の自然体のキーを巻いた値にする重さ（区間で切り替えて腕を回すより軽い時だけ）
 
 
 def _rot_angle(Ra, Rb):
@@ -699,12 +711,13 @@ def _intended(Ra, Rb, ea, eb, plain_seg, s):
     return np.stack([_mat(_slerp(qa, qb, float(x))) for x in s])
 
 
-def _relift(tr, mk, rest):
+def _relift(tr, mk, rest, pv):
     """腕のトラックの各キーを、どのオイラー角の表し方（2 通りの分解 × 360° の巻き）で書くかを選び直す。
     統合版は成分ごとに catmullrom で補間するので、隣り合うキーの表し方が違う（分解が入れ替わる・360° 巻く）と、
     回転はほとんど同じでも成分が大きく飛び、その区間と前後の区間の接線が暴れて腕が振り回される。
-      * 書いたオイラー角のキー（自然体 H など）は書いた値のまま（最初と最後は必ず: 終わりのブレンドで
-        成分が比例して縮むので、自然体はそのままの値でないと腕が一回転する）
+      * 書いたオイラー角のキー pv（自然体 H など）は書いた値のまま。腕が本当に一回転する動き（巻きが
+        戻らない）だけ、最初・最後のキーを同じ回転の別の値にするのを許す（END_WRAP。その時 resolve は
+        終わりのブレンドを切る — ブレンドは成分を比例して縮めるので、巻いた値のままでは腕が回る）
       * 行列から出したキーは、その錨（書いたキー、または最初・最後のキーの 2 通り）から回転を連続に
         たどった値（lift）のどれか
       * 錨どうしでたどった値が食い違う時だけ、切り替える区間を Viterbi で選ぶ（成分の補間が回転の
@@ -714,8 +727,8 @@ def _relift(tr, mk, rest):
     if n < 2 or not any(mk.get(t) is not None for t in ts):
         return
     Rs = [_key_R(tr, mk, t) for t in ts]
-    plain = [mk.get(t) is None for t in ts]
-    auth = [np.array(tr[t], float) for t in ts]
+    plain = [mk.get(t) is None and t in pv for t in ts]
+    auth = [np.array(pv[t] if plain[i] else tr[t], float) for i, t in enumerate(ts)]
 
     def lift(i0, e0):
         out = [None] * n
@@ -760,7 +773,7 @@ def _relift(tr, mk, rest):
         if plain[i]:
             if np.abs(e - auth[i]).max() < 0.05:
                 return 0.0
-            return INF if i in (0, n - 1) else 4.0
+            return END_WRAP if i in (0, n - 1) else 4.0
         return 1e-3 * float(np.abs(e - rest).sum()) if i in (0, n - 1) else 0.0
     cost = [np.array([node(0, e) for e in cands[0]])]
     back = []
@@ -862,16 +875,17 @@ def _refine(tr, mk):
         added += 1
 
 
-def _finalize_arms(tracks, mats, only=ARMS):
+def _finalize_arms(tracks, mats, plains, only=ARMS):
     """腕のトラックの表し方を選び直し（_relift）、補間を catmullrom で確かめて直す（_refine）。"""
     for k in only:
         if k not in tracks:
             continue
         mk = mats.setdefault(k, {})
+        pv = plains.get(k, {})
         rest = np.array(REST.get(k, (0.0, 0.0, 0.0)), float)
-        _relift(tracks[k], mk, rest)
+        _relift(tracks[k], mk, rest, pv)
         _refine(tracks[k], mk)
-        _relift(tracks[k], mk, rest)
+        _relift(tracks[k], mk, rest, pv)
 
 
 def arm_speeds(res, part, step=1.0 / 120.0):
@@ -904,33 +918,32 @@ def arm_speed_report(res, step=1.0 / 120.0):
     return out
 
 
+FP_TAPER = 6         # 一人称の腕の角度 f(θ) = FPK·θ·(1 − (θ/180)^FP_TAPER)（θ = 自然体からの回転の角度）
+
+
 def fp_track(res, part) -> dict:
-    """一人称の腕 {秒: (x, y, z)}: 自然体からの回転 D = R · R_rest⁻¹ を、同じ軸まわりに FPK 倍だけ回した物の
-    オイラー角（成分を 25% にするのではない — ±360° の巻きや分解の違いで一人称の腕が 90° ねじれないように）。
-    四元数の符号は最後のキー（自然体）から連続にたどり、オイラー角も隣のキーに最も近い表し方で。"""
+    """一人称の腕 {秒: (x, y, z)}: 自然体からの回転 D = R · R_rest⁻¹（最短の向き、角度 θ ≤ 180°）を、同じ軸
+    まわりに f(θ) = FPK·θ·(1 − (θ/180)^6)（≤ 28°）だけ回した物のオイラー角（隣のキーに最も近い表し方）。
+    成分を 25% にするのではない（±360° の巻きや分解の違いで一人称の腕が 90° ねじれないように）。θ が 180° に
+    近づくと f → 0 なので、軸が反対へ入れ替わる所（腕が自然体から真反対を通る時）でも一人称の腕は飛ばない。"""
     tr = res.tracks.get(part)
     if not tr:
         return {}
-    ts = sorted(tr)
     R0 = rot(*REST.get(part, (0.0, 0.0, 0.0)))
-    qs = [_quat(rot(*tr[t]) @ R0.T) for t in ts]
-    if qs[-1][0] < 0:
-        qs[-1] = -qs[-1]
-    for i in range(len(qs) - 2, -1, -1):
-        if float(np.dot(qs[i], qs[i + 1])) < 0:
-            qs[i] = -qs[i]
     out = {}
     prev = np.zeros(3)
-    for i in range(len(ts) - 1, -1, -1):
-        w, v = float(qs[i][0]), qs[i][1:]
-        s = float(np.linalg.norm(v))
+    for t in sorted(tr):
+        q = _quat(rot(*tr[t]) @ R0.T)
+        if q[0] < 0:
+            q = -q
+        s = float(np.linalg.norm(q[1:]))
         if s < 1e-9:
             F = np.eye(3)
         else:
-            th = 2.0 * math.degrees(math.atan2(s, w))      # 0〜360（符号を連続にたどった角度）
-            F = _axis_angle(v / s, th * FPK)
+            th = 2.0 * math.degrees(math.atan2(s, float(q[0])))
+            F = _axis_angle(q[1:] / s, FPK * th * (1.0 - (th / 180.0) ** FP_TAPER))
         e = euler_near(F, prev)
-        out[ts[i]] = tuple(float(x) for x in e)
+        out[t] = tuple(float(x) for x in e)
         prev = e
     return out
 

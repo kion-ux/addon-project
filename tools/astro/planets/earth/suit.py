@@ -121,11 +121,11 @@ def boots(s):
 def legs(s):
     # 腿: 前の青い板（上に白い板）・外の白い装甲（型番）。後ろと内側は骨格を見せる
     t = s.part("legs", "thigh_r", "rightLeg", pivot=A.HIP)
-    fr = layered_plate(t, (LX, 11.75, -1.82), (2.85, 4.3, 0.55), "plate", top="plate2",
-                       rot=(-3, 0, 0), inset=0.42, trim="gold", trim_edge="bottom",
+    fr = layered_plate(t, (LX, 11.75, -1.82), (2.85, 4.3, 0.55), "plate2", top="plate",
+                       rot=(-3, 0, 0), inset=0.3, trim="gold", trim_edge="bottom",
                        rivet="rivet", n_rivets=3, rivet_edge="top")
-    line_on(t, fr["top"], "north", (0.72, 0.08), (0.72, 0.62), 0.2, 0.16, "glow")
-    line_on(t, fr["top"], "north", (0.72, 0.62), (0.45, 0.9), 0.2, 0.16, "glow")
+    line_on(t, fr["top"], "north", (0.74, 0.1), (0.74, 0.6), 0.18, 0.16, "glow")
+    line_on(t, fr["top"], "north", (0.74, 0.6), (0.42, 0.86), 0.18, 0.16, "glow")
     side = rbox(t, (LX - 1.78, 11.95, 0.05), (0.5, 4.4, 2.9), "plate2", rot=(0, 0, -3),
                 decals={"west": {"decal": "serial", "text": "GA-03", "ink": (40, 60, 110)}})
     rivets(t, side, "west", 3, edge="bottom", margin=0.3)
@@ -145,11 +145,11 @@ def legs(s):
     g = s.part("legs", "shin_r", "rightLeg", pivot=A.KNEE)
     front = rbox(g, (LX, 4.75, -1.42), (2.75, 5.1, 0.55), "plate", rot=(4, 0, 0))
     stick(g, front, "north", 0.5, 0.04, (2.6, GOLD_W, 0.18), "gold", sink=0.05)
-    keel = rbox(g, (LX - 0.55, 4.85, -1.78), (1.15, 4.3, 0.5), "plate2", rot=(4, 22, 0))
-    l1 = line_on(g, keel, "north", (0.25, 0.12), (0.55, 0.48), 0.2, 0.16, "glow")
-    l2 = line_on(g, keel, "north", (0.55, 0.48), (0.38, 0.88), 0.2, 0.16, "glow")
+    keel = rbox(g, (LX - 0.36, 4.95, -1.76), (0.78, 4.2, 0.48), "plate2", rot=(4, 24, 0))
     mirror_x(g, keel, about=LX)
-    mirror_x(g, l1, l2, about=LX)
+    line_on(g, front, "north", (0.1, 0.18), (0.16, 0.55), 0.18, 0.16, "glow")
+    line_on(g, front, "north", (0.16, 0.55), (0.08, 0.86), 0.18, 0.16, "glow")
+    line_on(g, front, "north", (0.92, 0.3), (0.86, 0.7), 0.18, 0.16, "glow")
     sd = rbox(g, (LX - 1.45, 4.85, -0.15), (0.45, 4.9, 2.7), "plate", rot=(0, 0, -4))
     sdr = rivets(g, sd, "west", 3, edge="bottom", margin=0.32)
     mirror_x(g, sd, sdr, about=LX)
@@ -202,14 +202,17 @@ def torso(s):
     sl = rbox(c, (-3.9, 22.15, 0.0), (0.5, 2.9, 4.0), "plate", rot=(0, 0, -24))    # 脇の斜面
     mirror_x(c, sl)
     # 白い V の胸板: 外へ開き、内側の端が前へ、下辺が中央へ（金の縁・緑の大陸線・リベット）
-    pec = rbox(c, (-2.3, 24.05, -2.66), (4.2, 2.9, 0.6), "plate2", rot=(6, 17, 9))
-    pt = stick(c, pec, "north", 0.5, 0.95, (4.0, GOLD_W, 0.18), "gold", sink=0.05)
-    gl = [line_on(c, pec, "north", ab0, ab1, 0.2, 0.16, "glow") for ab0, ab1 in (
-        ((0.95, 0.4), (0.62, 0.56)), ((0.62, 0.56), (0.42, 0.85)), ((0.62, 0.56), (0.22, 0.4)))]
-    pr = rivets(c, pec, "north", 3, edge="bottom", margin=0.28, span=(0.2, 0.8))
+    pec = rbox(c, (-2.55, 24.2, -2.62), (3.55, 2.45, 0.55), "plate2", rot=(6, 17, 9))
+    pt = stick(c, pec, "north", 0.5, 0.94, (3.4, GOLD_W, 0.18), "gold", sink=0.05)
+    gl = [line_on(c, pec, "north", ab0, ab1, 0.18, 0.16, "glow") for ab0, ab1 in (
+        ((0.92, 0.42), (0.6, 0.55)), ((0.6, 0.55), (0.42, 0.8)), ((0.6, 0.55), (0.25, 0.42)))]
+    pr = rivets(c, pec, "north", 3, edge="bottom", margin=0.26, span=(0.2, 0.8))
     low = rbox(c, (-1.95, 21.95, -2.42), (3.3, 1.5, 0.5), "plate", rot=(-8, 12, 12))
     lr = rivets(c, low, "north", 2, edge="bottom", margin=0.28, span=(0.3, 0.75))
     mirror_x(c, pec, pt, gl, pr, low, lr)
+    # 胸の中央の稜（青）: 胸板の間を縦に通り、下の星核へ
+    kl = rbox(c, (0, 24.35, -2.82), (1.25, 2.9, 0.5), "plate", rot=(-8, 0, 0))
+    stick(c, kl, "north", 0.5, 0.55, (0.3, 2.2, 0.16), "plate2", sink=0.06)
     # 星核: 黒い菱形の台 → 金の八角の枠 → 地球 → 脈打つ光の輪
     rbox(c, (0, 22.75, -2.72), (2.5, 2.5, 0.5), "dark", rot=(0, 0, 45))
     octa(c, (0, 22.75, -2.98), 2.25, 0.36, "gold", axis="z")
@@ -246,14 +249,19 @@ def torso(s):
 # ---------------------------------------------------------------------------
 def back(s):
     bk = s.part("back", "pack", "body")
-    pk = bevel(bk, (0, 22.3, 3.5), (5.0, 5.2, 2.0), "plate2", cut=0.65, axis="z")
-    rbox(bk, (0, 25.15, 3.15), (4.4, 0.8, 2.0), "plate", rot=(20, 0, 0))             # 上の蓋
-    side = cbox(bk, (-2.55, 22.3, 3.5), (0.25, 4.0, 1.5), "plate")
-    mirror_x(bk, side)
-    vents(bk, pk[0], "south", 4, box=(0.22, 0.3, 0.78, 0.72), rim="frame")
-    cbox(bk, (0, 20.15, 4.52), (3.2, 0.4, 0.2), "hazard")
-    rivets(bk, pk[0], "south", 8, edge="border", margin=0.3)
+    pk = bevel(bk, (0, 22.3, 3.5), (4.2, 5.2, 2.0), "plate2", cut=0.6, axis="z")
+    rbox(bk, (0, 25.1, 3.2), (3.8, 0.8, 2.0), "plate", rot=(20, 0, 0))              # 上の蓋
+    vents(bk, pk[0], "south", 4, box=(0.25, 0.3, 0.75, 0.7), rim="frame")
+    cbox(bk, (0, 20.15, 4.52), (2.6, 0.4, 0.2), "hazard")
+    rivets(bk, pk[0], "south", 8, edge="border", margin=0.28)
     sensor(bk, (0, 24.35, 4.52), 0.3, "glow", "dark", facing=1)
+    st = cbox(bk, (-1.55, 22.3, 4.55), (0.36, 4.4, 0.16), "plate")                  # 青い縦の帯
+    # 脇の推進剤タンク（八角の筒 + 蓋 + 金の帯）
+    tk = octa(bk, (-2.32, 21.6, 3.85), 1.0, 3.0, "plate", axis="y")
+    tk += octa(bk, (-2.32, 23.2, 3.85), 0.78, 0.3, "frame", axis="y")
+    tk += octa(bk, (-2.32, 20.0, 3.85), 0.78, 0.3, "frame", axis="y")
+    tk += octa(bk, (-2.32, 21.6, 3.85), 1.12, 0.3, "gold", axis="y")
+    mirror_x(bk, st, tk)
     # ホース: バックパックの下から腰の両脇へ（垂れる蛇腹）
     hs = cable(bk, [(-1.6, 19.9, 3.6), (-2.9, 17.6, 2.4)], 0.3, "dark", sag=0.35,
                rib="frame_lt", rib_every=2)
@@ -280,12 +288,12 @@ def back(s):
 #  マント（雲のように白い二枚。上下 2 段で揺れる）
 # ---------------------------------------------------------------------------
 def cape(s):
-    cp = s.part("extra", "cape_r", "body", pivot=(-3.85, 25.7, 2.95), rotation=(0, 0, 3))
-    cbox(cp, (-3.85, 22.35, 3.0), (2.5, 6.7, 0.34), "cape_top")
-    cbox(cp, (-3.85, 25.55, 2.82), (1.2, 0.8, 0.6), "gold")
-    rbox(cp, (-3.85, 25.55, 2.45), (0.55, 0.55, 0.3), "gem", rot=(0, 0, 45))
-    lo = s.part("extra", "cape2_r", cp, pivot=(-3.85, 19.1, 3.0), rotation=(0, 0, 3))
-    cbox(lo, (-3.95, 13.55, 3.0), (2.7, 11.1, 0.32), "cape")                       # 裾は少し広く
+    cp = s.part("extra", "cape_r", "body", pivot=(-3.75, 25.7, 2.95), rotation=(0, 0, 2))
+    cbox(cp, (-3.75, 22.35, 3.0), (1.9, 6.7, 0.34), "cape_top")
+    cbox(cp, (-3.75, 25.55, 2.82), (1.1, 0.8, 0.6), "gold")
+    rbox(cp, (-3.75, 25.55, 2.45), (0.55, 0.55, 0.3), "gem", rot=(0, 0, 45))
+    lo = s.part("extra", "cape2_r", cp, pivot=(-3.75, 19.1, 3.0))
+    cbox(lo, (-3.8, 13.55, 3.0), (2.1, 11.1, 0.32), "cape")                        # 裾は少し広く
 
 
 # ---------------------------------------------------------------------------
@@ -368,28 +376,29 @@ def shoulders(s):
 def helmet(s):
     hz = A.HEAD_Z
     hm = s.part("helmet", "dome", "head")
-    bevel(hm, (0, 31.0, hz + 0.3), (4.5, 2.2, 4.9), "plate", cut=0.6, axis="z")
-    cbox(hm, (0, 32.15, hz + 0.45), (0.9, 0.42, 4.1), "plate2")                     # 中央の稜
+    bevel(hm, (0, 30.65, hz + 0.3), (4.5, 1.7, 4.9), "plate", cut=0.6, axis="z")
+    bevel(hm, (0, 31.62, hz + 0.45), (3.5, 0.9, 4.4), "plate", cut=0.42, axis="z")  # 冠
+    cbox(hm, (0, 32.0, hz + 0.5), (0.8, 0.34, 3.9), "plate2")                       # 中央の稜
     rbox(hm, (0, 30.7, hz - 2.2), (4.2, 1.3, 0.5), "plate", rot=(-22, 0, 0))       # 額の斜面
     br = rbox(hm, (-1.05, 30.05, hz - 2.42), (2.1, 0.5, 0.5), "plate2", rot=(-8, 8, 9))
     sd = cbox(hm, (-2.12, 28.95, hz + 0.65), (0.42, 2.2, 3.5), "plate")             # こめかみ
     sdr = rivets(hm, sd, "west", 2, edge="top", margin=0.3, span=(0.3, 0.7), size=0.22)
     ck = rbox(hm, (-1.82, 28.35, hz - 1.15), (0.5, 2.0, 2.3), "plate", rot=(0, 20, 4))  # 頬当て
     ckg = stick(hm, ck, "west", 0.06, 0.5, (0.22, 1.8, 0.16), "gold", sink=0.05)
-    ear = octa(hm, (-2.38, 29.15, hz + 0.65), 1.4, 0.36, "chrome", axis="x")       # 耳
-    eg = cbox(hm, (-2.6, 29.15, hz + 0.65), (0.16, 0.5, 0.5), "glow")
+    ear = octa(hm, (-2.36, 29.15, hz + 0.65), 1.4, 0.34, "chrome", axis="x")       # 耳
+    eg = cbox(hm, (-2.55, 29.15, hz + 0.65), (0.16, 0.5, 0.5), "glow")
     mirror_x(hm, br, sd, sdr, ck, ckg, ear, eg)
-    # 面頬（白）: 鼻筋の V と吸気スリット、尖った顎
-    fc = rbox(hm, (0, 28.45, hz - 2.3), (2.4, 1.3, 0.45), "face", rot=(10, 0, 0))
-    vents(hm, fc, "north", 2, box=(0.15, 0.3, 0.35, 0.75), axis="v", w=0.18, style="grille")
-    vents(hm, fc, "north", 2, box=(0.65, 0.3, 0.85, 0.75), axis="v", w=0.18, style="grille")
-    ch = rbox(hm, (-0.5, 27.65, hz - 2.0), (1.15, 0.75, 0.5), "face", rot=(0, 26, -22))
-    mirror_x(hm, ch)
-    cbox(hm, (0, 28.85, hz - 2.62), (0.32, 0.9, 0.2), "plate2")
+    # 面頬（白）: 中央の稜へ折れた V の板、頬の小さな吸気口、尖った顎
+    fc = rbox(hm, (-0.62, 28.45, hz - 2.2), (1.3, 1.25, 0.42), "face", rot=(8, 26, 0))
+    fv = stick(hm, fc, "north", 0.42, 0.32, (0.62, 0.16, 0.16), "grille", sink=0.06)
+    fv2 = stick(hm, fc, "north", 0.42, 0.56, (0.62, 0.16, 0.16), "grille", sink=0.06)
+    ch = rbox(hm, (-0.45, 27.75, hz - 1.98), (1.0, 0.7, 0.48), "face", rot=(0, 26, -22))
+    mirror_x(hm, fc, fv, fv2, ch)
+    cbox(hm, (0, 28.5, hz - 2.5), (0.3, 1.2, 0.3), "plate2")
     # 後頭部としころ
     cbox(hm, (0, 29.1, hz + 2.6), (4.0, 2.4, 0.45), "plate")
-    rbox(hm, (0, 27.85, hz + 2.6), (3.7, 0.8, 0.45), "plate_b", rot=(22, 0, 0))
-    rbox(hm, (0, 27.15, hz + 2.75), (3.2, 0.7, 0.42), "plate", rot=(32, 0, 0))
+    rbox(hm, (0, 28.05, hz + 2.62), (3.7, 0.75, 0.45), "plate_b", rot=(22, 0, 0))
+    rbox(hm, (0, 27.55, hz + 2.75), (3.2, 0.62, 0.42), "plate", rot=(32, 0, 0))
     # V 字の角（金。飾り）と額の宝玉
     cr = s.part("helmet", "crest", "head", pivot=(0, 30.6, hz - 2.6), ornament=True)
     v = polyline(cr, [(-0.25, 30.55, hz - 2.62), (-1.3, 31.6, hz - 2.6), (-2.85, 33.7, hz - 2.4)],
