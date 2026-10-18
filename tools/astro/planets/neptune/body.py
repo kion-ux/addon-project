@@ -14,6 +14,7 @@
   retro_throw   空中技 トリトンの逆行: 宙で槍を頭上に振りかぶり、真下へ投げ下ろす
   tempest_stir  必殺 アビサル・テンペスト（前半）: 槍を立てて大きく構え、渦潮をかき回しながら一回転
   tidal_crash   必殺の締め: 跳び上がって槍を頭上に構え、大津波とともに大地へ突き立てて膝をつく
+  throw         共通の「投げる」の上書き（頭上から投げる。共通版は穂先が頭に入る）
 """
 from __future__ import annotations
 
@@ -110,7 +111,18 @@ tc_plant = P(w=(30, 0, 0), h=(-18, 0, 0),
              lA=aim(dirv(f=0.3, u=-1.0, r=0.35)),
              rL=(60, 0, 6), lL=(-54, 0, -6), ground=True)
 
+# ---- 共通の「投げる」の上書き（槍は頭上から投げる。共通版は穂先が頭に入る） --------------
+th_cock = P(b=(-10, 26, 0), h=(-10, -18, 0),
+            rA=wield(blade=dirv(f=1.0, u=0.3, r=0.1), arm=dirv(u=1.0, f=-0.55, r=0.4)),
+            lA=aim(dirv(f=1.0, u=0.2, r=-0.2)), rL=(14, 0, 4), lL=(-20, 0, -4), ground=True)
+th_rel = P(b=(14, -22, 0), w=(10, 0, 0), h=(-8, 18, 0),
+           rA=wield(blade=dirv(f=1.0, u=-0.2), arm=dirv(u=0.8, f=0.4, r=0.35)),
+           lA=aim(dirv(f=-0.3, u=-1.0, r=-0.4)), rL=(16, 0, 4), lL=(-30, 0, -4),
+           root_pos=(0, 0, -1.0), ground=True)
+
 BODY_ANIMS = {
+    "throw": anim(0.55, {0.0: H, 0.14: th_cock, 0.26: th_rel, 0.4: P(th_rel, b=(12, -18, 0)),
+                         0.55: H}),
     "combo1": anim(0.5, {0.0: H, 0.08: c1_wind, 0.18: c1_hit, 0.3: c1_follow, 0.5: H}),
     "combo2": anim(0.55, {0.0: H, 0.09: c2_wind, 0.18: c2_mid, 0.27: c2_hit,
                           0.4: P(c2_hit, b=(6, -40, 0)), 0.55: H}),

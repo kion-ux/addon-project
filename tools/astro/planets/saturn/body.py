@@ -17,92 +17,96 @@
 """
 from __future__ import annotations
 
-from astro_animlib import LEFT, RIGHT, H, P, aim, anim, dirv, wield
+from astro_animlib import H, P, aim, anim, dirv, wield
+
+# 環刃の持ち方の性質: 環の面は「腕の軸」と「blade」を含む（環は拳から腕に直角に張り出す）。
+# だから環を水平に寝かせたい時は腕を水平に伸ばし、blade を腕に直角な水平の向きにする。
 
 # ---- 三段コンボ -------------------------------------------------------------
-# 1: 右から左へ、環を寝かせた水平の薙ぎ
+# 1: 右から左へ、環を寝かせた水平の薙ぎ（腕を右 → 前 → 左へ振り、環は腕の前に寝て先行する）
 c1_wind = P(b=(2, 40, 0), h=(0, -30, 0),
-            rA=wield(blade=dirv(r=1.0, f=0.1, u=0.1), arm=dirv(r=0.8, u=-0.5, f=-0.2)),
+            rA=wield(blade=dirv(f=1.0, r=0.2), arm=dirv(r=1.0, f=-0.15, u=-0.15)),
             lA=aim(dirv(f=1.0, r=-0.4, u=-0.1)),
             rL=(14, 0, 6), lL=(-18, 0, -6), ground=True)
 c1_hit = P(b=(6, -14, 0), h=(0, 12, 0),
-           rA=wield(blade=dirv(f=1.0, r=-0.15, u=-0.05), edge=LEFT),
+           rA=wield(blade=dirv(r=-1.0, f=0.15), arm=dirv(f=1.0, r=0.1, u=-0.1)),
            lA=aim(dirv(f=-0.3, u=-1.0, r=-0.6)),
            rL=(24, 0, 6), lL=(-30, 0, -6), root_pos=(0, 0, -1.0), ground=True)
 c1_follow = P(c1_hit, b=(8, -44, 0), h=(0, 34, 0),
-              rA=wield(blade=dirv(r=-1.0, f=0.35, u=-0.05), arm=dirv(r=-0.5, f=0.7, u=-0.5)))
+              rA=wield(blade=dirv(r=-0.7, f=-0.8), arm=dirv(r=-0.8, f=0.7, u=-0.1)))
 
-# 2: 左下から右上へ、環を立てて斬り上げる
+# 2: 左下から右上へ、環を立てて斬り上げる（環の面は振りの軌道を含む）
 c2_wind = P(b=(12, -32, 0), h=(0, 26, 0),
-            rA=wield(blade=dirv(r=-0.75, u=-0.55, f=0.4), arm=dirv(f=1.0, u=-0.6, r=-0.1)),
+            rA=wield(blade=dirv(f=0.6, r=0.45, u=0.5), arm=dirv(f=0.5, r=-0.7, u=-0.55)),
             lA=aim(dirv(f=0.3, u=-1.0, r=0.4)),
             rL=(-22, 0, 6), lL=(16, 0, -6), ground=True)
 c2_hit = P(b=(-6, 24, 0), h=(0, -18, 0),
-           rA=wield(blade=dirv(r=0.55, u=0.75, f=0.5), arm=dirv(r=0.8, u=0.1, f=0.6)),
+           rA=wield(blade=dirv(u=1.0, r=0.45, f=-0.2), arm=dirv(f=1.0, r=0.25, u=0.15)),
            lA=aim(dirv(f=-0.2, u=-1.0, r=-0.5)),
            rL=(-28, 0, 6), lL=(20, 0, -6), root_pos=(0, 0.4, -0.8), ground=True)
 c2_follow = P(c2_hit, b=(-10, 36, 0), h=(-6, -26, 0),
-              rA=wield(blade=dirv(r=0.6, u=0.8, f=-0.1), arm=dirv(r=0.9, u=0.4, f=0.1)))
+              rA=wield(blade=dirv(u=0.6, r=-0.5, f=-0.6), arm=dirv(r=0.8, u=0.6, f=0.2)))
 
-# 3: 環断（腕を右へ伸ばし、環を水平に広げて全身で一回転）
-c3_out = P(rA=wield(blade=dirv(r=1.0, f=0.45, u=-0.05), edge=dirv(f=1.0, r=-0.3)),
+# 3: 環断（腕を右へ水平に伸ばし、環を前へ寝かせて全身で一回転）
+c3_out = P(rA=wield(blade=dirv(f=1.0, r=-0.1), arm=dirv(r=1.0, f=0.15, u=-0.05)),
            lA=aim(dirv(r=-1.0, u=-0.35, f=-0.2)), b=(8, 0, 0), h=(4, 0, 0),
            rL=(-16, 0, 10), lL=(16, 0, -10), root_pos=(0, -0.8, 0))
 c3_wind = P(c3_out, root=(0, 40, 0), b=(8, 18, 0), h=(0, -16, 0))
 
 # ---- 惑星技: リング・ソー（円盤投げ） -----------------------------------------
 rt_wind = P(b=(-4, 52, 0), w=(6, 0, 0), h=(0, -44, 0),
-            rA=wield(blade=dirv(r=0.4, f=-0.9, u=0.05), arm=dirv(r=1.0, f=-0.3, u=-0.35)),
+            rA=wield(blade=dirv(f=1.0, r=0.35), arm=dirv(r=1.0, f=-0.35, u=-0.2)),
             lA=aim(dirv(f=1.0, u=0.25, r=-0.2)),
             rL=(14, 0, 8), lL=(-22, 0, -8), ground=True)
 rt_release = P(b=(10, -26, 0), w=(10, 0, 0), h=(-4, 22, 0),
-               rA=wield(blade=dirv(f=1.0, u=0.05, r=-0.1), arm=dirv(f=1.0, r=0.25, u=-0.15)),
+               rA=wield(blade=dirv(r=-1.0, f=0.2), arm=dirv(f=1.0, r=0.15, u=0.0)),
                lA=aim(dirv(f=-0.4, u=-1.0, r=-0.6)),
                rL=(26, 0, 6), lL=(-36, 0, -6), root_pos=(0, 0, -1.2), ground=True)
 rt_follow = P(rt_release, b=(14, -40, 0), h=(-6, 34, 0),
-              rA=wield(blade=dirv(f=0.4, r=-0.9, u=-0.3), arm=dirv(f=0.6, r=-0.6, u=-0.6)))
+              rA=wield(blade=dirv(r=-0.3, f=-1.0, u=-0.2), arm=dirv(r=-1.0, f=0.4, u=-0.45)))
 
 # ---- 機動技: リング・スライド ---------------------------------------------------
 slide = P(w=(18, 0, 0), b=(0, 24, 0), h=(-14, -22, 0),
-          rA=wield(blade=dirv(f=0.6, r=0.7, u=-0.25), arm=dirv(r=1.0, u=-0.45, f=-0.3)),
+          rA=wield(blade=dirv(f=1.0, u=-0.35), arm=dirv(r=1.0, u=-0.5, f=-0.1)),
           lA=aim(dirv(f=1.0, r=-0.55, u=0.1), twist=20),
           rL=(26, 0, 12), lL=(-34, 0, -8), ground=True)
 slide2 = P(slide, b=(0, 30, 0), w=(22, 0, 0), rL=(30, 0, 12), lL=(-38, 0, -8))
 slide_cut = P(w=(10, 0, 0), b=(4, -36, 0), h=(0, 28, 0),
-              rA=wield(blade=dirv(f=0.4, r=-1.0), edge=dirv(f=1.0, r=0.2)),
+              rA=wield(blade=dirv(r=-1.0, f=-0.3), arm=dirv(f=1.0, r=-0.3, u=-0.15)),
               lA=aim(dirv(r=1.0, u=-0.5, f=-0.3)),
               rL=(18, 0, 8), lL=(-22, 0, -8), ground=True)
 
 # ---- 空中技: 六角極渦 ------------------------------------------------------------
+# 腕を真上へ → 環は頭上に縦に立つ（正面を向いた光輪）。振り下ろして狙った地点を指す
 hx_up = P(b=(-10, 0, 0), h=(-34, 0, 0),
-          rA=wield(blade=dirv(u=0.15, f=0.3, r=-1.0), arm=dirv(u=1.0, f=0.2, r=0.35)),
+          rA=wield(blade=dirv(r=-1.0, f=0.15), arm=dirv(u=1.0, f=0.15, r=0.35)),
           lA=aim(dirv(u=0.9, f=0.4, r=-0.3)),
           rL=(-24, 0, 6), lL=(10, 0, -6))
 hx_down = P(b=(16, 0, 0), h=(10, 0, 0),
-            rA=wield(blade=dirv(f=1.0, u=-0.85, r=0.1), arm=dirv(f=1.0, u=-0.5, r=0.3)),
+            rA=wield(blade=dirv(f=0.45, u=0.9, r=0.1), arm=dirv(f=1.0, u=-0.55, r=0.25)),
             lA=aim(dirv(f=1.0, u=-0.6, r=-0.2), twist=30),
             rL=(-30, 0, 8), lL=(18, 0, -8))
 
 # ---- 必殺: クロノス・ホライズン ---------------------------------------------------
 hz_raise = P(b=(-12, 0, 0), h=(-30, 0, 0),
-             rA=wield(blade=dirv(u=0.2, f=0.2, r=-1.0), arm=dirv(u=1.0, f=0.25, r=0.35)),
+             rA=wield(blade=dirv(r=-1.0, f=0.15), arm=dirv(u=1.0, f=0.2, r=0.35)),
              lA=aim(dirv(f=0.7, u=-0.3, r=-0.6), twist=20),
              rL=(-6, 0, 10), lL=(6, 0, -10), ground=True)
 hz_hold = P(hz_raise, b=(-14, 0, 0), h=(-34, 0, 0),
             lA=aim(dirv(f=1.0, u=0.1, r=-0.3), twist=40))
 hz_wind = P(b=(4, 64, 0), w=(10, 0, 0), h=(0, -52, 0),
-            rA=wield(blade=dirv(r=0.6, f=-0.8, u=0.0), arm=dirv(r=1.0, f=-0.2, u=-0.3)),
+            rA=wield(blade=dirv(f=1.0, r=0.3), arm=dirv(r=1.0, f=-0.3, u=-0.1)),
             lA=aim(dirv(f=1.0, r=-0.5, u=0.05)),
             rL=(16, 0, 14), lL=(-30, 0, -12), ground=True)
 hz_slash = P(b=(6, -30, 0), w=(12, 0, 0), h=(0, 26, 0),
-             rA=wield(blade=dirv(f=1.0, r=-0.2, u=0.0), edge=LEFT),
+             rA=wield(blade=dirv(r=-1.0, f=0.1), arm=dirv(f=1.0, r=0.1, u=0.0)),
              lA=aim(dirv(f=-0.4, u=-1.0, r=-0.6)),
              rL=(30, 0, 12), lL=(-40, 0, -12), root_pos=(0, 0, -1.4), ground=True)
 hz_follow = P(hz_slash, b=(8, -70, 0), h=(0, 54, 0),
-              rA=wield(blade=dirv(r=-1.0, f=-0.25, u=0.05), arm=dirv(r=-0.6, f=0.6, u=-0.4)),
+              rA=wield(blade=dirv(r=-0.3, f=-1.0), arm=dirv(r=-1.0, f=0.3, u=-0.1)),
               lA=aim(dirv(r=1.0, u=-0.6, f=-0.4)))
 hz_zanshin = P(w=(16, 0, 0), b=(4, -40, 0), h=(-6, 30, 0),
-               rA=wield(blade=dirv(r=-0.6, u=-0.6, f=0.3), arm=dirv(r=-0.2, f=0.4, u=-1.0)),
+               rA=wield(blade=dirv(r=-0.2, f=-0.4, u=-1.0), arm=dirv(r=-0.8, f=0.4, u=-0.5)),
                lA=aim(dirv(r=0.6, u=-1.0, f=0.0)),
                rL=(24, 0, 10), lL=(-30, 0, -10), ground=True)
 

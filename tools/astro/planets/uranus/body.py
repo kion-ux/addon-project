@@ -85,13 +85,14 @@ rain_kick = P(rain_aim, b=(-20, 6, 0), h=(-30, -4, 0),
               rA=wield(blade=dirv(f=0.6, u=1.2, r=0.05), arm=dirv(f=0.8, u=0.9, r=0.35)))
 
 # ---- 必殺: 世界を傾ける → 砕く一射 ---------------------------------------------
-tilt_reach = P(b=(-4, -20, -14), h=(-10, 16, -10), w=(0, 0, 0),
-               lA=aim(dirv(r=-1.0, u=0.45, f=0.4), twist=-70),
+tilt_reach = P(b=(-8, 12, 12), h=(-22, -10, 8),
+               lA=aim(dirv(r=-0.55, u=1.0, f=0.35), twist=-40),
                rA=wield(blade=dirv(f=0.7, u=-0.3, r=0.6), arm=dirv(r=0.7, u=-0.7, f=0.1)),
-               rL=(-6, 0, 14), lL=(6, 0, -10), ground=True)
-tilt_turn = P(tilt_reach, b=(-6, -10, -26), h=(-14, 10, -18),
-              lA=aim(dirv(r=-0.6, u=-0.7, f=0.5), twist=-110),
-              root=(0, 0, -8))
+               rL=(-6, 0, 12), lL=(6, 0, -12), ground=True)
+tilt_turn = P(b=(6, -14, -22), h=(4, 12, -16),
+              lA=aim(dirv(r=0.9, u=-0.45, f=0.55), twist=-90),
+              rA=wield(blade=dirv(f=0.5, u=-0.5, r=0.7), arm=dirv(r=0.8, u=-0.6)),
+              rL=(-10, 0, 16), lL=(10, 0, -6), root=(0, 0, -8), ground=True)
 zero_aim = P(w=(16, 0, 0), h=(-14, 0, 0), b=(0, 16, 0),
              rA=wield(blade=dirv(f=1.0, u=0.05), arm=dirv(f=1.0, u=0.05, r=0.3)),
              lA=aim(dirv(f=1.0, u=0.0, r=-0.5), twist=20),

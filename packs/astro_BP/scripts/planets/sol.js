@@ -29,9 +29,7 @@ import {
 import {
   P, line, ring, arc, shock, emblem, flash, shake, sound, body, white, mix, afterimage, status, fxScale,
 } from "../fx.js";
-import {
-  hit, nearestHostile, hostilesNear, pull, launch, freeze,
-} from "../combat.js";
+import { hit, hostilesNear, pull } from "../combat.js";
 import {
   add, sub, up, norm, lerp3, yawRotate, yawDeg, rightOf, chest, dist, effect, onGround, valid, now,
 } from "../util.js";
@@ -45,7 +43,6 @@ const CRIMSON = [0.78, 0.13, 0.05];
 const PLASMA = [1.0, 0.52, 0.12];
 const NOVA = [0.74, 0.9, 1.0];
 const EAST = { x: 1, y: 0, z: 0 };
-const UPV = { x: 0, y: 1, z: 0 };
 
 /** 相手に火をつける（setOnFire が無い版では何もしない。ブロックには燃え移らない）。 */
 function ignite(e, seconds) {
@@ -135,6 +132,7 @@ register(KEY, {
       for (const e of ctx.cone(8.5, 55, c0, f)) {
         if (!ctx.once(e, 1, "flare")) continue;
         hit(ctx, e, 11, { color: SUN, kb: 1.0, up: 0.3, dir: f, power: 1.7, sound: "astro.hit_heavy" });
+        if (!valid(e)) continue;
         effect(e, "blindness", 70, 0);
         effect(e, "slowness", 50, 1);
         ignite(e, 5);
@@ -223,6 +221,7 @@ register(KEY, {
         const side = (e.location.x - c0.x) * r.x + (e.location.z - c0.z) * r.z >= 0 ? 1 : -1;
         const away = norm({ x: f.x * 0.5 + r.x * side, y: 0, z: f.z * 0.5 + r.z * side });
         hit(ctx, e, 8, { color: SUN, kb: 1.7, up: 0.5, dir: away, power: 1.6, sound: "astro.hit_heavy" });
+        if (!valid(e)) continue;
         ignite(e, 4);
         P(dim, "flame", chest(e), { color: FLARE, count: 6, spread: 0.4, size: 1.1 });
         sound(dim, "astro.flare", chest(e), 1.7, 0.5);
@@ -252,7 +251,7 @@ register(KEY, {
 
   // =========================================================================
   //  空中技「プロミネンス・アーチ」
-  //  宙で止まり（hover）、紅炎のループを三本、前方 4 / 7 / 10.5m へ順に叩きつける（5 / 9 / 14）。
+  //  宙で止まり（hover）、紅炎のループを三本、前方 3.2 / 5.8 / 9m へ順に叩きつける（5 / 9 / 14）。
   //  ループは地面から立ち上がり（後ろへ反る → 垂直 → 前へ倒れ込む）、伏せた所で炎の弧が爆ぜる。
   //  着く場所には 6 tick 前から予告の線。三本目は大きく、衝撃波が広がる
   // =========================================================================
@@ -265,7 +264,8 @@ register(KEY, {
     const f = ctx.f;
     const r = ctx.r;
     const o = ctx.loc();
-    const ARCHES = [[5, 4.0, 2.3, 3.0, 7], [9, 7.0, 2.6, 3.4, 7], [14, 10.5, 3.0, 4.4, 11]];
+    // [叩きつける tick, 前への距離, 半幅, 高さ, 素のダメージ]。一・二本目は浮かせて次のループの通り道に残す
+    const ARCHES = [[5, 3.2, 2.3, 3.0, 7], [9, 5.8, 2.6, 3.4, 7], [14, 9.0, 3.0, 4.4, 11]];
     ARCHES.forEach(([t, dist0, half, h, dmg], k) => {
       const big = k === 2;
       const mid = onGround(dim, add(o, f, dist0), 14);
@@ -309,7 +309,7 @@ register(KEY, {
         }
         for (const e of ctx.foes(h * 0.5 + 2.4, up(centre, 0.8))) {
           if (!ctx.once(e, 1, `arch${k}`)) continue;
-          hit(ctx, e, dmg, { color: FLARE, kb: big ? 1.4 : 0.8, up: big ? 0.8 : 0.55, dir: f, power: big ? 2.0 : 1.5,
+          hit(ctx, e, dmg, { color: FLARE, kb: big ? 1.4 : 0.3, up: big ? 0.8 : 0.62, dir: f, power: big ? 2.0 : 1.5,
                              sound: big ? "astro.hit_heavy" : "astro.hit" });
           ignite(e, big ? 5 : 3);
         }
@@ -362,6 +362,7 @@ register(KEY, {
       const list = ctx.foes(16, c0);
       for (let k = 0; k < list.length; k++) {
         const e = list[k];
+        if (!valid(e)) continue;
         pull(e, centre, 0.3 + i * 0.02, 0.06);
         if (k < 6 && i % 2 === 0) line(dim, "trail", chest(e), c0, 0.6, { color: FLARE, size: 0.45, life: 0.2 });
       }
