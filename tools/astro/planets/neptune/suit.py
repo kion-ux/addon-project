@@ -30,6 +30,7 @@ from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 from hd_space import rot
 
 TRIM_W = 0.4           # 真珠の縁取りの幅
+FIN = ["fin", "fin_m"]  # ヒレの条（白と淡い水色を交互に）
 
 # 配色（astro_data の neptune: plate 紺碧 / plate2 藍 / glow 水色 / accent 白）
 AZURE = (36, 92, 214)
@@ -47,9 +48,10 @@ def _v(p):
     return np.asarray(p, float)
 
 
-def fin3(bone, A, B, C, thick, layer, style, overlap=0.15, **kw):
+def fin3(bone, A, B, C, thick, layer, style, overlap=0.15, styles=None, **kw):
     """三角形 ABC を、辺 A→B に平行な細い板（ヒレの条）を C へ向かって重ねて埋める。
-    どの向きの平面でもよい（板の厚みは三角形の面の法線の向き）。戻り値はキューブのリスト。"""
+    どの向きの平面でもよい（板の厚みは三角形の面の法線の向き）。styles で条を交互に塗る。
+    戻り値はキューブのリスト。"""
     A, B, C = _v(A), _v(B), _v(C)
     e = B - A
     L = float(np.linalg.norm(e))
@@ -72,7 +74,8 @@ def fin3(bone, A, B, C, thick, layer, style, overlap=0.15, **kw):
         if ln < 0.2:
             continue
         cen = A + e * ((u0 + u1) / 2) + n * d
-        out.append(mat_cube(bone, cen, (thick, h * 1.06, ln), style, R, **kw))
+        st = styles[i % len(styles)] if styles else style
+        out.append(mat_cube(bone, cen, (thick, h * 1.06, ln), st, R, **kw))
     return out
 
 
@@ -112,9 +115,12 @@ SUIT_STYLES = {
     "plate2_b": {"base": (22, 28, 96), "light": (60, 74, 160), "dark": (12, 14, 56),
                  "line": (6, 8, 30)},
     # 白い波頭のヒレ（条の筋が斜めに走る）
-    "fin": {"kind": "armor", "base": FOAM, "light": (255, 255, 255), "dark": (150, 186, 228),
-            "line": (58, 96, 168), "panel": 0, "bolts": False,
-            "stripe": {"dir": "d", "period": 6, "width": 1, "color": (170, 206, 240), "k": 0.7}},
+    "fin": {"kind": "armor", "base": FOAM, "light": (255, 255, 255), "dark": (176, 204, 238),
+            "line": (120, 160, 220), "panel": 0, "bolts": False, "outline_k": 0.35,
+            "bevel_lo": 0.92},
+    "fin_m": {"kind": "armor", "base": (190, 222, 250), "light": (236, 248, 255),
+              "dark": (140, 186, 236), "line": (110, 150, 214), "panel": 0, "bolts": False,
+              "sheen": False, "outline_k": 0.3, "bevel_lo": 0.92},
     "fin_b": {"kind": "armor", "base": (196, 220, 246), "light": (240, 248, 255),
               "dark": (120, 156, 210), "line": (50, 84, 150), "panel": 0, "sheen": False},
     "pearl": {"kind": "trim", "base": PEARL, "light": (255, 255, 255), "dark": (96, 132, 176),
@@ -250,9 +256,9 @@ def legs(s):
     line_on(g, side, "west", (0.1, 0.25), (0.9, 0.75), 0.24, 0.2, "glow")
     fn = s.part("legs", "calf_fin_r", g, pivot=(X - 2.9, 5.0, 0.6), rotation=(0, 0, -16))
     fx = X - 3.1
-    fin3(fn, (fx, 3.4, -0.6), (fx, 7.8, 1.2), (fx, 9.6, 4.6), 0.45, 0.62, "fin")
-    beam(fn, (fx, 3.4, -0.6), (fx, 9.6, 4.6), 0.55, 0.5, "pearl", extend=0.2)   # 前縁
-    beam(fn, (fx + 0.12, 4.2, 0.0), (fx + 0.12, 8.6, 3.3), 0.5, 0.2, "glow")
+    fin3(fn, (fx, 3.2, 0.6), (fx, 8.6, 1.4), (fx, 10.6, 5.6), 0.45, 0.8, "fin", styles=FIN)
+    beam(fn, (fx, 8.6, 1.4), (fx, 10.6, 5.6), 0.55, 0.5, "pearl", extend=0.2)   # 前縁
+    beam(fn, (fx - 0.1, 3.6, 1.6), (fx - 0.1, 8.4, 4.4), 0.5, 0.2, "glow")
     # 腿
     t = s.part("legs", "thigh_r", "rightLeg", pivot=(X, 11.6, 0))
     cbox(t, (X, 10.4, 0.05), (5.2, 3.3, 5.4), "plate2")
@@ -382,11 +388,11 @@ def back(s):
     taper(fx, (-2.0, 13.85, 5.2), (-2.0, 7.0, 5.2), 2.0, 0.4, 3, "flame")
     taper(fx, (-2.0, 13.8, 5.2), (-2.0, 10.0, 5.2), 0.9, 0.25, 2, "flame_core", round_=False)
     # 背ビレ（スラスターの付け根から外上へ反り、肩の後ろに先が出る）
-    bf = s.part("back", "dorsal_r", bk, pivot=(-2.4, 18.5, 5.4), rotation=(-18, 0, -30))
+    bf = s.part("back", "dorsal_r", bk, pivot=(-2.4, 18.5, 5.4), rotation=(-14, 0, -20))
     fx_ = -2.4
-    fin3(bf, (fx_, 18.0, 4.8), (fx_, 28.6, 9.2), (fx_, 19.2, 8.2), 0.5, 0.7, "fin")
-    beam(bf, (fx_, 18.0, 4.8), (fx_, 28.6, 9.2), 0.6, 0.55, "pearl", extend=0.2)   # 前縁
-    beam(bf, (fx_ + 0.15, 19.4, 5.6), (fx_ + 0.15, 25.6, 8.2), 0.55, 0.22, "glow")
+    fin3(bf, (fx_, 18.2, 4.9), (fx_, 28.4, 10.4), (fx_, 18.4, 9.4), 0.5, 0.85, "fin", styles=FIN)
+    beam(bf, (fx_, 18.2, 4.9), (fx_, 28.4, 10.4), 0.62, 0.6, "pearl", extend=0.2)   # 前縁
+    beam(bf, (fx_ - 0.15, 19.0, 6.4), (fx_ - 0.15, 25.2, 9.4), 0.55, 0.22, "glow")
     taper(bf, (fx_, 18.3, 5.5), (fx_, 21.8, 7.4), 1.2, 0.6, 1, "plate2", round_=False)   # 付け根の装甲
 
 
@@ -414,9 +420,9 @@ def arms(s):
     cbox(fa, (-6.0, 13.42, 0), (5.7, TRIM_W, 5.9), "pearl")
     af = s.part("arms", "arm_fin_r", fa, pivot=(-8.9, 14.5, 0.5), rotation=(0, 0, -14))
     x = -9.1
-    fin3(af, (x, 13.6, -1.4), (x, 16.2, 1.0), (x, 18.4, 4.2), 0.42, 0.6, "fin")
-    beam(af, (x, 13.6, -1.4), (x, 18.4, 4.2), 0.5, 0.45, "pearl", extend=0.2)
-    beam(af, (x + 0.12, 14.4, -0.6), (x + 0.12, 17.3, 2.9), 0.46, 0.2, "glow")
+    fin3(af, (x, 13.4, -1.2), (x, 16.6, -0.2), (x, 19.0, 4.4), 0.42, 0.75, "fin", styles=FIN)
+    beam(af, (x, 16.6, -0.2), (x, 19.0, 4.4), 0.5, 0.45, "pearl", extend=0.2)
+    beam(af, (x - 0.12, 13.9, 0.2), (x - 0.12, 17.2, 3.2), 0.46, 0.2, "glow")
     # 拳: 甲の紺碧・真珠の指の関節・二節の指・親指・宝玉
     h = s.part("arms", "gauntlet_r", "rightArm", pivot=(ARM_X, 13.2, 0))
     cbox(h, (-6.0, 12.15, 0.0), (5.3, 2.7, 5.5), "plate2")
@@ -448,7 +454,7 @@ def shoulders(s):
     stick(p, l2, "west", 0.5, 0.05, (5.6, TRIM_W, 0.22), "pearl", sink=0.05)
     rbox(p, (-10.2, 19.15, 0.1), (0.8, 1.5, 5.2), "plate", rot=(0, 0, 10))
     # 波頭: 肩の外上で後ろへ巻く白いヒレ
-    fin3(p, (-9.6, 24.6, -2.8), (-9.6, 25.6, 2.2), (-10.4, 27.6, 3.8), 0.45, 0.55, "fin")
+    fin3(p, (-9.6, 24.4, -2.6), (-9.6, 25.4, 2.4), (-10.4, 27.8, 4.2), 0.45, 0.7, "fin", styles=FIN)
     beam(p, (-9.6, 24.6, -2.8), (-10.4, 27.6, 3.8), 0.5, 0.45, "pearl", extend=0.2)
 
 
@@ -471,12 +477,12 @@ def helmet(s):
     mirror_x(hm, sd, ear, eg)
     # 耳ビレ（側頭から後ろ上へ反る）
     ef = s.part("helmet", "ear_fin_r", hm, pivot=(-5.6, 28.0, 1.0), rotation=(0, 0, -18))
-    fin3(ef, (-5.9, 27.0, 0.4), (-5.9, 29.2, 1.6), (-5.9, 31.6, 5.8), 0.4, 0.55, "fin")
+    fin3(ef, (-5.9, 26.8, 0.6), (-5.9, 29.6, 1.4), (-5.9, 31.8, 6.0), 0.4, 0.7, "fin", styles=FIN)
     beam(ef, (-5.9, 27.0, 0.4), (-5.9, 31.6, 5.8), 0.48, 0.42, "pearl", extend=0.2)
     # 背ビレの鶏冠（頭頂の中央を前から後ろへ高く。白い条・水色の付け根・真珠の前縁）
     cr = s.part("helmet", "crest", hm, pivot=(0, 34.8, 1.0))
-    fin3(cr, (0, 34.6, -2.2), (0, 34.6, 5.6), (0, 39.8, 5.2), 0.5, 0.62, "fin")
-    fin3(cr, (0, 34.6, 5.6), (0, 32.2, 7.8), (0, 39.8, 5.2), 0.5, 0.62, "fin")
+    fin3(cr, (0, 34.6, -2.2), (0, 34.6, 5.6), (0, 39.8, 5.2), 0.5, 0.8, "fin", styles=FIN)
+    fin3(cr, (0, 34.6, 5.6), (0, 32.2, 7.8), (0, 39.8, 5.2), 0.5, 0.8, "fin", styles=FIN)
     polyline(cr, [(0, 34.6, -2.2), (0, 37.4, 1.6), (0, 39.8, 5.2)], 0.62, 0.5, "pearl")
     cbox(cr, (0, 35.05, 1.8), (0.7, 0.35, 7.4), "glow")
     # 三叉の冠（額の上: 中央の高い穂先と、外へ開いて先が内へ返る左右の穂先）

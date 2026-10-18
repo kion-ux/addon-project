@@ -29,6 +29,9 @@
   spin(m, parent, name, pivot=(0,0,0)) -> Bone         fx_spin_<name>
   glow(m, parent, name, pivot=(0,0,0)) -> Bone         fx_glow_<name>（WEAPON_ANIMS で脈動させる）
   sphere(bone, centre, r, style, **kw) -> [Cube]       角を落とした球（7 個）。惑星の球に
+  ring(bone, centre, radius, n, seg, style, axis="y", ...)  輪（セグメントは必ず接線向き）
+  globe_style(planet, emit=40, **kw) -> dict            球に惑星の模様を継ぎ目なく貼る塗り（kind "globe"）
+  spin_expr(axis, speed) / pulse_expr(speed, amount)    WEAPON_ANIMS に書く回転・脈動のチャンネル
   blade_point(bone, z_base, half_w, z_tip, thick, style, **kw)  YZ 平面の切先（三角形を角柱で埋める）
   edge_line(bone, pts, w, h, style, **kw)               polyline の別名（発光の縁取り）
   再輸出: box cbox rbox plate beam polyline octa chamfer bevel ring tri_fan fill_tri_yz arc_points lerp
@@ -531,8 +534,10 @@ def _sel(tp, fp):
     return f"(v.astro_fp > 0.5 ? {_num(fp)} : {_num(tp)})"
 
 
-def swing_channels(kind: str) -> dict:
-    s = SWING.get(kind, SWING["sword"])
+def swing_channels(kind: str, over=None) -> dict:
+    """origin ボーンの振り（手首の返し）。over = WEAPON_ANIMS["swing_root"]（{"rx": (三人称, 一人称), "ry": …,
+    "pz": …}）で種類の既定を上書きできる。"""
+    s = dict(SWING.get(kind, SWING["sword"]), **(over or {}))
     ch = {}
     rx = s.get("rx", (0, 0))
     ry = s.get("ry", (0, 0))
@@ -588,7 +593,8 @@ def weapon_animations(key: str, geo, mod=None) -> dict:
     _merge(idle, _default_spins(geo, "z", 120.0, have))
     _merge(idle, WA.get("idle", {}))
     A[f"{base}.idle"] = {"loop": True, "animation_length": float(WA.get("idle_length", 6.0)), "bones": idle}
-    sw = {ORIGIN: swing_channels(kind)} if swing_channels(kind) else {}
+    ch = swing_channels(kind, WA.get("swing_root"))
+    sw = {ORIGIN: ch} if ch else {}
     _merge(sw, WA.get("swing", {}))
     A[f"{base}.swing"] = {"loop": True, "bones": sw}
     A[f"{base}.form"] = form_animation(geo, WA.get("form_axes", getattr(mod, "FORM_AXES", None)))
@@ -847,7 +853,7 @@ def preview_swing(key: str) -> str:
     tiles = []
     for sw in (0.0, 0.15, 0.3, 0.5, 0.75):
         for fp in (0, 1):
-            ang = _eval_swing(kind, sw, fp)
+            ang = _eval_swing(kind, sw, fp, (getattr(mod, "WEAPON_ANIMS", {}) or {}).get("swing_root"))
             hh = h["fp"] if fp else h["tp"]
             a = {"hold": {"rotation": hh["rotation"], "position": hh["position"], "scale": (hh["scale"],) * 3},
                  ORIGIN: ang}
@@ -867,9 +873,9 @@ def preview_swing(key: str) -> str:
     return out
 
 
-def _eval_swing(kind, sw, fp):
+def _eval_swing(kind, sw, fp, over=None):
     """swing_channels の式を Python で評価（プレビュー用）。"""
-    s = SWING.get(kind, SWING["sword"])
+    s = dict(SWING.get(kind, SWING["sword"]), **(over or {}))
     cut = math.sin(math.radians((sw ** 0.6) * 180.0))
     wind = math.sin(math.radians(sw * 360.0))
     rx = s.get("rx", (0, 0))[fp] * (cut - 0.18 * wind)
