@@ -103,8 +103,8 @@ nr_shot = P(b=(14, 0, 0), h=(10, 0, 0),
             rL=(-30, 0, 6), lL=(16, 0, -6))
 
 # ---- 必殺 近日点突破 ---------------------------------------------------------------
-pd_low = P(w=(30, 0, 0), b=(0, 34, 0), h=(-30, -30, 0),
-           rA=wield(blade=dirv(f=-0.85, r=0.45, u=-0.25), arm=dirv(f=0.25, u=-1.0, r=-0.35)),
+pd_low = P(w=(30, 0, 0), b=(0, 16, 0), h=(-30, -16, 0),
+           rA=wield(blade=dirv(f=-0.65, r=0.85, u=-0.3), arm=dirv(f=0.1, u=-0.9, r=0.65)),
            lA=aim(dirv(f=0.7, u=-0.5, r=-0.6), twist=25),
            rL=(36, 0, 12), lL=(-50, 0, -12), ground=True)
 # 八度の斬り抜け: 左へ振り抜いた構えと、右へ返した構えを 0.2 秒ごとに入れ替える（JS の弦と同期）
@@ -171,10 +171,10 @@ BODY_ANIMS = {
                                1.04: P(hw3, w=(26, 0, 0)), 1.2: H}),
     "needle_rain": anim(1.3, {0.0: H, 0.05: out_r, 0.12: nr_up, 0.3: nr_shot, 0.42: nr_up, 0.6: nr_shot,
                               0.72: nr_up, 0.9: nr_shot, 1.1: P(nr_shot, b=(8, 0, 0)), 1.2: out_r, 1.3: H}),
-    "peri_draw": anim(1.9, {0.0: H, 0.2: pd_low, 0.36: P(pd_low, w=(32, 0, 0)),
+    "peri_draw": anim(1.9, {0.0: H, 0.04: out_r, 0.08: fs_under, 0.14: pd_low, 0.36: P(pd_low, w=(32, 0, 0)),
                             0.44: pk_l, 0.64: pk_r, 0.84: pk_l, 1.04: pk_r,
-                            1.24: pk_l, 1.44: pk_r, 1.64: pk_l, 1.84: pk_r, 1.9: P(pd_low, w=(28, 0, 0))}),
-    "peri_finish": anim(1.1, {0.0: P(pd_low, w=(28, 0, 0)), 0.18: pf_up, 0.4: P(pf_up, b=(-16, 0, 0)),
+                            1.24: pk_l, 1.44: pk_r, 1.64: pk_l, 1.84: pk_r, 1.9: pk_r}),
+    "peri_finish": anim(1.1, {0.0: pk_r, 0.18: pf_up, 0.4: P(pf_up, b=(-16, 0, 0)),
                               0.5: pf_down, 0.72: P(pf_down, w=(28, 0, 0)), 0.9: pf_sheath, 1.1: H}),
     "flourish": anim(0.6, {0.0: H, 0.1: P(c2_wind, b=(6, -20, 0)), 0.22: fl_out,
                            0.42: P(fl_out, b=(-2, 16, 0)), 0.6: H}),

@@ -97,7 +97,7 @@ function acidBloom(ctx, pos) {
   sound(dim, "astro.liquid", g, 0.6, 0.9);
   shake(dim, g, 10, 0.18, 0.2);
   zone(ctx, g, {
-    radius: R, ticks: 80, every: 10, delay: 4, damage: 1.5, height: 2.6,
+    radius: R, ticks: 80, every: 10, delay: 4, damage: 1.2, height: 2.6,
     hit: { color: ACID, nova: 1, xp: 1 },
     effects: [["poison", 50, 1], ["slowness", 24, 1]],
     visualEvery: 2,
@@ -207,7 +207,7 @@ function starPillar(ctx, S, g, base, big = false) {
   shake(dim, g, big ? 28 : 16, big ? 0.8 : 0.35, big ? 0.6 : 0.3);
   const R = big ? 6.5 : 2.9;
   for (const e of ctx.foes(R, up(g, 1))) {
-    if (!ctx.once(e, big ? 1 : 2, big ? "big" : "pillar")) continue;
+    if (!ctx.once(e, 1, big ? "big" : "pillar")) continue;
     hit(ctx, e, base, { color: STAR, up: big ? 0.8 : 0.55, kb: big ? 1.0 : 0.35, dir: dirTo(g, e.location),
                         power: big ? 2.4 : 1.9, crit: big, sound: "astro.hit_heavy" });
   }
@@ -217,7 +217,7 @@ register(KEY, {
   // =========================================================================
   //  惑星技「硫酸雲 アシッド・ヴェール」
   //  杖を肩の後ろへ引き（0〜5）、星の頭に黄色い雲を集めて、硫酸雲の弾を放つ（6）。
-  //  弾は少し弧を描いて飛び、最初の敵か地面で弾けて 4 秒残る雲になる（毒 II・鈍化・1.5/0.5 秒）。
+  //  弾は少し弧を描いて飛び、最初の敵か地面で弾けて 4 秒残る雲になる（毒 II・鈍化・1.2/0.5 秒）。
   // =========================================================================
   skill(ctx) {
     const { p, dim } = ctx;
@@ -293,7 +293,7 @@ register(KEY, {
         if (!ctx.once(e, 1, "grab")) continue;
         const lf = ctx.liveDir();
         const back = { x: -lf.x, y: 0, z: -lf.z };
-        hit(ctx, e, 6, { color: GOLD, kb: 1.9, up: 0.75, dir: back, power: 1.4, sound: "astro.hit_metal" });
+        hit(ctx, e, 8, { color: GOLD, kb: 1.9, up: 0.75, dir: back, power: 1.4, sound: "astro.hit_metal" });
         P(dim, "wind", chest(e), { color: CLOUD, count: 5, dir: back, speed: 8, spread: 0.5 });
         P(dim, "star", chest(e), { color: STAR, count: 5, spread: 0.4, life: 0.5 });
         sound(dim, "astro.gust", chest(e), 1.3, 0.7);
@@ -392,7 +392,7 @@ register(KEY, {
       }
       spots.forEach((g, k) => {
         ctx.at(k * 4, () => P(dim, "warning", up(g, 0.06), { color: [1, 0.85, 0.4], size: 2.4, life: 0.45 }));
-        ctx.at(8 + k * 4, () => starPillar(ctx, S, g, 9));
+        ctx.at(8 + k * 4, () => starPillar(ctx, S, g, 8));
       });
     });
     ctx.at(28, () => body(p, "venus.star_fall"));
@@ -418,7 +418,7 @@ register(KEY, {
     ctx.at(62, () => {
       const R = 9;
       zone(ctx, centre, {
-        radius: R, ticks: 60, every: 8, damage: 1.3, height: 5,
+        radius: R, ticks: 60, every: 8, damage: 1.0, height: 5,
         hit: { color: ACID, nova: 1, xp: 1 },
         effects: [["poison", 60, 1], ["slowness", 30, 1]],
         visualEvery: 2,
