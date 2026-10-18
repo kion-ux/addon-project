@@ -530,7 +530,7 @@ async function testPlanet(key) {
   }
   tick(4);
   ok(String(p.actionbar).includes(pl.form_ja), `${key}: HUD does not show the form`);
-  if (key === (ONLY || "earth")) console.log("  HUD sample: " + JSON.stringify(p.actionbar));
+  if (key === (ONLY || "earth")) console.log("  HUD sample: " + JSON.stringify(p.actionbar).replace(/[\uE000-\uF8FF]/g, (c) => "<" + c.charCodeAt(0).toString(16).toUpperCase() + ">"));
   flushWarns(`${key}.transform`);
 
   // ---- 4 技 --------------------------------------------------------------

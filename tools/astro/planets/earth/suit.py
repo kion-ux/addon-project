@@ -58,14 +58,14 @@ SUIT_ANIMS = {
         "extra_luna": {"position": [0, "math.sin(q.anim_time * 120.0) * 0.35", 0]},
     },
     "thrust": {
-        "extra_cape_r": {"rotation": ["v.astro_air * 34.0", 0, "-v.astro_air * 7.0"]},
+        "extra_cape_r": {"rotation": ["v.astro_air * 24.0", 0, "-v.astro_air * 6.0"]},
         "extra_cape2_r": {"rotation": [
-            "v.astro_air * (20.0 + math.sin(q.anim_time * 720.0) * 6.0)", 0, 0]},
+            "v.astro_air * (12.0 + math.sin(q.anim_time * 720.0) * 5.0)", 0, 0]},
     },
     "sprint": {
-        "extra_cape_r": {"rotation": ["v.astro_run * 28.0", 0, "-v.astro_run * 4.0"]},
+        "extra_cape_r": {"rotation": ["v.astro_run * 20.0", 0, "-v.astro_run * 4.0"]},
         "extra_cape2_r": {"rotation": [
-            "v.astro_run * (16.0 + math.sin(q.anim_time * 900.0) * 5.0)", 0, 0]},
+            "v.astro_run * (10.0 + math.sin(q.anim_time * 900.0) * 4.0)", 0, 0]},
     },
 }
 

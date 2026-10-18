@@ -2780,7 +2780,7 @@ def write_ui_md(G, pages, widths_note):
 MS = 2
 
 
-def _block_scene(W, H, seed=3):
+def _block_scene(W, H, seed=3, planet=True):
     """ゲーム画面らしい背景（夜明け前の空・星・ブロックの丘・木）。GUI px 単位で描いて MS 倍。"""
     rng = np.random.default_rng(seed)
     a = np.zeros((H, W, 4), np.float32)
@@ -2792,8 +2792,9 @@ def _block_scene(W, H, seed=3):
         sx, sy = int(rng.uniform(0, W)), int(rng.uniform(0, H * 0.5))
         a[sy, sx, :3] = (230, 230, 255)
     # 大きな惑星（空に浮かぶ）
-    pl = render_planet("saturn", 70, 16, ss=3)
-    over(a, pl * np.array([1, 1, 1, 0.85], np.float32), int(W * 0.72), int(H * 0.08))
+    if planet:
+        pl = render_planet("saturn", 70, 16, ss=3)
+        over(a, pl * np.array([1, 1, 1, 0.85], np.float32), int(W * 0.72), int(H * 0.08))
     # 遠い丘（ブロック）
     def hills(base, amp, blk, col, top, seed):
         r = np.random.default_rng(seed)
@@ -2940,7 +2941,7 @@ def hud_mock(pg, pg2, G):
 
     # --- タイトル・カットイン ---
     TW, TH = 480, 150
-    tpan = _block_scene(TW, TH, seed=9)
+    tpan = _block_scene(TW, TH, seed=9, planet=False)
     tpan[..., :3] *= 0.55
     tpan = np.asarray(Image.fromarray(tpan.astype(np.uint8)).resize((TW * MS, TH * MS), Image.NEAREST),
                       np.float32).copy()
@@ -2974,7 +2975,7 @@ def hud_mock(pg, pg2, G):
         over(out, img, (Wp - img.shape[1]) // 2, y)
         y += img.shape[0] + 4 * MS
     im = Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).convert("RGB")
-    im = im.resize((im.width * 2 // MS * MS // MS * MS // 1 if False else im.width * 2, im.height * 2), Image.NEAREST)
+    im = im.resize((im.width * 2, im.height * 2), Image.NEAREST)
     return im, widths
 
 
