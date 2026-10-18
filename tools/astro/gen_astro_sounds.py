@@ -692,7 +692,7 @@ def s_weapon_form(v, rng):
     wob = wobble(dm, 18, rng)
     gloop = sine(180 * pf * (1 + 0.45 * wob) * ev(K((0, 0.8), (dm, 1.6)), dm), dm)
     squelch = tvf(saw(110 * pf * (1 + 0.1 * wob), dm), Gres(lambda t: 500 + 1500 * (0.5 + 0.5 * np.sin(TAU * 9 * t)) * (1 + t * 3), 6, 3))
-    bub = scatter(dm, 30, L((0, 0.3), (0.3, 1), (dm, 0.5)), rng, g_bubble(300, 1300, amp=(0.2, 0.7)))
+    bub = fit(scatter(dm, 30, L((0, 0.3), (0.3, 1), (dm, 0.5)), rng, g_bubble(300, 1300, amp=(0.2, 0.7))), dm)
     morph = mix(gloop * 0.5, norm(squelch) * 0.35, norm(bub) * 0.5) * envp(dm, (0, 0), (0.25, 0.8), (dm - 0.04, 1), (dm, 0.3))
     rush = swell(0.14, rng, 2000, 9000, 1.2, 2.5)
     shing = mix(metal(0.8, 2900 * pf, BLADE, rng, tau=0.4, bright=0.6, dpow=0.4) * 0.6,
