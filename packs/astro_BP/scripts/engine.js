@@ -23,7 +23,7 @@ import {
 } from "./fx.js";
 import {
   hit, enemiesNear, enemiesInCone, enemiesOnLine, nearestEnemy, isTarget, setNova, damageMul,
-  freeze, launch, push, pull,
+  freeze, launch, push, pull, isHostile, hostilesNear, nearestHostile,
 } from "./combat.js";
 import { markAirborne, barrier, reflectProjectiles } from "./mobility.js";
 import { shoot } from "./projectiles.js";
@@ -31,7 +31,7 @@ import { zone as placeZone } from "./zones.js";
 import {
   valid, alive, knock, flatDir, viewDir, effect, add, now, dist, norm, sub, rightOf, chest as chestOf,
   blocked, onGround, groundY, report, rand, yawRotate, yawDeg, dirTo, clamp, removeEffect, lerp3,
-  finite,
+  finite, supported, clearLine,
 } from "./util.js";
 
 // ---------------------------------------------------------------------------
@@ -226,6 +226,16 @@ export function makeCtx(p, key, kind, extra = {}) {
   return ctx;
 }
 
+/** p の視線の先の、攻撃してよい相手（ブロックに遮られたら無し）。 */
+export function aimedEntity(p, maxD = 16) {
+  try {
+    for (const h of p.getEntitiesFromViewDirection?.({ maxDistance: maxD }) ?? []) {
+      if (h?.entity && isTarget(p, h.entity)) return h.entity;
+    }
+  } catch (_) { }
+  return undefined;
+}
+
 /** p が狙っている地点（地面の高さ）。 */
 export function aimPoint(p, maxD = 20) {
   const dim = p.dimension;
@@ -283,7 +293,14 @@ export function plunge(ctx, onLand, maxT = 34, speed = 2.6) {
       try { g = !!p.isOnGround; } catch (_) { }
       if (g || t === maxT) {
         landed = true;
-        onLand({ ...p.location });
+        let at = { ...p.location };
+        if (!g) {
+          // 着地しないまま時間切れ: すぐ下に地面があればそこで弾ける。無ければ空中に陣や噴火口を置かない
+          const gy = groundY(ctx.dim, at, 6, 0);
+          if (!blocked(ctx.dim, { x: at.x, y: gy - 1, z: at.z })) return;
+          at = { ...at, y: gy };
+        }
+        onLand(at);
       } else {
         if (t % 3 === 0) knock(p, 0, 0, 0, -speed);
         const l = p.location;
@@ -296,9 +313,12 @@ export function plunge(ctx, onLand, maxT = 34, speed = 2.6) {
   }
 }
 
-/** その場所に立てるか（足元と頭が空いているか）。 */
+/**
+ * その場所に立てるか（体の下半分と上半分のマスが空いているか）。足元は y + 0.5 で調べるので、
+ * ハーフブロック・土の道・耕地・ソウルサンドの上に立っている時に足元のブロックを壁とみなさない。
+ */
 export function standable(dim, loc) {
-  return !blocked(dim, loc) && !blocked(dim, { x: loc.x, y: loc.y + 1.2, z: loc.z });
+  return !blocked(dim, { x: loc.x, y: loc.y + 0.5, z: loc.z }) && !blocked(dim, { x: loc.x, y: loc.y + 1.5, z: loc.z });
 }
 
 /** 壁にめり込まない範囲で from から dir へ最大 maxD 進んだ地点。 */
@@ -307,9 +327,10 @@ export function safeAhead(dim, from, dir, maxD) {
   for (let d = 0.5; d <= maxD; d += 0.5) {
     const q = { x: from.x + dir.x * d, y: from.y, z: from.z + dir.z * d };
     if (!standable(dim, q)) {
-      // 1 段の段差なら乗り越える
-      const q2 = { ...q, y: q.y + 1 };
-      if (standable(dim, q2)) { last = q2; from = { ...from, y: from.y + 1 }; continue; }
+      // 1 段の段差なら乗り越える（段の上面へ）
+      const top = Math.floor(q.y + 0.5) + 1;
+      const q2 = { ...q, y: top };
+      if (top - from.y <= 1.25 && standable(dim, q2)) { last = q2; from = { ...from, y: top }; continue; }
       break;
     }
     last = q;
@@ -320,16 +341,19 @@ export function safeAhead(dim, from, dir, maxD) {
 /**
  * 瞬間移動。立てない場所（ブロックの中）なら少し上・手前を探し、無理なら移動しない。
  * @param pOrCtx プレイヤーか ctx / loc 行き先 / facing 向く点（任意）
+ * @param o      ground: true（か深さ）で、足元の下 3 ブロック（か深さ）以内に地面の無い場所（虚空・崖の外）へは跳ばない
  * @returns 移動できたら true
  */
-export function warp(pOrCtx, loc, facing) {
+export function warp(pOrCtx, loc, facing, o = {}) {
   const p = pOrCtx?.p ?? pOrCtx;
   if (!valid(p) || !loc || !finite(loc)) return false;
   const dim = p.dimension;
+  const depth = o.ground === true ? 3 : Number(o.ground) || 0;
+  const ok = (c) => standable(dim, c) && (!depth || supported(dim, c, depth));
   let q = null;
   for (const dy of [0, 1, 2, -1]) {
     const c = { x: loc.x, y: loc.y + dy, z: loc.z };
-    if (standable(dim, c)) { q = c; break; }
+    if (ok(c)) { q = c; break; }
   }
   if (!q) {
     // 手前へ戻りながら探す
@@ -338,6 +362,7 @@ export function warp(pOrCtx, loc, facing) {
     const D = Math.hypot(loc.x - from.x, loc.z - from.z);
     q = safeAhead(dim, { ...from }, d, D);
     if (dist(q, from) < 0.3) return false;
+    if (depth && !supported(dim, q, depth)) return false;
   }
   try {
     const opts = { dimension: dim, keepVelocity: false };
@@ -461,7 +486,8 @@ export function meteor(ctx, target, o = {}) {
  * 連鎖する雷: first から近くの敵へ次々と飛び移る。
  * @param o max 最大の数（5）/ range 飛び移る距離（6）/ damage 素のダメージ（6）/ falloff 1 回ごとの減衰（0.85）/
  *          delay 1 回ごとの tick（2）/ from 最初の雷の出どころ（ctx.chest()）/ color / hit 追加オプション /
- *          sound（"astro.zap"）/ onHit(e, i)
+ *          sound（"astro.zap"）/ onHit(e, i) /
+ *          filter(e) 飛び移ってよい相手（既定: 敵対的な相手だけ。村人・動物・中立の mob へは飛ばない）
  * @returns 連鎖が終わるまでの tick
  */
 export function chain(ctx, first, o = {}) {
@@ -469,6 +495,7 @@ export function chain(ctx, first, o = {}) {
   const dim = ctx.dim;
   const c = o.color ?? ctx.c;
   const max = o.max ?? 5, range = o.range ?? 6, delay = o.delay ?? 2;
+  const may = o.filter ?? ((e) => isHostile(e, ctx.p));
   const seen = new Set();
   let cur = first;
   let prev = o.from ?? ctx.chest();
@@ -491,7 +518,7 @@ export function chain(ctx, first, o = {}) {
     // 次の相手
     let best, bd = Infinity;
     for (const e of enemiesNear(ctx, to, range)) {
-      if (seen.has(e.id)) continue;
+      if (seen.has(e.id) || !may(e)) continue;
       const dd = dist(e.location, cur.location);
       if (dd < bd) { bd = dd; best = e; }
     }
@@ -601,7 +628,7 @@ export function genericMoves(key) {
       });
       for (let k = 0; k < 3; k++) {
         ctx.at(10 + k * 8, () => {
-          const foes = ctx.foes(14, centre);
+          const foes = ctx.hostiles(14, centre);
           const tgt = foes.length ? foes[k % foes.length].location
             : add(centre, yawRotate(ctx.f, k * 120), 5);
           meteor(ctx, tgt, { delay: 10, fall: 6, radius: 3.5, damage: 10, color: k % 2 ? ctx.accent : c });
@@ -658,4 +685,5 @@ export {
   body, bodyStop, add, dist, sub, now, dirTo, P, white, mix, line, ring, arc, burst, shock, beam, emblem,
   flash, shake, sound, afterimage, slash, hit, enemiesNear, enemiesInCone, enemiesOnLine, nearestEnemy,
   freeze, launch, push, pull, reflectProjectiles, markAirborne, onGround, groundY, fxScale,
+  hostilesNear, nearestHostile, supported, clearLine,
 };
