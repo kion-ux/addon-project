@@ -90,15 +90,15 @@ def build_weapon(m, root):
         a = math.radians(k * 45)
         d = (0.0, math.sin(a), -math.cos(a))
         L = R_LONG if k % 2 == 0 else R_SHORT
-        p0 = tuple(S[i] + d[i] * 1.5 for i in range(3))
-        pm = tuple(S[i] + d[i] * (1.5 + (L - 1.5) * 0.55) for i in range(3))
-        p1 = tuple(S[i] + d[i] * L for i in range(3))
+        pts = [tuple(S[i] + d[i] * r for i in range(3)) for r in (1.3, 1.3 + (L - 1.3) * 0.38,
+                                                                  1.3 + (L - 1.3) * 0.72, L)]
         if k % 2 == 0:
-            # 長い光条: 金の縁（太い）+ 白金に光る芯
-            W.polyline(sp, [p0, pm, p1], [0.66, 0.6], [1.8, 0.7], "gold", uv_scale=10)
-            W.polyline(sp, [p0, pm, p1], [0.76, 0.7], [0.95, 0.32], "star", uv_scale=10)
+            # 長い光条: 金の縁（根元が太く先が尖る）+ 白金に光る芯
+            W.polyline(sp, pts, [0.66, 0.62, 0.56], [2.3, 1.45, 0.6], "gold", uv_scale=10)
+            W.polyline(sp, pts[:3], [0.76, 0.72], [1.15, 0.6], "star", uv_scale=10)
         else:
-            W.polyline(sp, [p0, pm, p1], [0.54, 0.5], [1.3, 0.45], "gold", uv_scale=10)
+            W.polyline(sp, pts, [0.54, 0.5, 0.46], [1.6, 1.0, 0.42], "gold", uv_scale=10)
+            W.polyline(sp, pts[:2], [0.62], [0.7], "star", uv_scale=10)
 
     # =====================================================================
     #  form_3_clouds — 頭を包んで回る雲の輪（静止の傾き 24°）
