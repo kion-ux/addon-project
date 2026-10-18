@@ -276,7 +276,7 @@ register(KEY, {
         const base = up(ctx.loc(), 2.3);
         const f = ctx.liveDir();
         const r = rightOf(f);
-        sound(dim, "astro.laser", base, 1.9 + v * 0.1, 0.6);
+        sound(dim, "astro.laser", base, 1.8 + v * 0.1, 0.6);
         sound(dim, "astro.swing", base, 1.7, 0.6);
         P(dim, "flare", base, { color: white(SILVER, 0.5), size: 0.9, life: 0.12 });
         for (let k = 0; k < NEEDLES; k++) {

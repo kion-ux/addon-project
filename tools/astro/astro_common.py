@@ -346,7 +346,8 @@ def ring(bone, centre, radius, n, seg, style, axis="y", phase=0.0, a0=0.0, a1=36
             out.append(rbox(bone, p, (tl, seg[2], seg[1]), st, rot=(0, a, 0), **kw))
         elif axis == "z":    # 正面向きの輪（XY 平面）。a=0 で上、a=90 で -X
             p = (centre[0] - radius * math.sin(t), centre[1] + radius * math.cos(t), centre[2])
-            out.append(rbox(bone, p, (tl, seg[1], seg[2]), st, rot=(0, 0, a), **kw))
+            # rz = -a で局所 X が接線に沿う（rot の rz は Rz(-rz) として掛かる）
+            out.append(rbox(bone, p, (tl, seg[1], seg[2]), st, rot=(0, 0, -a), **kw))
         else:                # 側面の輪（YZ 平面）。a=0 で上、a=90 で -Z
             p = (centre[0], centre[1] + radius * math.cos(t), centre[2] - radius * math.sin(t))
             out.append(rbox(bone, p, (seg[2], seg[1], tl), st, rot=(a, 0, 0), **kw))
