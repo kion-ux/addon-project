@@ -55,18 +55,13 @@ def tongue(bone, base, ang_deg, L, w0, w1, thick, style, n=2, **kw):
 def build_weapon(m, root):
     # ---- form_0_grip: 柄・口金・柄頭の太陽 --------------------------------------------------
     grip = W.form(m, root, 0, "grip", (0, 0, 0))
-    W.octa(grip, (0, 0, 0.5), 1.9, 7.6, "wrap", uv_scale=8)
-    for z, ln in ((-3.35, 0.8), (4.35, 0.8)):
-        W.octa(grip, (0, 0, z), 2.45, ln, "gold", uv_scale=8)
-    W.octa(grip, (0, 0, 0.5), 2.08, 0.45, "gold", uv_scale=8)
-    W.octa(grip, (0, 0, 5.3), 2.3, 1.2, "spine", uv_scale=8)               # 柄頭の台（紅）
-    W.octa(grip, (0, 0, 5.95), 2.8, 0.35, "gold", uv_scale=10)
-    W.sphere(grip, (0, 0, 7.1), 1.05, "sun", uv_scale=14)                   # 柄頭の小さな太陽
-    for a in (0, 90, 180, 270):                                             # 光条の冠（後ろへ反る）
-        d = rot(0, 0, a) @ np.array([0.0, 1.0, 0.0])
-        p0 = (d[0] * 1.0, d[1] * 1.0, 6.2)
-        p1 = (d[0] * 2.1, d[1] * 2.1, 7.9)
-        W.beam(grip, p0, p1, 0.5, 0.5, "gold", uv_scale=10, extend=0.2)
+    W.octa(grip, (0, 0, 0.25), 1.9, 7.1, "wrap", uv_scale=8)
+    for z, ln in ((-3.35, 0.8), (3.85, 0.6)):
+        W.octa(grip, (0, 0, z), 2.35, ln, "gold", uv_scale=8)
+    W.octa(grip, (0, 0, 0.3), 2.08, 0.45, "gold", uv_scale=8)
+    W.octa(grip, (0, 0, 4.5), 1.7, 0.8, "spine", uv_scale=8)               # 柄頭の台（紅）
+    W.sphere(grip, (0, 0, 5.45), 0.85, "sun", uv_scale=14)                  # 柄頭の小さな太陽
+    W.ring(grip, (0, 0, 5.35), 0.95, 6, (0, 0.22, 0.3), "gold", axis="z", uv_scale=12)
 
     # ---- form_1_guard: 太陽フレアの鍔・中央の太陽 ------------------------------------------
     guard = W.form(m, root, 1, "guard", (0, 0, -3.6))

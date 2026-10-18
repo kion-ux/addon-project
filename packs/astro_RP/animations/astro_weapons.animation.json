@@ -552,6 +552,197 @@
         }
       }
     },
+    "animation.astro.core.mercury.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.47,
+      "bones": {
+        "form_0_globe": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_cage": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.135": [
+              0,
+              0,
+              0
+            ],
+            "0.267": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.355": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_2_rings": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.23": [
+              0,
+              0,
+              0
+            ],
+            "0.362": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.45": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.core.mercury.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -76.49,
+            -56.69,
+            102.45
+          ],
+          "position": [
+            -1.9,
+            22.9,
+            -3.61
+          ],
+          "scale": 0.85
+        }
+      }
+    },
+    "animation.astro.core.mercury.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 110.0) * 0.35",
+            0
+          ],
+          "rotation": [
+            0,
+            "math.sin(q.anim_time * 40.0) * 8.0",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 30",
+            0
+          ]
+        },
+        "fx_glow_sun": {
+          "scale": "1 + math.sin(q.anim_time * 120) * 0.05"
+        },
+        "fx_spin_ring_a": {
+          "rotation": [
+            0,
+            "q.anim_time * 90",
+            0
+          ]
+        },
+        "fx_spin_ring_b": {
+          "rotation": [
+            0,
+            "q.anim_time * -150",
+            0
+          ]
+        }
+      }
+    },
+    "animation.astro.core.mercury.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            18.0,
+            -0.0,
+            -0.0
+          ],
+          "position": [
+            -0.4,
+            22.62,
+            -4.82
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "animation.astro.core.mercury.use": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "origin": {
+          "scale": "1.0 + v.astro_usew * 0.12",
+          "position": [
+            0,
+            "v.astro_usew * 1.2",
+            0
+          ]
+        },
+        "fx_spin_globe": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_ring_a": {
+          "rotation": [
+            0,
+            "q.anim_time * -360 * v.astro_usew",
+            0
+          ]
+        },
+        "fx_spin_ring_b": {
+          "rotation": [
+            0,
+            "q.anim_time * 360 * v.astro_usew",
+            0
+          ]
+        }
+      }
+    },
     "animation.astro.core.neptune.form": {
       "loop": "hold_on_last_frame",
       "animation_length": 0.47,
@@ -1880,6 +2071,186 @@
         }
       }
     },
+    "animation.astro.weapon.mercury.form": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.62,
+      "bones": {
+        "form_0_grip": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.04": [
+              0,
+              0,
+              0
+            ],
+            "0.172": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.26": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_1_guard": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.153": [
+              0,
+              0,
+              0
+            ],
+            "0.285": [
+              1.15,
+              1.15,
+              1.15
+            ],
+            "0.373": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "form_2_blade": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.267": [
+              0.35,
+              0.35,
+              0.0
+            ],
+            "0.399": [
+              1.08,
+              1.08,
+              1.15
+            ],
+            "0.487": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "form_3_wings": {
+          "scale": {
+            "0.0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.38": [
+              0.35,
+              0.35,
+              0.0
+            ],
+            "0.512": [
+              1.08,
+              1.08,
+              1.15
+            ],
+            "0.6": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      }
+    },
+    "animation.astro.weapon.mercury.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -43.63,
+            13.73,
+            -178.09
+          ],
+          "position": [
+            -1.03,
+            25.48,
+            1.22
+          ],
+          "scale": 0.7
+        }
+      }
+    },
+    "animation.astro.weapon.mercury.idle": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "origin": {
+          "position": [
+            0,
+            "math.sin(q.anim_time * 90.0) * 0.1",
+            0
+          ]
+        },
+        "fx_spin_fins": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 240.0"
+          ]
+        },
+        "fx_glow_drop": {
+          "scale": "1 + math.sin(q.anim_time * 180) * 0.06"
+        }
+      }
+    },
+    "animation.astro.weapon.mercury.swing": {
+      "loop": true,
+      "bones": {
+        "origin": {
+          "rotation": [
+            "(v.astro_fp > 0.5 ? 70 : 38) * (math.sin(math.pow(v.astro_sw, 0.6) * 180.0) - 0.18 * math.sin(v.astro_sw * 360.0))",
+            "(v.astro_fp > 0.5 ? 10 : 0) * math.sin(math.pow(v.astro_sw, 0.6) * 180.0)",
+            0
+          ]
+        },
+        "fx_spin_fins": {
+          "rotation": [
+            0,
+            0,
+            "v.astro_sw * 720.0"
+          ]
+        }
+      }
+    },
+    "animation.astro.weapon.mercury.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            43.16,
+            10.87,
+            3.58
+          ],
+          "position": [
+            -0.6,
+            21.85,
+            1.0
+          ],
+          "scale": 0.9
+        }
+      }
+    },
     "animation.astro.weapon.neptune.form": {
       "loop": "hold_on_last_frame",
       "animation_length": 0.62,
@@ -2200,16 +2571,16 @@
       "bones": {
         "hold": {
           "rotation": [
-            -57.88,
-            -4.75,
-            149.22
+            -49.4,
+            -3.1,
+            -162.16
           ],
           "position": [
-            -1.15,
-            24.64,
-            1.38
+            -0.47,
+            25.23,
+            2.44
           ],
-          "scale": 0.6
+          "scale": 0.5
         }
       }
     },

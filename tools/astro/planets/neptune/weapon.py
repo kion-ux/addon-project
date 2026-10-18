@@ -152,12 +152,12 @@ def build_core(m, root):
                    "pearl", uv_scale=12)
     # 海王星の淡い環（傾いて回る）
     rings = W.form(m, root, 2, "rings", (0, 0, 0))
-    rg = W.spin(m, rings, "ring", (0, 0, 0), rotation=(24, 0, 0))
+    rg = W.spin(m, rings, "ring", (0, 0, 0), rotation=(-22, 0, 8))
     W.ring(rg, (0, 0, 0), 2.45, 12, (0, 0.28, 0.32), "ring_dark", axis="y",
            styles=["ring_dark", "glow_soft", "ring_dark"], uv_scale=10)
     # 衛星トリトン（逆行。傾いた軌道）
     tr = W.spin(m, rings, "triton", (0, 0, 0), rotation=(-30, 0, 20))
-    W.sphere(tr, (0, 0, -3.2), 0.5, "triton", uv_scale=14)
+    W.sphere(tr, (-2.2, 0, -2.3), 0.5, "triton", uv_scale=14)
 
 
 # ---------------------------------------------------------------------------

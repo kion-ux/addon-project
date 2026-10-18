@@ -26,11 +26,11 @@ S.install_painter()          # 擦り傷・砂ぼこりの塗り（kind "ares"�
 
 KIND = "axe"
 
-Z_HEAD = -19.4               # 斧頭（火星の窓）の中心
-CO = (-0.4, Z_HEAD)          # 三日月の刃の外の弧の中心 (y, z)
-RO = 8.0                     # 外の弧の半径
-CI = (3.8, Z_HEAD)           # 内の弧（えぐれ）の中心
-RI = 7.2
+Z_HEAD = -18.2               # 斧頭（火星の窓）の中心
+CO = (-0.6, Z_HEAD)          # 三日月の刃の外の弧の中心 (y, z)
+RO = 9.6                     # 外の弧の半径
+CI = (4.6, Z_HEAD)           # 内の弧（えぐれ）の中心
+RI = 8.4
 EDGE = (255, 112, 36)        # 赤熱した刃先
 
 
@@ -68,29 +68,29 @@ def build_weapon(m, root):
     #  form_1_haft — 鉄の柄・弾み車・杭打ち機
     # =====================================================================
     haft = W.form(m, root, 1, "haft", (0, 0, -3.8))
-    W.octa(haft, (0, 0, -10.0), 1.6, 12.6, "metal", uv_scale=6)
-    for z in (-6.1, -14.4):
+    W.octa(haft, (0, 0, -9.4), 1.6, 11.4, "metal", uv_scale=6)
+    for z in (-6.1, -13.4):
         W.octa(haft, (0, 0, z), 2.0, 0.5, "brass", uv_scale=8)
     gear = W.spin(m, haft, "gear", (0, 0, -4.7))
     W.ring(gear, (0, 0, -4.7), 1.4, 8, (0, 0.45, 0.55), "brass", axis="z", styles=["brass", "frame"],
            uv_scale=10)
     W.octa(gear, (0, 0, -4.7), 1.2, 0.4, "glow", uv_scale=10)
     # 杭打ち機: 柄の背（+Y）に沿う錆色の筒、両端の真鍮の蓋、柄への留め具、赤熱の線、斧頭へ伸びる二本の棒
-    W.octa(haft, (0, 1.95, -9.7), 2.1, 6.6, "plate2", uv_scale=7)
-    for z in (-6.55, -12.85):
+    W.octa(haft, (0, 1.95, -9.2), 2.1, 6.0, "plate2", uv_scale=7)
+    for z in (-6.35, -12.05):
         W.octa(haft, (0, 1.95, z), 2.35, 0.5, "brass", uv_scale=8)
         W.cbox(haft, (0, 0.95, z), (1.1, 1.1, 0.7), "frame", uv_scale=8)
-    W.cbox(haft, (0, 1.95, -9.7), (2.25, 0.5, 3.8), "hazard", uv_scale=8)
-    heat = W.glow(m, haft, "heat", (0, 3.05, -9.7))
-    W.cbox(heat, (0, 3.02, -9.7), (0.36, 0.2, 5.0), "edge_hot", uv_scale=10)
+    W.cbox(haft, (0, 1.95, -9.2), (2.25, 0.5, 3.4), "hazard", uv_scale=8)
+    heat = W.glow(m, haft, "heat", (0, 3.05, -9.2))
+    W.cbox(heat, (0, 3.02, -9.2), (0.36, 0.2, 4.4), "edge_hot", uv_scale=10)
     for x in (-0.55, 0.55):
-        W.beam(haft, (x, 1.75, -13.0), (x, 1.15, -16.6), 0.42, 0.42, "iron", uv_scale=10)
+        W.beam(haft, (x, 1.75, -12.3), (x, 1.2, -15.3), 0.42, 0.42, "iron", uv_scale=10)
     W.cbox(haft, (0, -0.95, -9.0), (0.9, 0.3, 2.6), "vent", uv_scale=10)   # 柄の腹の排気口
 
     # =====================================================================
     #  form_2_head — 斧頭の台・火星の窓・背のトゲ・杭
     # =====================================================================
-    head = W.form(m, root, 2, "head", (0, 0, -16.2))
+    head = W.form(m, root, 2, "head", (0, 0, -14.9))
     W.bevel(head, (0, 0.3, Z_HEAD), (2.6, 4.2, 6.8), "plate", cut=0.7, axis="x", edge_style="plate_b",
             uv_scale=6)
     for z in (Z_HEAD + 3.55, Z_HEAD - 3.55):                                  # 台の上下の真鍮の帯
@@ -105,44 +105,46 @@ def build_weapon(m, root):
     # 杭（先端から突き出る。振ると前へ打ち出す: WEAPON_ANIMS の swing）
     W.octa(head, (0, 0, Z_HEAD - 4.25), 2.0, 0.9, "frame", uv_scale=8)
     pile = W.part(m, head, "pile", (0, 0, Z_HEAD - 4.4))
-    W.octa(pile, (0, 0, Z_HEAD - 5.6), 1.25, 2.6, "iron", uv_scale=8)
-    W.octa(pile, (0, 0, Z_HEAD - 7.2), 0.95, 0.9, "steel", uv_scale=8)
-    W.cbox(pile, (0, 0, Z_HEAD - 7.95), (0.6, 0.6, 0.7), "steel", rotation=(0, 0, 45), uv_scale=8)
+    W.octa(pile, (0, 0, Z_HEAD - 5.3), 1.25, 2.0, "iron", uv_scale=8)
+    W.octa(pile, (0, 0, Z_HEAD - 6.6), 0.95, 0.8, "steel", uv_scale=8)
+    W.cbox(pile, (0, 0, Z_HEAD - 7.25), (0.6, 0.6, 0.6), "steel", rotation=(0, 0, 45), uv_scale=8)
 
     # =====================================================================
     #  form_3_blade — 三日月の刃（-Y へ伸びて現れる）
     # =====================================================================
     blade = W.form(m, root, 3, "blade", (0, -1.4, Z_HEAD))
-    n = 9
+    n = 11
     for i in range(n):
-        a = -48.0 + 96.0 * i / (n - 1)
-        r0 = _r_in(a) - 0.6
-        y0, z0 = _yz(CO, r0, a)
-        y1, z1 = _yz(CO, RO, a)
-        W.beam(blade, (0, y0, z0), (0, y1, z1), 0.9, 1.78, "blade", uv_scale=6)
+        a = -46.0 + 92.0 * i / (n - 1)
+        y0, z0 = _yz(CO, _r_in(a) - 0.7, a)
+        y1, z1 = _yz(CO, RO - 1.3, a)
+        W.beam(blade, (0, y0, z0), (0, y1, z1), 0.9, 1.75, "blade_body", uv_scale=6)
+        y2, z2 = _yz(CO, RO - 1.55, a)                                      # 研いだ刃（明るい鋼）
+        y3, z3 = _yz(CO, RO, a)
+        W.beam(blade, (0, y2, z2), (0, y3, z3), 0.7, 1.75, "blade", uv_scale=6)
     # 角（上下へ反り返る先）
     for s in (-1, 1):
-        p0 = _yz(CO, 6.6, s * 46)
-        p1 = _yz(CO, 7.4, s * 58)
-        p2 = _yz(CO, 7.0, s * 67)
-        W.polyline(blade, [(0, p0[0], p0[1]), (0, p1[0], p1[1]), (0, p2[0], p2[1])], [0.86, 0.8],
-                   [2.6, 1.1], "blade", uv_scale=6)
+        p0 = _yz(CO, RO - 2.0, s * 44)
+        p1 = _yz(CO, RO - 1.2, s * 56)
+        p2 = _yz(CO, RO - 1.8, s * 66)
+        W.polyline(blade, [(0, p0[0], p0[1]), (0, p1[0], p1[1]), (0, p2[0], p2[1])], [0.86, 0.76],
+                   [3.0, 1.2], "blade_body", uv_scale=6)
     # 赤熱した刃先（外の弧に沿って）
     pts = []
-    for k in range(13):
-        a = -64.0 + 128.0 * k / 12
-        r = RO + 0.15 if abs(a) <= 48 else RO + 0.15 - (abs(a) - 48) * 0.06
+    for k in range(15):
+        a = -63.0 + 126.0 * k / 14
+        r = RO + 0.1 if abs(a) <= 46 else RO + 0.1 - (abs(a) - 46) * 0.1
         y, z = _yz(CO, r, a)
         pts.append((0, y, z))
     W.polyline(blade, pts, 1.05, 0.62, "edge_hot", uv_scale=8)
     # 刃の中ほどの暗い溝と三本の放熱のスリット（両面）
-    arc = [(0, *_yz(CO, 5.1, a)) for a in (-40, -20, 0, 20, 40)]
+    arc = [(0, *_yz(CO, 5.6, a)) for a in (-40, -20, 0, 20, 40)]
     W.polyline(blade, arc, 1.0, 0.55, "dark", uv_scale=8)
-    for a in (-24, 0, 24):
-        y, z = _yz(CO, 6.5, a)
-        W.cbox(blade, (0, y, z), (1.02, 0.9, 0.36), "edge", rotation=(-a, 0, 0), uv_scale=10)
+    for a in (-22, 0, 22):
+        y, z = _yz(CO, 6.7, a)
+        W.cbox(blade, (0, y, z), (1.0, 1.0, 0.36), "edge", rotation=(-a, 0, 0), uv_scale=10)
     # 刃と台の継ぎ目の鉄の帯
-    W.cbox(blade, (0, -1.9, Z_HEAD), (1.3, 0.8, 6.2), "frame", uv_scale=8)
+    W.cbox(blade, (0, -2.1, Z_HEAD), (1.3, 0.8, 6.4), "frame", uv_scale=8)
 
 
 def build_core(m, root):
@@ -194,20 +196,22 @@ def WEAPON_STYLES(key):
     return weapon_styles(
         key,
         **_common(),
-        blade={"kind": "blade", "base": (128, 118, 116), "light": (226, 214, 204), "dark": (62, 54, 54),
-               "line": (28, 22, 22), "glint_period": 24},
+        blade={"kind": "blade", "base": (176, 166, 160), "light": (246, 238, 228), "dark": (98, 88, 86),
+               "line": (40, 32, 30), "glint_period": 22, "fuller": False},
+        blade_body=S._armor((84, 74, 74), panel=0, outline=False, bevel=False, scratch=0.012,
+                            dust_k=0.3, scratch_col=(200, 188, 180)),
         edge_hot={"glow": EDGE, "emit": 14, "sat": 0.55},
         edge={"glow": (255, 150, 60), "emit": 30, "sat": 0.4},
         metal={"base": (70, 62, 62), "light": (134, 122, 118), "dark": (36, 30, 30), "line": (16, 12, 12)},
         wrap={"base": (30, 24, 24), "strap": (150, 56, 34), "skin": (214, 196, 176)},
         dark={"base": (28, 22, 22), "glow": EDGE, "line": (8, 6, 6)},
-        globe=W.globe_style("mars", emit=40),
+        globe=W.globe_style("mars", emit=110),
         glow={"glow": (255, 128, 44)},
     )
 
 
 def CORE_STYLES(key):
-    return core_styles(key, **_common(), globe=W.globe_style("mars", emit=36))
+    return core_styles(key, **_common(), globe=W.globe_style("mars", emit=96))
 
 
 # ---------------------------------------------------------------------------
