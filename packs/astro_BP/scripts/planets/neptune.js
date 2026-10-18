@@ -154,8 +154,11 @@ register(KEY, {
     });
     ctx.at(4, () => sound(dim, "astro.gust", p.location, 1.5, 0.5));
     ctx.at(8, () => {
+      // 視線の上下は ±27° まで（真上・真下を向いていても水平の向きは開始時の前方で補う）
       const v = ctx.liveView();
-      const d = norm({ x: v.x, y: clamp(v.y, -0.45, 0.45), z: v.z });
+      const h = Math.hypot(v.x, v.z);
+      const hx = h > 0.08 ? v.x / h : ctx.f.x, hz = h > 0.08 ? v.z / h : ctx.f.z;
+      const d = norm({ x: hx, y: clamp(v.y / Math.max(h, 0.08), -0.5, 0.5), z: hz });
       const flat = norm({ x: d.x, y: 0, z: d.z });
       const from = add(up(ctx.loc(), 1.15), d, 0.9);
       const L = clearRange(dim, from, d, 14);
@@ -179,7 +182,7 @@ register(KEY, {
       shake(dim, p.location, 10, 0.35, 0.25);
       for (const e of enemiesOnLine(ctx, from, to, 1.4)) {
         if (!ctx.once(e, 1, "blade")) continue;
-        hit(ctx, e, 10, { color: AQUA, kb: 1.3, up: 0.25, dir: flat, power: 1.5, sound: "astro.hit_heavy" });
+        hit(ctx, e, 9, { color: AQUA, kb: 1.3, up: 0.25, dir: flat, power: 1.5, sound: "astro.hit_heavy" });
         P(dim, "slash", chest(e), { color: FOAM, size: 0.9, rot: yawDeg(flat) + 90, life: 0.2 });
       }
       // 遅れて追いつくソニックブーム
@@ -193,7 +196,7 @@ register(KEY, {
           if (q.y - g.y < 2.6) P(dim, "dust", up(g, 0.1), { count: 8, speed: 4, size: 1.0, spread: 0.6 });
         }
         for (const e of enemiesOnLine(ctx, from, to, 2.4)) {
-          if (ctx.once(e, 1, "boom")) hit(ctx, e, 4, { color: FOAM, up: 0.35, kb: 0.4, dir: flat, power: 1.2, sound: "astro.splash" });
+          if (ctx.once(e, 1, "boom")) hit(ctx, e, 3, { color: FOAM, up: 0.35, kb: 0.4, dir: flat, power: 1.2, sound: "astro.splash" });
         }
       });
       // 余韻: 凝結の滴と風の筋が通り道に残る
@@ -239,7 +242,7 @@ register(KEY, {
       P(dim, "speedline", up(out, 1.0), { color: AQUA, dir: f, count: 8, speed: 20, spread: 0.7 });
       for (const e of enemiesOnLine(ctx, up(from, 1.0), up(out, 1.0), 1.7)) {
         if (!ctx.once(e, 1, "path")) continue;
-        hit(ctx, e, 7, { color: AQUA, kb: 0.7, up: 0.3, dir: dirTo(e.location, gate), power: 1.4, sound: "astro.hit_metal" });
+        hit(ctx, e, 5, { color: AQUA, kb: 0.7, up: 0.3, dir: dirTo(e.location, gate), power: 1.4, sound: "astro.hit_metal" });
         P(dim, "slash", chest(e), { color: STORM, size: 1.0, rot: yawDeg(f), life: 0.22 });
       }
       // 出口の渦
@@ -257,7 +260,7 @@ register(KEY, {
       P(dim, "wind", c, { color: FOAM, count: 6, spread: 1.4, speed: 6 });
       sound(dim, "astro.swing_heavy", c, 1.1, 0.9);
       for (const e of ctx.foes(3.2, c)) {
-        if (ctx.once(e, 1, "spin")) hit(ctx, e, 4, { color: AQUA, kb: 0.9, up: 0.3, dir: dirTo(c, e.location) });
+        if (ctx.once(e, 1, "spin")) hit(ctx, e, 2, { color: AQUA, kb: 0.9, up: 0.3, dir: dirTo(c, e.location) });
       }
     });
     // 残った入口の渦: 3 秒間引き込み、時々削り、最後に潰れて弾ける
@@ -266,11 +269,12 @@ register(KEY, {
       visualEvery: 1,
       visual(d, c, age) { darkVortex(d, c, 1.15, age); },
       onPulse(list, z) {
-        if (z.pulses % 4 !== 0) return;
-        for (const e of list) hit(ctx, e, 2, { color: STORM, quiet: true, nova: 1, xp: 1 });
+        if (z.pulses % 6 !== 0) return;
+        for (const e of list) hit(ctx, e, 1, { color: STORM, quiet: true, nova: 1, xp: 1 });
         if (list.length) sound(dim, "astro.water_wave", z.center, 0.6, 0.5);
       },
       onEnd(z) {
+        if (!ctx.alive()) return;          // 解除・死亡・退出で消えた時は弾けない
         const c = z.center;
         P(dim, "splash", up(c, 0.05), { color: AQUA, size: 2.2, life: 0.5 });
         P(dim, "shock_flat", up(c, 0.08), { color: STORM, size: 2.2, life: 0.45 });
@@ -279,7 +283,7 @@ register(KEY, {
         sound(dim, "astro.splash", c, 0.8, 1.0);
         sound(dim, "astro.explosion", c, 1.4, 0.6);
         for (const e of enemiesNear(ctx, up(c, 0.8), 3.6)) {
-          if (ctx.once(e, 1, "collapse")) hit(ctx, e, 5, { color: AQUA, up: 0.7, kb: 0.4, dir: dirTo(c, e.location), power: 1.4 });
+          if (ctx.once(e, 1, "collapse")) hit(ctx, e, 3, { color: AQUA, up: 0.7, kb: 0.4, dir: dirTo(c, e.location), power: 1.4 });
         }
       },
     });
@@ -362,7 +366,7 @@ register(KEY, {
           P(d, "trail", prev, { color: FOAM, size: 1.0, life: 0.25 });
           if (age % 2 === 0) P(d, "speedline", pos, { color: white(TRITON, 0.4), count: 3, dir: UPV, speed: 12, spread: 0.4 });
         },
-        onEnd(pos) { impact(pos); },
+        onEnd(pos, reason) { if (reason !== "owner" && ctx.alive()) impact(pos); },
       });
     });
     return 26;
@@ -407,6 +411,7 @@ register(KEY, {
         if (age % 12 === 0) sound(d, "astro.water_wave", c, 0.6 + (age % 24 ? 0.1 : 0), 0.9);
       },
       onPulse(list, z) {
+        if (z.age >= 31) return;           // 32 で嵐が巻き上げる（ここで速度を上書きすると浮かない）
         for (const e of list) {
           launch(e, 0.04, hdist(e.location, z.center) > 1.6 ? 0.55 : 0.15, swirlDir(z.center, e.location));
           if (z.pulses % 5 === 0) hit(ctx, e, 2, { color: AQUA, quiet: true, nova: 1, xp: 1 });
@@ -448,7 +453,7 @@ register(KEY, {
       for (const e of ctx.foes(12, up(centre, 2))) {
         P(dim, "slash", chest(e), { color: i % 2 ? FOAM : AQUA, size: 1.2, rot: i * 70, var: i % 2, life: 0.2 });
         P(dim, "wind", chest(e), { color: FOAM, count: 2, spread: 0.6, speed: 6 });
-        if (ctx.once(e, 1, `blade${i}`)) hit(ctx, e, 3, { color: FOAM, up: 0.22, kb: 0.1, nova: 1 });
+        if (ctx.once(e, 1, `blade${i}`)) hit(ctx, e, 2, { color: FOAM, up: 0.22, kb: 0.1, nova: 1 });
       }
     });
     // 大津波

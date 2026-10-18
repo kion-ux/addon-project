@@ -354,9 +354,12 @@ def arms(s):
 # ---------------------------------------------------------------------------
 def shoulders(s):
     p = s.part("shoulders", "pauldron_r", "rightArm")
-    dome = bevel(p, (-7.5, 24.2, 0.1), (6.8, 3.6, 7.8), "plate", cut=1.2, axis="x",
+    dome = bevel(p, (-7.5, 24.2, 0.1), (6.8, 3.6, 7.8), "plate", cut=1.1, axis="z",
                  rot=(0, 0, -14))
-    stick(p, dome[0], "up", 0.5, 0.5, (1.4, 7.0, 0.3), "rustband", sink=0.15)  # 頂の縞
+    top = stick(p, dome[0], "up", 0.5, 0.5, (3.6, 6.8, 0.4), "belt", sink=0.12)   # 頂の褐色の板
+    stick(p, top, "up", 0.62, 0.5, (0.9, 6.4, 0.2), "rustband", sink=0.05)
+    for a in (0.06, 0.94):
+        line_on(p, dome[1], "north" if a < 0.5 else "south", (0.12, 0.62), (0.88, 0.62), 0.24, 0.2, "volt")
     rim = rbox(p, (-10.75, 24.0, 0.1), (0.9, 2.4, 8.0), "plate2", rot=(0, 0, -26))
     stick(p, rim, "up", 0.5, 0.5, (0.9, 8.0, 0.3), "copper", sink=0.05)
     # 垂れ（帯の重なり: 錆色 → 褐色の縞 → クリーム）
@@ -369,7 +372,7 @@ def shoulders(s):
     # テスラコイルの塔: 台座 → 光る芯に銅の巻き線 → 鏡面のトロイド → 電光の玉 → 回る放電の輪
     X, Z = -8.75, 0.4
     tw = s.part("shoulders", "tesla_r", p, pivot=(X, 25.8, Z))
-    octa(tw, (X, 26.0, Z), 3.0, 0.8, "frame", axis="y")
+    octa(tw, (X, 26.1, Z), 3.0, 0.9, "frame", axis="y")
     octa(tw, (X, 26.5, Z), 2.4, 0.3, "copper", axis="y")
     octa(tw, (X, 28.0, Z), 1.35, 3.0, "volt_core", axis="y")
     for k in range(5):

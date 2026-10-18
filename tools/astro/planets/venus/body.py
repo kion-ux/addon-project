@@ -84,8 +84,11 @@ def _retro():
         t = 0.06 + i * 0.07
         fr[round(t, 3)] = P(rg_pose, root=(0, 30 + i * 86.25, 0))      # 0.62 秒で 720°
     fr[0.7] = P(rg_throw, root=(0, 720, 0))
-    fr[0.82] = P(rg_throw, root=(0, 720, 0), b=(0, 36, 0))
-    fr[0.95] = P(root=(0, 720, 0))
+    fr[0.8] = P(rg_throw, root=(0, 720, 0), b=(0, 36, 0))
+    # 戻り: 杖を一度右外へ立ててから自然体へ（石突きが脚を通らないように）
+    fr[0.9] = P(root=(0, 720, 0), b=(0, 14, 0), w=(4, 0, 0),
+                rA=wield(blade=dirv(u=0.9, r=0.45, f=0.2), arm=dirv(r=0.85, f=0.35, u=-0.45)))
+    fr[1.0] = P(root=(0, 720, 0))
     return fr
 
 
@@ -131,7 +134,7 @@ BODY_ANIMS = {
                           0.75: P(root=(0, -360, 0))}),
     "acid_cast": anim(0.7, {0.0: H, 0.14: ac_wind, 0.26: ac_cast, 0.46: P(ac_cast, b=(10, -16, 0)),
                             0.7: H}),
-    "retrograde": anim(0.95, _retro()),
+    "retrograde": anim(1.0, _retro()),
     "dive": anim(1.2, {0.0: H, 0.14: dv_up, 0.3: dv_down, 1.0: P(dv_down, w=(18, 0, 0)), 1.2: H}),
     "dome": anim(0.9, {0.0: P(dm_kneel, w=(8, 0, 0), rL=(30, 0, 6), lL=(-30, 0, -6), ground=True),
                        0.06: dm_kneel, 0.3: dm_open, 0.66: P(dm_open, h=(-26, 0, 0)), 0.9: H}),

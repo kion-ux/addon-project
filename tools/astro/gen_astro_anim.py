@@ -220,16 +220,19 @@ def clip_report(res_all, step=0.04, limit=0.8):
         if cloud is None:
             continue
         worst = (0.0, None, 0.0)
+        over = 0
         n = max(1, int(math.ceil(res.length / step)))
         for i in range(n + 1):
             t = res.length * i / n
             if name.split(".")[-1] == "henshin" and t < AL.TR["weapon_form"]:
                 continue        # 武器はまだコア
             d, bone = penetration(AL.sample(res, t), cloud)
+            if d > limit:
+                over += 1
             if d > worst[0]:
                 worst = (d, bone, t)
         if worst[0] > limit:
-            rows.append((name, worst))
+            rows.append((name, worst + (over * res.length / n,)))
     return rows
 
 
@@ -351,8 +354,8 @@ def main(argv=None) -> int:
     shared = sum(1 for k in meta if "." not in k)
     print(f"  player animations: {len(anims)} ({shared} shared, {len(anims) - shared} per planet)")
     if "--check" in argv:
-        for name, (d, bone, t) in clip_report(res_all):
-            print(f"  CLIP {name:24s} {d:4.1f}px into {bone} at {t:.2f}s")
+        for name, (d, bone, t, dur) in clip_report(res_all):
+            print(f"  CLIP {name:24s} {d:4.1f}px into {bone:9s} at {t:.2f}s  (for ~{dur:.2f}s)")
     for e in errors:
         print(f"  ERROR {e}")
     return 1 if errors else 0
