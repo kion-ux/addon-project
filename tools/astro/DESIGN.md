@@ -392,6 +392,22 @@ animate: controller, idle, {thrust: !q.is_on_ground（なめらかに）}, {spri
 controller（初期 form → ready）。**コア** `astro:core_<key>`: tp / fp・idle（リングの回転・球の脈動）。
 ウェポン・コアも閉じた殻は one_sided、`fx_*` は両面の同じ方式でよい。
 
+> **振り（swing）の扱い（決定）**: `c.owning_entity->v.attack_time` はバニラの player.entity.json が
+> `"variable.attack_time": "public"` を宣言した **1.21.130 から** 読める（それより前は private で読むと 0）。
+> マニフェストの min_engine 1.21.30 は上げず、swing は **1.21.130 以降での上乗せ** とする。読めない版でも
+> 壊れて見えないことを生成時に検査する: swing の全チャンネルは `v.astro_sw` = 0（読めない・振り始め）と
+> 1（振り終わり）で自然体（gen_astro_weapons → astro_animcheck.rest_errors。部品の回転は 360° の整数倍）、
+> swing は `v.astro_sw > 0` の時だけ再生。武器は rightItem（右腕の子）に付くので、全ての版で
+> **バニラの腕の振りとコンボの全身モーション（playAnimation、§4.6）に乗って振られる** — 振りの見える部分は
+> こちらが担い、swing の手首の返し・部品の回転・杭の打ち出しは新しい版での飾り。player.entity.json は上書きしない
+> （他のアドオン・版ごとのバニラの定義と衝突する）。
+>
+> **待機ループの長さ**: idle は `loop: true` + `animation_length` で、統合版はその長さごとに q.anim_time を 0 に戻す。
+> 長さは書いた速さから自動で決める（astro_weapon.idle_loop_length: 全ての `q.anim_time * 速さ` が 360° の整数倍に
+> なる最短の長さ、idle_length（既定 6 秒）以上）。`q.anim_time` は `* 速さ` の形だけで使う。コアの use（右クリック中の
+> 輪の加速）は重みで速さが変わるので q.anim_time を使わず、pre_animation で角度 `v.astro_usespin` を積み上げる。
+> 全ての RP のループの継ぎ目は validate_astro（astro_animcheck.seam_errors）が検査する。
+
 ### 4.6 全身モーション（playanimation）
 `astro_animlib.py` の記法でキーポーズを書き、`animation.astro.p.<名前>` として書き出す。
 共通（全形態）: `none`, `henshin`（変身 3.0 秒）, `revert`, `airjump`, `boost`, `hover`（ループ）, `step`, `land`,
@@ -400,7 +416,18 @@ controller（初期 form → ready）。**コア** `astro:core_<key>`: tp / fp�
 （planets/<key>/body.py の BODY_ANIMS に書く）。
 コントローラ名: `astro.act`（技・コンボ）, `astro.move`（機動）, `astro.pose`（変身・ホバー）。
 バニラの攻撃の振り・持ち姿勢との足し合わせは hyperdim の gen_hd_anim（ATK_CANCEL, 一人称は腕 25%）に倣う。
-`anim_meta.js` に `{ "<名前>": [長さ秒, ブレンド可否] }`。
+`anim_meta.js` に `{ "<名前>": [長さ秒, ブレンド可否] }`（`anim(..., strike=秒)` を書いた物は 3 番目に当たる時刻。
+combo.js はそれがあれば当たりの演出をそこまで遅らせる）。
+
+> **腕の補間（v1.1）**: 統合版はオイラー角を成分ごとに catmullrom（一様なパラメータ）で補間する。同じ回転でも
+> 表し方（2 通りの分解 × 360° の巻き）が隣のキーと違うと、近いキーの間で成分が飛び、前後の長い区間の接線が
+> 暴れて腕が振り回される。astro_animlib は腕のキーを隣と連続な表し方に揃え（錨は書いたオイラー角のキー）、
+> 実際に catmullrom で補間して回転からずれる・速すぎる所にだけ 0.02 秒以上離したキーを足す。武器が体に入る
+> 所は書いたキーの間で腕を刃の軸まわりになめらかにねじって避ける（速さの上限の中で。避けきれない所は少し入る）。
+> 腕が本当に一回転する動きは最後の自然体のキーが巻いた値になり、そのモーションは終わりのブレンドをしない。
+> 一人称の腕は自然体からの回転を同じ軸まわりに 25%（自然体の真反対の近くでは 0 へ）。gen_astro_anim は
+> 1/120 秒ごとに腕の角速度（上限 max(1500°/秒, 書いたキーの間の速さ × 1.6)）と一人称の腕（|角度| ≤ 60°、
+> 20 ms 未満のキーの間で 20° 以上飛ばない）を検査する。
 
 ### 4.7 パーティクル（gen_astro_particles）
 全て白で描いたスプライトを、スクリプトが渡す色で染める。**色は必ず

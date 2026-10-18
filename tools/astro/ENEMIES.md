@@ -110,7 +110,7 @@ python3 tools/astro/gen_astro_entities.py --only=drone,boss …  絞り込み（
 |---|---|
 | `astro:mode`（ドローン 0..3） | 0 平常 / 1 溜め / 2 発射 |
 | `astro:mode`（センチネル 0..3） | 0 平常 / 1 振りかぶり / 2 叩きつけ |
-| `astro:mode`（ネメシス 0..7） | 0 平常 / 1 溜め / 2 光線 / 3 召喚 / 4 隕石 / 5 黒孔 / 6 突進 / 7 咆哮 |
+| `astro:mode`（ネメシス 0..8） | 0 平常 / 1 溜め / 2 光線 / 3 召喚 / 4 隕石 / 5 黒孔 / 6 突進 / 7 咆哮 / 8 消滅（スクリプトで死なせる時: 生きたまま入れると 2.6 秒で崩れ、52 tick の大爆発で消えたままになる。その後 remove()。普通の死のアニメは 0.9 秒） |
 | `astro:phase`（ネメシス 1..2） | 形態 |
 
 * イベント: ドローン `astro:engage` / `astro:disengage`（徘徊の on/off）、ボルト・数字 `astro:despawn`。
