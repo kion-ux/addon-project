@@ -150,7 +150,7 @@ function tickOne(p) {
   let sprinting = false;
   try { sprinting = !!p.isSprinting; } catch (_) { }
   if (sprinting && ground) {
-    if (mob.sprint >= 0) effect(p, "speed", 10, mob.sprint);
+    if (mob.sprint >= 0 && t % 4 === 0) effect(p, "speed", 12, mob.sprint);
     if (t % 3 === 0) {
       const f = flatDir(p);
       const back = { x: loc.x - f.x * 0.5, y: loc.y + 0.15, z: loc.z - f.z * 0.5 };
