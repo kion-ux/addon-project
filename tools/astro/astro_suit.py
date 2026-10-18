@@ -1169,3 +1169,91 @@ def small_part_errors(s: Suit, limit: float = MIN_PART - 0.005) -> List[str]:
             if min(c.size) < limit:
                 out.append(f"{b.name}: cube {c.size} (style {c.style}) has a side < {MIN_PART}")
     return out
+
+
+# ===========================================================================
+#  めり込みの検査（手足と胴の装甲。姿勢付き。check_astro_suits の警告）
+# ===========================================================================
+CLASH_POSES = {
+    "rest": {},
+    "walk+": {"rightArm": {"rotation": (-32, 0, 0)}, "leftArm": {"rotation": (32, 0, 0)},
+              "rightLeg": {"rotation": (32, 0, 0)}, "leftLeg": {"rotation": (-32, 0, 0)}},
+    "walk-": {"rightArm": {"rotation": (32, 0, 0)}, "leftArm": {"rotation": (-32, 0, 0)},
+              "rightLeg": {"rotation": (-32, 0, 0)}, "leftLeg": {"rotation": (32, 0, 0)}},
+    "hold": {"rightArm": {"rotation": (-18, 0, 0)}},
+}
+
+
+def _obbs(s, names, W):
+    geo = geo_of(s)
+    out = []
+    for b in geo["bones"]:
+        if b["name"] not in names:
+            continue
+        for c in b.get("cubes", []):
+            M = W[b["name"]] @ cube_matrix(c)
+            inf = c.get("inflate", 0.0)
+            o = np.array(c["origin"], float) - inf
+            sz = np.array(c["size"], float) + 2 * inf
+            ctr = (M @ np.r_[o + sz / 2, 1.0])[:3]
+            R = M[:3, :3]
+            out.append((b["name"], ctr, R, sz / 2))
+    return out
+
+
+def _sat_depth(a, b):
+    """2 つの OBB の重なりの深さ（分離していれば 0）。"""
+    _na, ca, Ra, ha = a
+    _nb, cb, Rb, hb = b
+    t = cb - ca
+    axes = [Ra[:, i] for i in range(3)] + [Rb[:, i] for i in range(3)]
+    for i in range(3):
+        for j in range(3):
+            v = np.cross(Ra[:, i], Rb[:, j])
+            n = np.linalg.norm(v)
+            if n > 1e-6:
+                axes.append(v / n)
+    depth = 1e9
+    for ax in axes:
+        ra = sum(ha[k] * abs(float(np.dot(Ra[:, k], ax))) for k in range(3))
+        rb = sum(hb[k] * abs(float(np.dot(Rb[:, k], ax))) for k in range(3))
+        d = ra + rb - abs(float(np.dot(t, ax)))
+        if d <= 0:
+            return 0.0
+        depth = min(depth, d)
+    return depth
+
+
+def clashes(s: Suit, limit: float = 0.2, poses=None) -> List[str]:
+    """手足（rightArm/leftArm/rightLeg/leftLeg の下）の装甲が、胴（body の下）の装甲にめり込む所を探す。
+    inner_*（骨格。隠れていてよい）・extra_*・fx_* は数えない。姿勢は CLASH_POSES（立ち・歩きの両端・持ち姿勢）。
+    戻り値: 「姿勢: 手足のボーン ↔ 胴のボーン 深さ」の文のリスト（深さ limit 以上）。"""
+    from hd_scene import skeleton_world
+    geo = geo_of(s)
+    bones = [b["name"] for b in geo["bones"]]
+
+    def ok(n):
+        ch = [n] + ancestors(geo, n)
+        return not any(x.startswith(("inner_", "extra_", "fx_")) for x in ch) and n not in TOP
+    limbs = {"rightArm", "leftArm", "rightLeg", "leftLeg"}
+    limb_b = {n for n in bones if ok(n) and top_of(geo, n) in limbs}
+    body_b = {n for n in bones if ok(n) and top_of(geo, n) == "body"}
+    out = {}
+    for pname, pose_ in (poses or CLASH_POSES).items():
+        W = suit_world(geo, skeleton_world(pose_))
+        A_ = _obbs(s, limb_b, W)
+        B_ = _obbs(s, body_b, W)
+        if not A_ or not B_:
+            continue
+        # 外接球で粗く絞る
+        ca = np.array([a[1] for a in A_])
+        ra = np.array([float(np.linalg.norm(a[3])) for a in A_])
+        cb = np.array([b[1] for b in B_])
+        rb = np.array([float(np.linalg.norm(b[3])) for b in B_])
+        D = np.linalg.norm(ca[:, None, :] - cb[None, :, :], axis=2)
+        for i, j in zip(*np.nonzero(D < (ra[:, None] + rb[None, :]))):
+            d = _sat_depth(A_[i], B_[j])
+            if d >= limit:
+                key = (pname, A_[i][0], B_[j][0])
+                out[key] = max(out.get(key, 0.0), d)
+    return [f"{p}: {a} <-> {b} ({d:.2f} deep)" for (p, a, b), d in sorted(out.items())]

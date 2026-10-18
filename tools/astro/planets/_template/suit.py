@@ -2,7 +2,7 @@
 """<惑星名> — <スーツ名>（7 頭身の雛形。v1.1）。
 
 使い方: tools/astro/planets/<key>/ にコピーし（__init__.py も空で作る）、各関数を作り込む。
-お手本は planets/earth/suit.py、説明は同じフォルダの README.md。この雛形のままでも検査は通る（約 760 キューブ）。
+お手本は planets/earth/suit.py、説明は同じフォルダの README.md。この雛形のままでも検査は通る（約 840 キューブ）。
 
     python3 tools/astro/preview_astro.py suit <key>    # 絵を見る（build_preview/astro/suit_<key>.png）
     python3 tools/astro/check_astro_suits.py <key>     # 検査（7 頭身・細かさ・命名・アニメ）

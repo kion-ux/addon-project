@@ -126,7 +126,7 @@ def legs(s):
                        rivet="rivet", n_rivets=3, rivet_edge="top")
     line_on(t, fr["top"], "north", (0.74, 0.1), (0.74, 0.6), 0.18, 0.16, "glow")
     line_on(t, fr["top"], "north", (0.74, 0.6), (0.42, 0.86), 0.18, 0.16, "glow")
-    side = rbox(t, (LX - 1.78, 11.95, 0.05), (0.5, 4.4, 2.9), "plate2", rot=(0, 0, -3),
+    side = rbox(t, (LX - 1.78, 11.65, 0.05), (0.5, 3.8, 2.9), "plate2", rot=(0, 0, -3),
                 decals={"west": {"decal": "serial", "text": "GA-03", "ink": (40, 60, 110)}})
     rivets(t, side, "west", 3, edge="bottom", margin=0.3)
     cbox(t, (LX - 1.62, 9.62, 0.05), (0.42, 0.42, 2.7), "gold")
@@ -182,14 +182,13 @@ def waist(s):
     cbox(w, (0, 14.0, 2.85), (3.0, 0.4, 0.3), "hazard")
     rivets(w, rs, "south", 4, edge="top", margin=0.3)
     # 草摺（腰の横。付け根で外へ開く。青の下板 + 白の上板 + 金の縁 + 発光線 + リベット）
-    ts = s.part("waist", "tasset_r", w, pivot=(-3.35, 16.6, 0.0), rotation=(0, 0, 12))
-    base = layered_plate(ts, (-3.75, 14.75, 0.0), (0.5, 3.5, 3.5), "plate", top="plate2",
-                         face="west", inset=0.38, trim="gold", trim_edge="bottom",
+    # 腿の外の装甲（y 13.55 まで）の上で終わり、篭手の内側（x -4.5）より内に収める
+    ts = s.part("waist", "tasset_r", w, pivot=(-3.35, 16.6, 0.0), rotation=(0, 0, 8))
+    base = layered_plate(ts, (-3.62, 15.15, 0.0), (0.45, 2.8, 3.5), "plate", top="plate2",
+                         face="west", inset=0.36, trim="gold", trim_edge="bottom",
                          rivet="rivet", n_rivets=3, rivet_edge="top")
-    line_on(ts, base["top"], "west", (0.15, 0.4), (0.85, 0.4), 0.2, 0.16, "glow")
-    low = rbox(ts, (-3.95, 12.75, 0.05), (0.42, 1.4, 3.0), "plate_b", rot=(0, 0, 6))
-    stick(ts, low, "west", 0.5, 0.08, (2.8, GOLD_W, 0.18), "gold", sink=0.05)
-    cbox(ts, (-3.45, 16.25, 0.0), (0.6, 0.6, 1.6), "dark")                        # 蝶番
+    line_on(ts, base["top"], "west", (0.15, 0.45), (0.85, 0.45), 0.2, 0.16, "glow")
+    cbox(ts, (-3.42, 16.3, 0.0), (0.5, 0.55, 1.6), "dark")                        # 蝶番
 
 
 # ---------------------------------------------------------------------------
@@ -316,14 +315,14 @@ def arms(s):
     fa = s.part("arms", "vambrace_r", "rightArm", pivot=A.WRIST)
     FX_ = A.FOREARM_X
     bevel(fa, (FX_, 17.15, 0.0), (2.85, 1.9, 2.95), "plate", cut=0.45, axis="y")
-    lo = bevel(fa, (FX_ + 0.02, 15.7, 0.0), (3.2, 1.75, 3.25), "plate", cut=0.5, axis="y")
-    ob = rbox(fa, (FX_ - 1.72, 16.3, 0.0), (0.42, 3.1, 2.6), "plate2", rot=(0, 0, 5))
+    lo = bevel(fa, (FX_ - 0.04, 15.7, 0.0), (3.0, 1.75, 3.15), "plate", cut=0.48, axis="y")
+    ob = rbox(fa, (FX_ - 1.68, 16.3, 0.0), (0.42, 3.1, 2.6), "plate2", rot=(0, 0, 5))
     line_on(fa, ob, "west", (0.15, 0.25), (0.42, 0.8), 0.18, 0.16, "glow")
     line_on(fa, ob, "west", (0.58, 0.8), (0.85, 0.25), 0.18, 0.16, "glow")
     rivets(fa, ob, "west", 3, edge="top", margin=0.28)
     fv = rbox(fa, (FX_ + 0.02, 16.4, -1.66), (2.2, 1.9, 0.35), "plate2", rot=(-5, 0, 0))
     vents(fa, fv, "north", 3, box=(0.2, 0.2, 0.8, 0.8), w=0.18)
-    octa(fa, (FX_ + 0.04, 14.72, 0.0), 3.3, 0.34, "gold", axis="y")                # 袖口
+    octa(fa, (FX_ - 0.02, 14.72, 0.0), 3.1, 0.34, "gold", axis="y")                # 袖口
     sensor(fa, (FX_ + 0.05, 15.5, 1.68), 0.26, "glow", "dark", facing=1)
     rivets(fa, lo[1], "south", 2, edge="bottom", margin=0.3, span=(0.3, 0.7))
 
