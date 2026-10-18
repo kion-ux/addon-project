@@ -99,6 +99,19 @@ def norm(x, peak=1.0):
     return x * (peak / m) if m > 0 else x
 
 
+def _endfade(a, dur=0.025):
+    """鳴ったまま途切れる層の末尾を滑らかに閉じる（プチッというクリック防止）。"""
+    if len(a) < 64:
+        return a
+    pk = float(np.max(np.abs(a)))
+    if pk <= 0 or float(np.max(np.abs(a[-32:]))) < pk * 1e-3:
+        return a
+    n = min(ns(dur), len(a) // 4)
+    a = a.copy()
+    a[len(a) - n:] *= 0.5 + 0.5 * np.cos(np.pi * np.arange(n) / n)
+    return a
+
+
 def mix(*items):
     """配列、または (開始秒, 配列[, 倍率]) を足し合わせる。"""
     parts = []
@@ -108,7 +121,7 @@ def mix(*items):
             g = it[2] if len(it) > 2 else 1.0
         else:
             t0, a, g = 0.0, it, 1.0
-        parts.append((int(round(t0 * SR)), np.asarray(a, float), g))
+        parts.append((int(round(t0 * SR)), _endfade(np.asarray(a, float)), g))
     n = max(o + len(a) for o, a, _ in parts)
     out = np.zeros(n)
     for o, a, g in parts:
@@ -618,7 +631,12 @@ def s_core_ring(v, rng):
 def s_swarm(v, rng):
     d = 1.25
     dens = L((0, 0.1), (0.15, 1.0), (0.95, 1.0), (d, 0.15))
-    pings = scatter(d, 420, dens, rng, g_ping(2500, 9500, 0.002, 0.012, drift=0.5, dur=d))
+    spin = pv(v, 5.5, 4.2, 7.0)
+
+    def spiral(rng, t):                       # 螺旋を描いて流れる: 粒の音程が周期的にうねりながら上がる
+        f = np.exp(rng.uniform(np.log(2200), np.log(7000))) * (1 + 0.5 * t / d) * (1 + 0.25 * np.sin(TAU * spin * t))
+        return ping(min(f, NYQ * 0.9), rng.uniform(0.002, 0.012), p0=rng.uniform(0, TAU)) * rng.uniform(0.3, 1.0)
+    pings = scatter(d, 420, dens, rng, spiral)
     clicks = scatter(d, 260, dens, rng, g_click(2500, 12000, (0.1, 0.6)))
     chit = scatter(d, 220, dens, rng, g_chitter(1200, 3600))
     flow = cn(d, Gbp(K((0, 700), (d, 3600)), 1.1), rng) * ev(dens, d) * lfo(5.0, d, 0.4)
@@ -1408,7 +1426,7 @@ def master(x, spec):
     x = np.asarray(x, float)
     if spec["dur"]:
         x = fit(x, spec["dur"])
-    x = ffilt(x, hp=spec["hp"], order=2)                     # 直流と超低域を切る
+    x = ffilt(x, hp=spec["hp"], lp=16500, order=2)           # 直流と超低域、Vorbis が削る超高域を先に切る
     # 末尾の無音を詰める（-66 dB 以下）
     blk = 256
     nb = len(x) // blk
@@ -1489,6 +1507,11 @@ def definitions():
     return {"format_version": "1.14.0", "sound_definitions": defs}
 
 
+def _build_one(job):
+    name, v = job
+    write_ogg(os.path.join(SND_DIR, file_name(name, v) + ".ogg"), render(name, v))
+
+
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     force = "--force" in argv
@@ -1509,8 +1532,8 @@ def main(argv=None):
             stale = json.load(fh).get("src") != h
     except (OSError, ValueError):
         stale = True
-    made = 0
     keep = set()
+    jobs = []
     for name, s in SOUNDS.items():
         for v in range(s["variants"]):
             path = os.path.join(SND_DIR, file_name(name, v) + ".ogg")
@@ -1518,8 +1541,16 @@ def main(argv=None):
             if force or stale or name in names or not os.path.exists(path):
                 if names and name not in names and os.path.exists(path) and not force:
                     continue
-                write_ogg(path, render(name, v))
-                made += 1
+                jobs.append((name, v))
+    n_jobs = max(1, int(os.environ.get("ASTRO_JOBS", min(2, os.cpu_count() or 1))))
+    if n_jobs > 1 and len(jobs) > 4:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(n_jobs) as ex:
+            list(ex.map(_build_one, jobs, chunksize=2))
+    else:
+        for job in jobs:
+            _build_one(job)
+    made = len(jobs)
     for f in os.listdir(SND_DIR):                              # 一覧から消えた音を掃除
         if f.endswith(".ogg") and f not in keep:
             os.remove(os.path.join(SND_DIR, f))

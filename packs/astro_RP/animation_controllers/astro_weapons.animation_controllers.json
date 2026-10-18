@@ -1,0 +1,21 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.astro.weapon_form": {
+      "initial_state": "form",
+      "states": {
+        "form": {
+          "animations": [
+            "form"
+          ],
+          "transitions": [
+            {
+              "ready": "q.all_animations_finished"
+            }
+          ]
+        },
+        "ready": {}
+      }
+    }
+  }
+}

@@ -206,7 +206,7 @@ def stand_in(kind: str):
         g = W.form(m, root, 0, "globe")
         W.sphere(g, (0, 0, 0), 2.4, "gem")
         r = W.spin(m, root, "ring", (0, 0, 0))
-        AC.ring(r, (0, 0, 0), 3.2, 12, (0, 0.5, 0.6), "metal", axis="y")
+        W.ring(r, (0, 0, 0), 3.2, 12, (0, 0.5, 0.6), "metal", axis="y")
         return m
     grip = W.form(m, root, 0, "grip")
     AC.octa(grip, (0, 0, 0.6), 1.6, 6.4, "wrap")
@@ -238,8 +238,8 @@ def stand_in(kind: str):
             AC.cbox(head, (0, 0, tip + 2.5), (5.0, 10.0, 5.0), "metal")
             AC.cbox(head, (0, 0, tip + 2.5), (5.4, 1.0, 5.4), "edge")
     elif kind == "ring":
-        AC.ring(head, (0, 0, -11.5), 8.0, 20, (0, 1.4, 0.8), "blade", axis="x")
-        AC.ring(head, (0, 0, -11.5), 9.0, 20, (0, 0.6, 0.9), "edge", axis="x")
+        W.ring(head, (0, 0, -11.5), 8.0, 20, (0, 1.4, 0.8), "blade", axis="x")
+        W.ring(head, (0, 0, -11.5), 9.0, 20, (0, 0.6, 0.9), "edge", axis="x")
         AC.cbox(head, (0, 0, -3.4), (1.6, 2.6, 1.0), "gold")
     elif kind == "crossbow":
         AC.cbox(head, (0, 2.6, -6.0), (2.0, 2.2, 16.0), "metal")

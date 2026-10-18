@@ -60,7 +60,7 @@ import numpy as np  # noqa: E402
 
 import astro_common as AC  # noqa: E402
 from astro_common import (arc_points, beam, bevel, box, cbox, chamfer, lerp, octa,  # noqa: E402,F401
-                          plate, polyline, rbox, ring, tri_fan, fill_tri_yz)
+                          plate, polyline, rbox, tri_fan, fill_tri_yz)
 import astro_data as D  # noqa: E402
 import astro_hold as AH  # noqa: E402
 from mcmodel import Model  # noqa: E402
@@ -133,6 +133,43 @@ def spin(m: Model, parent, name: str, pivot=(0, 0, 0), rotation=None):
 def glow(m: Model, parent, name: str, pivot=(0, 0, 0), rotation=None):
     """脈動する発光部品 fx_glow_<name>（既定で 1.0〜1.06 倍にゆっくり脈打つ）。"""
     return part(m, parent, f"fx_glow_{name}", pivot, rotation)
+
+
+def ring(bone, centre, radius, n, seg, style, axis="y", phase=0.0, a0=0.0, a1=360.0,
+         styles=None, **kw):
+    """軸 axis まわりの輪を n 個のセグメントで（astro_common.ring と同じ引数・同じ角度の向き）。
+    seg = (接線方向の長さ（0 で隙間なく繋がる長さ）, 半径方向の厚み, 軸方向の幅)。styles で交互に塗る。
+      axis="y": 水平の輪（XZ 平面）。a=0 で -Z（前）、a=90 で -X
+      axis="z": 正面向きの輪（XY 平面）。a=0 で +Y（上）、a=90 で -X
+      axis="x": 側面の輪（YZ 平面）。a=0 で +Y（上）、a=90 で -Z
+    セグメントは必ず接線の向きに置く（各セグメントの向きを回転行列から解く）。"""
+    out = []
+    full = abs(a1 - a0) >= 359.9
+    count = n if full else n + 1
+    step = (a1 - a0) / (n if full else max(1, n))
+    tl = seg[0] if seg[0] else 2 * radius * math.tan(math.radians(abs(step) / 2)) + 0.05
+    cx, cy, cz = centre
+    for i in range(count):
+        a = a0 + phase + i * step
+        t = math.radians(a)
+        st = styles[i % len(styles)] if styles else style
+        if axis == "y":
+            p = (cx - radius * math.sin(t), cy, cz - radius * math.cos(t))
+            tan = (-math.cos(t), 0.0, math.sin(t))
+            rad = (-math.sin(t), 0.0, -math.cos(t))
+        elif axis == "z":
+            p = (cx - radius * math.sin(t), cy + radius * math.cos(t), cz)
+            tan = (-math.cos(t), -math.sin(t), 0.0)
+            rad = (-math.sin(t), math.cos(t), 0.0)
+        else:
+            p = (cx, cy + radius * math.cos(t), cz - radius * math.sin(t))
+            tan = (0.0, -math.sin(t), -math.cos(t))
+            rad = (0.0, math.cos(t), -math.sin(t))
+        # 局所 X = 接線、局所 Y = 半径方向、局所 Z = 輪の軸
+        ax = np.cross(tan, rad)
+        R = np.column_stack([tan, rad, ax])
+        out.append(AC.mat_cube(bone, p, (tl, seg[1], seg[2]), st, R, **kw))
+    return out
 
 
 def sphere(bone, centre, r: float, style: str, **kw):
