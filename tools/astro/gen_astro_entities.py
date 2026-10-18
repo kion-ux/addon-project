@@ -695,8 +695,8 @@ def build_nemesis():
     cbox(eye, (cx, cy, ez - 0.45), (6.0, 6.0, 0.6), "pupil_v", uv_scale=8)
     for k in range(4):                                     # 虹彩の角を隠す暗い隅板
         a = 45 + 90 * k
-        rbox(eye, (cx - 6.6 * math.sin(math.radians(a)), cy + 6.6 * math.cos(math.radians(a)), ez - 0.1),
-             (5.2, 2.4, 1.2), "nem_plate", rot=(0, 0, a))
+        rbox(eye, (cx - 7.9 * math.sin(math.radians(a)), cy + 7.9 * math.cos(math.radians(a)), ez - 0.1),
+             (4.6, 2.2, 1.2), "nem_plate", rot=(0, 0, a))
     disk = m.bone("fx_eye_ring", (cx, cy, ez - 0.9), parent="eye")
     ring(disk, (cx, cy, ez - 0.9), 3.9, 12, (0, 0.6, 0.4), "glow", axis="z", styles=["glow", "glow_v"])
     lids = m.bone("lids", (cx, cy, ez), parent="eye")
@@ -729,7 +729,7 @@ def build_nemesis():
         slab(sb, base, bend, 4.6, 1.6, nz, "spine", extend=0.4)
         slab(sb, bend, bend + (tip - bend) * 0.6, 3.0, 1.3, nz, "spine", extend=0.4)
         slab(sb, bend + (tip - bend) * 0.6, tip, 1.5, 1.0, nz, "spine", extend=0.2)
-        slab(sb, base + d * 1.2 + V(0, 0, -0.9), tip - d * 1.5 + V(0, 0, -0.5), 0.55, 0.4, nz, "glow_v")
+        slab(sb, base + d * 1.2 + V(0, 0, -0.9), tip - d * 2.5 + V(0, 0, -0.5), 0.4, 0.4, nz, "glow_vs")
         cbox(sb, tuple(tip), (1.1, 1.1, 1.1), "glow", rotation=(45, 0, 45))
     # ---- 二重の光輪（傾けた親ボーン → 自分の軸まわりに回る子ボーン） ---------------
     m.bone("ring_a", NEM_C, parent="body", rotation=(72, 0, 18))
@@ -773,6 +773,110 @@ def build_nemesis():
             parent = f"fx_tendril_{i}_{k}"
             p0 = p1
     fit_density(m, 2, (1024, 1024))
+    return m
+
+
+# ===========================================================================
+#  ホログラム標的（HP 200 を毎回満タンに戻す練習台）
+#  投影台（不透明・entity_emissive_alpha）と、その上に浮かぶシアンの人型ワイヤーフレーム
+#  （holo_* ボーン = 加算合成 entity_beam_additive）。胸に赤い照準、体を上下する走査の輪。
+# ===========================================================================
+def hexagon(bone, centre, W, h, style, **kw):
+    """平らな六角柱（3 枚の板を 60° ずつ回す。上下の面は少しずつ引っ込めてちらつきを避ける）。"""
+    out = []
+    for k, a in enumerate((0, 60, 120)):
+        c = rbox(bone, centre, (W / math.sqrt(3) + 0.02, h - 0.03 * k, W), style, rot=(0, a, 0), **kw)
+        out.append(c)
+    return out
+
+
+def wire(bone, origin, size, t, style, fill=None, **kw):
+    """箱の 12 本の稜を太さ t の角柱で。fill を渡すと少し小さい半透明の中身も。"""
+    x0, y0, z0 = origin
+    sx, sy, sz = size
+    x1, y1, z1 = x0 + sx, y0 + sy, z0 + sz
+    out = []
+    for y in (y0, y1):
+        for z in (z0, z1):
+            out.append(cbox(bone, ((x0 + x1) / 2, y, z), (sx + t, t, t), style, **kw))
+    for x in (x0, x1):
+        for z in (z0, z1):
+            out.append(cbox(bone, (x, (y0 + y1) / 2, z), (t, sy - t, t), style, **kw))
+    for x in (x0, x1):
+        for y in (y0, y1):
+            out.append(cbox(bone, (x, y, (z0 + z1) / 2), (t, t, sz - t), style, **kw))
+    if fill:
+        out.append(cbox(bone, ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2),
+                        (sx - 0.6, sy - 0.6, sz - 0.6), fill, **kw))
+    return out
+
+
+def build_hologram():
+    m = Model(f"geometry.{NS}.hologram_target", uv_scale=4, visible_bounds=(2.0, 2.8), vb_offset=(0, 1.2, 0),
+              max_atlas=(512, 512))
+    m.bone("root", (0, 0, 0))
+    base = m.bone("base", (0, 0, 0), parent="root")
+    hexagon(base, (0, 1.0, 0), 15.0, 2.0, "pbase")
+    hexagon(base, (0, 2.3, 0), 12.0, 0.7, "pbase2")
+    cbox(base, (0, 2.75, 0), (5.2, 0.3, 5.2), "plens", uv_scale=8)
+    ring(base, (0, 2.75, 0), 3.0, 8, (0, 0.5, 0.4), "pglow", axis="y", phase=22.5)
+    for k, a in enumerate((30, 150, 270)):
+        r = math.radians(a)
+        px, pz = -6.4 * math.sin(r), -6.4 * math.cos(r)
+        cbox(base, (px, 3.6, pz), (1.4, 3.6, 1.4), "pframe", rotation=(0, a, 0))
+        cbox(base, (px, 5.6, pz), (1.0, 0.6, 1.0), "pglow", rotation=(0, a, 0))
+    cbox(base, (0, 1.0, -6.55), (6.0, 1.4, 0.3), "pserial")                       # 正面の型番
+    for a in (120, 240):
+        rbox(base, (-6.55 * math.sin(math.radians(a)), 1.0, -6.55 * math.cos(math.radians(a))),
+             (6.0, 1.4, 0.3), "phazard", rot=(0, a, 0))
+    # ---- ホログラム（加算合成） ------------------------------------------------
+    holo = m.bone("holo_root", (0, 3.0, 0), parent="root")
+    t = 0.45
+    hb = m.bone("holo_body", (0, 15.0, 0), parent="holo_root")
+    wire(hb, (-4, 15, -2), (8, 12, 4), t, "holo", fill="holo_fill")
+    hh = m.bone("holo_head", (0, 27.0, 0), parent="holo_body")
+    wire(hh, (-4, 27.2, -4), (8, 8, 8), t, "holo", fill="holo_fill")
+    cbox(hh, (0, 31.2, -4.05), (5.0, 0.5, 0.3), "holo_dim")                        # 目の線
+    for side, sx in (("r", -1), ("l", 1)):
+        ha = m.bone(f"holo_arm_{side}", (sx * 5.2, 26.0, 0), parent="holo_body", rotation=(0, 0, sx * -6))
+        wire(ha, (sx * 6.2 - 2, 15.2, -2), (4, 11.6, 4), t, "holo", fill="holo_fill")
+        hl = m.bone(f"holo_leg_{side}", (sx * 2.0, 15.0, 0), parent="holo_root")
+        wire(hl, (sx * 2.1 - 2, 3.2, -2), (4, 11.6, 4), t, "holo", fill="holo_fill")
+    ret = m.bone("holo_reticle", (0, 21.5, -2.6), parent="holo_body")
+    ring(ret, (0, 21.5, -2.6), 2.6, 8, (0, 0.4, 0.3), "holo_red", axis="z", phase=22.5)
+    for k in range(4):
+        a = 90 * k
+        rbox(ret, (-3.6 * math.sin(math.radians(a)), 21.5 + 3.6 * math.cos(math.radians(a)), -2.6),
+             (0.4, 1.6, 0.3), "holo_red", rot=(0, 0, a))
+    cbox(ret, (0, 21.5, -2.7), (0.8, 0.8, 0.3), "holo_red")
+    scan = m.bone("holo_scan", (0, 4.0, 0), parent="holo_root")
+    ring(scan, (0, 4.0, 0), 7.0, 12, (0, 0.35, 0.5), "holo_dim", axis="y")
+    fit_density(m, 4, (512, 512))
+    return m
+
+
+# ===========================================================================
+#  ヴォイド・ボルト（ドローンの投射物）と、ダメージ表示の空のジオメトリ
+# ===========================================================================
+def build_bolt():
+    m = Model(f"geometry.{NS}.void_bolt", uv_scale=8, visible_bounds=(1, 1), vb_offset=(0, 0.2, 0),
+              max_atlas=(128, 128))
+    m.bone("root", (0, 0, 0))
+    b = m.bone("body", (0, 2.0, 0), parent="root")
+    cbox(b, (0, 2.0, 0), (1.4, 1.4, 6.0), "energy", rotation=(0, 0, 45))
+    cbox(b, (0, 2.0, 0), (0.8, 0.8, 7.6), "glow")
+    for k in range(2):
+        cbox(b, (0, 2.0, -1.4 + k * 2.8), (2.4 - k * 0.8, 2.4 - k * 0.8, 0.4), "glow_soft",
+             rotation=(0, 0, 45 * k))
+    fit_density(m, 8, (128, 128), ks=(1.0, 0.75, 0.5))
+    return m
+
+
+def build_dmg_text():
+    m = Model(f"geometry.{NS}.dmg_text", uv_scale=1, visible_bounds=(1, 1), vb_offset=(0, 0.5, 0),
+              max_atlas=(16, 16))
+    m.bone("root", (0, 0, 0))
+    m.tex_w = m.tex_h = 16
     return m
 
 

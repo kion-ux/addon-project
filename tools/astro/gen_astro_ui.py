@@ -1295,6 +1295,20 @@ class Canvas:
         im = im.resize((im.width * self.ss, im.height * self.ss), Image.LANCZOS)
         over(self.a, np.asarray(im, np.float32), int(ox * self.ss), int(oy * self.ss))
 
+    def result_fit(self, n, cell=None, off=None):
+        """高解像度の絵を n x n に縮め、cell x cell の中央（off）に置く（事前乗算で縮める）。"""
+        cell = cell or self.w
+        pm = self.a.copy()
+        pm[..., :3] *= pm[..., 3:4] / 255.0
+        chans = [Image.fromarray(pm[..., i], "F").resize((n, n), Image.BOX) for i in range(4)]
+        sm = np.stack([np.asarray(c, np.float32) for c in chans], axis=-1)
+        a = sm[..., 3:4]
+        sm[..., :3] = np.where(a > 0, sm[..., :3] * 255.0 / np.maximum(a, 1e-6), 0)
+        out = np.zeros((cell, cell, 4), np.float32)
+        o = (cell - n) // 2 if off is None else off
+        out[o:o + n, o:o + n] = np.clip(sm, 0, 255)
+        return out
+
     def result(self):
         pm = self.a.copy()
         pm[..., :3] *= pm[..., 3:4] / 255.0
@@ -1372,8 +1386,8 @@ def emblem_big(key):
     rad = {"saturn": 5.6, "sol": 6.4, "uranus": 7.0}.get(key, 7.4)
     pl = render_planet(key, 32, rad, ss=6, detail=0.7)
     cv.paste(pl, 0, 0)
-    a = cv.result()
-    return soft_outlined(a, INK, 170)
+    # 4..27 行に収める（縁取り込み）
+    return soft_outlined(cv.result_fit(22, 32, 5), INK, 190)
 
 
 def wing(side):
@@ -1492,7 +1506,7 @@ def big_icon(name):
         cv.fill(cv.poly(tri), cv.grad((16, 4), (16, 26), (255, 236, 120), (255, 170, 20)))
         cv.fill(cv.line([(16, 11), (16, 19)], 2.6), (40, 24, 8))
         cv.fill(cv.ellipse(16, 22.6, 1.5), (40, 24, 8))
-    return soft_outlined(cv.result(), INK, 200)
+    return soft_outlined(cv.result_fit(22, 32, 5), INK, 200)
 
 
 def _px_from(arr):
@@ -3020,17 +3034,22 @@ def self_check(pages, G):
             # 小さなグリフは 3〜12 行（バーの端だけ 3〜12、他は 4〜11 が目安）
             if len(rows) and (rows.min() < 3 or rows.max() > 12):
                 errors.append(f"{name}: rows {rows.min()}..{rows.max()} outside 3..12")
-    # アイテムアイコン
+    # アイテムアイコン（自分の担当 = 素材・道具とスーツ。コアとウェポンは武器の生成スクリプトの担当）
+    warnings = []
+    mine = set(D.MATERIALS) | {f"suit_{k}" for k in KEYS}
     try:
         atlas = json.load(open(os.path.join(RP, "textures", "item_texture.json"), encoding="utf-8"))
         for k, v in atlas["texture_data"].items():
             if k.startswith("astro_"):
                 tex = v["textures"] if isinstance(v["textures"], str) else v["textures"][0]
                 if not os.path.exists(os.path.join(RP, tex + ".png")):
-                    errors.append(f"item_texture {k}: {tex}.png missing")
+                    (errors if k[len("astro_"):] in mine else warnings).append(f"item_texture {k}: {tex}.png missing")
     except FileNotFoundError:
         errors.append("item_texture.json missing (run gen_astro_packs.py)")
-    return errors
+    for name in mine:
+        if not os.path.exists(os.path.join(ITEM_DIR, f"{name}.png")):
+            errors.append(f"textures/items/astro/{name}.png missing")
+    return errors, warnings
 
 
 def main():
@@ -3063,10 +3082,12 @@ def main():
     mock.save(os.path.join(DOCS, "hud.png"), optimize=True)
     note = f"1 行目 ≈ {widths[0]:.0f} GUI px、2 行目 ≈ {widths[1]:.0f} GUI px（地球・16 + 10 セル）"
     write_ui_md(G, (pg, pg2), note)
-    errors = self_check((pg, pg2), G)
+    errors, warnings = self_check((pg, pg2), G)
     n = sum(1 for _ in iter_glyphs(G))
     print(f"  ui: glyph_EA {len(pg.meta)} cells, glyph_EB {len(pg2.meta)} cells, glyphs.js {n} keys, "
           f"suit icons {kinds}, {note}")
+    if warnings:
+        print(f"  ui: 他の担当のアイコンがまだ無い: {len(warnings)} 件（例: {warnings[0]}）")
     if errors:
         for e in errors:
             print("  !!", e)
