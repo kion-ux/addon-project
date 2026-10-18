@@ -702,27 +702,27 @@ def sp_debris(w, h, k):
 
 
 def sp_flame(w, h, f, n=8):
-    """アニメ調の炎の舌（8 コマ）。外炎は白 0.75、内炎は 1.0。後半のコマは千切れて縮む。"""
+    """アニメ調の炎の舌（8 コマ）。外炎は白 0.72、涙形の内炎は 1.0。コマが進むと細く低く揺れて消える。"""
     x, y = grid(w, h)
     yy = -y                                            # 上向き
     t = f / n
-    hgt = 1.0 - 0.45 * t
-    hh = (yy + 0.92) / (1.85 * hgt)                     # 0 = 根元, 1 = 先
     phase = t * 2 * math.pi
-    wob = 0.14 * np.sin(hh * 5.5 + phase) * hh
-    width = 0.62 * np.sqrt(np.clip(hh, 0, 1)) * np.clip(1 - hh, 0, 1) ** 0.85 * (1 - 0.3 * t)
-    body = hard(np.abs(x - wob) < width) * hard((hh > 0) & (hh < 1))
-    # 両脇の小さな舌
-    for sx, sh, ph in ((-0.36, 0.55, 1.3), (0.34, 0.62, 2.4)):
-        h2 = (yy + 0.75) / (1.85 * hgt * sh)
-        w2 = 0.24 * np.sqrt(np.clip(h2, 0, 1)) * np.clip(1 - h2, 0, 1) ** 0.9
-        body = np.maximum(body, hard(np.abs(x - sx - 0.08 * np.sin(h2 * 5 + phase + ph) * h2) < w2) *
-                          hard((h2 > 0) & (h2 < 1)))
-    core_w = width * 0.42
-    core = hard(np.abs(x - wob * 0.8) < core_w) * hard((hh > 0.02) & (hh < 0.62))
-    if t > 0.6:                                         # 千切れる: 上の部分が離れる
-        body = body * hard(np.abs(hh - 0.62) > 0.05 * (t - 0.5) * 6)
-    a = body * (1 - 0.35 * t)
+
+    def tongue(cx, base, height, width, ph, sway):
+        hh = (yy - base) / height                      # 0 = 根元, 1 = 先
+        wob = sway * np.sin(hh * 5.0 + phase + ph) * hh ** 1.3
+        wd = width * np.sqrt(np.clip(hh, 0, 1)) * np.clip(1 - hh, 0, 1) ** 0.75
+        return hard(np.abs(x - cx - wob) < wd) * hard((hh > 0) & (hh < 1)), wob
+
+    hgt = 1.0 - 0.4 * t
+    wid = 1.0 - 0.35 * t
+    body, wob = tongue(0.0, -0.92, 1.86 * hgt, 0.62 * wid, 0.0, 0.16)
+    for cx, sc, ph in ((-0.34, 0.55, 1.3), (0.33, 0.62, 2.4)):
+        b2, _ = tongue(cx, -0.88, 1.86 * hgt * sc, 0.26 * wid, ph, 0.1)
+        body = np.maximum(body, b2)
+    core, _ = tongue(0.0, -0.84, 1.86 * hgt * 0.58, 0.3 * wid, 0.4, 0.1)
+    core = core * body
+    a = body * (1 - 0.3 * t)
     white = np.where(core > 0, 1.0, 0.72)
     return down(a), down(np.where(body > 0, white, 1.0))
 
@@ -768,7 +768,7 @@ def sp_bolt(w, h, k):
     rng = np.random.RandomState(100 + k)
     pen = Pen(w, h)
     cy = h / 2
-    pts = _fit_y(_bolt_pts(rng, 1, w - 1, cy, cy, 7, 0.22), cy, h / 2 - 7)
+    pts = _fit_y(_bolt_pts(rng, 1, w - 1, cy, cy, 6, 0.3), cy, h / 2 - 7)
     pen.poly(pts, 5.0)
     core = Pen(w, h)
     core.poly(pts, 2.2)

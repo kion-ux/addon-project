@@ -1833,8 +1833,39 @@ def check():
 # ===========================================================================
 #  プレビュー（build_preview/astro/enemy_<id>.png）
 # ===========================================================================
+def _ternary(sx):
+    """Molang の a ? b : c（入れ子・括弧あり）を Python の (b if a else c) に直す。"""
+    out, i = "", 0
+    while i < len(sx):
+        if sx[i] == "(":
+            depth, j = 1, i + 1
+            while depth:
+                depth += {"(": 1, ")": -1}.get(sx[j], 0)
+                j += 1
+            out += "(" + _ternary(sx[i + 1:j - 1]) + ")"
+            i = j
+        else:
+            out += sx[i]
+            i += 1
+    depth = 0
+    for k, ch in enumerate(out):
+        depth += {"(": 1, ")": -1}.get(ch, 0)
+        if ch == "?" and depth == 0:
+            cond, rest = out[:k], out[k + 1:]
+            d2, q = 0, 0
+            for j, c2 in enumerate(rest):
+                d2 += {"(": 1, ")": -1}.get(c2, 0)
+                if d2 == 0 and c2 == "?":
+                    q += 1
+                elif d2 == 0 and c2 == ":":
+                    if q == 0:
+                        return f"(({rest[:j]}) if ({cond}) else ({_ternary(rest[j + 1:])}))"
+                    q -= 1
+    return out
+
+
 def molang(expr, env):
-    """プレビュー用の小さな Molang 評価（数式と三項演算子だけ）。失敗したら 0。"""
+    """プレビュー用の小さな Molang 評価（数式・比較・論理・三項演算子）。失敗したら 0。"""
     if isinstance(expr, (int, float)):
         return float(expr)
     import re
@@ -1844,18 +1875,14 @@ def molang(expr, env):
                  ("||", " or ")):
         py = py.replace(a, b)
     py = re.sub(r"\b([qv])\.(\w+)", r"\1_\2", py)
-    # a ? b : c → (b if a else c)（入れ子なし）
-    for _ in range(4):
-        m = re.search(r"\(([^()?:]+)\?([^()?:]+):([^()?:]+)\)", py)
-        if not m:
-            break
-        py = py[:m.start()] + f"(({m.group(2)}) if ({m.group(1)}) else ({m.group(3)}))" + py[m.end():]
+    py = re.sub(r"!(?!=)", " not ", py)
+    py = _ternary(py)
     g = {"_sin": lambda d: math.sin(math.radians(d)), "_cos": lambda d: math.cos(math.radians(d)),
          "_mod": math.fmod, "_clamp": lambda x, a, b: max(a, min(b, x)), "max": max, "min": min, "abs": abs}
     try:
         return float(eval(py, g, dict(env)))  # noqa: S307 (自分で書いた式だけ)
-    except Exception:  # noqa: BLE001
-        return 0.0
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError(f"preview molang: {expr} -> {py}: {exc}")
 
 
 def sample_pose(ident, names, t, env):
