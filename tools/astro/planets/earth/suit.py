@@ -390,10 +390,8 @@ def helmet(s):
     mirror_x(hm, br, sd, sdr, ck, ckg, ear, eg)
     # 面頬（白）: 中央の稜へ折れた V の板、頬の小さな吸気口、尖った顎
     fc = rbox(hm, (-0.62, 28.45, hz - 2.2), (1.3, 1.25, 0.42), "face", rot=(8, 26, 0))
-    fv = stick(hm, fc, "north", 0.42, 0.32, (0.62, 0.16, 0.16), "grille", sink=0.06)
-    fv2 = stick(hm, fc, "north", 0.42, 0.56, (0.62, 0.16, 0.16), "grille", sink=0.06)
     ch = rbox(hm, (-0.45, 27.75, hz - 1.98), (1.0, 0.7, 0.48), "face", rot=(0, 26, -22))
-    mirror_x(hm, fc, fv, fv2, ch)
+    mirror_x(hm, fc, ch)
     cbox(hm, (0, 28.5, hz - 2.5), (0.3, 1.2, 0.3), "plate2")
     # 後頭部（中央の稜が後ろへ降りる・小さな排気口）としころ
     bh = cbox(hm, (0, 29.1, hz + 2.6), (4.0, 2.4, 0.45), "plate")

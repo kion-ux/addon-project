@@ -490,17 +490,18 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
     if want("chest"):
         c = part("chest", "body", (0.0, A.CHEST_Y, 0.0))
         F["chest"] = c
-        chamfer(c, (0, 24.85, 0.05), (7.3 * k, 2.7, 4.4), SU, cut=0.75, axis="y")   # 上が広い
-        chamfer(c, (0, 22.15, 0.1), (6.0 * k, 2.9, 4.0), SU, cut=0.7, axis="y")
-        cbox(c, (0, 23.1, -2.3), (0.9, 4.6, 0.5), ME)                               # 胸骨
-        sensor(c, (0, 24.6, -2.58), 0.34, GL, DK)
-        for i, y in enumerate((24.7, 23.5, 22.3)):                                  # 肋骨
-            wx = (3.95 - i * 0.3) * k
-            rib = polyline(c, [(-0.45, y, -2.35), (-wx + 0.4, y - 0.25, -1.75),
-                                (-wx, y - 0.45, 0.4)], 0.42, 0.42, BA)
+        chamfer(c, (0, 24.85, 0.05), (6.3 * k, 2.7, 4.2), SU, cut=0.75, axis="y")   # 上が広い
+        chamfer(c, (0, 22.15, 0.1), (5.0 * k, 2.9, 3.7), SU, cut=0.7, axis="y")
+        cbox(c, (0, 23.1, -2.25), (0.95, 4.6, 0.5), ME)                              # 胸骨
+        sensor(c, (0, 24.6, -2.53), 0.34, GL, DK)
+        for i, y in enumerate((24.9, 23.75, 22.6, 21.5)):                           # 肋骨（籠）
+            wx = (4.25 - i * 0.32) * k
+            rib = polyline(c, [(-0.45, y, -2.3), (-wx + 0.55, y - 0.2, -2.0),
+                                (-wx, y - 0.4, -0.2), (-wx + 0.45, y - 0.5, 1.7)],
+                           0.42, 0.48, BA)
             mirror_x(c, rib)
         cl = beam(c, (-0.5, 25.95, -1.5), (-4.6 * k, 25.55, -0.5), 0.5, 0.5, BA)   # 鎖骨
-        pec = rbox(c, (-2.05 * k, 24.15, -2.28), (3.0 * k, 2.5, 0.5), SU, rot=(-4, 12, 0))
+        pec = rbox(c, (-1.95 * k, 24.6, -2.3), (2.6 * k, 1.9, 0.5), ME, rot=(-4, 12, 0))
         sock = octa(c, (-4.15 * k, 24.4, 0.0), 1.9, 0.6, DK, axis="x")             # 肩の受け
         lat = beam(c, (-3.7 * k, 25.4, 1.6), (-3.0 * k, 20.9, 1.35), 0.42, 0.55, ME)
         mirror_x(c, cl, pec, sock, lat)
@@ -549,10 +550,11 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         ua = part("upper_arm_r", "rightArm", A.SHOULDER)
         F["upper_arm_r"] = ua
         if want("upper_arm"):
-            octa(ua, (ax, 21.45, 0.05), 2.35 * k, 4.3, SU, axis="y")                # 二の腕の芯
+            octa(ua, (ax, 21.45, 0.05), 2.1 * k, 4.3, SU, axis="y")                 # 二の腕の芯
             for y in (22.75, 20.15):
-                octa(ua, (ax, y, 0.05), 2.62 * k, 0.3, BA, axis="y")
-            beam(ua, (ax, 23.5, -1.15 * k), (ax + 0.05, 19.6, -1.1 * k), 0.5, 0.36, ME)
+                octa(ua, (ax, y, 0.05), 2.45 * k, 0.3, BA, axis="y")
+            beam(ua, (ax, 23.5, -1.08 * k), (ax + 0.05, 19.6, -1.02 * k), 0.6, 0.4, ME)
+            beam(ua, (ax - 1.08 * k, 23.2, 0.05), (ax - 1.0 * k, 19.8, 0.05), 0.5, 0.44, ME)
             if pist:
                 piston(ua, (ax, 22.9, 1.32 * k), (A.ELBOW[0], 17.3, 1.18 * k), r=0.27,
                        style=ME, rod_style=JO, cap_style=DK)
@@ -566,11 +568,11 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         fa = part("forearm_r", "rightArm", A.ELBOW)
         F["forearm_r"] = fa
         if want("forearm"):
-            taper(fa, (fx_, 18.0, 0.05), (fx_ + 0.06, 14.95, 0.0), 2.62 * k, 2.15 * k, 2, SU)
-            for y, ww in ((17.15, 2.82), (15.65, 2.5)):
+            taper(fa, (fx_, 18.0, 0.05), (fx_ + 0.06, 14.95, 0.0), 2.35 * k, 1.95 * k, 2, SU)
+            for y, ww in ((17.15, 2.62), (15.65, 2.32)):
                 octa(fa, (fx_, y, 0.02), ww * k, 0.26, BA, axis="y")
-            beam(fa, (fx_, 17.7, -1.18 * k), (fx_ + 0.06, 15.2, -0.98 * k), 0.36, 0.36, ME)
-            beam(fa, (fx_ - 0.05, 17.7, 1.15 * k), (fx_ + 0.04, 15.2, 0.98 * k), 0.36, 0.36, ME)
+            beam(fa, (fx_, 17.7, -1.12 * k), (fx_ + 0.06, 15.2, -0.94 * k), 0.42, 0.4, ME)
+            beam(fa, (fx_ - 0.05, 17.7, 1.1 * k), (fx_ + 0.04, 15.2, 0.94 * k), 0.42, 0.4, ME)
         if want("wrist"):
             joint_drum(fa, A.WRIST, 0.88, 2.05, axis="x", style=ME, cap=JO, hub=DK,
                        caps=(-1,))
@@ -585,12 +587,12 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         if want("hip"):
             ball(th, A.HIP, 1.12, JO, ME)
         if want("thigh"):
-            taper(th, (LX - 0.05, 14.3, 0.05), (LX, 9.35, -0.05), 3.05 * k, 2.55 * k, 2, SU)
-            for y, ww in ((12.9, 3.12), (10.6, 2.86)):
+            taper(th, (LX - 0.05, 14.3, 0.05), (LX, 9.35, -0.05), 2.75 * k, 2.3 * k, 2, SU)
+            for y, ww in ((12.9, 2.95), (10.6, 2.7)):
                 octa(th, (LX, y, 0.0), ww * k, 0.3, BA, axis="y")
-            beam(th, (LX - 1.38 * k, 13.7, 0.25), (LX - 1.18 * k, 9.7, 0.1), 0.42, 0.5, ME)
-            beam(th, (LX + 1.2 * k, 13.2, 0.1), (LX + 1.05 * k, 9.7, 0.0), 0.38, 0.42, ME)
-            rbox(th, (LX, 11.9, -1.42 * k), (1.9 * k, 3.8, 0.42), ME, rot=(-4, 0, 0))
+            beam(th, (LX - 1.3 * k, 13.7, 0.25), (LX - 1.12 * k, 9.7, 0.1), 0.5, 0.6, ME)
+            beam(th, (LX + 1.15 * k, 13.2, 0.1), (LX + 1.0 * k, 9.7, 0.0), 0.42, 0.48, ME)
+            rbox(th, (LX, 11.9, -1.3 * k), (1.8 * k, 3.8, 0.45), ME, rot=(-4, 0, 0))
     if want("knee"):
         kn = part("knee_r", "rightLeg", A.KNEE)
         F["knee_r"] = kn
@@ -604,11 +606,12 @@ def build_frame7(s: Suit, style=None, bulk=1.0, skip=frozenset(), fingers=True) 
         sn = part("shin_r", "rightLeg", A.KNEE)
         F["shin_r"] = sn
         if want("shin"):
-            taper(sn, (LX, 7.75, 0.1), (LX, 2.55, 0.2), 2.5 * k, 2.0 * k, 2, SU)
-            chamfer(sn, (LX, 5.85, 0.95), (2.2 * k, 3.3, 1.3), SU, cut=0.45, axis="y")  # ふくらはぎ
-            for y, ww in ((6.75, 2.62), (3.55, 2.26)):
+            taper(sn, (LX, 7.75, 0.1), (LX, 2.55, 0.2), 2.3 * k, 1.85 * k, 2, SU)
+            chamfer(sn, (LX, 5.85, 0.9), (2.0 * k, 3.3, 1.3), SU, cut=0.45, axis="y")  # ふくらはぎ
+            for y, ww in ((6.75, 2.48), (3.55, 2.12)):
                 octa(sn, (LX, y, 0.12), ww * k, 0.26, BA, axis="y")
-            beam(sn, (LX, 7.4, -1.15 * k), (LX, 2.75, -0.98 * k), 0.6, 0.36, ME)
+            beam(sn, (LX, 7.4, -1.08 * k), (LX, 2.75, -0.92 * k), 0.7, 0.4, ME)
+            beam(sn, (LX - 1.05 * k, 7.2, 0.15), (LX - 0.9 * k, 3.0, 0.2), 0.42, 0.45, ME)
         if want("ankle"):
             joint_drum(sn, A.ANKLE, 0.92, 2.3 * k, axis="x", style=ME, cap=JO, hub=DK,
                        caps=(-1, 1))
