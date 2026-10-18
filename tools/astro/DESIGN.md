@@ -397,6 +397,7 @@ ID（`astro:` を付けて spawnParticle）。★ は流れや形のある特別
 | `warning` | 敵の攻撃予告（地面の赤い円と縞） |
 | `afterimage` | 人型の残像（スーツの輪郭） |
 | `lens` | 光のにじみ（大きく淡い、必殺技の締め） |
+| `ring_n` `line_n` | 1 回の呼び出しで輪・線を v.count 粒で描く形状エミッタ（fx.ring / fx.line が使う） |
 **事実（調査済み）**: format_version は全て "1.10.0"。`lookat_direction` / `direction_x` ではサイズの **[0] が向きに沿う長さ**。
 速度の無い粒の向きは `"direction": {"mode": "custom", "custom_direction": [...]}`。光は particles_add（lighting なし）、
 暗い煙・虚無は particles_blend。spawnParticle は 1 回ごとに全クライアントへ 1 パケットなので、fx.js の予算は
@@ -445,7 +446,9 @@ register("<key>", {
 `accent` / `hot`（白寄りの発光色） / `f` 水平前方 / `v` 視線 / `start` 開始位置 /
 `at(t, fn)` t tick 後に実行（死亡・退出・解除で止まる） / `every(t0, n, step, fn)` / `once(e, max)` /
 `loc()` `chest()` `front(d, y)` `liveDir()` / `dmg(base)` 同調率と惑星の補正を掛けたダメージ / `level` 同調率 Lv。
-細かい引数は engine.js・fx.js・combat.js の JSDoc を正とする。
+細かい引数は engine.js・fx.js・combat.js の JSDoc と planets/_template/README_moves.md を正とする。
+**ダメージの約束**: `hit(ctxOrPlayer, target, base, opts)` が同調率と惑星の補正を掛けるので、技は **素のダメージ** を渡す
+（`ctx.dmg()` は表示用。hit に渡すと二重に掛かる）。
 
 ### 4.10b スクリプト API の事実（@minecraft/server 1.13.0 で確認済み）
 * ある: itemUse / itemStartUse / itemStopUse / itemReleaseUse（使用時間のあるアイテムだけ）/ entityHitEntity / entityHurt /
