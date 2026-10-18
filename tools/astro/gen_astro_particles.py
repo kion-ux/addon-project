@@ -2670,6 +2670,62 @@ def build_effects():
 #  PARTICLES.md
 # ===========================================================================
 MAT_JA = {"add": "加算（光る）", "blend": "半透明（色が乗る・暗くもできる）"}
+# size = 1 の時の大きさ（式から読んだもの。PARTICLES.md に出す）
+SIZE_NOTES = {
+    "glow": "直径 0.5 m（寿命の間に半分まで縮む）", "trail": "直径 0.4 m（0.12 m まで縮む）",
+    "dot": "粒の直径 0.08 m", "spark": "筋の長さ 0.5 m・太さ 0.06 m",
+    "star": "0.22 m（瞬いて 0.02〜0.22 m）", "impact": "直径 0.75 m → 1.8 m に広がる",
+    "flare": "横 1.3 → 5.1 m・縦 0.8 → 0 m", "ring": "直径 0 → 2 m に広がる",
+    "ring_flat": "直径 0 → 2.2 m に広がる", "shock_flat": "直径 0 → 3 m に広がる",
+    "circle": "直径 2.4 m（点く時に一瞬膨らむ）", "circle_v": "直径 2.4 m（点く時に一瞬膨らむ）",
+    "hex_circle": "差し渡し 2.4 m（点く時に一瞬膨らむ）", "emblem": "直径 3 m（点く時に一瞬膨らむ）",
+    "hex": "0.6 m のセル", "scan": "幅 1.4 m・太さ 0.2 m の線（走る距離は height）",
+    "pillar": "幅 0.9 m（高さは height）", "beam": "太さ 0.5 m（長さは len）",
+    "slash": "直径 1.9 → 2.6 m", "slash_big": "直径 3.4 → 4.8 m", "slash_flat": "直径 2.7 → 3.8 m",
+    "cross": "1.3 → 2.2 m", "thrust": "太さ 0.5 m（長さは len）",
+    "speedline": "筋の長さ 1.1 m・太さ 0.045 m", "wind": "1.0 × 0.5 m",
+    "vortex": "筋 0.8 × 0.09 m（渦の大きさは spread と height）", "converge": "筋 0.5 × 0.05 m",
+    "orbit": "筋 0.34 × 0.07 m（軌道は spread）", "aura": "炎の舌 0.24 × 0.55 m",
+    "nano": "粒 0.09 m", "nano_stream": "粒 0.11 m（螺旋の太さは spread）",
+    "smoke": "塊 0.4 → 1.3 m（ばらつき ±20%）", "dust": "塊 0.35 → 0.95 m（ばらつき ±20%）",
+    "debris": "破片 0.13〜0.31 m", "ember": "0.07 m", "flame": "0.42 × 0.56 m の炎",
+    "plasma": "直径 0.66 → 1.2 m", "bolt": "帯の幅 1.2 m（光る芯はその 1/6 ほど。長さは len）",
+    "arc": "0.6 m", "shard": "0.14 × 0.3 m", "ice": "0.22〜0.42 m", "diamond": "0.3 m",
+    "droplet": "0.2 × 0.13 m（速度の向きに長い）", "splash": "幅 0.6 → 1.4 m・高さ 0.4 → 1.2 m（足元から上へ）",
+    "bubble": "0.1〜0.22 m", "wave": "幅 2.4 → 3.8 m・高さ 0.56 → 1.4 m（中心は足元から 0.6 m 上）",
+    "cloud": "塊 1.1〜2.1 m（1.3 倍まで膨らむ）", "aurora": "帯の幅 1.8 m（高さは height、輪の半径は spread）",
+    "meteor": "頭の直径 0.95 m（尾の長さは len、既定 3 × size）", "black_hole": "直径 3 m",
+    "void": "1.1〜2.2 m", "warning": "直径 2.4 m", "afterimage": "幅 1 m・高さ 2 m（足元がエミッタ）",
+    "ring_n": "粒 0.16 m（輪の大きさは spread）", "line_n": "粒 0.16 m（線の長さは (vx,vy,vz)）",
+    "lens": "直径 2.4 → 4.8 m",
+}
+RECIPES = [
+    ("命中", "`impact`（size 1）+ `spark`（count 6、向き = 攻撃の向き）+ `ring`（size 0.6）"),
+    ("重い命中・叩きつけ", "`impact`（size 2）+ `shock_flat` + `dust` + `debris`"),
+    ("斬撃", "`slash`（rot で弧の向き、var 0/1 で左右の振り）+ `spark`。大技は `slash_big`、回転斬りは `slash_flat`"),
+    ("光線", "`circle_v`（発射口。向き = 視線）+ `beam`（毎 tick 出すか life を伸ばす）+ `flare`（撃った瞬間）+ "
+     "`glow`/`impact`（着弾点）"),
+    ("落雷", "`warning`（予告）→ `bolt`（地面の点から len 12）+ `impact` + `shock_flat` + `arc`"),
+    ("連鎖放電", "A から B へ `bolt`（vx,vy,vz = B − A、len = 距離）+ B に `arc`"),
+    ("溜め", "`converge` + `orbit` + 芯に `glow`"),
+    ("変身", "足元に `circle` + `scan` + コアから各部位へ `nano_stream`（vx,vy,vz = 部位 − コア）+ 締めに `emblem`"
+     "（var = 惑星番号）+ `ring_n`"),
+    ("範囲の縁", "`ring_n`（spread = 半径、1 回で輪）か `ring_flat`（広がる輪）"),
+    ("軌跡・射線", "`line_n`（1 回で線）か `trail` を並べる"),
+    ("ブラックホール", "`black_hole` + 同じ点・同じ色で `lens`（size × 0.8、加算の光）+ `converge`"),
+    ("隕石", "`warning` → `meteor`（毎 tick 位置を変えて出すか speed で飛ばす）→ `impact` + `shock_flat` + "
+     "`debris` + `smoke`"),
+    ("水", "`wave`（向き = 進む向き）+ `splash` + `droplet` + `bubble`"),
+    ("凍結", "`ice` + `shard` + `hex`（count と spread で氷の殻）"),
+]
+
+
+def _short(look):
+    s, prev = look, None
+    while prev != s:
+        prev, s = s, re.sub(r"（[^（）]*）", "", s)
+    s = s.split("。")[0]
+    return s if len(s) <= 44 else s[:43] + "…"
 
 
 def write_doc(E):
@@ -2678,7 +2734,9 @@ def write_doc(E):
     w("# アストロ・ナノギア パーティクル一覧（PARTICLES.md）")
     w("")
     w("`tools/astro/gen_astro_particles.py` が生成する。**このファイルは手で直さない**（生成スクリプトを直して作り直す）。")
-    w("惑星の技の演出はこの表だけを見て書けるようにしてある。")
+    w("惑星の技の演出はこの表だけを見て書けるようにしてある。見た目の確認は "
+      "`ASTRO_PREVIEW=1 python3 tools/astro/gen_astro_particles.py` → `build_preview/astro/particles_*.png`"
+      "（JSON をそのまま動かした簡易シミュレーション。`ASTRO_PREVIEW_ONLY=beam,bolt` で一部だけ）。")
     w("")
     w("## 使い方")
     w("")
@@ -2689,24 +2747,24 @@ def write_doc(E):
     w("dim.spawnParticle(\"astro:ring_flat\", pos, m);   // fx.js の P() がこれを包む")
     w("```")
     w("")
-    w("* 変数は全て任意。渡さなければ下の表の既定値になる（変数無しでも見栄えがする既定にしてある）。")
-    w("  変数名は必ず `variable.` を付けて setFloat する（`v.` ではない）。")
-    w("* **色** `cr cg cb` は 0..1。スプライトは白で描いてあり、`particle_appearance_tinting` でこの色に染める。")
-    w("  多くの発光は生まれた瞬間だけ白く光ってから色に落ちる（表の「白→色」）。")
-    w("* **size** は倍率。各粒の「基準の大きさ」は個別の欄に書いた m（size 1 の時）。")
+    w("* 変数は全て任意。渡さなければ各粒の表の既定値になる（変数無しでも見栄えがする既定にしてある）。"
+      "変数名は必ず `variable.` を付けて setFloat する（`v.` ではない）。")
+    w("* **色** `cr cg cb` は 0..1。スプライトは白で描いてあり、`minecraft:particle_appearance_tinting` でこの色に"
+      "染める。「白→色」と書いた粒は生まれた瞬間だけ白く光ってから色に落ちる。")
+    w("* **size** は倍率。各粒の「size 1 の大きさ」の欄が基準（m）。")
     w("* **life** は粒の寿命（秒）。連続で出す粒（vortex・nano_stream）は欄に書いた意味になる。")
-    w("* **vx vy vz** の意味は粒ごとに違う（**向き**か**終点のずれ m**か**速度 m/s**か）。向きとして使う粒は内部で"
-      "正規化するので長さは関係無い（長さは `len` で渡す）。3 つとも 0 か未指定なら既定の向き/点になる。"
-      "1 つだけ渡すと残りは 0 として扱う。")
-    w("* 向きのある粒（beam・bolt・thrust・meteor・circle_v・wave）は **ワールド座標の向き** をそのまま渡す"
-      "（`p.getViewDirection()` や `B − A`）。")
+    w("* **vx vy vz** の意味は粒ごとに違う（**向き**・**終点のずれ m**・**速度 m/s**・**面の法線**）。"
+      "向きとして使う粒は内部で正規化するので長さは関係無い（長さは `len` で渡す）。"
+      "3 つとも 0 か未指定なら既定の向き/点になる。1 つだけ渡すと残りは 0 として扱う。")
+    w("* 向き・ずれは **ワールド座標** で渡す（`p.getViewDirection()`、`B − A` など）。")
     w("* 「水平」の粒（ring_flat・shock_flat・circle・hex_circle・emblem・slash_flat・warning）は地面と平行"
       "（emitter_transform_xz。スクリプトから出すエミッタは回転しないので常にワールドの水平面）。"
       "地面に置く時は y を +0.05〜0.1 上げると埋まらない。")
-    w("* 「加算」は光る（暗い所ほど目立つ。黒は描けない）。「半透明」は色がそのまま乗る（煙・雲・岩・警告）。")
-    w("* 粒数の目安（fx.js の予算は 1 tick 260 粒）は各欄の **粒数**。")
+    w("* 「加算」は光る（暗い所ほど目立つ。黒は描けない）。「半透明」は色がそのまま乗る（煙・雲・岩・警告・虚空）。")
+    w("* spawnParticle 1 回 = 全員へのパケット 1 つ。輪や線は `ring_n`・`line_n` で 1 回にまとめる。"
+      "粒数（fx.js の予算は 1 tick 260 粒）は各粒の **粒数** の欄。")
     w("")
-    w("### 変数の早見表（共通の意味）")
+    w("### 変数の早見表（共通の意味。粒ごとの意味は各表）")
     w("")
     w("| 変数 | 意味 |")
     w("|---|---|")
@@ -2715,44 +2773,73 @@ def write_doc(E):
     w("")
     w("## 一覧")
     w("")
-    w("| ID | 見た目 | 材質 | 読む変数 | 粒数 |")
+    w("| ID | 見た目 | 材質 | 読む変数（色・size・life 以外） | 粒数 |")
     w("|---|---|---|---|---|")
     for f in E:
-        short = f.look.split("。")[0].split("（")[0]
-        vars_ = " ".join(f"`{k}`" for k in f.vars if k not in ("cr", "cg", "cb"))
-        w(f"| `{NS}:{f.id}`{' ★' if f.star else ''} | {short} | {MAT_JA[f.material].split('（')[0]} | "
-          f"{vars_} | {f.cost} |")
+        vars_ = " ".join(f"`{k}`" for k in f.vars if k not in ("cr", "cg", "cb", "size", "life"))
+        mark = " ★" if f.star else (" ＋" if f.id in EXTRA_IDS else "")
+        w(f"| `{NS}:{f.id}`{mark} | {_short(f.look)} | {MAT_JA[f.material].split('（')[0]} | {vars_ or '—'} | "
+          f"{f.cost} |")
     w("")
-    w("★ = 流れや形のある特別な動き（DESIGN §4.7）。")
+    w("★ = 流れや形のある特別な動き（DESIGN §4.7）。＋ = DESIGN §4.7 に無い追加（1 回の spawn で形を描く）。")
+    w("")
+    w("## 組み合わせの例")
+    w("")
+    for k, v in RECIPES:
+        w(f"* **{k}**: {v}")
     w("")
     w("## 個別")
     for f in E:
         w("")
-        w(f"### `{NS}:{f.id}`{' ★' if f.star else ''}")
+        mark = " ★" if f.star else (" ＋" if f.id in EXTRA_IDS else "")
+        w(f"### `{NS}:{f.id}`{mark}")
         w("")
         w(f"* 見た目: {f.look}")
-        w(f"* 材質: {MAT_JA[f.material]} / 粒数: {f.cost}")
+        w(f"* 材質: {MAT_JA[f.material]}{' / 白→色' if f.whitens else ''} / 粒数: {f.cost}")
+        w(f"* size 1 の大きさ: {SIZE_NOTES[f.id]}")
         w(f"* 用途: {f.uses}")
         w(f"* 目安: {f.typical}")
         w("")
         w("| 変数 | 既定 | 意味 |")
         w("|---|---|---|")
+        rows = []
+        done = set()
         for k, (shown, note, _) in f.vars.items():
-            w(f"| `{k}` | {shown} | {note or VAR_MEANING[k]} |")
+            if k in done:
+                continue
+            if k in ("cr", "cg", "cb"):
+                c = [f.vars[n][0] for n in ("cr", "cg", "cb")]
+                dflt = c[0] if len(set(c)) == 1 and not c[0][0].isdigit() else f"({', '.join(c)})"
+                rows.append(("`cr` `cg` `cb`", dflt, "色 (0..1)"))
+                done |= {"cr", "cg", "cb"}
+            elif k in ("vx", "vy", "vz"):
+                rows.append(("`vx` `vy` `vz`", "(0, 0, 0)", note or "向き"))
+                done |= {"vx", "vy", "vz"}
+            else:
+                rows.append((f"`{k}`", shown, note or VAR_MEANING[k]))
+                done.add(k)
+        order = {"`cr` `cg` `cb`": 0, "`size`": 1, "`life`": 2}
+        for name, dflt, note in sorted(rows, key=lambda r: order.get(r[0], 3)):
+            w(f"| {name} | {dflt} | {note} |")
     w("")
     w("## 注意（作業者向け）")
     w("")
-    w("* `lookat_direction` の粒（beam・bolt・thrust・spark・speedline・wind・droplet・converge・orbit・vortex）は"
-      "スプライトの**横（size[0]）が向きに沿う**。向きの軸まわりにカメラへ回るので帯は常に見える。")
+    w("* `lookat_direction` の粒（beam・bolt・thrust・meteor・spark・speedline・wind・droplet・converge・orbit・vortex）は"
+      "スプライトの**横（size[0]）が向きに沿う**。向きの軸まわりにカメラへ回るので帯は常に見える"
+      "（真正面・真後ろから見ると点になる）。")
     w("* `circle_v`・`wave` は `direction_z`（面が向きを向く）なので、真横から見ると薄くなる。")
-    w("* `black_hole` は半透明（blend）の一枚絵で、核は黒のまま（染まらない）。光らせたい時は同じ点に"
+    w("* `black_hole` は半透明（blend）の一枚絵で、核は黒のまま（染まらない）。光らせたい時は同じ点に "
       "`lens`（加算）を同じ色で重ねる（DESIGN の「blend + add の二層」はこの二つで作る）。")
     w("* 寿命の長い陣（circle 系・emblem・black_hole・cloud・aurora）は現れる/消える速さが秒で決まっているので、"
       "life を何秒にしても点き方は同じ。")
     w("* `nano_stream` は放出に `count / rate` 秒かかる。最後の粒が着くのは `life + count / rate` 秒後。")
     w("* `vortex` の `life` は放出時間。同時最大 160 粒、nano_stream は 120 粒で打ち切る。")
     w("* `debris` だけ地形と衝突する（地面で跳ねる）。")
-    w("* 色の既定値は粒ごとに違う（下の各表）。`emblem` は v.var の惑星の発光色が既定。")
+    w("* `slash` 系の `rot` は弧の向き（回す向きの正負はゲーム内で確かめること）。右振りと左振りは `var` 0/1 で選ぶ"
+      "（回転では鏡像にならない）。")
+    w("* `emblem` の `var`: " + " / ".join(f"{i} {k}" for i, k in enumerate(EMBLEM_KEYS[:9])) +
+      " / 9 汎用（既定）。色を渡さなければその惑星の発光色。")
+    w("* 加算の粒は RGB とアルファの両方に消え方を掛けている（加算の材質がアルファを見るか確かめられないため）。")
     w("")
     with open(DOC_MD, "w", encoding="utf-8") as fh:
         fh.write("\n".join(L))
@@ -2857,6 +2944,8 @@ def self_check(E, docs):
         err(f"atlas size {img.size}")
     n_exprs = 0
     for f in E:
+        if f.id not in SIZE_NOTES:
+            err(f"{f.id}: no SIZE_NOTES entry")
         path = os.path.join(PART_DIR, f"{f.id}.particle.json")
         try:
             doc = json.load(open(path, encoding="utf-8"))

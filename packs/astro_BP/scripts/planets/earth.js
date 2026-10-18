@@ -121,6 +121,8 @@ register(KEY, {
       P(dim, "splash", ctx.local(1.5, 0, 1.0), { color: OCEAN, count: 12, speed: 4, spread: 0.6 });
       shake(dim, p.location, 8, 0.2, 0.2);
       const start = ctx.local(1.2, 0, 0.9);
+      // 波頭そのもの（wave は自分で前へ進む: 17 m/s ≒ 弾の速さ、0.7 秒で 12m）
+      P(dim, "wave", { ...start, y: start.y - 0.8 }, { color: OCEAN, dir: f, speed: 17, size: 1.1, life: 0.7 });
       projectile(ctx, start, f, {
         speed: 0.85, range: 12, radius: 1.7, pierce: Infinity, life: 30, blocks: false,
         damage: 9, hitOpts: { color: OCEAN, kb: 1.5, up: 0.3, dir: f, power: 1.4, sound: "astro.splash" },
@@ -129,8 +131,8 @@ register(KEY, {
           const gy = groundY(d, pos, 3, 2);
           s.pos.y = gy + 0.9;
           const q = s.pos;
-          P(d, "wave", q, { color: OCEAN, dir: f, size: 2.4, rot, life: 0.2 });
-          P(d, "slash_flat", { ...q, y: gy + 0.35 }, { color: white(OCEAN, 0.3), size: 2.6, rot, life: 0.15 });
+          if (age === 7) P(d, "wave", { ...q, y: gy + 0.05 }, { color: white(OCEAN, 0.15), dir: f, speed: 17, size: 1.0, life: 0.35 });
+          P(d, "slash_flat", { ...q, y: gy + 0.35 }, { color: white(OCEAN, 0.3), size: 1.1, rot, life: 0.15 });
           for (const sd of [-1, 1]) {
             const h = add(q, r, 1.6 * sd);
             P(d, "splash", h, { color: OCEAN, count: 3, speed: 2.5, spread: 0.3 });
@@ -145,7 +147,7 @@ register(KEY, {
         onEnd(pos) {
           const g = onGround(dim, pos, 4);
           P(dim, "splash", up(g, 0.6), { color: OCEAN, count: 20, speed: 5, spread: 1.2 });
-          P(dim, "ring_flat", up(g, 0.06), { color: OCEAN, size: 3.2, life: 0.5 });
+          P(dim, "ring_flat", up(g, 0.06), { color: OCEAN, size: 1.8, life: 0.5 });
           P(dim, "bubble", up(g, 0.5), { color: white(OCEAN, 0.4), count: 8, spread: 1.0, speed: 1 });
           sound(dim, "astro.splash", g, 0.9, 1.0);
         },
@@ -186,7 +188,7 @@ register(KEY, {
       const g = ctx.ground(ctx.loc());
       shock(dim, g, OCEAN, 3.5, { debris: 6 });
       P(dim, "ring", ctx.chest(), { color: AURORA_G, size: 3.2, life: 0.3 });
-      P(dim, "flare", ctx.chest(), { color: white(AURORA_G, 0.5), size: 2.2, life: 0.2 });
+      P(dim, "flare", ctx.chest(), { color: white(AURORA_G, 0.5), size: 1.1, life: 0.2 });
       sound(dim, "astro.impact_heavy", g, 1.2, 0.8);
       sound(dim, "astro.gravity", g, 0.8, 0.8);
       for (const e of ctx.foes(3.6)) {
@@ -210,10 +212,10 @@ register(KEY, {
     sound(dim, "astro.gravity", p.location, 1.4, 0.8);
     sound(dim, "astro.beam_charge", p.location, 0.8, 0.6);
     ctx.at(0, () => {
-      P(dim, "circle", up(target, 0.05), { color: MOON, size: 4.8, life: 1.6, spin: 60 });
+      P(dim, "circle", up(target, 0.05), { color: MOON, size: 4.0, life: 1.6, spin: 60 });
       emblem(dim, up(target, 0.07), KEY, { color: AURORA_P, size: 3.2, life: 1.6 });
     });
-    ctx.every(0, 7, 4, () => P(dim, "warning", up(target, 0.06), { color: [1, 0.3, 0.3], size: 4.5, life: 0.25 }));
+    ctx.every(0, 7, 4, () => P(dim, "warning", up(target, 0.06), { color: [1, 0.3, 0.3], size: 3.8, life: 0.25 }));
     ctx.every(0, 10, 1, (i) => {
       const from = lunaPos(p);
       const q = lerp3(from, top, i / 9);
@@ -233,9 +235,9 @@ register(KEY, {
     }
     ctx.at(26, () => {
       const g = ctx.ground(target);
-      P(dim, "flare", up(g, 1.0), { color: white(MOON, 0.4), size: 6, life: 0.3 });
+      P(dim, "flare", up(g, 1.0), { color: white(MOON, 0.4), size: 2.2, life: 0.3 });
       P(dim, "impact", up(g, 0.8), { color: MOON, size: 3.5, life: 0.22 });
-      P(dim, "lens", up(g, 1.2), { color: white(OCEAN, 0.5), size: 5, life: 0.35 });
+      P(dim, "lens", up(g, 1.2), { color: white(OCEAN, 0.5), size: 1.6, life: 0.35 });
       shock(dim, g, MOON, 4.5, { debris: 18 });
       ring(dim, "debris", g, 2.5, 8, { count: 3, speed: 6 }, 0.3);
       P(dim, "dust", up(g, 0.3), { count: 30, speed: 6, size: 1.6, spread: 1.5 });
@@ -249,7 +251,7 @@ register(KEY, {
     });
     ctx.at(30, () => {
       const g = ctx.ground(target);
-      P(dim, "shock_flat", up(g, 0.08), { color: OCEAN, size: 7.5, life: 0.6 });
+      P(dim, "shock_flat", up(g, 0.08), { color: OCEAN, size: 5, life: 0.6 });
       ring(dim, "dust", g, 6, 12, { count: 2, speed: 2 }, 0.2);
       for (const e of ctx.foes(7.6, up(g, 0.8))) {
         if (ctx.once(e, 1, "wave")) hit(ctx, e, 5, { color: OCEAN, kb: 1.2, up: 0.35, dir: dirTo(g, e.location) });
@@ -271,7 +273,7 @@ register(KEY, {
     ctx.at(12, () => {
       const tip = ctx.ground(ctx.local(0.9, 0, 0));
       P(dim, "impact", up(tip, 0.3), { color: FOREST, size: 2.0, life: 0.2 });
-      P(dim, "pillar", up(tip, 1.5), { color: AURORA_G, size: 0.6, height: 3, life: 0.4 });
+      P(dim, "pillar", up(tip, 0.05), { color: AURORA_G, size: 0.6, height: 3, life: 0.4 });
       emblem(dim, up(centre, 0.06), KEY, { size: 6, life: 4.0, spin: 20 });
       P(dim, "hex_circle", up(centre, 0.05), { color: OCEAN, size: 8, life: 3.5, spin: -15 });
       sound(dim, "astro.impact_heavy", tip, 0.8, 1.2);
@@ -290,11 +292,11 @@ register(KEY, {
         sound(dim, "astro.impact_heavy", centre, 0.9 + R * 0.02, 1.0);
         sound(dim, "astro.explosion", centre, 0.7, 0.9);
         shake(dim, centre, 22, 0.4, 0.35);
-        P(dim, "shock_flat", up(centre, 0.08), { color: FOREST, size: R + 1, life: 0.5 });
+        P(dim, "shock_flat", up(centre, 0.08), { color: FOREST, size: (R + 1) / 1.5, life: 0.5 });
         for (let i = 0; i < n; i++) {
           const q = onGround(dim, add(centre, yawRotate(EAST, i / n * 360 + R * 10), R), 6);
           ctx.at(i % 3, () => {
-            P(dim, "pillar", up(q, 1.8), { color: i % 2 ? FOREST : mix(FOREST, OCEAN, 0.5), size: 0.9, height: 3.6, life: 0.6 });
+            P(dim, "pillar", up(q, 0.05), { color: i % 2 ? FOREST : mix(FOREST, OCEAN, 0.5), size: 0.9, height: 3.6, life: 0.6 });
             P(dim, "debris", up(q, 0.4), { count: 5, speed: 6, spread: 0.4 });
             P(dim, "dust", up(q, 0.2), { count: 4, speed: 3 });
             if (i % 2 === 0) P(dim, "shard", up(q, 1.2), { color: OCEAN, count: 3, speed: 4 });
@@ -307,12 +309,14 @@ register(KEY, {
         }
       });
     }
-    // オーロラの幕（味方を癒やす）
+    // オーロラの幕（aurora 1 回で半径 spread の輪に帯が並ぶ）。味方を癒やす
+    for (const t of [16, 44]) {
+      ctx.at(t, () => {
+        P(dim, "aurora", up(centre, 0.1), { color: AURORA_G, spread: 8, count: 16, height: 5.5, life: 3.0, spin: 6 });
+        P(dim, "aurora", up(centre, 0.1), { color: AURORA_P, spread: 6.5, count: 12, height: 4.5, life: 3.0, spin: -8 });
+      });
+    }
     ctx.every(16, 10, 6, (i) => {
-      for (let k = 0; k < 6; k++) {
-        const q = add(centre, yawRotate(EAST, k * 60 + i * 12), 8);
-        P(dim, "aurora", up(q, 2.5), { color: k % 2 ? AURORA_P : AURORA_G, size: 2.6, height: 5, life: 0.8 });
-      }
       if (i % 2 === 0) {
         for (const a of alliesNear(p, centre, 12)) {
           heal(a, 2);
@@ -324,8 +328,8 @@ register(KEY, {
     });
     ctx.at(37, () => sound(dim, "astro.supernova", centre, 1.2, 0.9));   // 1.66 秒後 = 70 で弾ける
     ctx.at(70, () => {
-      P(dim, "lens", up(centre, 1.5), { color: white(FOREST, 0.5), size: 10, life: 0.6 });
-      P(dim, "flare", up(centre, 1.2), { color: white(AURORA_G, 0.6), size: 7, life: 0.4 });
+      P(dim, "lens", up(centre, 1.5), { color: white(FOREST, 0.5), size: 3, life: 0.6 });
+      P(dim, "flare", up(centre, 1.2), { color: white(AURORA_G, 0.6), size: 2.6, life: 0.4 });
       shock(dim, centre, AURORA_G, 12, { debris: 20 });
       P(dim, "ring", up(centre, 1.0), { color: AURORA_P, size: 9, life: 0.5 });
       flash(dim, centre, 32, white(AURORA_G, 0.6), 0.1, 0.5);
@@ -348,9 +352,9 @@ register(KEY, {
     for (let k = -2; k <= 2; k++) {
       arc(dim, ctx.chest(), yawRotate(f, k * 22), 2.6 + Math.abs(k) * 0.1, -30, 30, 10 + k * 6,
         k % 2 ? AURORA_P : AURORA_G, { size: 0.9, steps: 7, sparks: false, life: 0.3 });
-      P(dim, "aurora", add(ctx.chest(), yawRotate(f, k * 22), 3.2), { color: mix(AURORA_G, AURORA_P, (k + 2) / 4), size: 1.6, height: 2.4, life: 0.5 });
+      P(dim, "aurora", add(ctx.loc(), yawRotate(f, k * 22), 3.2), { color: mix(AURORA_G, AURORA_P, (k + 2) / 4), spread: 0, count: 1, size: 1.2, height: 2.6, life: 0.6 });
     }
-    P(dim, "slash_big", ctx.local(2, 0, 1.1), { color: AURORA_G, rot: yawDeg(f), size: 2, life: 0.3 });
+    P(dim, "slash_big", ctx.local(2, 0, 1.1), { color: AURORA_G, rot: yawDeg(f), size: 1.0, life: 0.3 });
     sound(dim, "astro.swing_heavy", p.location, 1.0, 0.9);
     sound(dim, "astro.wind", p.location, 1.4, 0.6);
     for (const e of ctx.cone(5, 60, ctx.chest(), f)) {
@@ -367,17 +371,15 @@ register(KEY, {
     const g = ctx.ground(ctx.loc());
     sound(dim, "astro.water_wave", g, 1.0, 1.0);
     sound(dim, "astro.wind", g, 1.1, 0.8);
-    emblem(dim, up(g, 0.05), KEY, { size: 3.6, life: 1.6 });
-    P(dim, "flare", ctx.chest(), { color: white(FOREST, 0.5), size: 2.6, life: 0.3 });
+    emblem(dim, up(g, 0.05), KEY, { size: 1.6, life: 1.8 });
+    P(dim, "flare", ctx.chest(), { color: white(FOREST, 0.5), size: 1.3, life: 0.3 });
     ctx.every(0, 5, 3, (i) => {
-      P(dim, "ring_flat", up(g, 0.06 + i * 0.01), { color: i % 2 ? FOREST : OCEAN, size: 1.5 + i * 1.5, life: 0.6 });
+      P(dim, "ring_flat", up(g, 0.06 + i * 0.01), { color: i % 2 ? FOREST : OCEAN, size: 0.8 + i * 0.8, life: 0.6 });
       ring(dim, i % 2 ? "dot" : "droplet", g, 1.2 + i * 1.4, 10, { color: i % 2 ? FOREST : OCEAN, size: 0.5, life: 0.5 }, 0.2);
     });
-    ctx.every(2, 6, 4, (i) => {
-      for (let k = 0; k < 6; k++) {
-        const q = add(g, yawRotate(EAST, k * 60 + i * 10), 3.2);
-        P(dim, "aurora", up(q, 2), { color: k % 2 ? AURORA_P : AURORA_G, size: 2, height: 4, life: 0.8 });
-      }
+    ctx.at(2, () => {
+      P(dim, "aurora", up(g, 0.1), { color: AURORA_G, spread: 3.2, count: 12, height: 4, life: 2.2, spin: 10 });
+      P(dim, "aurora", up(g, 0.1), { color: AURORA_P, spread: 2.6, count: 10, height: 3.2, life: 2.2, spin: -12 });
     });
     ctx.every(0, 8, 2, (i) => P(dim, "glow", lunaPos(p, now() + i * 4), { color: MOON, size: 0.5, life: 0.2 }));
     return 20;

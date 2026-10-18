@@ -73,6 +73,10 @@ def suit_tiles(a: SC.SuitAsset, tile=TILE):
     run = SC.suit_anim(a, ["idle", "thrust", "sprint"], 0.9, {"v.astro_run": 1.0})
     im = SC.render(a, SC.pose("walk", 0.22), run, "right", tile)
     tiles.append(SC.label(im, "疾走"))
+    wp = SC.load_attachable(f"weapon_{key}", ("tp", "idle"), 0.6)
+    if wp:                                        # その惑星のナノウェポンが生成済みなら持たせる
+        im = SC.render(a, SC.pose("hold"), idle, (-50, -8), tile, weapon=wp)
+        tiles.append(SC.label(im, "ナノウェポン"))
     rel = SC.release_anim(a, 0.35)
     im = SC.render(a, SC.pose("stand"), rel, "q34", tile)
     tiles.append(SC.label(im, "解除 0.35s"))

@@ -1157,8 +1157,8 @@ def arrow_glyph():
 def build_hud_page():
     pg = Page(PAGE_HUD, 16)
     G = {"emblem": {}, "energy": {}, "move": {}}
-    capL = pg.put(0x00, energy_cap("L"), "energy.capL", (0, CAP_W))
-    capR = pg.put(0x01, energy_cap("R"), "energy.capR", (0, CAP_W))
+    capL = pg.put(0x00, energy_cap("L"), "energy.<key>.capL（全惑星共通）", (0, CAP_W))
+    capR = pg.put(0x01, energy_cap("R"), "energy.<key>.capR（全惑星共通）", (0, CAP_W))
     G["nova"] = {
         "full": pg.put(0x02, nova_seg("full"), "nova.full", (0, NOVA_W)),
         "empty": pg.put(0x03, nova_seg("empty"), "nova.empty", (0, NOVA_W)),
@@ -1167,11 +1167,11 @@ def build_hud_page():
         "capR": pg.put(0x06, nova_cap("R"), "nova.capR", (0, CAP_W)),
     }
     G["progress"] = {
-        "full": pg.put(0x07, prog_seg("full"), "progress.full", (0, PROG_W)),
-        "empty": pg.put(0x08, prog_seg("empty"), "progress.empty", (0, PROG_W)),
-        "half": pg.put(0x09, prog_seg("half"), "progress.half", (0, PROG_W)),
-        "capL": pg.put(0x0A, prog_cap("L"), "progress.capL", (0, 3)),
-        "capR": pg.put(0x0B, prog_cap("R"), "progress.capR", (0, 3)),
+        "full": pg.put(0x07, prog_seg("full"), "progress.full = sync.full", (0, PROG_W)),
+        "empty": pg.put(0x08, prog_seg("empty"), "progress.empty = sync.empty", (0, PROG_W)),
+        "half": pg.put(0x09, prog_seg("half"), "progress.half = sync.half", (0, PROG_W)),
+        "capL": pg.put(0x0A, prog_cap("L"), "progress.capL = sync.capL", (0, 3)),
+        "capR": pg.put(0x0B, prog_cap("R"), "progress.capR = sync.capR", (0, 3)),
     }
     # G.sync = 変身・解除の進み具合（DESIGN §4.8 の sync。G.progress と同じグリフ）
     G["sync"] = dict(G["progress"])
@@ -2755,7 +2755,9 @@ def write_ui_md(G, pages, widths_note):
             width = round((x1 - x0) * 16 / pg.cell)
             r = m["rows"]
             rows = f"{r[0]}–{r[1]}" if r else "-"
-            w(f"| U+{pg.cp(idx):04X} | `G.{m['name']}` | {width} | {rows} |")
+            nm = m["name"].split("（")[0].split(" = ")
+            label = " = ".join(f"`G.{x}`" for x in nm) + ("（全惑星共通）" if "（" in m["name"] else "")
+            w(f"| U+{pg.cp(idx):04X} | {label} | {width} | {rows} |")
         w("")
     w("配置: EA の行 0 = バーの部品、行 1〜9 = 惑星（order 順）で 列 0 紋章 / 1〜3 星力 満・半・空 / 4〜7 技（使える: "
       "skill, dash, air, ult）/ 8〜B 技（待ち）、行 A = 赤い星力、行 B = 状態アイコン。EB の行 0 = 大きな紋章、行 1 = 飾り、"

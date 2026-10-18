@@ -331,6 +331,48 @@ def load_suit(key, geo=None, tex=None) -> SuitAsset:
     return SuitAsset(key, g, t, anims)
 
 
+def _geo_by_id(identifier):
+    for fn in sorted(os.listdir(AC.GEO_DIR)) if os.path.isdir(AC.GEO_DIR) else []:
+        if not fn.endswith(".json"):
+            continue
+        try:
+            doc = json.load(open(os.path.join(AC.GEO_DIR, fn), encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for g in doc.get("minecraft:geometry", []):
+            if g.get("description", {}).get("identifier") == identifier:
+                return g
+    return None
+
+
+def load_attachable(name, anims=("tp", "idle"), t=0.0, env=None):
+    """pack の attachables/<name>.attachable.json を読み、描き足す物（render の weapon= / extra=）にする。
+    anims: アタッチャブルの短いアニメ名のうち評価して重ねる物（武器なら "tp","idle"、一人称は "fp"）。
+    無ければ None。例: render(asset, pose("hold"), anim, "q34", weapon=load_attachable("weapon_earth"))"""
+    p = os.path.join(AC.ATT_DIR, f"{name}.attachable.json")
+    if not os.path.exists(p):
+        return None
+    d = json.load(open(p, encoding="utf-8"))["minecraft:attachable"]["description"]
+    geo = _geo_by_id(d["geometry"]["default"])
+    tp = os.path.join(AC.RP, d["textures"]["default"] + ".png")
+    if geo is None or not os.path.exists(tp):
+        return None
+    files = [os.path.join(AC.ANIM_DIR, f) for f in sorted(os.listdir(AC.ANIM_DIR))
+             if f.endswith(".json")] if os.path.isdir(AC.ANIM_DIR) else []
+    pool = {}
+    for f in files:
+        try:
+            pool.update(json.load(open(f, encoding="utf-8")).get("animations", {}))
+        except (OSError, json.JSONDecodeError):
+            pass
+    e = {"v.astro_fp": 0.0}
+    e.update(env or {})
+    res = [eval_animation(pool[d["animations"][n]], t, e) for n in anims
+           if n in d["animations"] and d["animations"][n] in pool]
+    return {"geo": geo, "tex": Image.open(tp).convert("RGBA"), "anim": combine(*res),
+            "bind": "hand"}
+
+
 # ===========================================================================
 #  プレイヤーの姿勢
 # ===========================================================================

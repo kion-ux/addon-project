@@ -28,7 +28,7 @@ export const PARTICLES = [
   "speedline", "wind", "vortex", "converge", "orbit", "aura", "nano", "nano_stream",
   "smoke", "dust", "debris", "ember", "flame", "plasma", "bolt", "arc", "shard", "ice", "diamond",
   "droplet", "splash", "bubble", "wave", "cloud", "aurora", "meteor", "black_hole", "void",
-  "warning", "afterimage", "lens",
+  "warning", "afterimage", "lens", "ring_n", "line_n",
 ];
 
 const VARS = ["size", "life", "rot", "count", "speed", "spread", "vx", "vy", "vz", "var",
@@ -110,18 +110,42 @@ export function shade(c, k) { return [c[0] * k, c[1] * k, c[2] * k]; }
 // ---------------------------------------------------------------------------
 //  形のある演出
 // ---------------------------------------------------------------------------
-/** 点 a から b へ step m 間隔で粒を並べる（光線・鎖・斬撃線）。 */
+/**
+ * ring_n / line_n（1 回の spawn で輪・線を描く粒）で描ける粒の種類 → v.var。
+ * 0 発光の玉 / 1 きらめき / 2 ナノマシン / 3 六角 / 4 小さな点（PARTICLES.md）
+ */
+export const SHAPED_VAR = { glow: 0, trail: 0, star: 1, nano: 2, hex: 3, dot: 4 };
+
+/**
+ * 点 a から b へ step m 間隔で粒を並べる（光線・鎖・斬撃線）。
+ * id が SHAPED_VAR にあれば line_n 1 回で描く（o.loop で 1 粒ずつに戻す）。o.spread で線の太さ。
+ */
 export function line(dim, id, a, b, step, o = {}) {
   const d = dist(a, b);
   const n = Math.min(60, Math.max(1, Math.ceil(d / Math.max(0.1, step))));
+  const v = SHAPED_VAR[id];
+  if (v !== undefined && !o.loop) {
+    P(dim, "line_n", a, { color: o.color, size: o.size, life: o.life, spread: o.spread, var: v,
+                          count: Math.min(40, n + 1), dir: { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z } });
+    return;
+  }
   for (let i = 0; i <= n; i++) {
     const t = i / n;
     P(dim, id, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t }, o);
   }
 }
 
-/** 中心 c・半径 radius の水平の輪に n 個並べる（y は c.y からの高さ）。 */
+/**
+ * 中心 c・半径 radius の水平の輪に n 個並べる（y は c.y からの高さ）。
+ * id が SHAPED_VAR にあれば ring_n 1 回で描く（o.speed で外へ広がる。o.loop で 1 粒ずつに戻す）。
+ */
 export function ring(dim, id, c, radius, n, o = {}, y = 0.1) {
+  const v = SHAPED_VAR[id];
+  if (v !== undefined && !o.loop) {
+    P(dim, "ring_n", { x: c.x, y: c.y + y, z: c.z }, { color: o.color, size: o.size, life: o.life, speed: o.speed,
+                                                       count: Math.max(4, Math.min(48, n)), spread: radius, var: v });
+    return;
+  }
   const off = o.phase ?? 0;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + off;

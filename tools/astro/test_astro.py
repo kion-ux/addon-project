@@ -968,6 +968,10 @@ def design_lists():
             first = line.split("|")[1]
             particles.update(re.findall(r"`([a-z_]+)`", first))
     molang = set(re.findall(r"`?v\.([a-z]+)", s47))
+    # パーティクルの担当が DESIGN に追記する前に足した ID（PARTICLES.md の一覧）も認める
+    pm = os.path.join(HERE, "PARTICLES.md")
+    if os.path.isfile(pm):
+        particles.update(re.findall(r"^\| `astro:([a-z_]+)`", open(pm, encoding="utf-8").read(), re.M))
     s49 = section("### 4.9", "### 4.10")
     sounds = set()
     m = re.search(r"```\n(.*?)```", s49, re.S)
@@ -1007,7 +1011,7 @@ def reference_checks(used):
     # パーティクル
     ids = {p.split(":", 1)[1] if p.startswith("astro:") else p for p in used["particles"]}
     bad = sorted(i for i in ids if i not in d_particles)
-    errs += [f"particle astro:{i} is not in DESIGN §4.7" for i in bad]
+    errs += [f"particle astro:{i} is not in DESIGN §4.7 / PARTICLES.md" for i in bad]
     rp_particles = pack_ids(os.path.join(RP, "particles"), ["particle_effect", "description", "identifier"])
     if rp_particles is None:
         skipped.append("particles exist in packs/astro_RP/particles: SKIPPED (resource not generated yet)")
