@@ -819,7 +819,7 @@ def build_hologram():
     hexagon(base, (0, 1.0, 0), 15.0, 2.0, "pbase")
     hexagon(base, (0, 2.3, 0), 12.0, 0.7, "pbase2")
     cbox(base, (0, 2.75, 0), (5.2, 0.3, 5.2), "plens", uv_scale=8)
-    ring(base, (0, 2.75, 0), 3.0, 8, (0, 0.5, 0.4), "pglow", axis="y", phase=22.5)
+    ring(base, (0, 2.75, 0), 3.0, 6, (0, 0.5, 0.4), "pglow", axis="y", phase=30)
     for k, a in enumerate((30, 150, 270)):
         r = math.radians(a)
         px, pz = -6.4 * math.sin(r), -6.4 * math.cos(r)
@@ -843,14 +843,14 @@ def build_hologram():
         hl = m.bone(f"holo_leg_{side}", (sx * 2.0, 15.0, 0), parent="holo_root")
         wire(hl, (sx * 2.1 - 2, 3.2, -2), (4, 11.6, 4), t, "holo", fill="holo_fill")
     ret = m.bone("holo_reticle", (0, 21.5, -2.6), parent="holo_body")
-    ring(ret, (0, 21.5, -2.6), 2.6, 8, (0, 0.4, 0.3), "holo_red", axis="z", phase=22.5)
+    ring(ret, (0, 21.5, -2.6), 2.6, 6, (0, 0.4, 0.3), "holo_red", axis="z", phase=30)
     for k in range(4):
         a = 90 * k
         rbox(ret, (-3.6 * math.sin(math.radians(a)), 21.5 + 3.6 * math.cos(math.radians(a)), -2.6),
              (0.4, 1.6, 0.3), "holo_red", rot=(0, 0, a))
     cbox(ret, (0, 21.5, -2.7), (0.8, 0.8, 0.3), "holo_red")
     scan = m.bone("holo_scan", (0, 4.0, 0), parent="holo_root")
-    ring(scan, (0, 4.0, 0), 7.0, 12, (0, 0.35, 0.5), "holo_dim", axis="y")
+    ring(scan, (0, 4.0, 0), 7.0, 8, (0, 0.35, 0.5), "holo_dim", axis="y", phase=22.5)
     fit_density(m, 4, (512, 512))
     return m
 
@@ -1858,12 +1858,14 @@ def molang(expr, env):
         return 0.0
 
 
-def sample_pose(names, t, env):
-    """ANIMS の名前の列を時刻 t で評価して足し合わせたボーンの姿勢。"""
+def sample_pose(ident, names, t, env):
+    """ANIMS（animation.astro.<ident>.<名前>）を時刻 t で評価して足し合わせたボーンの姿勢。"""
     out = {}
     env = dict(env, q_anim_time=t)
     for n in names:
-        a = ANIMS.get(f"animation.{NS}.{n}", {})
+        a = ANIMS.get(f"animation.{NS}.{ident}.{n}")
+        if a is None:
+            raise KeyError(f"animation.{NS}.{ident}.{n}")
         for bone, tr in a.get("bones", {}).items():
             e = out.setdefault(bone, {"rotation": [0, 0, 0], "position": [0, 0, 0], "scale": [1, 1, 1]})
             for ch, v in tr.items():
@@ -1916,7 +1918,7 @@ def preview(only):
         tex = Image.open(os.path.join(TEX_DIR, f"{ident}.png"))
         tiles = []
         for yaw, pitch, names, t, env in views:
-            pose = sample_pose(names, t, dict(ENV0, **env))
+            pose = sample_pose(ident, names, t, dict(ENV0, **env))
             tiles.append(render(geo, tex, yaw, pitch, 380, pose=pose))
         path = os.path.join(SCRATCH, f"enemy_{ident}.png")
         sheet(tiles, path, cols=min(4, len(tiles)), label=f"{NS}:{ident}")

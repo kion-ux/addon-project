@@ -29,7 +29,7 @@ import {
 import { onMeleeHit, forgetCombo } from "./combo.js";
 import { tickPassives, tickPassiveEffects, PASSIVE_EVERY } from "./passives.js";
 import { tickHud } from "./hud.js";
-import { openTerminal } from "./ui.js";
+import { openTerminal, forgetUi } from "./ui.js";
 import * as EN from "./enemies.js";
 import {
   allPlayers, valid, heldItem, selectedSlot, isPlayer, report, guard, heal, getProp, setProp, give,
@@ -97,7 +97,7 @@ world.afterEvents.entityHurt.subscribe(guard("entityHurt", (ev) => {
   if (!valid(e)) return;
   const quiet = EN.onEntityHurt(e, ev.damage, src) === true;
   if (!quiet) {
-    if (isPlayer(attacker) && S(attacker).form && attacker.id !== e.id) showDamage(e, ev.damage, attacker);
+    if (valid(attacker) && isPlayer(attacker) && S(attacker).form && attacker.id !== e.id) showDamage(e, ev.damage, attacker);
     else if (e.typeId === EN.TYPES.target) showDamage(e, ev.damage, isPlayer(attacker) ? attacker : undefined);
   }
   if (!isPlayer(e)) return;
@@ -114,6 +114,16 @@ world.afterEvents.entityHurt.subscribe(guard("entityHurt", (ev) => {
   }
   addNova(e, ev.damage * COMMON.nova_per_damage_taken);
   BUS.emit("hurt", e, attacker, ev.damage);
+}));
+
+// 飛び道具が当たった: バリア中なら弾いた演出、回避中ならジャスト回避
+world.afterEvents.projectileHitEntity?.subscribe(guard("projectileHitEntity", (ev) => {
+  let victim;
+  try { victim = ev.getEntityHit?.()?.entity; } catch (_) { return; }
+  if (!valid(victim) || !isPlayer(victim) || !isReady(victim)) return;
+  const shooter = valid(ev.source) ? ev.source : undefined;
+  if (barrierActive(victim)) onBarrierHit(victim, shooter);
+  else if (isDodging(victim)) tryJustDodge(victim, shooter);
 }));
 
 world.afterEvents.entityDie.subscribe(guard("entityDie", (ev) => {
@@ -180,6 +190,7 @@ world.afterEvents.playerLeave?.subscribe(guard("playerLeave", (ev) => {
   forgetCombo(id);
   forgetFx(id);
   forgetTransform(id);
+  forgetUi(id);
   forgetState(id);
 }));
 

@@ -756,26 +756,31 @@ def _bolt_pts(rng, x0, x1, y0, y1, depth, rough):
     return pts
 
 
+def _fit_y(pts, cy, limit):
+    """ぎざぎざの縦のずれを ±limit に収める（端で平らに切れないように全体を縮める）。"""
+    m = max(abs(py - cy) for _, py in pts) or 1.0
+    k = min(1.0, limit / m)
+    return [(px, cy + (py - cy) * k) for px, py in pts]
+
+
 def sp_bolt(w, h, k):
     """稲妻（横向き、左端から右端へ。両端は高さの中央 = 端点が正確につながる）。"""
     rng = np.random.RandomState(100 + k)
     pen = Pen(w, h)
     cy = h / 2
-    pts = _bolt_pts(rng, 1, w - 1, cy, cy, 6, 0.34)
-    pts = [(px, float(np.clip(py, 3, h - 3))) for px, py in pts]
-    pen.poly(pts, 5.5)
-    for _ in range(3):                                  # 枝
-        i = rng.randint(8, len(pts) - 20)
-        bx, by = pts[i]
-        L = rng.uniform(30, 60)
-        ex = bx + L
-        ey = float(np.clip(by + rng.choice([-1, 1]) * rng.uniform(6, h / 2 - 3), 3, h - 3))
-        br = _bolt_pts(rng, bx, ex, by, ey, 4, 0.3)
-        br = [(px, float(np.clip(py, 2, h - 2))) for px, py in br]
-        pen.poly(br, 2.8)
-    a = pen.alpha()
+    pts = _fit_y(_bolt_pts(rng, 1, w - 1, cy, cy, 7, 0.22), cy, h / 2 - 7)
+    pen.poly(pts, 5.0)
     core = Pen(w, h)
-    core.poly(pts, 2.4)
+    core.poly(pts, 2.2)
+    for _ in range(3):                                  # 枝
+        i = rng.randint(10, len(pts) - 30)
+        bx, by = pts[i]
+        L = rng.uniform(28, 56)
+        ey = cy + rng.choice([-1, 1]) * rng.uniform(4, h / 2 - 5)
+        br = _bolt_pts(rng, bx, bx + L, by, ey, 4, 0.25)
+        br = [(px, float(np.clip(py, 4, h - 4))) for px, py in br]
+        pen.poly(br, 2.4)
+    a = pen.alpha()
     white = 0.68 + 0.32 * core.alpha()
     return halo(a, 2.6, 0.8), white
 
@@ -2376,7 +2381,7 @@ def build_effects():
     f.param(["v.e_nx * v.e_len * 0.5", "v.e_ny * v.e_len * 0.5", "v.e_nz * v.e_len * 0.5"])
     idx = f"math.mod({f.v('var', f'({PA} * 30.0 + v.emitter_random_1 * 3.0)', '形 0..2 を固定（未指定なら時間で入れ替わる）', doc_default='時間で切り替え')}, 3.0)"
     f.bb(["v.e_len", f"{S} * 1.2"], "lookat_direction", uv_pick("bolt", idx, 3), dict(CUSTOM_N))
-    f.tint(ELEC, f"(math.mod(math.floor({PA} * 40.0), 2.0) > 0.5 ? 0.5 : 1.0) * {fade_out(1.3)}", whiten=1.2)
+    f.tint(ELEC, f"(math.mod(math.floor({PA} * 40.0), 2.0) > 0.5 ? 0.65 : 1.0) * {fade_out(1.3)}", whiten=1.2)
     f.cost = "1"
 
     f = new("arc", "add", "放電のちらつき: 短いぎざぎざの電光（4 種）が瞬いて入れ替わる", "帯電・感電・テスラコイル",

@@ -73,6 +73,16 @@ export function chooseKind(p) {
   return "skill";
 }
 
+const denied = new Map();   // playerId -> 最後に断りの音を鳴らした tick
+
+/** 出せない時の合図（itemUseOn が押しっぱなしで何度も来ても音は 1 秒に 1 回）。 */
+function deny(p, text, pitch) {
+  announce(p, text, 16);
+  if ((denied.get(p.id) ?? -99) > now() - 20) return;
+  denied.set(p.id, now());
+  sound(p.dimension, "astro.alert", p.location, pitch, 0.35);
+}
+
 /**
  * 技を出す。出せたら true。
  * @param {Player} p
@@ -91,14 +101,12 @@ export function perform(p, kind, extra = {}) {
   if (!mv) return false;
   const left = cdLeft(p, key, kind);
   if (left > 0) {
-    announce(p, `§r${glyph(["move", key, kind, "wait"], "")}§r §7${MOVE_LABEL[kind]}「${mv.ja}」 §cあと ${(left / 20).toFixed(1)} 秒`, 16);
-    sound(p.dimension, "astro.alert", p.location, 0.7, 0.35);
+    deny(p, `§r${glyph(["move", key, kind, "wait"], "")}§r §7${MOVE_LABEL[kind]}「${mv.ja}」 §cあと ${(left / 20).toFixed(1)} 秒`, 0.7);
     return false;
   }
   const cost = mv.cost ?? 0;
   if (cost > 0 && energy(p) < cost) {
-    announce(p, `§r${glyph("icon.energy", "")}§r §c星力が足りない（${MOVE_LABEL[kind]} ${cost}）`, 20);
-    sound(p.dimension, "astro.alert", p.location, 0.6, 0.4);
+    deny(p, `§r${glyph("icon.energy", "")}§r §c星力が足りない（${MOVE_LABEL[kind]} ${cost}）`, 0.6);
     return false;
   }
   if (kind === "ult") {

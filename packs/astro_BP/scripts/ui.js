@@ -31,12 +31,20 @@ export async function show(form, p, tries = 6) {
   return undefined;
 }
 
+const open = new Set();   // フォームを開いている（開こうとしている）プレイヤー
+
 function run(page, p, ...args) {
+  if (open.has(p.id)) return;          // 押しっぱなしで何枚も重ねて開かない
+  open.add(p.id);
+  const done = () => open.delete(p.id);
   try {
     const r = page(p, ...args);
-    if (r && typeof r.catch === "function") r.catch((e) => report("ui", e));
-  } catch (e) { report("ui", e); }
+    if (r && typeof r.then === "function") r.then(done, (e) => { done(); report("ui", e); });
+    else done();
+  } catch (e) { done(); report("ui", e); }
 }
+
+export function forgetUi(id) { open.delete(id); }
 
 function click(p) { sound(p.dimension, "astro.ui_select", p.location, 1.0, 0.6); }
 function back(p) { sound(p.dimension, "astro.ui_back", p.location, 1.0, 0.6); }
@@ -64,6 +72,7 @@ function statusText(p) {
 
 /** ターミナルを開く（astro:terminal を右クリック）。 */
 export function openTerminal(p) {
+  if (open.has(p.id)) return;
   sound(p.dimension, "astro.ui_open", p.location, 1.0, 0.7);
   run(top, p);
 }

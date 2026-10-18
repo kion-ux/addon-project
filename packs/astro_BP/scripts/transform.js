@@ -335,7 +335,7 @@ function buildSequence(p, key, slot, coreless) {
   const head = at(0, 0, 1.62);
   const cam = settings(p).cam !== false;
   const c = pl.color, hot = white(pl.color, 0.45);
-  const seq = { p, key, slot, coreless, age: 0, idx: 0, steps: [], formed: false, cam, done: false };
+  const seq = { p, key, slot, coreless, age: 0, idx: 0, steps: [], formed: false, cam, done: false, dimId: dim.id };
   const add_ = (t, name, fn) => seq.steps.push([t, name, fn]);
 
   // カメラの位置がブロックに埋まるなら頭の方へ寄せる
@@ -543,6 +543,13 @@ export function tickTransforms() {
     const p = seq.p;
     if (!valid(p)) { seqs.delete(id); continue; }   // 退出: 再参加の時に片付ける
     if (!alive(p)) continue;                        // 死亡: entityDie が片付ける
+    let dimId = seq.dimId;
+    try { dimId = p.dimension.id; } catch (_) { }
+    if (dimId !== seq.dimId) {                      // 次元移動: 演出を打ち切って元に戻す
+      seqs.delete(id);
+      revert(p, "invalid", { instant: true });
+      continue;
+    }
     seq.age++;
     runSteps(seq);
     if (seq.abort) {

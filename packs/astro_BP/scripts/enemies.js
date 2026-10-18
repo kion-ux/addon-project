@@ -111,6 +111,19 @@ export function summonBoss(p) {
   return e;
 }
 
+/** 手に持っている物を 1 つ減らす。 */
+function consumeHeld(p, typeId) {
+  try {
+    const inv = p.getComponent("minecraft:inventory")?.container;
+    const slot = p.selectedSlotIndex ?? 0;
+    const it = inv?.getItem(slot);
+    if (!it || it.typeId !== typeId) return false;
+    if (it.amount > 1) { it.amount -= 1; inv.setItem(slot, it); } else inv.setItem(slot, undefined);
+    return true;
+  } catch (_) { return false; }
+}
+
 export function useVoidSignal(p) {
+  if (!consumeHeld(p, "astro:void_signal")) return undefined;
   return summonBoss(p);
 }

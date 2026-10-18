@@ -266,17 +266,17 @@ p.onScreenDisplay.setTitle(`§r${G.iconBig.overheat}`, { subtitle: "§cOVERHEAT"
 
 | 番号 | G のキー | 幅 (GUI px) | 行 |
 |---|---|---|---|
-| U+EB00 | `G.emblemBig.mercury` | 10 | 6–25 |
-| U+EB01 | `G.emblemBig.venus` | 10 | 6–25 |
-| U+EB02 | `G.emblemBig.earth` | 10 | 6–25 |
-| U+EB03 | `G.emblemBig.mars` | 10 | 6–25 |
-| U+EB04 | `G.emblemBig.jupiter` | 10 | 6–25 |
-| U+EB05 | `G.emblemBig.saturn` | 10 | 6–25 |
-| U+EB06 | `G.emblemBig.uranus` | 10 | 6–25 |
-| U+EB07 | `G.emblemBig.neptune` | 10 | 6–25 |
-| U+EB08 | `G.emblemBig.sol` | 10 | 6–25 |
-| U+EB10 | `G.banner.wingL` | 16 | 6–25 |
-| U+EB11 | `G.banner.wingR` | 16 | 6–25 |
+| U+EB00 | `G.emblemBig.mercury` | 11 | 5–26 |
+| U+EB01 | `G.emblemBig.venus` | 11 | 5–26 |
+| U+EB02 | `G.emblemBig.earth` | 11 | 5–26 |
+| U+EB03 | `G.emblemBig.mars` | 11 | 5–26 |
+| U+EB04 | `G.emblemBig.jupiter` | 11 | 5–26 |
+| U+EB05 | `G.emblemBig.saturn` | 11 | 5–26 |
+| U+EB06 | `G.emblemBig.uranus` | 11 | 5–26 |
+| U+EB07 | `G.emblemBig.neptune` | 11 | 5–26 |
+| U+EB08 | `G.emblemBig.sol` | 11 | 5–26 |
+| U+EB10 | `G.banner.wingL` | 16 | 5–26 |
+| U+EB11 | `G.banner.wingR` | 16 | 5–26 |
 | U+EB12 | `G.banner.divider` | 16 | 10–21 |
 | U+EB13 | `G.banner.lineL` | 16 | 13–18 |
 | U+EB14 | `G.banner.lineR` | 16 | 13–18 |
