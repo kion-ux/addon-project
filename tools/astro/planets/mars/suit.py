@@ -32,10 +32,11 @@ from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 #  色
 # ---------------------------------------------------------------------------
 CRIMSON = (196, 58, 34)
-RUST = (140, 48, 28)
+RUST = (138, 66, 40)
 IRON = (40, 34, 34)
 OCHRE = (217, 137, 58)
-DUST = (184, 118, 72)            # 火星の赤い砂ぼこり
+DUST = (166, 104, 66)            # 火星の赤い砂ぼこり
+STEEL = (82, 72, 72)             # 黒い鉄の下地の装甲
 GLOW = (255, 122, 42)
 BRASS_W = 0.42                   # 縁取りの幅
 
@@ -105,7 +106,7 @@ def install_painter():
         else:
             v = y / max(1, h - 1)
             k = smooth(0.45, 1.0, v) * (0.15 + 0.4 * n)
-        k *= st.get("dust_k", 1.0)
+        k *= st.get("dust_k", 0.6)
         if k > 0:
             col = mix(col, dust, k)
         m = c.get("wear", {}).get((x, y))
@@ -168,11 +169,14 @@ def _armor(base, **kw):
 # ===========================================================================
 SUIT_STYLES = {
     "plate": _armor(CRIMSON),
-    "plate_b": _armor((150, 42, 26), panel=0, scratch=0.004),
+    "plate_b": _armor((132, 36, 24), panel=0, scratch=0.004),
+    "steel": _armor(STEEL, line=(24, 20, 20), dust_k=0.7, scratch_col=(196, 184, 176)),
+    "steel_b": _armor((62, 54, 54), panel=0, line=(20, 16, 16), dust_k=0.6, scratch=0.004,
+                      scratch_col=(170, 160, 152)),
     "plate2": _armor(RUST, line=(52, 18, 10)),
-    "plate2_b": _armor((106, 38, 24), panel=0, scratch=0.004, line=(46, 16, 10)),
+    "plate2_b": _armor((104, 50, 32), panel=0, scratch=0.004, line=(46, 20, 12)),
     "accent": _armor(OCHRE, line=(80, 46, 18)),
-    "iron": {"kind": "chrome", "base": (150, 138, 132), "light": (236, 226, 214), "line": (30, 24, 24)},
+    "iron": {"kind": "chrome", "base": (112, 102, 100), "light": (214, 202, 190), "line": (26, 20, 20)},
     "brass": {"kind": "trim", "base": (198, 134, 62), "light": (255, 214, 150), "dark": (112, 64, 26),
               "line": (58, 32, 12)},
     "frame": {"kind": "frame", "base": (62, 54, 54), "light": (110, 98, 94), "line": (22, 18, 18)},
@@ -181,7 +185,7 @@ SUIT_STYLES = {
     "flame_core": {"kind": "flame", "glow": (255, 214, 120), "light": (255, 255, 236),
                    "deep": (255, 120, 40), "bevel": False, "outline": False},
     "thruster": {"glow": (255, 130, 44), "light": (255, 236, 190), "deep": (150, 30, 8)},
-    "glow_hot": {"kind": "glowline", "glow": (255, 168, 70), "light": (255, 246, 214),
+    "glow_hot": {"kind": "glowline", "glow": (255, 104, 34), "light": (255, 200, 130),
                  "bevel": False, "outline": False},
     "ember": {"kind": "glowline", "glow": (255, 96, 30), "light": (255, 200, 120), "bevel": False,
               "outline": False, "emit": 60},
