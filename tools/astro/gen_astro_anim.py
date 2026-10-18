@@ -77,10 +77,25 @@ def collect():
     return out
 
 
-def build():
+def build(clear=True):
+    """clear=True なら、wield() の腕を武器（生成済みのジオメトリ）が体に入らない向きへ回す。"""
     anims, meta, res_all = {}, {}, {}
+    clouds = {}
+
+    def cloud_of(key, kind):
+        if not clear:
+            return None
+        if key is None:          # 共通の版: 同じ種類の武器を持つ惑星の武器で
+            key = next((k for k in D.PLANET_KEYS if planet_hold(k)["kind"] == kind
+                        and weapon_cloud(k) is not None), None)
+            if key is None:
+                return None
+        if key not in clouds:
+            clouds[key] = weapon_cloud(key)
+        return clouds[key]
     for name, spec, kind, hold, key in collect():
-        res = AL.resolve(spec, kind, name=name, hold=hold)
+        cl = cloud_of(key, kind) if AL.uses_wield(spec) else None
+        res = AL.resolve(spec, kind, name=name, hold=hold, cloud=cl)
         res.planet = key
         res_all[name] = res
         anims[AL.PREFIX + name] = AL.to_json(res)
@@ -174,31 +189,8 @@ def weapon_cloud(key, what="weapon", step=1.0):
     return np.c_[pts, np.ones(len(pts))].T
 
 
-# スーツを着た体の当たり（素の箱 + 装甲の厚み）。右腕は上腕だけ（拳は武器を握っている）
-SUIT_PAD = {"head": 1.0, "body": 0.9, "leftArm": 0.6, "rightArm": 0.6, "rightLeg": 0.6, "leftLeg": 0.6}
-UPPER_R = ((-8, 17, -2), (4, 7, 4))
-
-
 def penetration(pose, cloud):
-    import hd_scene as S
-    W_ = S.skeleton_world(pose)
-    pw = W_["rightItem"] @ cloud
-    worst = (0.0, None)
-    for bone, _p, _pv, cube in S.SKELETON:
-        if not cube:
-            continue
-        o, s, _c = cube
-        if bone == "rightArm":
-            o, s = UPPER_R
-        pad = SUIT_PAD.get(bone, 0.5)
-        lo = np.array(o, float) - pad
-        hi = np.array(o, float) + np.array(s, float) + pad
-        q = (np.linalg.inv(W_[bone]) @ pw)[:3].T
-        d = np.clip(np.minimum(q - lo, hi - q).min(axis=1), 0, None)
-        m = float(d.max()) if len(d) else 0.0
-        if m > worst[0]:
-            worst = (m, bone)
-    return worst
+    return AL.clip_depth(pose, cloud)
 
 
 def clip_report(res_all, step=0.04, limit=0.8):

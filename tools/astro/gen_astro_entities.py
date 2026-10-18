@@ -46,8 +46,8 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import astro_common as AC  # noqa: E402
-from astro_common import (BP, RP, SCRATCH, beam, bevel, box, cbox, chamfer, line3, mat_cube,  # noqa: E402,F401
-                          octa, polyline, rbox, ring, write_json)
+from astro_common import (BP, RP, SCRATCH, beam, box, cbox, line3, mat_cube,  # noqa: E402,F401
+                          polyline, rbox, ring, write_json)
 from astro_data import ENEMIES, NS  # noqa: E402
 from astro_paint import EMI, SOFT, WHITE, AstroPainter, hash2, hexc, mix, shade, smooth  # noqa: E402
 from mcmodel import Model  # noqa: E402
@@ -239,6 +239,17 @@ def inv_styles():
         "lights": {"kind": "decal", "decal": "lights", "count": 3, "color": MAG,
                    "under": dict(hull2, panel=0)},
         "black": {"kind": "flat", "base": (6, 3, 12), "outline": False, "bevel": False},
+        # ネメシス: 黒い装甲（照りの強い縁で形を読ませる）と、割れ目から光る虚空
+        "nem_plate": {"kind": "armor", "base": (38, 28, 56), "light": (118, 98, 160), "dark": (14, 9, 24),
+                      "line": (6, 3, 12), "groove": (12, 6, 22), "bolts": False, "bevel_hi": 0.4},
+        "nem_plate2": {"kind": "armor", "base": (58, 44, 86), "light": (150, 128, 196), "dark": (20, 14, 34),
+                       "line": (8, 4, 14), "groove": (24, 14, 40), "bolts": False, "bevel_hi": 0.4,
+                       "stripe": {"dir": "h", "period": 12, "width": 1, "color": VIO, "glow": True,
+                                  "emit": 60, "offset": 9}},
+        "spine": {"kind": "armor", "base": (34, 26, 50), "light": (104, 86, 146), "dark": (12, 8, 22),
+                  "line": (6, 3, 12), "panel": 0, "bevel_hi": 0.45},
+        "void_core": {"kind": "void", "base": (40, 12, 84), "glow": (200, 96, 255), "nebula": (255, 80, 210),
+                      "outline": False, "bevel": False},
     }
     return st
 
@@ -273,6 +284,35 @@ def holo_styles():
 # ===========================================================================
 #  形の補助
 # ===========================================================================
+def _inset(cubes, axis_i, d):
+    """重なる箱の、軸方向の面を d だけ引っ込める（同一平面の面が重なると実機でちらつく）。"""
+    for c in cubes:
+        c.size[axis_i] = round(c.size[axis_i] - d, 3)
+        c.origin[axis_i] = round(c.origin[axis_i] + d / 2, 3)
+    return cubes
+
+
+def bevel(bone, centre, size, style, cut=0.5, axis="z", **kw):
+    """astro_common.bevel（45° の面取り 6 個）。十字の 2 個目と稜の 4 本の軸方向の面を少し引っ込める。"""
+    out = AC.bevel(bone, centre, size, style, cut=cut, axis=axis, **kw)
+    i = AC.AX[axis]
+    _inset(out[1:2], i, 0.04)
+    _inset(out[2:], i, 0.08)
+    return out
+
+
+def chamfer(bone, centre, size, style, cut=0.5, axis="z", **kw):
+    out = AC.chamfer(bone, centre, size, style, cut=cut, axis=axis, **kw)
+    _inset(out[1:], AC.AX[axis], 0.04)
+    return out
+
+
+def octa(bone, centre, w, length, style, axis="z", **kw):
+    out = AC.octa(bone, centre, w, length, style, axis=axis, **kw)
+    _inset(out[1:], AC.AX[axis], 0.04)
+    return out
+
+
 def ball(bone, centre, r, style, **kw):
     """角を落とした球（7 個: 中心の立方体 + 3 方向の板 + 45° の板）。astro_weapon.sphere と同じ比率。"""
     d = 2 * r
@@ -629,7 +669,7 @@ def build_nemesis():
     body = m.bone("body", NEM_C, parent="root")
     # ---- 核: 星の渦巻く虚空の球 + 割れ目から光の漏れる装甲殻 ----------------
     core = m.bone("core", NEM_C, parent="body")
-    ball(core, NEM_C, R - 0.7, "void", uv_scale=3)
+    ball(core, NEM_C, R - 0.7, "void_core", uv_scale=3)
     shell = m.bone("shell", NEM_C, parent="body")
     for lat in (-52, -18, 18, 52):
         for k in range(8):
@@ -641,27 +681,31 @@ def build_nemesis():
             p0, _ = _sph(lon, lat - 15, R)
             p1, _ = _sph(lon, lat + 15, R)
             w = 2 * math.pi * R * math.cos(math.radians(lat)) / 8 * 0.84
-            st = "scale" if (k + (lat > 0)) % 2 else "dark"
+            st = "nem_plate2" if (k + (lat > 0)) % 2 else "nem_plate"
             slab(shell, p0, p1, w, 1.8, n, st, extend=0.2)
     for sy_ in (-1, 1):                                    # 極の蓋
-        octa(shell, (cx, cy + sy_ * (R - 0.2), cz), 7.4, 1.8, "dark", axis="y")
+        octa(shell, (cx, cy + sy_ * (R - 0.2), cz), 7.4, 1.8, "nem_plate", axis="y")
         octa(shell, (cx, cy + sy_ * (R + 0.8), cz), 3.6, 0.6, "glow_v", axis="y")
     # ---- 単眼: 縁・虹彩・特異点の瞳・降着円盤・V 字の瞼 ---------------------
     ez = cz - R + 0.2
     eye = m.bone("eye", (cx, cy, ez), parent="body")
     ring(eye, (cx, cy, ez - 0.2), 7.7, 16, (0, 1.4, 2.4), "dark", axis="z", phase=11.25)
     ring(eye, (cx, cy, ez - 1.0), 6.9, 16, (0, 0.5, 0.6), "glow_vs", axis="z", phase=11.25)
-    bevel(eye, (cx, cy, ez + 0.4), (13.6, 13.6, 1.4), "eye_v", cut=13.6 * 0.293, axis="z", uv_scale=5)
-    bevel(eye, (cx, cy, ez - 0.45), (6.4, 6.4, 0.6), "pupil_v", cut=6.4 * 0.293, axis="z", uv_scale=6)
+    cbox(eye, (cx, cy, ez + 0.4), (12.6, 12.6, 1.4), "eye_v", uv_scale=6)
+    cbox(eye, (cx, cy, ez - 0.45), (6.0, 6.0, 0.6), "pupil_v", uv_scale=8)
+    for k in range(4):                                     # 虹彩の角を隠す暗い隅板
+        a = 45 + 90 * k
+        rbox(eye, (cx - 6.6 * math.sin(math.radians(a)), cy + 6.6 * math.cos(math.radians(a)), ez - 0.1),
+             (5.2, 2.4, 1.2), "nem_plate", rot=(0, 0, a))
     disk = m.bone("fx_eye_ring", (cx, cy, ez - 0.9), parent="eye")
     ring(disk, (cx, cy, ez - 0.9), 3.9, 12, (0, 0.6, 0.4), "glow", axis="z", styles=["glow", "glow_v"])
     lids = m.bone("lids", (cx, cy, ez), parent="eye")
     for s_ in (-1, 1):
         # 上の瞼（中央へ下がる V 字）と下の瞼
         rbox(lids, (s_ * 4.2, cy + 6.6, ez - 0.6), (9.0, 2.4, 3.2), "hull2", rot=(-10, 0, s_ * 16))
-        rbox(lids, (s_ * 4.6, cy + 7.9, ez + 0.2), (8.4, 1.6, 3.0), "dark", rot=(-4, 0, s_ * 18))
+        rbox(lids, (s_ * 4.6, cy + 7.9, ez + 0.2), (8.4, 1.6, 3.0), "nem_plate", rot=(-4, 0, s_ * 18))
         rbox(lids, (s_ * 4.4, cy - 6.9, ez - 0.4), (7.6, 2.0, 2.8), "hull2", rot=(10, 0, s_ * -12))
-        rbox(lids, (s_ * 7.6, cy, ez - 0.2), (2.0, 7.0, 2.8), "dark", rot=(0, s_ * 18, 0))
+        rbox(lids, (s_ * 7.6, cy, ez - 0.2), (2.0, 7.0, 2.8), "nem_plate", rot=(0, s_ * 18, 0))
         rbox(lids, (s_ * 4.6, cy + 5.45, ez - 2.25), (6.6, 0.45, 0.4), "glow", rot=(-10, 0, s_ * 16))
     # ---- 大顎（眼の左右から前下へ曲がる） ------------------------------------
     for side, s_ in (("r", -1), ("l", 1)):
@@ -680,10 +724,12 @@ def build_nemesis():
         L = 23.0 - 6.0 * abs(math.cos(a * 1.0)) * 0 - (5.0 if i % 2 else 0.0)
         sb = m.bone(f"fx_spine_{i}", tuple(np.round(base, 3)), parent="body")
         tip = base + d * L + V(0, 0, 3.0)
-        bend = base + d * (L * 0.55) + V(0, 0, 1.0)
-        spike(sb, base, bend, 3.4, 2.2, 1, "dark")
-        spike(sb, bend, tip, 2.2, 0.5, 2, "dark")
-        slab(sb, base + d * 1.5 + V(0, 0, -1.2), bend + V(0, 0, -1.0), 0.6, 0.5, V(0, 0, 1), "glow_v")
+        bend = base + d * (L * 0.5) + V(0, 0, 1.0)
+        nz = V(0, 0.0, 1.0)
+        slab(sb, base, bend, 4.6, 1.6, nz, "spine", extend=0.4)
+        slab(sb, bend, bend + (tip - bend) * 0.6, 3.0, 1.3, nz, "spine", extend=0.4)
+        slab(sb, bend + (tip - bend) * 0.6, tip, 1.5, 1.0, nz, "spine", extend=0.2)
+        slab(sb, base + d * 1.2 + V(0, 0, -0.9), tip - d * 1.5 + V(0, 0, -0.5), 0.55, 0.4, nz, "glow_v")
         cbox(sb, tuple(tip), (1.1, 1.1, 1.1), "glow", rotation=(45, 0, 45))
     # ---- 二重の光輪（傾けた親ボーン → 自分の軸まわりに回る子ボーン） ---------------
     m.bone("ring_a", NEM_C, parent="body", rotation=(72, 0, 18))
@@ -705,7 +751,7 @@ def build_nemesis():
         c = V(cx - 23.0 * math.sin(a), cy + h, cz - 23.0 * math.cos(a))
         sb = m.bone(f"fx_shard_{i}", tuple(np.round(c, 3)), parent="fx_shards")
         tilt = (20 + 15 * i, i * 360 / NEM_SHARDS + 30, 25 - 10 * i)
-        rbox(sb, tuple(c), (3.2, 6.6, 1.6), "dark", rot=tilt)
+        rbox(sb, tuple(c), (3.2, 6.6, 1.6), "nem_plate2", rot=tilt)
         rbox(sb, tuple(c + V(0, 0.4, 0)), (1.8, 4.4, 2.0), "crystal", rot=tilt)
         rbox(sb, tuple(c + V(0, -3.6, 0)), (1.6, 2.2, 1.2), "hull2", rot=(tilt[0] + 30, tilt[1], tilt[2]))
     # ---- 触手（3 節。節ごとにボーン） -----------------------------------------
@@ -720,7 +766,7 @@ def build_nemesis():
             p1 = p0 + V(0, -seg, 0) + out * (1.4 - k * 0.9)
             tb = m.bone(f"fx_tendril_{i}_{k}", tuple(np.round(p0, 3)), parent=parent)
             w = 2.6 - k * 0.7
-            beam(tb, p0, p1, w, w, "dark" if k else "hull2", extend=0.4)
+            beam(tb, p0, p1, w, w, "spine" if k else "nem_plate2", extend=0.4)
             octa(tb, tuple(p0), w + 0.9, 1.0, "trim" if k == 0 else "frame", axis="y")
             if k == 2:
                 cbox(tb, tuple(p1 + V(0, -0.6, 0)), (1.2, 1.6, 1.2), "glow", rotation=(0, 45, 0))

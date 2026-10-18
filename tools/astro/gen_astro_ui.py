@@ -3009,7 +3009,7 @@ def self_check(pages, G):
             errors.append(f"{name}: empty cell")
         if a[:, x0].max() < FAINT_A - 2 or a[:, x1 - 1].max() < FAINT_A - 2:
             errors.append(f"{name}: no edge pixel at its span {x0}..{x1 - 1}")
-        if a[:, :x0].max() > 0 or a[:, x1:].max() > 0:
+        if (x0 > 0 and a[:, :x0].max() > 0) or (x1 < a.shape[1] and a[:, x1:].max() > 0):
             errors.append(f"{name}: pixels outside its span")
         unit = pg.cell // 16
         lim = (2 * unit, 14 * unit) if pg.page == PAGE_HUD else (2 * unit, 30 * unit)

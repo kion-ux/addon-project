@@ -6,8 +6,10 @@
 //   v.vx v.vy v.vz / v.var / v.height v.spin v.rate v.grav v.len）。
 //  ID は "astro:" を付けずに渡す（P(dim, "glow", …) → astro:glow）。
 //
-//  予算: 1 tick に出すパーティクル（spawnParticle の回数）は BUDGET_PER_TICK × 設定の倍率まで。
-//  超えた分は黙って捨てるので、大事な層（当たりの光）を先に、飾り（火の粉）を後に出すこと。
+//  予算: spawnParticle は 1 回ごとに近くの全クライアントへ 1 パケット（変数は JSON）を送るので、
+//  1 tick の呼び出しを「1 + count/8」の重みで数え、BUDGET_PER_TICK × 設定の倍率まで（標準で約 110 回、
+//  粒にしておよそ 260 発）。超えた分は黙って捨てるので、大事な層（当たりの光）を先に、飾りを後に出すこと。
+//  変数は渡したものだけを送る（既定値はパーティクル側の v.x ?? 既定値）。
 // ===========================================================================
 import { MolangVariableMap } from "@minecraft/server";
 import { ANIM_META } from "./anim_meta.js";
@@ -35,7 +37,7 @@ const VARS = ["size", "life", "rot", "count", "speed", "spread", "vx", "vy", "vz
 // ---------------------------------------------------------------------------
 //  予算
 // ---------------------------------------------------------------------------
-export const BUDGET_PER_TICK = 260;
+export const BUDGET_PER_TICK = 110;
 let budget = 0;
 let budgetTick = -1;
 let fxK = 1.0;
@@ -45,10 +47,12 @@ export function setFxScale(k) { fxK = Math.max(0.2, Math.min(2, k)); }
 /** 今の演出の量の倍率（0.5 少ない / 1 標準 / 1.5 多い）。飾りの層を省く判断に使える。 */
 export function fxScale() { return fxK; }
 
-function spend() {
+function spend(cost) {
   const t = now();
   if (t !== budgetTick) { budgetTick = t; budget = 0; }
-  return ++budget <= BUDGET_PER_TICK * fxK;
+  if (budget + cost > BUDGET_PER_TICK * fxK) return false;
+  budget += cost;
+  return true;
 }
 
 /** この tick に残っている予算（大きな演出の前に確かめる用）。 */
@@ -68,7 +72,8 @@ export function budgetLeft() {
 export function P(dim, id, loc, o = {}) {
   if (!dim || !loc) return;
   if (!Number.isFinite(loc.x) || !Number.isFinite(loc.y) || !Number.isFinite(loc.z)) return;
-  if (!spend()) return;
+  const cnt = typeof o.count === "number" && o.count > 0 ? o.count * (fxK < 1 ? fxK : 1) : 0;
+  if (!spend(1 + cnt / 8)) return;
   try {
     const m = new MolangVariableMap();
     const c = o.color;

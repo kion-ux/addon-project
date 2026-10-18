@@ -80,6 +80,7 @@ PREFIX = f"animation.{NS}.p."
 BONES = {"rA": "rightArm", "lA": "leftArm", "b": "body", "h": "head", "rL": "rightLeg",
          "lL": "leftLeg", "root": "root", "w": "waist"}
 ORDER = ("root", "w", "b", "h", "rA", "lA", "rL", "lL")
+SOLVE_ORDER = ("root", "w", "b", "h", "lA", "rL", "lL", "rA")    # 武器の腕は最後に（他の部位を見て避ける）
 ARMS = ("rA", "lA")
 REST = {"rA": (-18.0, 0.0, 0.0)}           # バニラの持ち姿勢（三人称で右手に物を持つ）
 FPK = 0.25                                 # 一人称での腕の振れ幅
@@ -261,8 +262,9 @@ def _hold_info(wkind, hold=None):
     return AH.hold(wkind)
 
 
-def _arm_matrix(v, side, pose, hold):
-    """Aim / Wield → 腕の局所の回転行列（体・腰のひねりを打ち消して）。"""
+def _arm_matrix(v, side, pose, hold, cloud=None, solved=None):
+    """Aim / Wield → 腕の局所の回転行列（体・腰のひねりを打ち消して）。
+    cloud（武器の点）があれば、wield は武器が体に入らない所へ腕を回す（solved = 解いた他の部位）。"""
     Rp = _parent_R(pose)
     if isinstance(v, Aim):
         d = Rp.T @ v.d
@@ -274,13 +276,88 @@ def _arm_matrix(v, side, pose, hold):
     edge_l = -np.asarray(hold["up_arm"], float)
     bt = Rp.T @ v.blade
     if v.edge is not None:
-        R = frame_axes(blade_l, bt, edge_l, Rp.T @ v.edge)
+        want, loc = Rp.T @ v.edge, edge_l
+        R = frame_axes(blade_l, bt, edge_l, want)
     else:
-        pref = Rp.T @ (v.arm if v.arm is not None else DEFAULT_ARM)
-        R = frame_axes(blade_l, bt, ARM_DOWN, pref)
+        want, loc = Rp.T @ (v.arm if v.arm is not None else DEFAULT_ARM), ARM_DOWN
+        R = frame_axes(blade_l, bt, ARM_DOWN, want)
     if v.roll:
         R = _axis_angle(bt, v.roll) @ R
+    if cloud is not None and solved is not None:
+        R = _clear(R, bt, want / np.linalg.norm(want), loc, solved, cloud)
     return R
+
+
+# ---------------------------------------------------------------------------
+#  武器と体の当たり（スーツを着た体: 素の箱 + 装甲の厚み。右腕は上腕だけ — 拳は武器を握っている）
+# ---------------------------------------------------------------------------
+SUIT_PAD = {"head": 1.0, "body": 0.9, "leftArm": 0.6, "rightArm": 0.6, "rightLeg": 0.6, "leftLeg": 0.6}
+UPPER_R = ((-8, 17, -2), (4, 7, 4))
+
+
+def parts_pose(parts):
+    """{部位: 値} → hd_scene の姿勢。"""
+    pose = {}
+    for k, v in parts.items():
+        if k == "root_pos":
+            pose.setdefault("root", {})["position"] = tuple(v)
+        elif k in BONES and not isinstance(v, (Aim, Wield)):
+            pose.setdefault(BONES[k], {})["rotation"] = tuple(v)
+    return pose
+
+
+def clip_depth(pose, cloud, skip=()):
+    """姿勢 pose（hd_scene の形）で、右手の武器の点 cloud（rightItem 空間 4xN）が体に入る最大の深さと部位。"""
+    import hd_scene as S
+    W_ = S.skeleton_world(pose)
+    pw = W_["rightItem"] @ cloud
+    worst = (0.0, None)
+    for bone, _p, _pv, cube in S.SKELETON:
+        if not cube or bone in skip:
+            continue
+        o, sz, _c = cube
+        if bone == "rightArm":
+            o, sz = UPPER_R
+        pad = SUIT_PAD.get(bone, 0.5)
+        lo = np.array(o, float) - pad
+        hi = np.array(o, float) + np.array(sz, float) + pad
+        q = (np.linalg.inv(W_[bone]) @ pw)[:3].T
+        d = np.clip(np.minimum(q - lo, hi - q).min(axis=1), 0, None)
+        m = float(d.max()) if len(d) else 0.0
+        if m > worst[0]:
+            worst = (m, bone)
+    return worst
+
+
+def _clear(R0, bt, want_dir, local_vec, parts, cloud):
+    """武器の刃先の向き bt を保ったまま、腕を刃の軸まわりに回して（手首の角度は一定）体に入らない所を探す。
+    want_dir / local_vec: 守りたい向き（腕の向き or 刃の向き）と、その腕の局所でのベクトル。"""
+    def at(phi):
+        return _axis_angle(bt, phi) @ R0
+
+    def cost(phi):
+        R = at(phi)
+        e = euler(R)
+        d, _b = clip_depth(parts_pose(dict(parts, rA=e)), cloud)
+        v = R @ local_vec
+        dev = math.degrees(math.acos(max(-1.0, min(1.0, float(np.dot(v, want_dir))))))
+        return 60.0 * max(0.0, d - 0.15) ** 2 + (dev / 30.0) ** 2, d
+    c0, d0 = cost(0.0)
+    if d0 <= 0.3:
+        return R0
+    best = (c0, 0.0)
+    for phi in range(-170, 180, 10):
+        c, _d = cost(float(phi))
+        if c < best[0]:
+            best = (c, float(phi))
+    step = 5.0
+    while step >= 1.0:
+        for sgn in (-1, 1):
+            c, _d = cost(best[1] + sgn * step)
+            if c < best[0]:
+                best = (c, best[1] + sgn * step)
+        step /= 2
+    return at(best[1])
 
 
 def _foot_min(pose):
@@ -298,8 +375,10 @@ def _foot_min(pose):
     return low
 
 
-def resolve(spec, wkind="sword", name="", hold=None) -> Resolved:
-    """spec（anim() の戻り値）を、武器の種類 wkind の持ち方で解く。"""
+def resolve(spec, wkind="sword", name="", hold=None, cloud=None) -> Resolved:
+    """spec（anim() の戻り値）を、武器の種類 wkind の持ち方で解く。
+    cloud（gen_astro_anim.weapon_cloud の武器の表面の点）を渡すと、wield() の腕は武器がスーツを着た体に
+    入り込まない向きへ自動で回す（刃先の向きは変えず、手首の角度のまま腕を刃の軸まわりに）。"""
     hold = _hold_info(wkind, hold) if uses_wield(spec) else hold
     frames = spec["frames"]
     times = sorted(frames)
@@ -317,12 +396,16 @@ def resolve(spec, wkind="sword", name="", hold=None) -> Resolved:
     for t in times:
         f = frames[t]
         pose = {}
-        for k in ORDER:
+        plain = {k: f.get(k, REST.get(k, (0.0, 0.0, 0.0))) for k in ORDER if k in parts}
+        plain = {k: v for k, v in plain.items() if not isinstance(v, (Aim, Wield))}
+        if "root_pos" in f:
+            plain["root_pos"] = f["root_pos"]
+        for k in SOLVE_ORDER:
             if k not in parts:
                 continue
             v = f.get(k, REST.get(k, (0.0, 0.0, 0.0)))
             if isinstance(v, (Aim, Wield)):
-                R = _arm_matrix(v, k, f, hold)
+                R = _arm_matrix(v, k, f, hold, cloud, dict(plain, **{kk: pose[kk] for kk in pose}))
                 e = euler_near(R, prev[k])
                 if k in mats:
                     mats[k][t] = R
