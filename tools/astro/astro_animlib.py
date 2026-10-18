@@ -837,7 +837,8 @@ def library() -> dict:
     })
 
     # ---- 叩きつける（0.8 秒）: 跳んで頭上から地面へ ---------------------------------------------
-    up = P(rA=wield(blade=dirv(u=0.7, f=-0.7), arm=dirv(u=1.0, f=0.1)), lA=aim(dirv(u=1.0, f=0.25, r=-0.15)),
+    up = P(rA=wield(blade=dirv(u=0.7, f=-0.7, r=0.1), arm=dirv(u=1.0, f=0.1, r=0.3)),
+           lA=aim(dirv(u=1.0, f=0.25, r=-0.15)),
            b=(-16, 0, 0), h=(-20, 0, 0), rL=(-30, 0, 0), lL=(-12, 0, 0), root_pos=(0, 2.4, 0))
     down = P(rA=wield(blade=dirv(f=1.0, u=-0.95), arm=dirv(f=1.0, u=-0.75)),
              lA=aim(dirv(f=0.7, u=-1.0, r=0.15)), w=(30, 0, 0), h=(-24, 0, 0),
