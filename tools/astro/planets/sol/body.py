@@ -13,10 +13,11 @@
   prominence    空中技 プロミネンス・アーチ: 宙で三度、頭上から叩きつける（0.24 / 0.46 / 0.72 秒）
   nova_collapse 必殺 スーパーノヴァ（前半）: 身を丸めて恒星の核へ収縮する（膝を抱え、剣を抱き込む）
   nova_burst    必殺 スーパーノヴァ（後半）: 全身を大の字に開いて爆発する
+  throw         共通の「投げる」の大剣版（振りかぶりで剣を右へ開き、柄頭が兜に当たらないように）
 """
 from __future__ import annotations
 
-from astro_animlib import LEFT, RIGHT, H, P, aim, anim, dirv, wield
+from astro_animlib import LEFT, H, P, aim, anim, dirv, wield
 
 # ---- 三段コンボ -------------------------------------------------------------
 c1_wind = P(b=(0, 44, 0), h=(0, -32, 0), w=(4, 0, 0),

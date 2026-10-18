@@ -92,14 +92,14 @@ SUIT_ANIMS = {
                                      "1.0 + math.sin(q.anim_time * 300.0 + 90.0) * 0.05", "1.0"]},
     },
     "thrust": {
-        # 空中では光輪が速く回り、紅炎が大きく燃え上がる
-        "fx_spin_halo": {"rotation": [0, 0, "v.astro_air * q.anim_time * 90.0"]},
+        # 空中では光輪の内の光の輪が広がり、肩の紅炎が大きく燃え上がる
+        "fx_spin_halo_in": {"scale": ["1.0 + v.astro_air * 0.12", "1.0 + v.astro_air * 0.12", "1.0"]},
         "fx_glow_prom_r": {"scale": ["1.0", "1.0 + v.astro_air * 0.18", "1.0"]},
         "fx_glow_prom_l": {"scale": ["1.0", "1.0 + v.astro_air * 0.18", "1.0"]},
     },
     "sprint": {
         # 疾走中は背中の紅炎が後ろへなびく
-        "fx_glow_arch_r": {"rotation": ["v.astro_run * 16.0", 0, 0]},
+        "fx_glow_arch_r": {"rotation": ["-v.astro_run * 12.0", 0, 0]},
     },
 }
 

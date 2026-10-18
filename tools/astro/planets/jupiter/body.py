@@ -24,6 +24,9 @@ c1_wind = P(b=(2, 44, 0), w=(4, 0, 0), h=(0, -32, 0),
             rA=wield(blade=dirv(r=1.0, f=-0.45, u=0.25), arm=dirv(r=1.0, u=-0.2, f=-0.1)),
             lA=aim(dirv(f=1.0, r=-0.4, u=-0.1)),
             rL=(14, 0, 8), lL=(-18, 0, -8), ground=True)
+c1_lift = P(b=(0, 20, 0), h=(0, -14, 0),
+            rA=wield(blade=dirv(r=0.75, f=0.45, u=0.45), arm=dirv(r=0.9, u=-0.45, f=0.25)),
+            lA=aim(dirv(f=1.0, r=-0.3, u=-0.3)), ground=True)
 c1_hit = P(b=(8, -14, 0), w=(8, 0, 0), h=(0, 12, 0),
            rA=wield(blade=dirv(f=1.0, r=-0.15, u=0.05), edge=LEFT),
            lA=aim(dirv(f=-0.4, u=-1.0, r=-0.6)),
@@ -71,7 +74,7 @@ s_well = P(b=(4, 22, 0), h=(0, -14, 0),
            rA=wield(blade=dirv(f=-0.4, u=0.35, r=0.65), arm=dirv(r=0.75, u=-0.55, f=-0.35)),
            rL=(16, 0, 8), lL=(-22, 0, -8), ground=True)
 s_dash = P(w=(30, 0, 0), h=(-30, 0, 0),
-           rA=wield(blade=dirv(f=-0.55, u=-0.2, r=0.6), arm=dirv(f=-0.35, u=-1.0, r=0.35)),
+           rA=wield(blade=dirv(f=-0.5, u=-0.05, r=0.85), arm=dirv(f=-0.35, u=-1.0, r=0.5)),
            lA=aim(dirv(f=1.0, u=0.0, r=0.2), twist=60),
            rL=(-34, 0, 2), lL=(30, 0, -2))
 s_sweep = P(b=(10, -42, 0), w=(14, 0, 0), h=(-10, 34, 0),
@@ -111,7 +114,7 @@ t_smash = P(w=(36, 0, 0), h=(-30, 0, 0), b=(4, 0, 0),
             rL=(60, 0, 6), lL=(-54, 0, -6), ground=True)
 
 BODY_ANIMS = {
-    "combo1": anim(0.55, {0.0: H, 0.09: c1_wind, 0.2: c1_hit, 0.3: c1_follow,
+    "combo1": anim(0.55, {0.0: H, 0.045: c1_lift, 0.09: c1_wind, 0.2: c1_hit, 0.3: c1_follow,
                           0.4: P(c1_follow, b=(6, -44, 0)), 0.55: H}),
     "combo2": anim(0.55, {0.0: H, 0.09: c2_wind, 0.21: c2_hit, 0.31: c2_follow,
                           0.4: P(c2_follow, b=(-10, 30, 0)), 0.55: H}),

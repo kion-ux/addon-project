@@ -420,7 +420,8 @@ register(KEY, {
     // 98° 傾いた重力: 下向きを 98° 横へ倒す（ほぼ真横、わずかに上）
     const grav = norm({ x: side.x * Math.sin(TILT), y: -Math.cos(TILT), z: side.z * Math.sin(TILT) });
     const n = tiltNormal(f);
-    const ringC = up(centre, 4.0);
+    const ringC = up(centre, 5.0);
+    const RR = 6.4;                      // 巨大な環の半径（下端は地面に少し沈む = 地から立つ弧）
     const caught = new Map();
     let phase = 0;
     ctx.at(4, () => {
@@ -433,13 +434,13 @@ register(KEY, {
     });
     // 巨大な環（傾いた輪 + 回る 5 つの氷の衛星）
     ctx.every(6, 13, 4, (i) => {
-      P(dim, "ring_n", ringC, { color: i % 2 ? ICE : AZURE, count: 48, spread: 7.2, dir: n, life: 0.45, var: 1 });
-      P(dim, "ring_n", ringC, { color: TEAL, count: 36, spread: 6.4, dir: n, life: 0.45, var: 4 });
+      P(dim, "ring_n", ringC, { color: i % 2 ? ICE : AZURE, count: 48, spread: RR, dir: n, life: 0.45, var: 1 });
+      P(dim, "ring_n", ringC, { color: TEAL, count: 36, spread: RR - 0.8, dir: n, life: 0.45, var: 4 });
     });
     ctx.every(6, 26, 2, () => {
       phase += 0.21;
       for (let k = 0; k < 5; k++) {
-        const q = onRing(ringC, n, 7.2, phase + k * 1.2566);
+        const q = onRing(ringC, n, RR, phase + k * 1.2566);
         P(dim, "glow", q, { color: FROST, size: 0.9, life: 0.15 });
         if (k % 2 === 0) P(dim, "diamond", q, { color: ICE, count: 1, speed: 0.2, size: 1.2, life: 0.2 });
       }
@@ -538,7 +539,7 @@ register(KEY, {
     // 環が崩れ、オーロラと雪
     ctx.at(58, () => {
       P(dim, "lens", ringC, { color: white(ICE, 0.5), size: 3.2, life: 0.7 });
-      P(dim, "ring_n", ringC, { color: FROST, count: 48, spread: 7.2, speed: -9, dir: n, life: 0.7, var: 1 });
+      P(dim, "ring_n", ringC, { color: FROST, count: 48, spread: RR, speed: -9, dir: n, life: 0.7, var: 1 });
       P(dim, "aurora", up(centre, 0.1), { color: AZURE, spread: 7, count: 14, height: 5, life: 2.4, spin: 8 });
       P(dim, "aurora", up(centre, 0.1), { color: mix(ICE, TEAL, 0.4), spread: 5, count: 10, height: 4, life: 2.4, spin: -10 });
       shock(dim, centre, ICE, 9, { dust: false });

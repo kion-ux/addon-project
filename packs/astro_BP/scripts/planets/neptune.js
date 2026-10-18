@@ -267,7 +267,7 @@ register(KEY, {
     zone(ctx, gate, {
       radius: 5.0, ticks: 60, every: 3, delay: 6, pull: 0.45, height: 3,
       visualEvery: 1,
-      visual(d, c, age) { darkVortex(d, c, 1.15, age); },
+      visual(d, c, age) { if (age >= 5) darkVortex(d, c, 1.15, age); },   // 0〜4 は開く演出が描く
       onPulse(list, z) {
         if (z.pulses % 6 !== 0) return;
         for (const e of list) hit(ctx, e, 1, { color: STORM, quiet: true, nova: 1, xp: 1 });
@@ -424,7 +424,7 @@ register(KEY, {
     });
     // 超音速の嵐: 巻き上げ
     ctx.at(30, () => {
-      P(dim, "cloud", up(centre, 9), { color: [0.22, 0.28, 0.5], count: 8, spread: 6, life: 3.0, dir: { x: 0, y: 0, z: 0.2 } });
+      P(dim, "cloud", up(centre, 9), { color: white(ABYSS, 0.18), count: 8, spread: 6, life: 3.0, dir: { x: 0, y: 0, z: 0.2 } });
       sound(dim, "astro.thunder", centre, 0.9, 0.9);
     });
     ctx.at(32, () => {
