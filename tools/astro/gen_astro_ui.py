@@ -2446,6 +2446,17 @@ def pack_icon():
         size = int(r * 5.2) + 4
         pl = render_planet(key, size, r, ss=3, detail=1.0)
         cv.paste(soft_outlined(pl, (4, 6, 16), 160), x - size / 2, y - size / 2)
+    # 地球のスーツのモデルがあれば、星核の前に兜と胸を置く（無ければ星核だけ）
+    geo, tex = suit_paths("earth")
+    if os.path.exists(geo) and os.path.exists(tex):
+        try:
+            bust = render_bust(geo, tex, 92, yaw=-24.0, pitch=-6.0)
+        except Exception as e:  # noqa: BLE001
+            print(f"  ui: pack_icon のスーツの描画に失敗（{e}）")
+            bust = None
+        if bust is not None:
+            cv.glow(cv.ellipse(cx, cy + 6, 34, 40), (255, 236, 190), 6, 0.55)
+            cv.paste(bust, cx - 46, cy - 46)
     # 題字の帯
     cv.fill(np.clip((Y - 150) / 40, 0, 1) * 0.75, (4, 4, 14))
     draw_logo(cv, "ASTRO", 186, 6.2, [(0.0, (255, 255, 255)), (0.45, (200, 244, 255)), (0.55, (110, 210, 255)),

@@ -343,7 +343,7 @@ export function addXp(p, key, n) {
     const dim = p.dimension;
     sound(dim, "astro.sync_up", p.location, 1.0, 1.0);
     title(p, `§r${glyph(["emblemBig", key], pl.symbol)}`, `${pl.tc}${pl.form_ja} §f同調率 Lv${lv}`, { fadeIn: 4, stay: 40, fadeOut: 12 });
-    emblem(dim, { ...p.location, y: p.location.y + 0.05 }, pl, { size: 3, life: 1.4 });
+    emblem(dim, { ...p.location, y: p.location.y + 0.05 }, pl, { size: 1.2, life: 1.4 });
     ring(dim, "star", p.location, 1.2, 10, { color: white(pl.color, 0.4), count: 2, spread: 0.2, life: 1.0 }, 1.0);
     P(dim, "converge", chest(p), { color: pl.color, count: 20, spread: 2.4, life: 0.6 });
     p.sendMessage?.(`${pl.tc}${pl.form_ja}§r の同調率が §bLv${lv}§r に上がった（与ダメージ・最大星力・再使用短縮）`);

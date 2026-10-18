@@ -54,8 +54,8 @@
           "texture_width": 1024,
           "texture_height": 1024,
           "uv": [
-            "(((v.particle_random_1 < 0.34) ? 0.0 : 1.0) < 0.5 ? 1.0 : 1.0)",
-            "(((v.particle_random_1 < 0.34) ? 0.0 : 1.0) < 0.5 ? 647.0 : 877.0)"
+            "(((v.particle_random_1 < 0.34) ? 0.0 : 1.0) < 0.5 ? 1.0 : 719.0)",
+            "(((v.particle_random_1 < 0.34) ? 0.0 : 1.0) < 0.5 ? 647.0 : 911.0)"
           ],
           "uv_size": [
             "(((v.particle_random_1 < 0.34) ? 0.0 : 1.0) < 0.5 ? 96.0 : 256.0)",

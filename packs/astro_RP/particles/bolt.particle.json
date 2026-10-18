@@ -54,7 +54,7 @@
           "texture_height": 1024,
           "uv": [
             521.0,
-            "583.0 + math.clamp(math.floor(math.mod((v.var ?? (v.particle_age * 30.0 + v.emitter_random_1 * 3.0)), 3.0)), 0.0, 2.0) * 36.0"
+            "615.0 + math.clamp(math.floor(math.mod((v.var ?? (v.particle_age * 30.0 + v.emitter_random_1 * 3.0)), 3.0)), 0.0, 2.0) * 36.0"
           ],
           "uv_size": [
             256,

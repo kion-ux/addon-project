@@ -69,9 +69,9 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 | `astro:scan` ★ | 横一文字の走査線 | 加算 | `size` `height` `life` | 1 |
 | `astro:pillar` | 地面から立ち上がる光の柱 | 加算 | `size` `height` `life` | 1 |
 | `astro:beam` ★ | エミッタから (vx,vy,vz) の向きへ v.len m 伸びるまっすぐな光の帯 | 加算 | `size` `vx` `vy` `vz` `len` `life` | 1 |
-| `astro:slash` | 三日月の斬撃 | 加算 | `size` `life` `rot` | 1 |
-| `astro:slash_big` | 大きな三日月の斬撃 | 加算 | `size` `life` `rot` | 1 |
-| `astro:slash_flat` | 水平の三日月の斬撃 | 加算 | `size` `life` `rot` | 1 |
+| `astro:slash` | 三日月の斬撃 | 加算 | `size` `life` `rot` `var` | 1 |
+| `astro:slash_big` | 大きな三日月の斬撃 | 加算 | `size` `life` `rot` `var` | 1 |
+| `astro:slash_flat` | 水平の三日月の斬撃 | 加算 | `size` `life` `rot` `var` | 1 |
 | `astro:cross` | 十字 | 加算 | `size` `life` `rot` | 1 |
 | `astro:thrust` ★ | 突きの閃光: エミッタから (vx,vy,vz) へ v.len m のレンズ形の鋭い光 | 加算 | `size` `vx` `vy` `vz` `len` `life` | 1 |
 | `astro:speedline` | 細い速度線が (vx,vy,vz) の向きへ高速で流れる | 加算 | `size` `vx` `vy` `vz` `count` `spread` `speed` `life` | count（既定 6） |
@@ -436,7 +436,8 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 |---|---|---|
 | `size` | 1.0 | 大きさの倍率（各粒の基準の大きさに掛ける） |
 | `life` | 0.24 | 粒の寿命 (秒) |
-| `rot` | 0.0 | 振りの向き (度)。0 = 上の弧で左から右へ |
+| `rot` | 0.0 | 弧の回転 (度)。0 = 上の弧（向きを変えるには rot、振りの左右は var） |
+| `var` | 0.0 | 0 = 左から右（時計回り）に振る形 / 1 = 鏡像（右から左・反時計回り） |
 | `cr` | 0.47 | 色の赤 (0..1) |
 | `cg` | 0.94 | 色の緑 (0..1) |
 | `cb` | 1.0 | 色の青 (0..1) |
@@ -452,7 +453,8 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 |---|---|---|
 | `size` | 1.0 | 大きさの倍率（各粒の基準の大きさに掛ける） |
 | `life` | 0.4 | 粒の寿命 (秒) |
-| `rot` | 0.0 | 振りの向き (度)。0 = 上の弧で左から右へ |
+| `rot` | 0.0 | 弧の回転 (度)。0 = 上の弧（向きを変えるには rot、振りの左右は var） |
+| `var` | 0.0 | 0 = 左から右（時計回り）に振る形 / 1 = 鏡像（右から左・反時計回り） |
 | `cr` | 0.47 | 色の赤 (0..1) |
 | `cg` | 0.94 | 色の緑 (0..1) |
 | `cb` | 1.0 | 色の青 (0..1) |
@@ -468,7 +470,8 @@ dim.spawnParticle("astro:ring_flat", pos, m);   // fx.js の P() がこれを包
 |---|---|---|
 | `size` | 1.0 | 大きさの倍率（各粒の基準の大きさに掛ける） |
 | `life` | 0.3 | 粒の寿命 (秒) |
-| `rot` | 0.0 | 振りの向き (度)。0 = 上の弧で左から右へ |
+| `rot` | 0.0 | 弧の回転 (度)。0 = 上の弧（向きを変えるには rot、振りの左右は var） |
+| `var` | 0.0 | 0 = 左から右（時計回り）に振る形 / 1 = 鏡像（右から左・反時計回り） |
 | `cr` | 0.47 | 色の赤 (0..1) |
 | `cg` | 0.94 | 色の緑 (0..1) |
 | `cb` | 1.0 | 色の青 (0..1) |

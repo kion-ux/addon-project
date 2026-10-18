@@ -306,6 +306,14 @@ class AstroPainter(HDPainter):
             ins = max(2, min(w, h) // 6)
             c["panels"].append(("rect", ins, ins, w - 1 - ins, h - 1 - ins,
                                 max(1, min(w, h) // 7)))
+            # 大きな面には少し変化を: 内側を二枚に割る / 小さな銘板（暗い矩形と点）
+            pick = rng.random()
+            if w >= 18 and h >= 14 and pick < 0.3 and st.get("detail", True):
+                c["panels"].append(("hseam", ins + int((h - 2 * ins) * 0.62)))
+            elif w >= 16 and h >= 16 and pick > 0.72 and st.get("detail", True):
+                lw, lh = max(4, w // 5), max(3, h // 8)
+                lx = ins + 2 if rng.random() < 0.5 else w - ins - 2 - lw
+                c["panels"].append(("label", lx, h - ins - 2 - lh, lw, lh))
             # 長い面は継ぎ目で 2〜3 枚に割る
             if w >= 2.4 * h and w >= 28 and h >= 12:
                 c["panels"].append(("vseam", w // 2 + rng.randint(-1, 1)))
@@ -389,6 +397,17 @@ class AstroPainter(HDPainter):
                                 return mix(lt, WHITE, 0.5), 255
                             if x == bx_ + 1 and y == by_ + 1:
                                 return shade(col, 0.6), 255
+            elif pan[0] == "label":
+                _, lx, ly, lw, lh = pan
+                if lx <= x < lx + lw and ly <= y < ly + lh:
+                    col = shade(hexc(st["base"]), 0.42)
+                    if y == ly + lh // 2 and x in (lx + 1, lx + 3):
+                        col = mix(hexc(st.get("glow", (120, 255, 170))), WHITE, 0.3)
+                        return col, SOFT
+                    if y == ly:
+                        col = shade(col, 0.8)
+                    elif y == ly + lh - 1:
+                        col = mix(col, WHITE, 0.25)
             elif pan[0] == "vseam" and x == pan[1]:
                 col = mix(col, groove, 0.75)
             elif pan[0] == "vseam" and x == pan[1] + 1:
@@ -938,6 +957,11 @@ def common_styles(key):
                    "color": glow},
         "luna": {"kind": "planet", "planet": "luna", "bevel": False, "outline": False},
     }
+    for v in st.values():                         # 銘板の小さな灯りなどは惑星の発光色で
+        if v.get("kind") in ("armor", "armor2"):
+            v.setdefault("glow", glow)
+        if isinstance(v.get("under"), dict):
+            v["under"].setdefault("glow", glow)
     return st
 
 

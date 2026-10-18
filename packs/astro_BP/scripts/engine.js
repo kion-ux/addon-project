@@ -372,9 +372,9 @@ export function ultOpen(ctx, ticks = 80, freezeRadius = 12) {
   }
   body(p, "ult_rise");
   const g = { ...p.location, y: p.location.y + 0.05 };
-  emblem(dim, g, pl, { size: 4.2, life: 2.4, spin: 50 });
-  P(dim, "circle", g, { color: ctx.c, size: 5.5, life: 2.2, spin: -30 });
-  P(dim, "lens", ctx.chest(), { color: white(ctx.c, 0.5), size: 4, life: 0.5 });
+  emblem(dim, g, pl, { size: 3.2, life: 2.4, spin: 50 });
+  P(dim, "circle", g, { color: ctx.c, size: 4.6, life: 2.2, spin: -30 });
+  P(dim, "lens", ctx.chest(), { color: white(ctx.c, 0.5), size: 1.4, life: 0.5 });
   P(dim, "converge", ctx.chest(), { color: ctx.hot, count: 26, spread: 3.2, life: 0.6, size: 1.2 });
   markAirborne(p);
 }
@@ -410,8 +410,8 @@ export function meteor(ctx, target, o = {}) {
   if (o.warn !== false) {
     for (let t = 0; t < delay; t += 4) {
       ctx.at(t, () => {
-        P(dim, "warning", { ...g, y: g.y + 0.06 }, { color: [1, 0.25, 0.2], size: R, life: 0.25 });
-        if (t === 0) P(dim, "circle", { ...g, y: g.y + 0.05 }, { color: c, size: R * 1.1, life: (delay + fall) / 20, spin: 90 });
+        P(dim, "warning", { ...g, y: g.y + 0.06 }, { color: [1, 0.25, 0.2], size: R / 1.2, life: 0.25 });
+        if (t === 0) P(dim, "circle", { ...g, y: g.y + 0.05 }, { color: c, size: R / 1.1, life: (delay + fall) / 20, spin: 90 });
       });
     }
   }
@@ -427,7 +427,7 @@ export function meteor(ctx, target, o = {}) {
   }
   ctx.at(delay + fall, () => {
     if (!o.quiet) {
-      P(dim, "flare", { ...g, y: g.y + 0.8 }, { color: white(c, 0.5), size: R * 1.4, life: 0.25 });
+      P(dim, "flare", { ...g, y: g.y + 0.8 }, { color: white(c, 0.5), size: R * 0.55, life: 0.25 });
       P(dim, "impact", { ...g, y: g.y + 0.6 }, { color: white(c, 0.3), size: R * 0.8, life: 0.2 });
       shock(dim, g, c, R, { debris: 12 });
       P(dim, "smoke", { ...g, y: g.y + 0.5 }, { count: 10, speed: 2, size: 2, spread: R * 0.3 });
@@ -520,7 +520,7 @@ export function genericMoves(key) {
           speed: 1.0, range: 14, radius: 1.3, pierce: Infinity, damage: 9,
           hitOpts: { color: c, kb: 0.9, up: 0.25, power: 1.3 },
           trail(d, pos, prev, age) {
-            P(d, "slash_flat", pos, { color: c, size: 1.6, rot: yawDeg(f), life: 0.12 });
+            P(d, "slash_flat", pos, { color: c, size: 0.85, rot: yawDeg(f), life: 0.12 });
             P(d, "trail", pos, { color: white(c, 0.3), size: 1.2, life: 0.18 });
             if (age % 2 === 0) P(d, "spark", pos, { color: hot, count: 2, speed: 2 });
           },
@@ -548,7 +548,7 @@ export function genericMoves(key) {
       ctx.at(10, () => {
         const at = ctx.local(1.4, 0, 1.0);
         burst(dim, at, c, 1.8);
-        P(dim, "ring_flat", { ...p.location, y: p.location.y + 0.1 }, { color: c, size: 3.0 });
+        P(dim, "ring_flat", { ...p.location, y: p.location.y + 0.1 }, { color: c, size: 2.7 });
         sound(dim, "astro.explosion", at, 1.4, 0.6);
         for (const e of ctx.foes(3.0, at)) hit(ctx, e, 4, { color: c, kb: 0.8, up: 0.4, dir: f });
       });
@@ -570,7 +570,7 @@ export function genericMoves(key) {
           shock(dim, l, c, 5, { debris: 10 });
           for (let k = 0; k < 6; k++) {
             const q = add(l, yawRotate({ x: 1, y: 0, z: 0 }, k * 60 + 30), 3.4);
-            ctx.at(k, () => P(dim, "pillar", { ...q, y: q.y + 2.5 }, { color: c, size: 0.9, height: 5, life: 0.5 }));
+            ctx.at(k, () => P(dim, "pillar", { ...q, y: q.y + 0.05 }, { color: c, size: 0.9, height: 5, life: 0.5 }));
           }
           for (const e of ctx.foes(5.2, { ...l, y: l.y + 0.8 })) {
             hit(ctx, e, 10, { color: c, kb: 0.7, up: 0.65, power: 1.6 });
@@ -597,8 +597,8 @@ export function genericMoves(key) {
       }
       ctx.at(50, () => {
         const g = onGround(dim, centre);
-        P(dim, "lens", { ...g, y: g.y + 1.5 }, { color: white(c, 0.5), size: 8, life: 0.5 });
-        P(dim, "flare", { ...g, y: g.y + 1.2 }, { color: white(c, 0.6), size: 6, life: 0.35 });
+        P(dim, "lens", { ...g, y: g.y + 1.5 }, { color: white(c, 0.5), size: 3, life: 0.5 });
+        P(dim, "flare", { ...g, y: g.y + 1.2 }, { color: white(c, 0.6), size: 2.4, life: 0.35 });
         shock(dim, g, c, 10, { debris: 16 });
         flash(dim, g, 30, [1, 1, 1], 0.1, 0.5);
         sound(dim, "astro.supernova", g, 1.0, 1.4);
@@ -614,7 +614,7 @@ export function genericMoves(key) {
       const { p, dim, c, hot } = ctx;
       const f = ctx.liveDir();
       for (const a of [-30, 0, 30]) arc(dim, ctx.chest(), yawRotate(f, a), 2.2, -50, 50, 10, c, { size: 0.9, steps: 8, sparks: false });
-      P(dim, "slash_big", ctx.local(1.8, 0, 1.1), { color: c, rot: yawDeg(f), size: 1.6, life: 0.3 });
+      P(dim, "slash_big", ctx.local(1.8, 0, 1.1), { color: c, rot: yawDeg(f), size: 0.9, life: 0.3 });
       sound(dim, "astro.swing_heavy", p.location, 1.1, 0.9);
       for (const e of ctx.cone(4.2, 55, ctx.chest(), f)) hit(ctx, e, 4, { color: c, kb: 0.9, up: 0.3, dir: f });
       if (target && valid(target)) burst(dim, chestOf(target), hot, 1.4);
@@ -624,11 +624,11 @@ export function genericMoves(key) {
     burst(ctx) {
       const { p, dim, c, hot } = ctx;
       const g = { ...p.location, y: p.location.y + 0.05 };
-      emblem(dim, g, ctx.planet, { size: 3.6, life: 1.6 });
-      P(dim, "pillar", { ...g, y: g.y + 3 }, { color: c, size: 1.2, height: 7, life: 0.6 });
-      P(dim, "flare", ctx.chest(), { color: white(c, 0.5), size: 3, life: 0.3 });
+      emblem(dim, g, ctx.planet, { size: 1.6, life: 1.8 });
+      P(dim, "pillar", g, { color: c, size: 1.2, height: 7, life: 0.6 });
+      P(dim, "flare", ctx.chest(), { color: white(c, 0.5), size: 1.4, life: 0.3 });
       ctx.every(0, 4, 3, (i) => {
-        P(dim, "ring_flat", g, { color: i % 2 ? ctx.accent : c, size: 2 + i * 1.6, life: 0.5 });
+        P(dim, "ring_flat", g, { color: i % 2 ? ctx.accent : c, size: 0.9 + i * 0.8, life: 0.5 });
         ring(dim, "star", g, 1.5 + i * 1.2, 8, { color: hot, count: 1, spread: 0.1, life: 0.8 }, 0.6);
       });
       P(dim, "aura", ctx.loc(), { color: c, size: 1.4, life: 1.0 });

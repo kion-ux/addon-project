@@ -181,8 +181,10 @@ export function burst(dim, loc, color, power = 1) {
  */
 export function shock(dim, loc, color, radius = 3, o = {}) {
   const g = { x: loc.x, y: loc.y + 0.08, z: loc.z };
-  P(dim, "shock_flat", g, { color, size: o.size ?? radius, life: o.life ?? 0.5 });
-  P(dim, "ring_flat", { ...g, y: g.y + 0.04 }, { color: white(color, 0.35), size: (o.size ?? radius) * 1.1, life: (o.life ?? 0.5) * 0.8 });
+  // shock_flat は直径 ≈ 3.0 × size、ring_flat は ≈ 2.2 × size（PARTICLES.md）→ 半径 radius に合わせる
+  const R = o.size ?? radius;
+  P(dim, "shock_flat", g, { color, size: R / 1.5, life: o.life ?? 0.5 });
+  P(dim, "ring_flat", { ...g, y: g.y + 0.04 }, { color: white(color, 0.35), size: R / 1.05, life: (o.life ?? 0.5) * 0.8 });
   if (o.dust !== false) P(dim, "dust", { ...g, y: g.y + 0.1 }, { count: Math.round(8 + radius * 3), speed: 3 + radius, size: 1.2, spread: radius * 0.3 });
   if (o.debris) P(dim, "debris", { ...g, y: g.y + 0.2 }, { count: o.debris, speed: 5 + radius, spread: radius * 0.25 });
 }
@@ -229,9 +231,9 @@ export function slash(dim, loc, color, rot, size = 1, kind = "slash", life) {
   P(dim, kind, loc, { color, rot, size, life });
 }
 
-/** 人型の残像（スーツの輪郭）。loc は足元。 */
-export function afterimage(dim, loc, color, life = 0.4, rot) {
-  P(dim, "afterimage", { x: loc.x, y: loc.y + 1.0, z: loc.z }, { color, size: 1.0, life, rot });
+/** 人型の残像（スーツの輪郭。高さ 2m）。loc は足元（パーティクルの足元がエミッタ）。 */
+export function afterimage(dim, loc, color, life = 0.4) {
+  P(dim, "afterimage", { x: loc.x, y: loc.y + 0.02, z: loc.z }, { color, size: 1.0, life });
 }
 
 /** 効果音（astro.<名前> を渡す）。 */

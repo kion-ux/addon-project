@@ -355,7 +355,7 @@ function buildSequence(p, key, slot, coreless) {
     sound(dim, "astro.core_ring", coreAt, 1.0, 0.8);
     title(p, `${pl.tc}CORE SYNC`, progressText(0), { fadeIn: 0, stay: T.freeze + 6, fadeOut: 6 });
     P(dim, "circle", { ...base, y: base.y + 0.05 }, { color: c, size: 1.6, life: 3.0, spin: 60 });
-    P(dim, "scan", { ...base, y: base.y + 1.0 }, { color: c, size: 1.4, life: 0.8 });
+    P(dim, "scan", { ...base, y: base.y + 0.05 }, { color: c, size: 1.4, height: 2.1, life: 0.8 });
   });
   for (let t = 0; t <= 8; t += 2) {
     add_(t, "rise", () => {
@@ -400,7 +400,7 @@ function buildSequence(p, key, slot, coreless) {
     const it = makeItem(pl.suitOn ?? pl.suit, LOCK_SLOT, true);
     if (it) setEquip(p, "Head", it);
     sound(dim, "astro.armor_lock", p.location, 1.2, 0.6);
-    P(dim, "scan", { ...base, y: base.y + 1.0 }, { color: hot, size: 1.6, life: 1.8 });
+    P(dim, "scan", { ...base, y: base.y + 0.05 }, { color: hot, size: 1.6, height: 2.2, life: 1.8 });
   });
   for (const [part, sec] of Object.entries(ASSEMBLE_ORDER)) {
     const tp = T.suit_equip + Math.round(sec * 20);
@@ -432,14 +432,14 @@ function buildSequence(p, key, slot, coreless) {
   add_(T.visor_flash, "visor_flash", () => {
     sound(dim, "astro.visor_on", head, 1.0, 1.0);
     P(dim, "flare", at(0.28, 0, 1.65), { color: white(c, 0.6), size: 0.9, life: 0.25 });
-    P(dim, "lens", at(0.3, 0, 1.65), { color: c, size: 1.6, life: 0.3 });
+    P(dim, "lens", at(0.3, 0, 1.65), { color: c, size: 0.5, life: 0.3 });
   });
   // ---- 50: 惑星の力が弾ける -----------------------------------------------
   add_(T.planet_burst - 2, "burst_sound", () => sound(dim, "astro.transform_burst", p.location, 1.0, 1.2));
   add_(T.planet_burst, "planet_burst", () => {
     title(p, `§r${glyph(["emblemBig", key], pl.symbol)}`, `${pl.tc}${pl.form_ja} §f${pl.form_en}`, { fadeIn: 0, stay: 40, fadeOut: 14 });
-    P(dim, "flare", { ...base, y: base.y + 1.1 }, { color: white(c, 0.6), size: 3.2, life: 0.3 });
-    P(dim, "shock_flat", { ...base, y: base.y + 0.06 }, { color: c, size: 4, life: 0.5 });
+    P(dim, "flare", { ...base, y: base.y + 1.1 }, { color: white(c, 0.6), size: 1.6, life: 0.3 });
+    P(dim, "shock_flat", { ...base, y: base.y + 0.06 }, { color: c, size: 2.2, life: 0.5 });
     shake(dim, base, 14, 0.35, 0.35);
     try {
       const ctx = makeCtx(p, key, "burst");
@@ -653,7 +653,7 @@ function revertFx(p, pl, reason) {
     const q = { x: l.x + f.x * s[0], y: l.y + s[2], z: l.z + f.z * s[0] };
     swarm(dim, q, hand, pl.color, { count: 8, life: 0.4 });
   }
-  P(dim, "scan", { ...l, y: l.y + 1.0 }, { color: pl.color, size: 1.4, life: 0.8 });
+  P(dim, "scan", { ...l, y: l.y + 0.05 }, { color: pl.color, size: 1.4, height: 2.1, life: 0.8 });
   P(dim, "smoke", { ...l, y: l.y + 1.0 }, { count: 6, spread: 0.5, size: 1.0 });
   P(dim, "glow", hand, { color: white(pl.color, 0.5), size: 0.9, life: 0.6 });
   if (reason === "manual") {

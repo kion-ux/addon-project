@@ -307,8 +307,8 @@ function heroLanding(p, vy) {
   const l = p.location;
   const k = Math.min(2.4, -vy);
   body(p, "land", "astro.move");
-  P(p.dimension, "shock_flat", { x: l.x, y: l.y + 0.06, z: l.z }, { color: pl.color, size: 1.4 + k, life: 0.45 });
-  P(p.dimension, "ring_flat", { x: l.x, y: l.y + 0.08, z: l.z }, { color: white(pl.color, 0.4), size: 1.8 + k, life: 0.4 });
+  P(p.dimension, "shock_flat", { x: l.x, y: l.y + 0.06, z: l.z }, { color: pl.color, size: 0.6 + k * 0.45, life: 0.45 });
+  P(p.dimension, "ring_flat", { x: l.x, y: l.y + 0.08, z: l.z }, { color: white(pl.color, 0.4), size: 0.8 + k * 0.6, life: 0.4 });
   P(p.dimension, "dust", { x: l.x, y: l.y + 0.1, z: l.z }, { count: Math.round(10 + k * 6), spread: 0.4, speed: 4 + k * 2, size: 1.2 });
   ring(p.dimension, "spark", l, 0.8, 6, { color: pl.color, count: 2, speed: 3 });
   sound(p.dimension, "astro.land", l, 1.1, 0.5 + k * 0.2);

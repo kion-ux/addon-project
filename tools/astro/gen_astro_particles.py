@@ -588,6 +588,12 @@ def sp_slash(w, h, thick=0.3, span=210.0, lines=3):
     return halo(down(a), w / 70, 0.35), down(np.where(a > 0, white, 1.0))
 
 
+def sp_slash_m(w, h, *args):
+    """sp_slash の鏡像（右から左・反時計回りの振り）。"""
+    a, white = sp_slash(w, h, *args)
+    return a[:, ::-1].copy(), white[:, ::-1].copy()
+
+
 def sp_cross(w, h):
     x, y = grid(w, h)
     a = np.zeros_like(x)
@@ -1119,9 +1125,10 @@ def sp_lens(w, h):
 SPRITES = {
     "circle": (256, 256, 1, "x", sp_circle, ()),
     "hex_circle": (256, 256, 1, "x", sp_hex_circle, ()),
-    "slash_big": (256, 256, 1, "x", sp_slash, (0.44, 220.0, 4)),
-    "black_hole": (192, 192, 1, "x", sp_black_hole, ()),
-    "warning": (192, 192, 1, "x", sp_warning, ()),
+    "slash_big": (224, 224, 1, "x", sp_slash, (0.44, 220.0, 4)),
+    "slash_big_m": (224, 224, 1, "x", sp_slash_m, (0.44, 220.0, 4)),
+    "black_hole": (176, 176, 1, "x", sp_black_hole, ()),
+    "warning": (176, 176, 1, "x", sp_warning, ()),
     "emblem": (128, 128, 10, "grid5", sp_emblem, ()),
     "afterimage": (96, 192, 1, "x", sp_afterimage, ()),
     "aurora": (64, 256, 1, "x", sp_aurora, ()),
@@ -1136,6 +1143,7 @@ SPRITES = {
     "streak": (256, 32, 1, "x", sp_streak, ()),
     "scan": (256, 32, 1, "x", sp_scan, ()),
     "slash": (128, 128, 1, "x", sp_slash, (0.4, 200.0, 3)),
+    "slash_m": (128, 128, 1, "x", sp_slash_m, (0.4, 200.0, 3)),
     "impact": (128, 128, 1, "x", sp_impact, ()),
     "cross": (128, 128, 1, "x", sp_cross, ()),
     "ring": (128, 128, 1, "x", sp_ring, ()),
@@ -1672,6 +1680,8 @@ class FX:
         self.comps = {}
         self.init_src = []
         self.cost = ""
+        self.size_note = ""
+        self.whitens = False
 
     # ---- 変数
     def v(self, name, default, note=None, doc_default=None):
@@ -1706,6 +1716,7 @@ class FX:
     def tint(self, rgb, alpha, whiten=None, white_mix=None, doc=None):
         """色は必ず particle_appearance_tinting の中。加算では RGB にも消え方を掛ける
         （加算の材質がアルファを見るかは確かめられないので、RGB とアルファの両方で消す）。"""
+        self.whitens = bool(whiten)
         cs = self.col(rgb, whiten, white_mix, doc)
         if self.material == "add":
             cs = [f"{c} * {alpha}" for c in cs]
@@ -2115,8 +2126,10 @@ def build_effects():
         f.instant(1)
         f.point()
         f.lifetime(f.life(life_d))
-        f.spin(f.v("rot", 0.0, "振りの向き (度)。0 = 上の弧で左から右へ"))
-        f.bb([f"{S} * {num(base)} * (0.85 + {AGE} * 0.35)"] * 2, mode, uv(sprite))
+        f.spin(f.v("rot", 0.0, "弧の回転 (度)。0 = 上の弧（向きを変えるには rot、振りの左右は var）"))
+        mir = f.v("var", 0.0, "0 = 左から右（時計回り）に振る形 / 1 = 鏡像（右から左・反時計回り）")
+        f.bb([f"{S} * {num(base)} * (0.85 + {AGE} * 0.35)"] * 2, mode,
+             uv_choice([(sprite, None), (sprite + "_m", None)], mir))
         f.tint(CYAN, clamp01(f"(1.0 - {AGE}) * 1.8"), whiten=3)
         f.cost = "1"
         return f

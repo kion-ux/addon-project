@@ -52,7 +52,7 @@
           "texture_height": 1024,
           "uv": [
             "877.0 + math.clamp(math.floor(v.particle_random_1 * 1.999), 0.0, 1.0) * 64.0",
-            681.0
+            811.0
           ],
           "uv_size": [
             64,
