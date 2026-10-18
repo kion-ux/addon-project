@@ -9,8 +9,10 @@ q.anim_time を使う待機ループの長さ。
         q.anim_time を `* 数` 以外で使う式や、L が LOOP_MAX 秒を超える速さは ValueError。
   seam_errors(anims, where="") -> [str]
         `loop: true` のアニメ（animation_length があるか、キーフレームで長さが決まる物）の全チャンネルを
-        時刻 0 と L で評価し（他の変数は同じ値に固定）、値が合わない物（回転は 360° を法として）。
+        時刻 0 と L で評価し（他の変数は 0 と 1 に固定）、値が合わない物（回転は 360° を法として）。
         animation_length の無い式だけのループは q.anim_time が戻らないので調べない。
+  weighted_time_warnings(anims, where="") -> [str]
+        `v.重み * q.anim_time * 速さ` の回転（重みが変わる間に一気に回る。警告）
   rest_errors(anim, var, values=(0.0, 1.0), where="") -> [str]
         var（例 v.astro_sw）が values の時、全チャンネルが自然体（回転・位置 0、スケール 1）か。
         振りのアニメは振り始め（0）と振り終わり（1）で飛ばないこと。
@@ -160,7 +162,8 @@ def seam_errors(anims: dict, where="") -> list:
         if L <= 0:
             continue
         names = {_canon(n) for n in _names(a)} - {"q.anim_time"}
-        envs = [{n: 0.0 for n in names}, {n: 1.0 for n in names}, {n: 0.37 for n in names}]
+        # 重みなどの変数は止まっている値（0 と 1）で。途中の値で掛かる速さは weighted_time_warnings
+        envs = [{n: 0.0 for n in names}, {n: 1.0 for n in names}]
         for bone, chans in bones.items():
             for chan, v in chans.items():
                 for env in envs:
@@ -174,6 +177,23 @@ def seam_errors(anims: dict, where="") -> list:
                                     f"{[round(x, 2) for x in v1]} -> {[round(x, 2) for x in v0]}")
                         break
     return errs
+
+
+def weighted_time_warnings(anims: dict, where="") -> list:
+    """`変数 * q.anim_time * 速さ` の形（重みで速さを変える回転）: 重みがなめらかに変わる間は、それまでの
+    経過時間 × 重みの変化 だけ一気に回り（経過 10 秒・720°/秒なら重み 1→0 の間に 7200°）、ループが戻る時も
+    重みが途中なら飛ぶ。pre_animation で角度を積み上げる（v.a = math.mod(v.a + q.delta_time * 速さ * 重み, 360)）
+    方が良い。"""
+    out = []
+    pat = re.compile(r"(?:\b[vt]\.\w+\s*\*\s*\(?\s*" + _AT + r"|" + _AT + r"[^;?:]*?\*\s*\(?\s*[vt]\.\w+)")
+    for name, a in sorted(anims.items()):
+        for bone, chans in a.get("bones", {}).items():
+            for chan, v in chans.items():
+                for s in _strings(v):
+                    if pat.search(s):
+                        out.append(f"{where}{name} {bone}.{chan}: speed scaled by a variable ({s[:70]})")
+                        break
+    return out
 
 
 def rest_errors(anim: dict, var: str, values=(0.0, 1.0), where="") -> list:

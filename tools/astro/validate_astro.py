@@ -143,6 +143,11 @@ def main() -> int:
             if k in anims:
                 errors.append(f"duplicate animation {k} ({rel(p)})")
             anims[k] = v
+        # ループの継ぎ目（animation_length ごとに q.anim_time が 0 に戻る所で値が飛ばないか）と、
+        # 重みで速さを変える回転（重みが変わる間に一気に回る）— astro_animcheck
+        import astro_animcheck as AK
+        errors.extend(AK.seam_errors(doc["animations"], f"{rel(p)}: "))
+        warnings.extend(AK.weighted_time_warnings(doc["animations"], f"{rel(p)}: "))
     controllers = {}
     for p in walk(os.path.join(RP, "animation_controllers")):
         doc = load(p)
