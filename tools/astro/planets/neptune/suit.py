@@ -224,9 +224,11 @@ SUIT_ANIMS = {
     },
     "thrust": {
         "fx_spin_turbine": {"rotation": [0, 0, "q.anim_time * 720.0 * v.astro_air"]},
-        "extra_tail_r": {"rotation": ["v.astro_air * 30.0", 0, "-v.astro_air * 6.0"]},
+        # 空中では尾ビレが二股に開き、スラスターの炎の通り道を空ける
+        "extra_tail_r": {"rotation": ["v.astro_air * 18.0", 0, "v.astro_air * 16.0"]},
         "extra_tail2_r": {"rotation": [
-            "v.astro_air * (16.0 + math.sin(q.anim_time * 720.0) * 6.0)", 0, 0]},
+            "v.astro_air * (14.0 + math.sin(q.anim_time * 720.0) * 6.0)", 0,
+            "v.astro_air * 8.0"]},
     },
     "sprint": {
         "fx_spin_turbine": {"rotation": [0, 0, "q.anim_time * 360.0 * v.astro_run"]},
@@ -392,10 +394,10 @@ def torso(s):
         p1 = (-math.sin(a + 0.7) * 2.05, 20.6 + math.cos(a + 0.7) * 2.05, -4.5)
         beam(sp, p0, p1, 0.22, 0.3, "glow" if i % 2 == 0 else "glow_soft")
     gl = s.fx("glow", "core", c, pivot=(0, 20.6, -4.5))
-    ring(gl, (0, 20.6, -4.42), 1.4, 8, (0, 0.2, 0.25), "glow_soft", axis="z")
+    ring(gl, (0, 20.6, -4.76), 1.22, 8, (0, 0.18, 0.2), "glow_soft", axis="z")
     # 襟（首の両脇に立つ）と、外へ開く鰓蓋の白いヒレ
     col = rbox(c, (-3.0, 24.35, -0.2), (2.2, 1.5, 5.0), "plate2", rot=(0, 0, -20))
-    colt = stick(c, col, "up", 0.5, 0.5, (1.8, 4.6, 0.25), "plate", sink=0.1)
+    colt = stick(c, col, "up", 0.5, 0.5, (1.8, 4.6, 0.25), "fin", sink=0.1)
     mirror_x(c, col, colt)
     # 脇: 排気口
     fl = cbox(c, (-4.8, 21.0, 0.3), (0.5, 3.6, 3.2), "plate")
@@ -521,6 +523,10 @@ def helmet(s):
     rbox(hm, (0, 32.0, -4.85), (8.6, 2.6, 0.8), "plate2", rot=(-30, 0, 0))   # 額の斜面
     rbox(hm, (0, 31.9, 5.2), (8.6, 2.4, 0.8), "plate2", rot=(30, 0, 0))      # 後ろの斜面
     cbox(hm, (0, 26.9, 4.95), (8.8, 4.6, 0.8), "plate2")                      # 後頭部
+    cbox(hm, (0, 28.6, 5.45), (1.2, 5.4, 0.4), "pearl")                       # 後頭の稜（鶏冠の続き）
+    cbox(hm, (0, 28.4, 5.66), (0.3, 4.6, 0.2), "glow")
+    for zx in (-2.6, 2.6):                                                    # 後頭の鰓のスリット
+        cbox(hm, (zx, 27.2, 5.42), (1.8, 1.6, 0.2), "grille")
     sd = cbox(hm, (-4.95, 27.3, 0.1), (0.9, 5.0, 8.4), "plate")               # 側板
     ear = octa(hm, (-5.55, 27.8, 0.9), 2.4, 0.5, "pearl", axis="x")
     eg = octa(hm, (-5.85, 27.8, 0.9), 1.0, 0.25, "glow", axis="x")

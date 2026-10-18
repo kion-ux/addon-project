@@ -55,10 +55,15 @@ def planet_hold(key):
     return W.planet_hold(key, "weapon")
 
 
+AL_LIB_CACHE = {}
+
+
 def collect():
-    """[(名前, spec, 武器の種類, 持ち方 or None, 惑星 or None)]。"""
+    """[(名前, spec, 武器の種類, 持ち方 or None, 惑星 or None)]。共通の版が先に来る。"""
     import astro_hold as AH
     lib = AL.library()
+    AL_LIB_CACHE.clear()
+    AL_LIB_CACHE.update(lib)
     out = []
     canon = AH.hold(CANON)
     for name, spec in lib.items():
@@ -94,6 +99,7 @@ def build(clear=True):
         if key not in clouds:
             clouds[key] = weapon_cloud(key)
         return clouds[key]
+    shared = set(AL.library())
     for name, spec, kind, hold, key in collect():
         # 惑星の版は必ず（その惑星の武器で直す）。共通の版は wield() を使う物だけ（騎士剣で）
         cl = cloud_of(key, kind) if (key is not None or AL.uses_wield(spec)) else None
@@ -101,8 +107,13 @@ def build(clear=True):
             cl = None            # 変身の前半はコアを持っている
         res = AL.resolve(spec, kind, name=name, hold=hold, cloud=cl)
         res.planet = key
+        js = AL.to_json(res)
+        base = name.split(".", 1)[-1]
+        if key is not None and base in shared and spec is AL_LIB_CACHE.get(base) \
+                and js == anims.get(AL.PREFIX + base):
+            continue            # 共通の版と同じ（同じ種類の武器）なら書かない — スクリプトは共通の版を使う
         res_all[name] = res
-        anims[AL.PREFIX + name] = AL.to_json(res)
+        anims[AL.PREFIX + name] = js
         meta[name] = [round(res.length, 3), 1 if res.blend else 0]
     return anims, meta, res_all
 
@@ -299,8 +310,15 @@ def preview(name, planet=None, frames=8, view=None, out=None):
 
 # ===========================================================================
 def write(anims, meta):
-    AC.write_json(ANIM_PATH, {"format_version": "1.10.0",
-                              "animations": {k: anims[k] for k in sorted(anims)}})
+    # 大きいので 1 アニメ 1 行に詰めて書く（読みやすさより pack の大きさ）
+    os.makedirs(os.path.dirname(ANIM_PATH), exist_ok=True)
+    with open(ANIM_PATH, "w", encoding="utf-8") as fh:
+        fh.write('{\n  "format_version": "1.10.0",\n  "animations": {\n')
+        keys = sorted(anims)
+        for i, k in enumerate(keys):
+            fh.write(f"    {json.dumps(k)}: {json.dumps(anims[k], ensure_ascii=False, separators=(',', ':'))}")
+            fh.write(",\n" if i < len(keys) - 1 else "\n")
+        fh.write("  }\n}\n")
     os.makedirs(os.path.dirname(META_PATH), exist_ok=True)
     with open(META_PATH, "w", encoding="utf-8") as fh:
         fh.write("// 自動生成（tools/astro/gen_astro_anim.py）。全身モーションの [長さ(秒), ブレンド可否]。\n")

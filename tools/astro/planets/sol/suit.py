@@ -170,10 +170,9 @@ def boots(s):
     b = s.part("boots", "foot_r", "rightLeg")
     cbox(b, (X, -0.3, -0.6), (5.3, 0.8, 6.8), "frame")                    # 靴底
     cbox(b, (X, 1.7, -0.2), (5.3, 3.2, 5.8), "plate")                     # 足の殻
-    toe = rbox(b, (X, 1.15, -3.25), (4.9, 2.3, 1.8), "plate2", rot=(-40, 0, 0))
+    toe = rbox(b, (X, 1.15, -3.25), (4.9, 2.3, 1.8), "plate", rot=(-40, 0, 0))
     stick(b, toe, "north", 0.5, 0.5, (0.45, 1.6, 0.25), "glow", sink=0.05)
     taper(b, (X, 0.55, -3.9), (X, 0.3, -5.3), 3.2, 1.0, 2, "plate2", round_=False)   # 尖った爪先
-    cbox(b, (X, 0.1, -4.1), (4.4, 0.5, 0.9), "bronze")
     rbox(b, (X, 3.4, -2.55), (4.1, 2.2, 0.8), "plate", rot=(-28, 0, 0))   # 甲
     rbox(b, (X, 3.55, -2.98), (1.2, 1.2, 0.4), "gem", rot=(-28, 0, 45))
     rbox(b, (X, 1.6, 2.75), (4.7, 2.9, 0.9), "crimson", rot=(8, 0, 0))   # 踵（紅）
@@ -350,7 +349,6 @@ def arms(s):
     el = s.part("arms", "elbow_r", "rightArm", pivot=(ARM_X, 16.8, 0))
     cbox(el, (-6.0, 16.9, 0.0), (5.3, 1.5, 5.3), "frame")
     octa(el, (-8.45, 16.9, 0.2), 1.8, 0.5, "bronze", axis="x")
-    octa(el, (-8.7, 16.9, 0.2), 0.8, 0.25, "glow_hot", axis="x")
     rbox(el, (-6.3, 17.0, 2.75), (3.0, 1.9, 0.8), "crimson", rot=(-18, 0, 0))   # 肘当て
     taper(el, (-6.3, 17.2, 3.1), (-6.4, 18.6, 5.0), 1.2, 0.3, 2, "plate2", round_=False)   # 肘の棘
     fa = s.part("arms", "vambrace_r", "rightArm", pivot=(ARM_X, 15.0, 0))

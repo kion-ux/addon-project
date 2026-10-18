@@ -41,6 +41,22 @@ GLOW = (255, 122, 42)
 BRASS_W = 0.42                   # 縁取りの幅
 
 
+def arc_z(bone, centre, radius, a0, a1, n, seg, style, styles=None):
+    """正面向き（XY 平面）の弧を n 個の接線のセグメントで。a=0 で上、a>0 で -X（右）。
+    seg = (半径方向の厚み, Z の幅)。（astro_common.ring の axis="z" は 0/90° 以外で
+    セグメントが接線を向かないので、ここでは rz = -a で向きを合わせて置く）"""
+    out = []
+    step = (a1 - a0) / max(1, n)
+    tl = 2 * radius * math.tan(math.radians(abs(step) / 2)) + 0.05
+    for i in range(n + 1 if abs(a1 - a0) < 359.9 else n):
+        a = a0 + i * step
+        t = math.radians(a)
+        p = (centre[0] - radius * math.sin(t), centre[1] + radius * math.cos(t), centre[2])
+        st = styles[i % len(styles)] if styles else style
+        out.append(rbox(bone, p, (tl, seg[0], seg[1]), st, rot=(0, 0, -a)))
+    return out
+
+
 # ===========================================================================
 #  塗りの追加: kind "ares"（擦り傷・欠け・砂ぼこりの付いた装甲）と "ares_rock"（衛星の岩肌）
 #  astro_paint.AstroPainter に k_/p_ のメソッドを足すだけ（既存の kind は変えない）。
@@ -359,13 +375,12 @@ def torso(s):
     rbox(c, (0, 24.05, -3.25), (4.6, 1.3, 0.9), "plate2", rot=(-28, 0, 0))
     # 星核: 鉄の八角の台 → 火星 → 四隅の爪 → 細い籠の桟 → 脈打つ光の輪
     octa(c, (0, 20.15, -3.75), 4.3, 1.0, "iron", axis="z")
-    cbox(c, (0, 20.15, -4.2), (2.9, 2.9, 0.8), "core")
+    cbox(c, (0, 20.15, -4.2), (3.1, 3.1, 0.8), "core", uv_scale=8)
     for sx in (-1, 1):
         for sy in (-1, 1):
-            rbox(c, (sx * 1.55, 20.15 + sy * 1.55, -4.45), (0.8, 0.8, 0.6), "frame", rot=(0, 0, 45))
-    cbox(c, (0, 20.15, -4.68), (3.5, 0.26, 0.26), "iron")
+            rbox(c, (sx * 1.65, 20.15 + sy * 1.65, -4.45), (0.8, 0.8, 0.6), "frame", rot=(0, 0, 45))
     gl = s.fx("glow", "core", c, pivot=(0, 20.15, -4.65))
-    ring(gl, (0, 20.15, -4.55), 2.2, 8, (0, 0.3, 0.3), "glow", axis="z")
+    arc_z(gl, (0, 20.15, -4.55), 2.2, 0, 360, 12, (0.3, 0.3), "glow")
     # 脇: 錆色の板と排気口
     fl = cbox(c, (-5.55, 20.7, 0.4), (0.5, 4.0, 3.8), "plate2")
     fv = cbox(c, (-5.85, 20.7, 0.4), (0.15, 2.8, 2.6), "vent")
@@ -462,12 +477,12 @@ def shoulders(s):
               decals={"west": {"decal": "hazard", "c1": OCHRE, "c2": (44, 36, 34)}})
     stick(p, l2, "west", 0.5, 0.05, (7.2, BRASS_W, 0.22), "brass", sink=0.05)
     rbox(p, (-11.45, 18.55, 0.1), (0.9, 1.7, 6.6), "plate", rot=(0, 0, 11))
-    # 鈍いトゲ（上外へ。真ん中が長い。真鍮の座金の上に四角錐）
-    for z, k in ((-2.7, 0.8), (0.0, 1.0), (2.7, 0.8)):
-        base = (-9.1, 25.9, z)
-        tip = (-10.2 - 1.1 * k, 26.5 + 2.4 * k, z * 1.1)
-        octa(p, base, 2.1, 0.6, "brass", axis="y")
-        taper(p, base, tip, 2.0, 0.55, 2, "iron", round_=False)
+    # 鈍いトゲ（外の縁から外上へ。真ん中が長い。真鍮の座金から先細りの円錐）
+    for z, k in ((-3.0, 0.8), (0.0, 1.0), (3.0, 0.8)):
+        base = (-10.3, 25.2, z)
+        tip = (-12.4 - 1.0 * k, 26.6 + 1.6 * k, z * 1.08)
+        octa(p, base, 2.0, 0.7, "brass", axis="x", rot=(0, 0, -32), pivot=base)
+        taper(p, base, tip, 1.9, 0.42, 3, "iron")
     # 前後の当て板
     fr = rbox(p, (-7.6, 23.6, -4.65), (5.2, 2.6, 0.8), "plate2", rot=(-14, 0, -12))
     stick(p, fr, "north", 0.5, 0.5, (3.4, 0.4, 0.2), "glow", sink=0.05)
@@ -515,10 +530,10 @@ def helmet(s):
         rm = (r0 + r1) / 2
         dz = 0.12 if i % 2 else -0.12
         cen = (C[0] + d[0] * rm, C[1] + d[1] * rm, C[2] + dz)
-        rbox(cr, cen, (1.85, r1 - r0, 1.1), "plate" if i % 2 == 0 else "plate_b", rot=(0, 0, a))
+        rbox(cr, cen, (1.85, r1 - r0, 1.1), "plate" if i % 2 == 0 else "plate_b", rot=(0, 0, -a))
         tip = (C[0] + d[0] * (r1 - 0.1), C[1] + d[1] * (r1 - 0.1), C[2] + dz)
-        rbox(cr, tip, (1.95, 0.4, 1.22), "glow_hot", rot=(0, 0, a))
-    ring(cr, C, 5.3, 10, (0, 0.6, 1.5), "brass", axis="z", a0=-64, a1=64)
+        rbox(cr, tip, (1.95, 0.4, 1.22), "glow_hot", rot=(0, 0, -a))
+    arc_z(cr, C, 5.3, -64, 64, 10, (0.6, 1.5), "brass")
     # バイザー: 横の目の帯 + 縦の口の帯 = T 字
     vz = s.part("visor", "tslit", "head")
     fg = s.fx("glow", "visor", vz, pivot=(0, 27.4, -5.05))

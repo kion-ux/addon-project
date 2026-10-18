@@ -173,17 +173,22 @@ def plank(bone, a, b, normal, t, h, style, extend=0.1):
 
 
 def wing(bone, top, bot, tip, t, style, n=4, curve=0.14, edge=None, edge_w=0.26):
-    """三角の羽根: 付け根の前縁 top・後縁 bot から先端 tip へ。n 枚の板を扇に重ねて埋める。
-    下の板ほど前縁の手前で終わるので、後縁が弧を描く。edge で前縁に発光線。"""
+    """後退翼の羽根: 付け根の前縁 top・後縁 bot から、前縁に平行な n 枚の板を重ねる。
+    下の板ほど短く（curve ずつ）、先端は前縁に寄せて細くするので、後縁が段々の弧を描く
+    （重なった羽根の並び）。edge で前縁に発光線。"""
     top, bot, tip = (np.asarray(v, float) for v in (top, bot, tip))
     nrm = np.cross(tip - top, bot - top)
     nrm /= np.linalg.norm(nrm)
-    h = float(np.linalg.norm(bot - top)) / n * 1.45
+    d = tip - top
+    span = bot - top
+    h = float(np.linalg.norm(span)) / n * 1.4
     out = []
     for i in range(n):
         f = (i + 0.5) / n
-        r = top + (bot - top) * f
-        e = top + (tip - top) * (1.0 - curve * i)
+        r = top + span * f
+        k = 1.0 - curve * i
+        # 先端は前縁の方へ寄る（先細り）
+        e = top + d * k + span * f * (0.35 + 0.4 * (1 - k))
         out.append(plank(bone, r, e, nrm, t, h, style))
     if edge:
         d = tip - top
