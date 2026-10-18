@@ -25,7 +25,7 @@
           "binding": "q.item_slot_to_bone_name(c.item_slot)"
         },
         {
-          "name": "root",
+          "name": "origin",
           "pivot": [
             0.0,
             0.0,
@@ -40,7 +40,7 @@
             0.0,
             0.0
           ],
-          "parent": "root",
+          "parent": "origin",
           "cubes": [
             {
               "origin": [
@@ -2912,7 +2912,7 @@
             0.0,
             -3.6
           ],
-          "parent": "root",
+          "parent": "origin",
           "cubes": [
             {
               "origin": [
@@ -7468,7 +7468,7 @@
             0.0,
             -6.4
           ],
-          "parent": "root",
+          "parent": "origin",
           "cubes": [
             {
               "origin": [

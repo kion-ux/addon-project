@@ -7,11 +7,14 @@
 書き出す物（key ごと）:
   packs/astro_RP/models/entity/astro_suit_<key>.geo.json   geometry.astro.suit_<key>
   packs/astro_RP/textures/entity/astro/suit_<key>.png
-  packs/astro_RP/attachables/suit_<key>.attachable.json     astro:suit_<key>
-  packs/astro_RP/attachables/suit_<key>_off.attachable.json astro:suit_<key>_off（同じモデル、分解）
+  packs/astro_RP/attachables/suit_<key>_on.attachable.json  astro:suit_<key>_on（組み上がり → ready）
+  packs/astro_RP/attachables/suit_<key>.attachable.json     astro:suit_<key>（装着中。組み上がりを繰り返さない）
+  packs/astro_RP/attachables/suit_<key>_off.attachable.json astro:suit_<key>_off（分解 → gone）
 共有（全惑星ぶん。決定的な順番で毎回作り直す）:
   packs/astro_RP/animations/astro_suits.animation.json
   packs/astro_RP/animation_controllers/astro_suits.animation_controllers.json
+  packs/astro_RP/render_controllers/astro_suits.render_controllers.json  controller.render.astro.suit
+    （既定 entity_emissive_alpha_one_sided、fx_* ボーンだけ両面の entity_emissive_alpha）
 
 アニメ（animation.astro.suit.<key>.<名前>）:
   assemble  部位ボーンの群（接頭辞）と ASSEMBLE_ORDER から自動。群の開始まで scale 0、
@@ -21,7 +24,8 @@
   idle      SUIT_ANIMS["idle"] + fx_glow_*（バイザー以外）のゆっくりした脈動
   thrust    fx_thrust_* を v.astro_air（空中で 1 に近づく）で伸ばす + SUIT_ANIMS["thrust"]
   sprint    SUIT_ANIMS["sprint"]（v.astro_run で強さを付けられる）
-  fp_hide   一人称で腕以外を隠す（fpx_* の包みボーンを scale 0）
+  fp_hide   一人称で head・body・rightLeg・leftLeg を scale 0（腕だけ残る）
+  hide_all  6 つのトップレベルを scale 0（頭スロット以外・透明化の時）
 """
 from __future__ import annotations
 
@@ -41,47 +45,21 @@ ANIM_FILE = os.path.join(AC.ANIM_DIR, "astro_suits.animation.json")
 CTRL_FILE = os.path.join(AC.CTRL_DIR, "astro_suits.animation_controllers.json")
 CTRL_ON = f"controller.animation.{NS}.suit"
 CTRL_OFF = f"controller.animation.{NS}.suit_off"
+RC_FILE = os.path.join(AC.RP, "render_controllers", "astro_suits.render_controllers.json")
+RC_NAME = f"controller.render.{NS}.suit"
 IDLE_LEN = 12.0              # idle のループ長（秒）。Molang の周波数は 30°/秒の倍数で継ぎ目が出ない
 POP = (0.10, 0.25)           # 組み上がりのポップ: 0→1.15 に 0.10 秒、1.0 に戻るまで 0.25 秒
 RELEASE_LEN = 0.8
 MAX_CUBES = 650
 
-# 一人称で隠す包みボーン（腕以外のトップレベルの直下に生成時に挟む）
-FP_WRAP = ("body", "head", "rightLeg", "leftLeg")
-
-
-def wrap_name(top):
-    return f"fpx_{top}"
-
-
-def is_wrapper(name):
-    return name.startswith("fpx_")
+FP_HIDE = ("head", "body", "rightLeg", "leftLeg")     # 一人称で隠すトップレベル
 
 
 # ===========================================================================
 #  モデル
 # ===========================================================================
-def insert_fp_wrappers(s: AS.Suit) -> None:
-    """腕以外のトップレベルの直下に fpx_<top> を挟み、部位ボーンをその子にする。
-    fp_hide はこの包みだけを縮めるので、組み上がり（部位ボーンの scale）と重ならない。"""
-    from mcmodel import Bone
-    m = s.m
-    if any(is_wrapper(b.name) for b in m.bones):
-        return
-    wraps = []
-    for top in FP_WRAP:
-        w = Bone(wrap_name(top), AS.TOP[top], parent=top)
-        wraps.append(w)
-        for b in m.bones:
-            if b.parent == top:
-                b.parent = w.name
-    n = len(AS.TOP)
-    m.bones[n:n] = wraps
-
-
 def build_suit(key: str, packed=True) -> AS.Suit:
     s = AS.build(key)
-    insert_fp_wrappers(s)
     if packed:
         AS.pack(s)
     return s
@@ -181,7 +159,7 @@ def anim_assemble(s):
             bones[b.name] = {"scale": {"0.0": [1, 1, 1], _k(tv): [1, 1, 1],
                                        _k(tv + 0.08): [1.6, 1.6, 1.6],
                                        _k(min(L, tv + 0.22)): [1, 1, 1]}}
-    return {"loop": False, "animation_length": L, "bones": bones}
+    return {"loop": "hold_on_last_frame", "animation_length": L, "bones": bones}
 
 
 def _k(t):
@@ -205,11 +183,55 @@ def anim_gone(s):
     return {"loop": True, "bones": {n: {"scale": 0} for n, _g in pop_bones(s)}}
 
 
+def _neg(v):
+    if isinstance(v, (int, float)):
+        return -v
+    return f"-({v})"
+
+
+def _mirror_vec(v, signs):
+    if isinstance(v, dict):                     # キーフレーム
+        out = {}
+        for t, x in v.items():
+            if isinstance(x, dict):
+                out[t] = {k: _mirror_vec(y, signs) if k in ("pre", "post") else y
+                          for k, y in x.items()}
+            else:
+                out[t] = _mirror_vec(x, signs)
+        return out
+    if isinstance(v, (list, tuple)):
+        return [_neg(x) if sg < 0 else x for x, sg in zip(v, signs)]
+    return v
+
+
+def mirror_tracks(bones: dict) -> dict:
+    """`*_r` のボーンのトラックを `*_l` へ写す（rotation は (rx,-ry,-rz)、position は (-x,y,z)）。
+    `_l` を自分で書いた物はそのまま。"""
+    out = dict(bones)
+    for name, tr in bones.items():
+        if not name.endswith("_r") or name[:-2] + "_l" in bones:
+            continue
+        m = {}
+        for ch, v in tr.items():
+            if ch == "rotation":
+                m[ch] = _mirror_vec(v, (1, -1, -1))
+            elif ch == "position":
+                m[ch] = _mirror_vec(v, (-1, 1, 1))
+            else:
+                m[ch] = v
+        out[name[:-2] + "_l"] = m
+    return out
+
+
 def _planet_anim(s, name):
     a = (getattr(s.module, "SUIT_ANIMS", {}) or {}).get(name, {})
     if "bones" in a:
-        return dict(a["bones"]), {k: v for k, v in a.items() if k != "bones"}
-    return dict(a), {}
+        bones, opts = dict(a["bones"]), {k: v for k, v in a.items() if k != "bones"}
+    else:
+        bones, opts = dict(a), {}
+    if getattr(s.module, "MIRROR", True):
+        bones = mirror_tracks(bones)
+    return bones, opts
 
 
 def _merge_tracks(base, extra):
@@ -259,7 +281,11 @@ def anim_sprint(s):
 
 
 def anim_fp_hide(s):
-    return {"loop": True, "bones": {wrap_name(t): {"scale": 0} for t in FP_WRAP}}
+    return {"loop": True, "bones": {t: {"scale": 0} for t in FP_HIDE}}
+
+
+def anim_hide_all(s):
+    return {"loop": True, "bones": {t: {"scale": 0} for t in AS.TOP}}
 
 
 def suit_animations(s) -> dict:
@@ -272,6 +298,7 @@ def suit_animations(s) -> dict:
         f"{base}.thrust": anim_thrust(s),
         f"{base}.sprint": anim_sprint(s),
         f"{base}.fp_hide": anim_fp_hide(s),
+        f"{base}.hide_all": anim_hide_all(s),
     }
     # 惑星が追加で書いたアニメ（SUIT_ANIMS の idle/thrust/sprint 以外）もそのまま書き出す
     for name, a in (getattr(s.module, "SUIT_ANIMS", {}) or {}).items():
@@ -288,7 +315,7 @@ def controllers() -> dict:
             "initial_state": "assemble",
             "states": {
                 "assemble": {"animations": ["assemble"],
-                             "transitions": [{"ready": "q.all_animations_finished"}]},
+                             "transitions": [{"ready": "q.all_animations_finished || q.is_in_ui"}]},
                 "ready": {"animations": []},
             },
         },
@@ -306,9 +333,9 @@ def controllers() -> dict:
 # ===========================================================================
 #  アタッチャブル
 # ===========================================================================
-# 注意（実機で未確認の前提）: 頭スロットのアタッチャブルの中の q.is_on_ground / q.is_sprinting /
-# q.delta_time は「持ち主（プレイヤー）」を指す前提で書いている（kaiju8 の no8_form と hyperdim の武器が
-# 同じ前提で q.is_on_ground・q.is_using_item を直接使っている）。c.is_first_person は hyperdim の武器と同じ。
+# アタッチャブルの中の素の q.*（q.is_on_ground / q.is_sprinting / q.delta_time …）は装着者を評価する
+# （DESIGN §4.5 の調査結果。kaiju8 の no8_form・hyperdim の武器も同じ前提）。素の v.* はアタッチャブル自身の変数。
+# c.is_first_person は装着者本人の一人称だけ 1。
 PRE = [
     "v.astro_fp = c.is_first_person ? 1.0 : 0.0;",
     "v.astro_air = (v.astro_air ?? 0.0) + ((q.is_on_ground ? 0.0 : 1.0) - (v.astro_air ?? 0.0))"
@@ -318,29 +345,38 @@ PRE = [
 ]
 PARENT_SETUP = ("v.helmet_layer_visible = 0.0; v.chest_layer_visible = 0.0; "
                 "v.leg_layer_visible = 0.0; v.boot_layer_visible = 0.0;")
+VARIANTS = ("on", "", "off")          # astro:suit_<key>_on / astro:suit_<key> / astro:suit_<key>_off
 
 
-def attachable(key, off=False, extra_anims=()):
+def ident(key, variant=""):
+    return f"{NS}:suit_{key}" + (f"_{variant}" if variant else "")
+
+
+def attachable(key, variant="", extra_anims=()):
+    """variant: "on"（組み上がり → ready）/ ""（装着中）/ "off"（分解 → gone）。"""
     base = f"animation.{NS}.suit.{key}"
-    ident = f"{NS}:suit_{key}" + ("_off" if off else "")
     anims = {"idle": f"{base}.idle", "thrust": f"{base}.thrust", "sprint": f"{base}.sprint",
-             "fp_hide": f"{base}.fp_hide"}
-    if off:
+             "fp_hide": f"{base}.fp_hide", "hide_all": f"{base}.hide_all"}
+    for n in extra_anims:
+        anims[n] = f"{base}.{n}"
+    tail = [{"fp_hide": "v.astro_fp > 0.5"},
+            {"hide_all": "c.item_slot != 'head' || q.is_invisible"}]
+    if variant == "off":
         anims.update({"release": f"{base}.release", "gone": f"{base}.gone",
                       "controller": CTRL_OFF})
-        animate = ["controller", "idle", "thrust", {"fp_hide": "v.astro_fp > 0.5"}]
-    else:
+        animate = ["controller", "idle", "thrust"] + tail
+    elif variant == "on":
         anims.update({"assemble": f"{base}.assemble", "controller": CTRL_ON})
-        for n in extra_anims:
-            anims[n] = f"{base}.{n}"
-        animate = ["controller", "idle", "thrust", {"sprint": "v.astro_run > 0.01"},
-                   {"fp_hide": "v.astro_fp > 0.5"}]
+        animate = ["controller", "idle", "thrust", {"sprint": "v.astro_run > 0.01"}] + tail
+    else:
+        animate = ["idle", "thrust", {"sprint": "v.astro_run > 0.01"}] + tail
     return {
         "format_version": "1.10.0",
         "minecraft:attachable": {
             "description": {
-                "identifier": ident,
-                "materials": {"default": "entity_emissive_alpha",
+                "identifier": ident(key, variant),
+                "materials": {"default": "entity_emissive_alpha_one_sided",
+                              "fx": "entity_emissive_alpha",
                               "enchanted": "entity_alphatest_glint"},
                 "textures": {"default": f"textures/entity/astro/suit_{key}",
                              "enchanted": "textures/misc/enchanted_item_glint"},
@@ -348,10 +384,17 @@ def attachable(key, off=False, extra_anims=()):
                 "animations": anims,
                 "scripts": {"parent_setup": PARENT_SETUP, "pre_animation": list(PRE),
                             "animate": animate},
-                "render_controllers": ["controller.render.item_default"],
+                "render_controllers": [RC_NAME],
             }
         },
     }
+
+
+def render_controllers() -> dict:
+    return {"format_version": "1.8.0", "render_controllers": {
+        RC_NAME: {"geometry": "Geometry.default",
+                  "materials": [{"*": "Material.default"}, {"fx_*": "Material.fx"}],
+                  "textures": ["Texture.default"]}}}
 
 
 # ===========================================================================
@@ -366,10 +409,9 @@ def write_suit(s: AS.Suit, quiet=False):
     p.save(tex)
     extra = [n for n in (getattr(s.module, "SUIT_ANIMS", {}) or {})
              if n not in ("idle", "thrust", "sprint")]
-    write_json(os.path.join(AC.ATT_DIR, f"suit_{key}.attachable.json"),
-               attachable(key, extra_anims=extra))
-    write_json(os.path.join(AC.ATT_DIR, f"suit_{key}_off.attachable.json"),
-               attachable(key, off=True))
+    for v in VARIANTS:
+        write_json(os.path.join(AC.ATT_DIR, f"suit_{key}{'_' + v if v else ''}.attachable.json"),
+                   attachable(key, v, extra_anims=extra))
     n = len(s.m.all_cubes())
     if not quiet:
         print(f"  suit {key:8s} {len(s.m.bones):3d} bones {n:4d} cubes "
@@ -387,6 +429,7 @@ def write_shared(keys=None):
         A.update(suit_animations(s))
     write_json(ANIM_FILE, {"format_version": "1.8.0", "animations": A})
     write_json(CTRL_FILE, {"format_version": "1.10.0", "animation_controllers": controllers()})
+    write_json(RC_FILE, render_controllers())
     return A
 
 

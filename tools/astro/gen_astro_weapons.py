@@ -13,7 +13,8 @@ WEAPON_ANIMS / CORE_ANIMS / KIND / HOLD / ICON）からモデルを組み、書�
   textures/items/astro/weapon_<key>.png / core_<key>.png   （64x64 のアイコン）
 共有ファイル（毎回、weapon.py のある全惑星から作り直す。誰がどの惑星で走らせても同じ結果）:
   animations/astro_weapons.animation.json
-  animation_controllers/astro_weapons.animation_controllers.json
+  animation_controllers/astro_weapons.animation_controllers.json   （形成 → ready）
+  render_controllers/astro_weapons.render_controllers.json         （片面 + fx_* だけ両面）
 
 塗り（テクスチャとアイコン）は時間がかかるので、指定されなかった惑星は「モデル・塗り・ペインタが前回と
 同じでファイルがある」なら塗り直さない（build_preview/astro/.weapons_cache.json に指紋を残す）。
@@ -37,6 +38,7 @@ import astro_weapon as W  # noqa: E402
 NS = W.NS
 ANIM_PATH = os.path.join(AC.RP, "animations", "astro_weapons.animation.json")
 CTRL_PATH = os.path.join(AC.RP, "animation_controllers", "astro_weapons.animation_controllers.json")
+RC_PATH = os.path.join(AC.RP, "render_controllers", "astro_weapons.render_controllers.json")
 CACHE = os.path.join(AC.SCRATCH, ".weapons_cache.json")
 
 
@@ -126,6 +128,7 @@ def check(keys) -> list:
     errors = []
     anims = json.load(open(ANIM_PATH, encoding="utf-8"))["animations"]
     ctrls = json.load(open(CTRL_PATH, encoding="utf-8"))["animation_controllers"]
+    rcs = json.load(open(RC_PATH, encoding="utf-8"))["render_controllers"]
     for doc in (anims, ctrls):
         for s in _strings(doc):
             if not _balanced(s):
@@ -154,6 +157,13 @@ def check(keys) -> list:
             for s in _strings(att["scripts"]):
                 if not _balanced(s):
                     errors.append(f"{key} {what}: unbalanced molang in scripts: {s[:60]}")
+            for rc in att.get("render_controllers", []):
+                name = rc if isinstance(rc, str) else next(iter(rc))
+                if name not in rcs and not name.startswith("controller.render.item_"):
+                    errors.append(f"{key} {what}: render controller {name} missing")
+            for mat in ("default", "fx"):
+                if mat not in att.get("materials", {}):
+                    errors.append(f"{key} {what}: material {mat} missing")
             amap = att["animations"]
             for short, full in amap.items():
                 if full.startswith("controller."):
@@ -202,6 +212,7 @@ def main(argv=None) -> int:
     AC.write_json(ANIM_PATH, {"format_version": "1.10.0",
                               "animations": {k: anims[k] for k in sorted(anims)}})
     AC.write_json(CTRL_PATH, {"format_version": "1.10.0", "animation_controllers": W.form_controller()})
+    AC.write_json(RC_PATH, {"format_version": "1.10.0", "render_controllers": W.render_controller()})
     print("\n".join(log))
     for w in warns:
         print(f"  WARN {w}")

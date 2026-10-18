@@ -10,7 +10,7 @@
           ],
           "transitions": [
             {
-              "ready": "q.all_animations_finished"
+              "ready": "q.all_animations_finished || q.is_in_ui"
             }
           ]
         },

@@ -4,12 +4,11 @@
     "description": {
       "identifier": "astro:core_earth",
       "materials": {
-        "default": "entity_emissive_alpha",
-        "enchanted": "entity_alphatest_glint"
+        "default": "entity_emissive_alpha_one_sided",
+        "fx": "entity_emissive_alpha"
       },
       "textures": {
-        "default": "textures/entity/astro/core_earth",
-        "enchanted": "textures/misc/enchanted_item_glint"
+        "default": "textures/entity/astro/core_earth"
       },
       "geometry": {
         "default": "geometry.astro.core_earth"
@@ -44,7 +43,7 @@
         ]
       },
       "render_controllers": [
-        "controller.render.item_default"
+        "controller.render.astro.weapon"
       ]
     }
   }

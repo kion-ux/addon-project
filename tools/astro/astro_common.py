@@ -91,7 +91,7 @@ def cbox(bone, centre, size, style, **kw) -> Cube:
     """中心と大きさで置く箱。rotation（統合版の角度）は中心まわり（pivot を渡せばそこ）。"""
     o = [centre[i] - size[i] / 2 for i in range(3)]
     if kw.get("rotation") is not None:
-        r = [round(float(a), 2) for a in kw["rotation"]]
+        r = [round(float(a), 2) + 0.0 for a in kw["rotation"]]
         if not any(abs(a) > 1e-3 for a in r):
             kw.pop("rotation")
             kw.pop("pivot", None)
@@ -268,17 +268,29 @@ def _axis_rot(axis, a):
     return {"x": (a, 0, 0), "y": (0, a, 0), "z": (0, 0, a)}[axis]
 
 
-def octa(bone, centre, w, length, style, axis="z", style2=None, **kw):
-    """八角柱（箱 + 軸まわりに 45° 回した箱）。柄・ノズル・関節の円盤に。"""
+def _group(bone, parts, rot_=None, pivot=None, centre=None, **kw):
+    """部品の組 [(中心, 大きさ, 局所の回転行列, スタイル)] を、組ごと rot_（統合版の角度）で
+    pivot（省略で centre）まわりに回して置く。"""
+    G = rot(*rot_) if rot_ is not None and any(abs(a) > 1e-6 for a in rot_) else np.eye(3)
+    P = np.asarray(pivot if pivot is not None else centre, float)
+    out = []
+    for c, sz, R, st in parts:
+        c2 = G @ (np.asarray(c, float) - P) + P
+        out.append(mat_cube(bone, c2, sz, st, G @ R, **kw))
+    return out
+
+
+def octa(bone, centre, w, length, style, axis="z", style2=None, rot=None, pivot=None, **kw):
+    """八角柱（箱 + 軸まわりに 45° 回した箱）。ノズル・関節の円盤・柄に。rot で組ごと傾ける。"""
     size = [w, w, w]
     size[AX[axis]] = length
-    a = cbox(bone, centre, size, style, **kw)
     s2 = [v * 0.94 if i != AX[axis] else v for i, v in enumerate(size)]
-    b = rbox(bone, centre, s2, style2 or style, rot=_axis_rot(axis, 45), **kw)
-    return [a, b]
+    r45 = globals()["rot"](*_axis_rot(axis, 45))
+    return _group(bone, [(centre, size, np.eye(3), style), (centre, s2, r45, style2 or style)],
+                  rot, pivot, centre, **kw)
 
 
-def chamfer(bone, centre, size, style, cut=0.5, axis="z", **kw):
+def chamfer(bone, centre, size, style, cut=0.5, axis="z", rot=None, pivot=None, **kw):
     """角を落とした箱（axis に沿う 4 本の稜を cut だけ段々に落とす。2 個）。"""
     i = AX[axis]
     j, k = [n for n in range(3) if n != i]
@@ -286,25 +298,33 @@ def chamfer(bone, centre, size, style, cut=0.5, axis="z", **kw):
     s1[j] -= 2 * cut
     s2 = list(size)
     s2[k] -= 2 * cut
-    return [cbox(bone, centre, s1, style, **kw), cbox(bone, centre, s2, style, **kw)]
+    return _group(bone, [(centre, s1, np.eye(3), style), (centre, s2, np.eye(3), style)],
+                  rot, pivot, centre, **kw)
 
 
-def bevel(bone, centre, size, style, cut=0.5, axis="z", edge_style=None, **kw):
+def bevel(bone, centre, size, style, cut=0.5, axis="z", edge_style=None, rot=None, pivot=None,
+          **kw):
     """45° の面取り（axis に沿う 4 本の稜）。十字の 2 個 + 稜の 4 本 = 6 個。
-    edge_style を渡すと稜だけ別の塗り（金の縁取りなど）。"""
+    edge_style で稜だけ別の塗り（金の縁取りなど）。rot で組ごと傾ける（pivot 省略で中心）。
+    戻り値のリストの [0] は「a 方向に長い本体」、[1] は「b 方向に長い本体」。"""
     i = AX[axis]
     j, k = [n for n in range(3) if n != i]
-    out = chamfer(bone, centre, size, style, cut, axis, **kw)
-    s = cut * math.sqrt(2)
+    s1 = list(size)
+    s1[j] -= 2 * cut
+    s2 = list(size)
+    s2[k] -= 2 * cut
+    parts = [(centre, s1, np.eye(3), style), (centre, s2, np.eye(3), style)]
+    e = cut * math.sqrt(2)
+    r45 = globals()["rot"](*_axis_rot(axis, 45))
     for sj in (-1, 1):
         for sk in (-1, 1):
             c = list(centre)
             c[j] += sj * (size[j] / 2 - cut)
             c[k] += sk * (size[k] / 2 - cut)
-            es = [s, s, s]
+            es = [e, e, e]
             es[i] = size[i]
-            out.append(rbox(bone, c, es, edge_style or style, rot=_axis_rot(axis, 45), **kw))
-    return out
+            parts.append((c, es, r45, edge_style or style))
+    return _group(bone, parts, rot, pivot, centre, **kw)
 
 
 def ring(bone, centre, radius, n, seg, style, axis="y", phase=0.0, a0=0.0, a1=360.0,

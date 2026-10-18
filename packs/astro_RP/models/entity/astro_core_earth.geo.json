@@ -25,7 +25,7 @@
           "binding": "q.item_slot_to_bone_name(c.item_slot)"
         },
         {
-          "name": "root",
+          "name": "origin",
           "pivot": [
             0.0,
             0.0,
@@ -40,7 +40,7 @@
             0.0,
             0.0
           ],
-          "parent": "root",
+          "parent": "origin",
           "cubes": [
             {
               "origin": [
@@ -2787,7 +2787,7 @@
             0.0,
             0.0
           ],
-          "parent": "root"
+          "parent": "origin"
         },
         {
           "name": "fx_spin_globe",
@@ -3355,7 +3355,7 @@
             0.0,
             0.0
           ],
-          "parent": "root"
+          "parent": "origin"
         },
         {
           "name": "fx_spin_ring_a",

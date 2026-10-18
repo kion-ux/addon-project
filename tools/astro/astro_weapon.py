@@ -6,21 +6,24 @@
 
 ■ ボーンの構成（DESIGN.md §4.3）
     hold   手に bind（q.item_slot_to_bone_name(c.item_slot)）。持ち方（tp / fp）を受け持つ
-     └ root   握り = 原点（コアは球の中心）。振り・待機の揺れ
+     └ origin 握り = 原点（コアは球の中心）。振り・待機の揺れ
+              （"root" はプレイヤーのボーン名なので使わない。プレイヤーと同じ名前のボーンは、
+               アタッチャブルでもそのボーンに付いて動いてしまう — DESIGN.md §4.5）
         ├ form_0_grip    形成アニメ（持ち替えた瞬間に番号順にポップして現れる）の部品
         ├ form_1_guard     …キューブは必ずどれかの form_ ボーン（またはその子）に入れる
         ├ form_2_blade
         │  └ fx_spin_moon  回る部品（WEAPON_ANIMS で回し方を書く。書かなければ既定の回転）
         └ …
-  root の直下にキューブを置かない（形成アニメで消えないため validate_model が警告する）。
+  origin の直下にキューブを置かない（形成アニメで消えないため validate_model が警告する）。
+  ボーン名にプレイヤーのボーン名（root waist body head rightArm rightItem cape hat …）を使わない（RESERVED）。
 
 ■ 座標（武器空間）: 16 単位 = 1 ブロック。握りの中心 = 原点、刃先 = -Z、+Y = 刃の幅（片刃は -Y が刃）、
   +X = 刃の平の法線。回転は統合版の規則そのまま（astro_common の補助と同じ）。
   手に持った時の大きさは astro_hold.SPEC[kind]["scale"] 倍（剣なら 0.8 倍）。
 
 ■ 公開 API（モデル）
-  new_model(identifier, max_atlas=(1024, 1024), uv_scale=4) -> Model   hold・root ボーン入り
-  root_of(m) -> Bone
+  new_model(identifier, max_atlas=(1024, 1024), uv_scale=4) -> Model   hold・origin ボーン入り
+  root_of(m) -> Bone                                   origin ボーン（build_weapon(m, root) の root）
   part(m, parent, name, pivot=(0,0,0)) -> Bone        ただのボーン（名前の重複は例外）
   form(m, parent, index, name, pivot=(0,0,0)) -> Bone  form_<index>_<name>
   spin(m, parent, name, pivot=(0,0,0)) -> Bone         fx_spin_<name>
@@ -74,7 +77,16 @@ ATT_DIR = os.path.join(RP, "attachables")
 ICON_DIR = os.path.join(RP, "textures", "items", NS)
 
 BIND = "q.item_slot_to_bone_name(c.item_slot)"
+ORIGIN = "origin"
+# プレイヤー（geometry.humanoid.custom と防具）のボーン名。アタッチャブルで同じ名前のボーンを作ると、
+# そのボーンの変換に付いて動いてしまう（大文字小文字は区別しない）
+RESERVED = {n.lower() for n in (
+    "root", "waist", "body", "head", "hat", "helmet", "cape", "jacket", "bodyArmor", "belt",
+    "rightArm", "leftArm", "rightSleeve", "leftSleeve", "rightItem", "leftItem", "rightArmArmor",
+    "leftArmArmor", "rightLeg", "leftLeg", "rightPants", "leftPants", "rightSock", "leftSock",
+    "rightLegging", "leftLegging", "rightBoot", "leftBoot")}
 FORM_CTRL = f"controller.animation.{NS}.weapon_form"
+RENDER_CTRL = f"controller.render.{NS}.weapon"
 
 # 形成アニメの時間割（秒）
 FORM_LEN = 0.6          # 最後の部品が収まるまで
@@ -89,16 +101,17 @@ BUDGET = {"weapon": (80, 200), "core": (30, 80)}
 #  モデルの補助
 # ===========================================================================
 def new_model(identifier: str, max_atlas=(1024, 1024), uv_scale: int = 4) -> Model:
-    """hold（手に bind）→ root（握り = 原点）入りの空のモデル。"""
+    """hold（手に bind）→ origin（握り = 原点）入りの空のモデル。"""
     m = Model(identifier, uv_scale=uv_scale, visible_bounds=(4, 4), vb_offset=(0, 1.0, 0),
               max_atlas=tuple(max_atlas))
     m.bone("hold", (0, 0, 0), binding=BIND)
-    m.bone("root", (0, 0, 0), parent="hold")
+    m.bone(ORIGIN, (0, 0, 0), parent="hold")
     return m
 
 
 def root_of(m: Model):
-    return next(b for b in m.bones if b.name == "root")
+    """build_weapon(m, root) に渡す親ボーン（名前は origin）。"""
+    return next(b for b in m.bones if b.name == ORIGIN)
 
 
 def _bone_names(m):
@@ -109,6 +122,8 @@ def part(m: Model, parent, name: str, pivot=(0, 0, 0), rotation=None):
     """parent（Bone か名前）の子ボーン。rotation はボーンの静止時の回転（統合版の角度）。
     回るボーンに静止の傾きを付けると、アニメの回転はその上に足される（傾いたまま首を振る歳差運動）。"""
     pname = parent if isinstance(parent, str) else parent.name
+    if name.lower() in RESERVED:
+        raise ValueError(f"{m.identifier}: bone name {name!r} is a player bone name (reserved)")
     if name in _bone_names(m):
         raise ValueError(f"{m.identifier}: duplicate bone {name}")
     if pname not in _bone_names(m):
@@ -210,10 +225,13 @@ def validate_model(m: Model, kind: str = "weapon", quiet: bool = False) -> list:
     warn = []
     names = [b.name for b in m.bones]
     byname = {b.name: b for b in m.bones}
-    if names[:2] != ["hold", "root"]:
-        warn.append("first bones must be hold, root")
-    if byname["root"].cubes:
-        warn.append("root has cubes (put them in form_<n>_<name> bones so the forming animation shows them)")
+    if names[:2] != ["hold", ORIGIN]:
+        warn.append(f"first bones must be hold, {ORIGIN}")
+    if byname[ORIGIN].cubes:
+        warn.append(f"{ORIGIN} has cubes (put them in form_<n>_<name> bones so the forming animation shows them)")
+    for n in names:
+        if n.lower() in RESERVED:
+            warn.append(f"bone {n} uses a player bone name (it would follow the player's {n})")
     forms = [n for n in names if n.startswith("form_")]
     if kind == "weapon" and not forms:
         warn.append("no form_<n>_<name> bones (no forming animation)")
@@ -466,7 +484,8 @@ def form_animation(geo, axes=None, length=FORM_LEN) -> dict:
             keys = {"0.0": [0, 0, 0], _ts(t0): [0, 0, 0], _ts(t1): [1.15, 1.15, 1.15], _ts(t2): [1, 1, 1]}
         bones[name] = {"scale": keys}
     end = max([FORM_START + rank[i] * gap + FORM_POP for i, _ in fb] or [length])
-    return {"loop": False, "animation_length": _r(end + 0.02), "bones": bones}
+    # 一回きり: 最後のコマで止め、コントローラが q.all_animations_finished で ready へ
+    return {"loop": "hold_on_last_frame", "animation_length": _r(end + 0.02), "bones": bones}
 
 
 def _merge(dst: dict, src: dict) -> dict:
@@ -564,12 +583,12 @@ def weapon_animations(key: str, geo, mod=None) -> dict:
     A = {}
     A[f"{base}.tp"] = {"loop": True, "bones": {"hold": _tf(h["tp"])}}
     A[f"{base}.fp"] = {"loop": True, "bones": {"hold": _tf(h["fp"])}}
-    idle = {"root": {"position": [0, "math.sin(q.anim_time * 90.0) * 0.1", 0]}}
+    idle = {ORIGIN: {"position": [0, "math.sin(q.anim_time * 90.0) * 0.1", 0]}}
     have = set(WA.get("idle", {}))
     _merge(idle, _default_spins(geo, "z", 120.0, have))
     _merge(idle, WA.get("idle", {}))
     A[f"{base}.idle"] = {"loop": True, "animation_length": float(WA.get("idle_length", 6.0)), "bones": idle}
-    sw = {"root": swing_channels(kind)} if swing_channels(kind) else {}
+    sw = {ORIGIN: swing_channels(kind)} if swing_channels(kind) else {}
     _merge(sw, WA.get("swing", {}))
     A[f"{base}.swing"] = {"loop": True, "bones": sw}
     A[f"{base}.form"] = form_animation(geo, WA.get("form_axes", getattr(mod, "FORM_AXES", None)))
@@ -585,13 +604,13 @@ def core_animations(key: str, geo, mod=None) -> dict:
     A = {}
     A[f"{base}.tp"] = {"loop": True, "bones": {"hold": _tf(h["tp"])}}
     A[f"{base}.fp"] = {"loop": True, "bones": {"hold": _tf(h["fp"])}}
-    idle = {"root": {"position": [0, "math.sin(q.anim_time * 110.0) * 0.35", 0],
+    idle = {ORIGIN: {"position": [0, "math.sin(q.anim_time * 110.0) * 0.35", 0],
                      "rotation": [0, "math.sin(q.anim_time * 40.0) * 8.0", 0]}}
     have = set(CA.get("idle", {}))
     _merge(idle, _default_spins(geo, "y", 90.0, have))
     _merge(idle, CA.get("idle", {}))
     A[f"{base}.idle"] = {"loop": True, "animation_length": float(CA.get("idle_length", 6.0)), "bones": idle}
-    use = {"root": {"scale": "1.0 + v.astro_usew * 0.12",
+    use = {ORIGIN: {"scale": "1.0 + v.astro_usew * 0.12",
                     "position": [0, "v.astro_usew * 1.2", 0]}}
     k = 0
     for b in geo_bones(geo):
@@ -606,11 +625,22 @@ def core_animations(key: str, geo, mod=None) -> dict:
     return A
 
 
+def render_controller() -> dict:
+    """片面の既定（閉じた箱）と、fx_* ボーンだけ両面の発光（DESIGN.md §4.5）。"""
+    return {RENDER_CTRL: {
+        "geometry": "Geometry.default",
+        "materials": [{"*": "Material.default"}, {"fx_*": "Material.fx"}],
+        "textures": ["Texture.default"],
+    }}
+
+
 def form_controller() -> dict:
     return {FORM_CTRL: {
         "initial_state": "form",
         "states": {
-            "form": {"animations": ["form"], "transitions": [{"ready": "q.all_animations_finished"}]},
+            # インベントリの人形（q.is_in_ui。素の q.* は持ち主を評価する）では形成を飛ばす
+            "form": {"animations": ["form"],
+                     "transitions": [{"ready": "q.all_animations_finished || q.is_in_ui"}]},
             "ready": {},
         },
     }}
@@ -645,13 +675,13 @@ def attachable(key: str, what: str, anims: dict) -> dict:
         "minecraft:attachable": {
             "description": {
                 "identifier": f"{NS}:{what}_{key}",
-                "materials": {"default": "entity_emissive_alpha", "enchanted": "entity_alphatest_glint"},
-                "textures": {"default": f"textures/entity/{NS}/{what}_{key}",
-                             "enchanted": "textures/misc/enchanted_item_glint"},
+                # 閉じた箱は片面（裏面を描かない）、fx_* ボーン（回る輪・薄い板）は両面
+                "materials": {"default": "entity_emissive_alpha_one_sided", "fx": "entity_emissive_alpha"},
+                "textures": {"default": f"textures/entity/{NS}/{what}_{key}"},
                 "geometry": {"default": f"geometry.{NS}.{what}_{key}"},
                 "animations": keys,
                 "scripts": {"pre_animation": list(PRE), "animate": animate},
-                "render_controllers": ["controller.render.item_default"],
+                "render_controllers": [RENDER_CTRL],
             }
         },
     }
@@ -820,7 +850,7 @@ def preview_swing(key: str) -> str:
             ang = _eval_swing(kind, sw, fp)
             hh = h["fp"] if fp else h["tp"]
             a = {"hold": {"rotation": hh["rotation"], "position": hh["position"], "scale": (hh["scale"],) * 3},
-                 "root": ang}
+                 ORIGIN: ang}
             if fp:
                 im = S.fp(gw, tw, a, size=(320, 180))
             else:

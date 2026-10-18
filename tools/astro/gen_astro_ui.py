@@ -743,9 +743,9 @@ MOVE_SYMBOL = {
     "skill": [
         "c..C..c",
         ".c.C.c.",
-        "..CWC..",
-        "CCWWWCC",
-        "..CWC..",
+        "..WWW..",
+        "CCWCWCC",
+        "..WWW..",
         ".c.C.c.",
         "c..C..c",
     ],
@@ -769,11 +769,11 @@ MOVE_SYMBOL = {
     ],
     "ult": [
         "...C...",
-        "...W...",
-        "c.CWC.c",
+        ".c.W.c.",
+        "..CWC..",
         "CWWWWWC",
-        "c.CWC.c",
-        "...W...",
+        "..CWC..",
+        ".c.W.c.",
         "...C...",
     ],
 }
@@ -825,35 +825,193 @@ def move_icon(c, kind, ready):
 
 
 # ---------------------------------------------------------------------------
-#  小さな惑星紋章（12x12: 六角の枠＋直径 8 の惑星）
+#  小さな惑星紋章（12x10: 六角の左右の括弧＋直径 8 の惑星）
+#  模様は手で描いた素材の地図（文字 = 素材）、陰影は球の向きからセル調に自動で付ける
 # ---------------------------------------------------------------------------
+_R = lambda *cs: [tuple(c) for c in cs]  # noqa: E731
+SMALL_PLANET = {
+    # rows: 12x10（セルの 2..13 列 × 3..12 行）。小文字/大文字 = 素材（ramps は陰影 4 段、flat は単色）
+    "mercury": ([
+        "............",
+        "....aaaa....",
+        "...aacraa...",
+        "..acraaaca..",
+        "..aaaaaaar..",
+        "..aaacaaaa..",
+        "..acaraaca..",
+        "...raaaar...",
+        "....aaaa....",
+        "............",
+    ], (6, 5), 4.05, {
+        "a": _R((236, 236, 242), (194, 196, 206), (150, 152, 166), (100, 102, 120)),
+        "c": _R((168, 168, 178), (128, 128, 140), (100, 100, 114), (72, 74, 92)),
+        "r": _R((255, 255, 255), (240, 240, 246), (206, 206, 214), (140, 142, 158)),
+    }, {}),
+    "venus": ([
+        "............",
+        "....aabb....",
+        "...abbbaa...",
+        "..abbooobb..",
+        "..baaaaabb..",
+        "..bboobbaa..",
+        "..aabbbooo..",
+        "...bbaaab...",
+        "....oobb....",
+        "............",
+    ], (6, 5), 4.05, {
+        "a": _R((255, 250, 226), (252, 232, 172), (226, 192, 112), (168, 124, 58)),
+        "b": _R((252, 228, 152), (238, 198, 106), (204, 152, 66), (148, 100, 40)),
+        "o": _R((234, 182, 98), (208, 148, 62), (170, 110, 42), (118, 72, 26)),
+    }, {}),
+    "earth": ([
+        "............",
+        "....iiic....",
+        "...ooGGooo..",
+        "..oGGGooco..",
+        "..ooGGoooo..",
+        "..oooGoGGo..",
+        "..ocooGGGo..",
+        "...ooooGo...",
+        "....oooo....",
+        "............",
+    ], (6, 5), 4.05, {
+        "o": _R((96, 176, 255), (46, 120, 230), (30, 84, 190), (18, 48, 130)),
+        "G": _R((150, 236, 120), (84, 190, 84), (52, 142, 62), (30, 96, 44)),
+        "i": _R((255, 255, 255), (238, 246, 254), (204, 218, 236), (140, 160, 192)),
+        "c": _R((255, 255, 255), (232, 242, 252), (196, 212, 232), (130, 150, 186)),
+    }, {}),
+    "mars": ([
+        "............",
+        "....iiii....",
+        "...iiaaaa...",
+        "..aaaaddaa..",
+        "..aadddaaa..",
+        "..aaaaaada..",
+        "..addaaaaa..",
+        "...aaaaad...",
+        "....aaaa....",
+        "............",
+    ], (6, 5), 4.05, {
+        "a": _R((252, 164, 112), (224, 102, 58), (178, 66, 36), (116, 38, 22)),
+        "d": _R((206, 112, 76), (170, 72, 44), (130, 50, 30), (88, 30, 20)),
+        "i": _R((255, 255, 255), (252, 242, 234), (222, 202, 192), (170, 140, 130)),
+    }, {}),
+    "jupiter": ([
+        "............",
+        "....cccc....",
+        "...tttttt...",
+        "..bbbbbbbb..",
+        "..cccccccc..",
+        "..oossoooo..",
+        "..ccccccct..",
+        "...bbbbbb...",
+        "....tttt....",
+        "............",
+    ], (6, 5), 4.05, {
+        "c": _R((255, 248, 230), (242, 226, 192), (210, 190, 152), (150, 130, 100)),
+        "t": _R((242, 216, 172), (216, 182, 132), (180, 146, 100), (126, 98, 66)),
+        "b": _R((210, 154, 108), (174, 112, 72), (138, 86, 54), (94, 56, 36)),
+        "o": _R((246, 188, 134), (224, 150, 98), (186, 116, 72), (130, 78, 48)),
+        "s": _R((255, 146, 112), (226, 84, 56), (184, 60, 40), (132, 40, 28)),
+    }, {}),
+    "saturn": ([
+        "............",
+        "............",
+        "....aaaa..RR",
+        "...bbbbbRRr.",
+        "...aaaRRbb..",
+        "..RRRRaaa...",
+        ".RRrbbbb....",
+        "RR..aaaa....",
+        "............",
+        "............",
+    ], (6, 5), 3.2, {
+        "a": _R((255, 242, 204), (242, 216, 152), (206, 176, 110), (150, 120, 70)),
+        "b": _R((242, 216, 152), (216, 186, 120), (180, 148, 88), (126, 98, 58)),
+    }, {"R": (238, 222, 172), "r": (168, 148, 104)}),
+    "uranus": ([
+        "......R.....",
+        "....aRaa....",
+        "...aaRaaa...",
+        "..aaaRbaaa..",
+        "..bbbRbbbb..",
+        "..aaaRaaaa..",
+        "..aaaRaaaa..",
+        "...aaRaaa...",
+        "....aRaa....",
+        "......R.....",
+    ], (6, 5), 4.05, {
+        "a": _R((236, 255, 255), (176, 238, 242), (124, 204, 214), (72, 142, 162)),
+        "b": _R((220, 250, 252), (160, 228, 236), (112, 192, 204), (64, 130, 150)),
+    }, {"R": (226, 255, 255)}),
+    "neptune": ([
+        "............",
+        "....bbbb....",
+        "...bllbbb...",
+        "..bbbbbbbb..",
+        "..bbwwwbbb..",
+        "..bbdddbbb..",
+        "..bbbbbbbb..",
+        "...bbllbb...",
+        "....bbbb....",
+        "............",
+    ], (6, 5), 4.05, {
+        "b": _R((122, 172, 255), (62, 112, 238), (36, 74, 190), (20, 40, 120)),
+        "l": _R((176, 214, 255), (112, 162, 250), (70, 112, 212), (40, 60, 140)),
+        "w": _R((255, 255, 255), (224, 238, 255), (176, 204, 242), (120, 140, 190)),
+        "d": _R((44, 64, 168), (28, 42, 124), (20, 30, 94), (12, 18, 62)),
+    }, {}),
+    "sol": ([
+        ".....yy.....",
+        "..o..yy..o..",
+        "...oyyyyo...",
+        "...yWWyyy...",
+        ".yyWWWyyyyy.",
+        ".yyyWyyyyoy.",
+        "...yyyyoo...",
+        "...oyyooo...",
+        "..o..yy..o..",
+        ".....yy.....",
+    ], (6, 5), 3.2, {}, {"W": (255, 254, 236), "y": (255, 214, 84), "o": (255, 148, 40)}),
+}
+LIGHT = np.array([-0.55, -0.62, 0.56]) / np.linalg.norm([-0.55, -0.62, 0.56])
+
+# 括弧の画素（スプライト座標 12x10）。左右対称
+BRACKET = [(3, 0), (2, 0), (1, 1), (1, 2), (0, 3), (0, 4), (0, 5), (0, 6), (1, 7), (1, 8), (2, 9), (3, 9)]
+
+
 def emblem_small(key):
     c = HUD_COL[key]
     p = Px(16)
+    # 暗い六角の地
     hexpts = [(5.1, 3), (10.9, 3), (14, 8), (10.9, 13), (5.1, 13), (2, 8)]
-    m = poly_mask(16, 16, hexpts)
-    out = edge(m)
-    p.fill_mask(erode(m), PLATE, 216)
-    for y, x in zip(*np.nonzero(out)):
-        lit = (x + y * 0.8) < 14
-        p.put(x, y, lighten(c, 0.5) if lit else shade(c, 0.85), 255)
-    pl = render_planet(key, 16, {"saturn": 2.6, "sol": 3.0, "uranus": 3.2}.get(key, 3.6), crisp=True,
-                       detail=0.0)
-    over(p.a, pl, 0, 0)
-    tweak_small_emblem(key, p, c)
+    p.fill_mask(poly_mask(16, 16, hexpts), PLATE, 200)
+    rows, (cx, cy), rad, ramps, flat = SMALL_PLANET[key]
+    for j, row in enumerate(rows):
+        for i, ch in enumerate(row):
+            if ch == ".":
+                continue
+            x, y = 2 + i, 3 + j
+            if ch in flat:
+                p.put(x, y, flat[ch], 255)
+                continue
+            dx = (i + 0.5 - cx) / rad
+            dy = (j + 0.5 - cy) / rad
+            nz = math.sqrt(max(0.0, 1 - dx * dx - dy * dy))
+            lam = dx * LIGHT[0] + dy * LIGHT[1] + nz * LIGHT[2]
+            tone = 0 if lam > 0.90 else 1 if lam > 0.52 else 2 if lam > 0.12 else 3
+            p.put(x, y, ramps[ch][tone], 255)
+    for (i, j) in BRACKET:
+        for (ii, side) in ((i, "L"), (11 - i, "R")):
+            x, y = 2 + ii, 3 + j
+            if side == "L":
+                col = lighten(c, 0.55) if j <= 5 else c
+            else:
+                col = c if j <= 4 else shade(c, 0.78)
+            if (ii in (3, 8)):
+                col = mix(col, PLATE, 0.35)          # 角の短い棒は少し暗く
+            p.put(x, y, col, 255)
     return p
-
-
-def tweak_small_emblem(key, p, c):
-    """極小の惑星は手で一部の画素を整える。"""
-    if key == "sol":
-        for x, y in [(7, 4), (8, 4), (7, 11), (8, 11), (4, 7), (4, 8), (11, 7), (11, 8)]:
-            p.put(x, y, (255, 200, 70), 255)
-        for x, y in [(5, 5), (10, 5), (5, 10), (10, 10)]:
-            p.put(x, y, (255, 150, 40), 210)
-        p.put(7, 7, WHITE, 255)
-    if key == "earth":
-        p.put(6, 6, (236, 248, 255), 220)
 
 
 # ---------------------------------------------------------------------------
@@ -902,24 +1060,24 @@ ICONS = {
     ], {"f": (230, 50, 30), "R": (255, 120, 40), "Y": (255, 214, 90), "W": (255, 252, 220)}),
     "barrier": ([
         "...CCC...",
-        ".CCLLLCC.",
-        "CLLpppLLC",
-        "CLppWppLC",
-        "CLpWWWpLC",
-        "CLppWppLC",
+        ".CCWLLCC.",
+        "CWLpppLLC",
+        "CLppppaLC",
+        "CLpppaaLC",
+        "CLLpaaLLC",
         ".CCLLLCC.",
         "...CCC...",
-    ], {"C": (96, 214, 255), "L": (200, 244, 255), "p": (30, 70, 120), "W": (255, 255, 255)}),
+    ], {"C": (96, 214, 255), "L": (190, 240, 255), "p": (24, 64, 116), "a": (60, 130, 200),
+        "W": (255, 255, 255)}),
     "sync": ([
-        ".V.....P.",
-        ".VwwwwwP.",
-        "..V...P..",
-        "...VwP...",
-        "....X....",
-        "...PwV...",
-        "..P...V..",
-        ".PwwwwwV.",
-    ], {"V": (196, 150, 255), "P": (110, 226, 255), "w": ((210, 214, 255), 150), "X": (255, 255, 255)}),
+        "P...V...P",
+        "rP.V.V.Pr",
+        "r.X...X.r",
+        "r.X...X.r",
+        "rV.P.P.Vr",
+        "V...P...V",
+        ".........",
+    ], {"V": (196, 150, 255), "P": (110, 226, 255), "r": ((220, 220, 255), 110), "X": (255, 255, 255)}),
     "check": ([
         "........G",
         ".......GG",
@@ -1049,6 +1207,313 @@ def build_hud_page():
     G["icon"]["pipOff"] = pg.put(0xBA, pip(False), "icon.pipOff", (0, 5))
     G["icon"]["sep"] = pg.put(0xBB, sep_glyph(), "icon.sep", (0, 3))
     G["icon"]["arrow"] = pg.put(0xBC, arrow_glyph(), "icon.arrow", (0, 4))
+    return pg, G
+
+
+# ===========================================================================
+#  なめらかな絵の画布（ss 倍で描いて事前乗算で縮める）
+# ===========================================================================
+class Canvas:
+    def __init__(self, w, h=None, ss=4):
+        self.w, self.h, self.ss = w, (h if h is not None else w), ss
+        self.W, self.H = self.w * ss, self.h * ss
+        self.a = np.zeros((self.H, self.W, 4), np.float32)
+
+    # --- 形（0..1 の float マスク。座標は出力の px） ---
+    def _m(self):
+        return Image.new("L", (self.W, self.H), 0)
+
+    def poly(self, pts):
+        im = self._m()
+        ImageDraw.Draw(im).polygon([(x * self.ss, y * self.ss) for x, y in pts], fill=255)
+        return np.asarray(im, np.float32) / 255.0
+
+    def ellipse(self, cx, cy, rx, ry=None):
+        ry = rx if ry is None else ry
+        im = self._m()
+        s = self.ss
+        ImageDraw.Draw(im).ellipse([(cx - rx) * s, (cy - ry) * s, (cx + rx) * s, (cy + ry) * s], fill=255)
+        return np.asarray(im, np.float32) / 255.0
+
+    def ring(self, cx, cy, r0, r1):
+        return np.clip(self.ellipse(cx, cy, r1) - self.ellipse(cx, cy, r0), 0, 1)
+
+    def line(self, pts, width):
+        im = self._m()
+        s = self.ss
+        ImageDraw.Draw(im).line([(x * s, y * s) for x, y in pts], fill=255, width=max(1, int(round(width * s))),
+                                joint="curve")
+        return np.asarray(im, np.float32) / 255.0
+
+    def arc(self, cx, cy, r, a0, a1, width):
+        im = self._m()
+        s = self.ss
+        ImageDraw.Draw(im).arc([(cx - r) * s, (cy - r) * s, (cx + r) * s, (cy + r) * s], a0, a1, fill=255,
+                               width=max(1, int(round(width * s))))
+        return np.asarray(im, np.float32) / 255.0
+
+    def coords(self):
+        ys, xs = np.mgrid[0:self.H, 0:self.W].astype(np.float32)
+        return (xs + 0.5) / self.ss, (ys + 0.5) / self.ss
+
+    # --- 塗り ---
+    def fill(self, m, col, alpha=1.0):
+        """col: RGB か (H, W, 3) の配列。"""
+        a = np.clip(m * alpha, 0, 1)[..., None]
+        if a.max() <= 0:
+            return
+        col = np.asarray(col, np.float32)
+        da = self.a[..., 3:4] / 255.0
+        oa = a + da * (1 - a)
+        self.a[..., :3] = np.where(oa > 0, (col * a + self.a[..., :3] * da * (1 - a)) / np.maximum(oa, 1e-6),
+                                   self.a[..., :3])
+        self.a[..., 3:4] = oa * 255
+
+    def grad(self, p0, p1, c0, c1, stops=None):
+        """p0→p1 の線形グラデーションの色配列。"""
+        X, Y = self.coords()
+        dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+        t = ((X - p0[0]) * dx + (Y - p0[1]) * dy) / max(dx * dx + dy * dy, 1e-6)
+        if stops is None:
+            stops = [(0.0, c0), (1.0, c1)]
+        return _ramp(t, stops)
+
+    def radial(self, cx, cy, r, stops):
+        X, Y = self.coords()
+        t = np.sqrt((X - cx) ** 2 + (Y - cy) ** 2) / r
+        return _ramp(t, stops)
+
+    def glow(self, m, col, radius, strength=1.0):
+        """マスクをぼかした発光（下に敷く）。"""
+        im = Image.fromarray(np.clip(m * 255, 0, 255).astype(np.uint8), "L")
+        b = np.asarray(im.filter(ImageFilter.GaussianBlur(radius * self.ss)), np.float32) / 255.0
+        self.fill(np.clip(b * strength, 0, 1), col)
+
+    def paste(self, arr, ox, oy):
+        """出力解像度の RGBA 配列を ss 倍に拡大して重ねる。"""
+        im = Image.fromarray(np.clip(arr + 0.5, 0, 255).astype(np.uint8), "RGBA")
+        im = im.resize((im.width * self.ss, im.height * self.ss), Image.LANCZOS)
+        over(self.a, np.asarray(im, np.float32), int(ox * self.ss), int(oy * self.ss))
+
+    def result(self):
+        pm = self.a.copy()
+        pm[..., :3] *= pm[..., 3:4] / 255.0
+        pm = pm.reshape(self.h, self.ss, self.w, self.ss, 4).mean(axis=(1, 3))
+        a = pm[..., 3:4]
+        pm[..., :3] = np.where(a > 0, pm[..., :3] * 255.0 / np.maximum(a, 1e-6), 0)
+        return pm
+
+
+def outlined(arr, col=(14, 12, 20), thr=96, grow=1):
+    """アルファを 2 値にして暗い縁取りを付ける（アイテムアイコンと同じ流儀）。"""
+    im = Image.fromarray(np.clip(arr + 0.5, 0, 255).astype(np.uint8), "RGBA")
+    a = im.split()[3].point(lambda v: 255 if v > thr else 0)
+    im.putalpha(a)
+    ring = Image.new("RGBA", im.size, tuple(col) + (255,))
+    ring.putalpha(a.filter(ImageFilter.MaxFilter(1 + 2 * grow)))
+    ring.alpha_composite(im)
+    return np.asarray(ring, np.float32)
+
+
+def soft_outlined(arr, col=INK, alpha=200, grow=1):
+    """縁取り（アルファは保ったまま、外側に暗い縁を足す）。"""
+    im = Image.fromarray(np.clip(arr + 0.5, 0, 255).astype(np.uint8), "RGBA")
+    a = im.split()[3]
+    hard = a.point(lambda v: 255 if v > 60 else 0).filter(ImageFilter.MaxFilter(1 + 2 * grow))
+    ring = Image.new("RGBA", im.size, tuple(col) + (0,))
+    ring.putalpha(hard.point(lambda v: alpha if v else 0))
+    ring.alpha_composite(im)
+    return np.asarray(ring, np.float32)
+
+
+# ===========================================================================
+#  大きな絵のページ（glyph_EB、32 px セル）
+#    行 0  大きな惑星紋章（order 1..9 → 列 0..8）
+#    行 1  カットインの飾り（翼・区切り線）
+#    行 2  大きな状態アイコン
+# ===========================================================================
+def hex_pts(cx, cy, rx, ry, flat=True):
+    if flat:
+        return [(cx - rx, cy), (cx - rx / 2, cy - ry), (cx + rx / 2, cy - ry), (cx + rx, cy),
+                (cx + rx / 2, cy + ry), (cx - rx / 2, cy + ry)]
+    return [(cx, cy - ry), (cx + rx, cy - ry / 2), (cx + rx, cy + ry / 2), (cx, cy + ry),
+            (cx - rx, cy + ry / 2), (cx - rx, cy - ry / 2)]
+
+
+def emblem_frame(cv, key, cx, cy, R, detail=1.0):
+    """六角のメカ枠（金属の外枠・惑星色の内側の発光線・暗い地・四隅の留め具）。R = 外枠の縦の半径。"""
+    c = HUD_COL[key]
+    rx = R * 1.16
+    outer = cv.poly(hex_pts(cx, cy, rx, R))
+    inner = cv.poly(hex_pts(cx, cy, rx - R * 0.17, R * 0.85))
+    glow_in = cv.poly(hex_pts(cx, cy, rx - R * 0.24, R * 0.79))
+    cv.fill(outer, (0, 0, 0), 0.0)
+    metal = cv.grad((cx - rx, cy - R), (cx + rx, cy + R), None, None,
+                    [(0.0, (236, 242, 250)), (0.35, (164, 178, 198)), (0.55, (96, 108, 130)),
+                     (0.75, (150, 164, 186)), (1.0, (70, 80, 100))])
+    cv.fill(np.clip(outer - inner, 0, 1), metal)
+    cv.fill(np.clip(inner - glow_in, 0, 1), c)
+    plate = cv.radial(cx, cy - R * 0.2, R, [(0.0, mix(PLATE, c, 0.22)), (1.0, (6, 10, 20))])
+    cv.fill(glow_in, plate, 0.94)
+    # 枠の溝（パネルライン）と留め具
+    for ang in (30, 150, 210, 330):
+        a = math.radians(ang)
+        x, y = cx + math.cos(a) * rx * 0.86, cy + math.sin(a) * R * 0.98
+        cv.fill(cv.line([(x - math.cos(a) * R * 0.12, y - math.sin(a) * R * 0.12),
+                         (x + math.cos(a) * R * 0.05, y + math.sin(a) * R * 0.05)], max(0.6, R * 0.05)),
+                (40, 46, 60))
+    for (x, y) in ((cx - rx / 2, cy - R), (cx + rx / 2, cy + R)):
+        cv.fill(cv.ellipse(x, y, R * 0.12), lighten(c, 0.5))
+
+
+def emblem_big(key):
+    cv = Canvas(32, ss=8)
+    emblem_frame(cv, key, 16, 16, 11.6)
+    rad = {"saturn": 5.6, "sol": 6.4, "uranus": 7.0}.get(key, 7.4)
+    pl = render_planet(key, 32, rad, ss=6, detail=0.7)
+    cv.paste(pl, 0, 0)
+    a = cv.result()
+    return soft_outlined(a, INK, 170)
+
+
+def wing(side):
+    """カットインの翼（左向き）。side="R" は左右反転。"""
+    cv = Canvas(32, ss=8)
+    blades = [
+        # (付け根の上, 付け根の下, 先端の上, 先端の下) 右端が付け根
+        [(31.5, 11.0), (31.5, 14.6), (6.0, 9.0), (2.5, 7.4)],
+        [(31.5, 15.2), (31.5, 18.2), (9.5, 16.8), (6.0, 15.4)],
+        [(31.5, 18.8), (31.5, 21.6), (15.0, 24.2), (12.0, 23.6)],
+    ]
+    for i, (a, b, tb, ta) in enumerate(blades):
+        pts = [a, ta, tb, b]
+        m = cv.poly(pts)
+        metal = cv.grad((a[0], a[1] - 2), (b[0], b[1] + 2), None, None,
+                        [(0.0, (250, 252, 255)), (0.4, (176, 190, 212)), (1.0, (84, 96, 122))])
+        cv.fill(m, metal)
+        # 前縁の発光線
+        cv.fill(cv.line([a, ta], 0.9), (150, 236, 255))
+        cv.fill(cv.line([(a[0] - 2, a[1] + 0.4), (ta[0] + 2.4, ta[1] + 0.9)], 0.35), WHITE)
+        # 刻み（パネルライン）
+        mx = (a[0] + ta[0]) / 2
+        my = (a[1] + ta[1]) / 2 + 0.8
+        cv.fill(cv.line([(mx, my), (mx + 1.4, (b[1] + tb[1]) / 2 - 0.6)], 0.4), (60, 70, 92))
+    hub = cv.poly([(26, 9.5), (32, 9.5), (32, 23), (26, 23), (24, 19.5), (24, 13)])
+    cv.fill(hub, cv.grad((24, 9), (32, 23), (210, 222, 238), (76, 88, 112)))
+    cv.fill(cv.poly([(27.5, 14), (30.5, 14), (30.5, 18.6), (27.5, 18.6)]), (150, 236, 255))
+    cv.fill(cv.poly([(28.2, 14.6), (29.6, 14.6), (29.6, 16), (28.2, 16)]), WHITE)
+    a = soft_outlined(cv.result(), INK, 210)
+    if side == "R":
+        a = a[:, ::-1].copy()
+    return a
+
+
+def divider(kind):
+    """区切り線。kind: mid（両端が消える・中央にひし形）/ L（右へ伸びて左端が消える）/ R。"""
+    cv = Canvas(32, ss=8)
+    X, Y = cv.coords()
+    if kind == "mid":
+        fade = np.clip(1 - np.abs(X - 16) / 16, 0, 1) ** 0.6
+    elif kind == "L":
+        fade = np.clip(X / 32, 0, 1) ** 0.8
+    else:
+        fade = np.clip(1 - X / 32, 0, 1) ** 0.8
+    line = cv.poly([(0, 15.4), (32, 15.4), (32, 16.6), (0, 16.6)]) * fade
+    cv.fill(cv.poly([(0, 14.6), (32, 14.6), (32, 17.4), (0, 17.4)]) * fade, (60, 170, 255), 0.35)
+    cv.fill(line, (210, 246, 255))
+    if kind == "mid":
+        d = cv.poly([(16, 11.5), (20.5, 16), (16, 20.5), (11.5, 16)])
+        cv.fill(cv.poly([(16, 10.0), (22, 16), (16, 22), (10, 16)]), INK, 0.8)
+        cv.fill(d, cv.grad((13, 12), (19, 20), (255, 255, 255), (120, 210, 255)))
+        cv.fill(cv.poly([(16, 13.6), (18.4, 16), (16, 18.4), (13.6, 16)]), (40, 90, 160))
+    else:
+        tip = 30.5 if kind == "L" else 1.5
+        cv.fill(cv.poly([(tip, 13.4), (tip + 2.6, 16), (tip, 18.6), (tip - 2.6, 16)]), (210, 246, 255))
+    return cv.result()
+
+
+def big_icon(name):
+    cv = Canvas(32, ss=8)
+    if name == "energy":
+        pts = [(19, 5), (8, 18), (15, 18), (11, 27), (24, 13), (17, 13), (21, 5)]
+        cv.glow(cv.poly(pts), (255, 220, 80), 1.2, 0.8)
+        cv.fill(cv.poly(pts), cv.grad((10, 6), (22, 26), (255, 252, 210), (255, 176, 30)))
+        cv.fill(cv.line([(18.6, 6.4), (11, 16.4)], 0.8), WHITE)
+    elif name == "nova":
+        pts = []
+        for i in range(8):
+            a = math.radians(i * 45 - 90)
+            r = 11.5 if i % 2 == 0 else 3.4
+            pts.append((16 + math.cos(a) * r, 16 + math.sin(a) * r))
+        cv.glow(cv.poly(pts), (255, 210, 90), 1.6, 0.9)
+        cv.fill(cv.poly(pts), cv.radial(16, 16, 11, [(0.0, (255, 255, 240)), (0.5, (255, 226, 120)),
+                                                     (1.0, (255, 160, 30))]))
+        cv.fill(cv.ring(16, 16, 7.2, 8.0), (255, 236, 160), 0.8)
+    elif name == "revert":
+        cv.fill(cv.arc(16, 16.5, 8.5, -60, 240, 2.6), (255, 110, 110))
+        cv.fill(cv.line([(16, 5.5), (16, 15)], 2.6), WHITE)
+    elif name == "overheat":
+        flame = [(16, 4), (21, 11), (24, 17), (23, 23), (19, 27), (13, 27), (9, 23), (8, 17), (11, 12), (13, 15)]
+        cv.glow(cv.poly(flame), (255, 90, 30), 1.4, 0.8)
+        cv.fill(cv.poly(flame), cv.grad((16, 4), (16, 27), (255, 210, 90), (230, 40, 20)))
+        inner = [(16, 13), (19.5, 18), (19.5, 23), (16, 26), (12.5, 23), (12.5, 19)]
+        cv.fill(cv.poly(inner), cv.grad((16, 13), (16, 26), (255, 255, 230), (255, 190, 70)))
+    elif name == "barrier":
+        h = cv.poly(hex_pts(16, 16, 12, 11, flat=False))
+        hi = cv.poly(hex_pts(16, 16, 9.8, 8.8, flat=False))
+        cv.glow(h, (90, 210, 255), 1.4, 0.7)
+        cv.fill(h, (110, 222, 255))
+        cv.fill(hi, cv.grad((8, 6), (24, 26), (40, 110, 180), (12, 34, 80)))
+        for (x, y) in ((16, 12), (12.6, 18), (19.4, 18)):
+            cv.fill(cv.poly(hex_pts(x, y, 3.0, 2.8, flat=False)), (140, 230, 255), 0.55)
+        cv.fill(cv.line([(9.5, 10.5), (13, 8.4)], 1.0), WHITE)
+    elif name == "sync":
+        for k, col in ((0, (196, 150, 255)), (math.pi, (110, 226, 255))):
+            pts = [(6 + t * 20 / 40, 16 + 7 * math.cos(t / 40 * 2 * math.pi + k)) for t in range(41)]
+            cv.fill(cv.line(pts, 2.0), col)
+        for t in (0, 10, 20, 30, 40):
+            x = 6 + t / 2
+            cv.fill(cv.line([(x, 16 - 6), (x, 16 + 6)], 0.8), (230, 230, 255), 0.5)
+    elif name == "check":
+        pts = [(6, 16), (10, 12.5), (14, 17), (24, 6.5), (27.5, 10), (14, 24)]
+        cv.glow(cv.poly(pts), (90, 255, 140), 1.2, 0.7)
+        cv.fill(cv.poly(pts), cv.grad((6, 6), (26, 24), (200, 255, 210), (40, 200, 90)))
+    elif name == "lock":
+        cv.fill(cv.arc(16, 13, 6.5, 180, 360, 2.6), (190, 200, 218))
+        cv.fill(cv.line([(9.5, 13), (9.5, 16)], 2.6), (190, 200, 218))
+        cv.fill(cv.line([(22.5, 13), (22.5, 16)], 2.6), (190, 200, 218))
+        body = cv.poly([(7, 15), (25, 15), (25, 27), (7, 27)])
+        cv.fill(body, cv.grad((7, 15), (25, 27), (255, 228, 130), (180, 110, 30)))
+        cv.fill(cv.ellipse(16, 20, 1.8), (60, 36, 10))
+        cv.fill(cv.line([(16, 20), (16, 24)], 1.4), (60, 36, 10))
+    elif name == "warn":
+        tri = [(16, 4.5), (28, 26), (4, 26)]
+        cv.glow(cv.poly(tri), (255, 200, 40), 1.2, 0.7)
+        cv.fill(cv.poly(tri), cv.grad((16, 4), (16, 26), (255, 236, 120), (255, 170, 20)))
+        cv.fill(cv.line([(16, 11), (16, 19)], 2.6), (40, 24, 8))
+        cv.fill(cv.ellipse(16, 22.6, 1.5), (40, 24, 8))
+    return soft_outlined(cv.result(), INK, 200)
+
+
+def _px_from(arr):
+    p = Px(arr.shape[1], arr.shape[0])
+    p.a = arr.astype(np.float32)
+    return p
+
+
+def build_art_page():
+    pg = Page(PAGE_ART, 32)
+    G = {"emblemBig": {}, "banner": {}, "iconBig": {}}
+    for key in KEYS:
+        G["emblemBig"][key] = pg.put(D.PLANETS[key]["order"] - 1, _px_from(emblem_big(key)), f"emblemBig.{key}")
+    G["banner"]["wingL"] = pg.put(0x10, _px_from(wing("L")), "banner.wingL")
+    G["banner"]["wingR"] = pg.put(0x11, _px_from(wing("R")), "banner.wingR")
+    G["banner"]["divider"] = pg.put(0x12, _px_from(divider("mid")), "banner.divider")
+    G["banner"]["lineL"] = pg.put(0x13, _px_from(divider("L")), "banner.lineL")
+    G["banner"]["lineR"] = pg.put(0x14, _px_from(divider("R")), "banner.lineR")
+    for i, name in enumerate(["energy", "nova", "revert", "overheat", "barrier", "sync", "check", "lock",
+                              "warn"]):
+        G["iconBig"][name] = pg.put(0x20 + i, _px_from(big_icon(name)), f"iconBig.{name}")
     return pg, G
 
 
@@ -1308,7 +1773,10 @@ def main():
     pg, G = build_hud_page()
     save_png(pg.image(), os.path.join(FONT_DIR, "glyph_EA.png"))
     page_preview(pg, os.path.join(SCRATCH, "glyphs_EA.png"))
-    print("  ui: glyph_EA")
+    pg2, G2 = build_art_page()
+    save_png(pg2.image(), os.path.join(FONT_DIR, "glyph_EB.png"))
+    page_preview(pg2, os.path.join(SCRATCH, "glyphs_EB.png"))
+    print("  ui: glyph_EA, glyph_EB")
 
 
 if __name__ == "__main__":

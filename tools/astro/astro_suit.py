@@ -60,10 +60,23 @@ SKIN = {
     "rightLeg": ((-3.9, 0, -2), (4, 12, 4)),
     "leftLeg": ((-0.1, 0, -2), (4, 12, 4)),
 }
+# スリム（Alex）の腕: 幅 3・pivot y 21.5。肌の外側は y 11.25..23.75 まで下がる（DESIGN §4.5 の調査）
+SKIN_SLIM = {
+    "rightArm": ((-7, 11.5, -2), (3, 12, 4)),
+    "leftArm": ((4, 11.5, -2), (3, 12, 4)),
+}
 LAYER = {"head": 0.5, "body": 0.25, "rightArm": 0.25, "leftArm": 0.25,
          "rightLeg": 0.25, "leftLeg": 0.25}
 MIRROR_TOP = {"rightArm": "leftArm", "leftArm": "rightArm", "rightLeg": "leftLeg",
               "leftLeg": "rightLeg", "body": "body", "head": "head"}
+
+# プレイヤーのボーン名（大文字小文字を区別せず一致すると、そのボーンに付いて動いてしまう）。
+# トップレベルの 6 つ以外にこの名前を付けてはいけない
+RESERVED = {n.lower() for n in (
+    "root", "waist", "body", "head", "hat", "cape", "jacket", "rightArm", "leftArm", "rightLeg",
+    "leftLeg", "rightItem", "leftItem", "helmet", "bodyArmor", "belt", "leftSleeve",
+    "rightSleeve", "leftPants", "rightPants", "rightSock", "leftSock", "rightBoot", "leftBoot",
+    "leftLegging", "rightLegging", "leftArmArmor", "rightArmArmor")}
 
 GROUPS = ("inner", "boots", "legs", "waist", "torso", "back", "arms", "shoulders",
           "helmet", "visor", "extra")
@@ -191,8 +204,12 @@ class Suit:
             side = {"rightArm": "arm_r", "leftArm": "arm_l", "rightLeg": "leg_r",
                     "leftLeg": "leg_l"}.get(top, top)
             b = self.part("inner", side, top, pivot=TOP[top])
-            c = [o[i] + sz[i] / 2 for i in range(3)]
-            size = [sz[i] + 2 * inf for i in range(3)]
+            lo = [o[i] - inf for i in range(3)]
+            hi = [o[i] + sz[i] + inf for i in range(3)]
+            if top in ("rightArm", "leftArm"):
+                lo[1] = min(lo[1], 11.25 - gap)        # スリムの腕は 0.5 低くまで来る
+            c = [(lo[i] + hi[i]) / 2 for i in range(3)]
+            size = [hi[i] - lo[i] for i in range(3)]
             if top in ("leftLeg", "leftArm"):
                 size[2] += 0.1
             kw = {"uv_scale": uv_scale} if uv_scale else {}
@@ -246,11 +263,12 @@ class Suit:
         return self.m.stats()
 
 
-def mirror_cube(c: Cube, smap=None) -> Cube:
+def mirror_cube(c: Cube, smap=None, about: float = 0.0) -> Cube:
+    """X = about の面で鏡映したキューブ（回転は (rx, -ry, -rz)、デカールの east/west 入れ替え）。"""
     o = list(c.origin)
     s = list(c.size)
-    o[0] = -(o[0] + s[0])
-    piv = [-c.pivot[0], c.pivot[1], c.pivot[2]] if c.pivot else None
+    o[0] = 2 * about - (o[0] + s[0])
+    piv = [2 * about - c.pivot[0], c.pivot[1], c.pivot[2]] if c.pivot else None
     rot_ = [c.rotation[0], -c.rotation[1], -c.rotation[2]] if c.rotation else None
     dec = {}
     for f, d in (c.decals or {}).items():
@@ -259,6 +277,20 @@ def mirror_cube(c: Cube, smap=None) -> Cube:
     n = Cube(o, s, style, inflate=c.inflate, pivot=piv, rotation=rot_, decals=dec,
              uv_scale=c.uv_scale)
     return n
+
+
+def mirror_x(bone: Bone, *cubes, style_map=None, about: float = 0.0) -> List[Cube]:
+    """同じボーンの中で、渡したキューブ（リスト可）の X 鏡映を足す（胸・兜など中央の部品の左右対称）。
+    about で鏡の位置（脚の中心 LEG_X など）。"""
+    flat = []
+    for c in cubes:
+        if isinstance(c, (list, tuple)):
+            flat.extend(c)
+        else:
+            flat.append(c)
+    out = [mirror_cube(c, style_map, about) for c in flat]
+    bone.cubes.extend(out)
+    return out
 
 
 # ===========================================================================
@@ -413,9 +445,9 @@ FACE_N = {"up": (1, 1), "down": (1, -1), "east": (0, 1), "west": (0, -1),
           "south": (2, 1), "north": (2, -1)}   # 軸, 向き（east = +X、south = +Z）
 
 
-def skin_samples(top: str, spacing: float = 0.5):
-    """外側レイヤーの表面の標本点 (N,3) と、その点の面名のリスト。"""
-    o, sz = SKIN[top]
+def skin_samples(top: str, spacing: float = 0.5, slim=False):
+    """外側レイヤーの表面の標本点 (N,3) と、その点の面名のリスト。slim=True でスリムの腕。"""
+    o, sz = (SKIN_SLIM if slim else SKIN)[top]
     inf = LAYER[top]
     lo = np.array(o, float) - inf
     hi = np.array(o, float) + np.array(sz, float) + inf
@@ -465,6 +497,10 @@ def coverage(s_or_geo, spacing: float = 0.5, margin: float = 0.05, allow=None,
     res = {}
     for top in TOP:
         pts, faces = skin_samples(top, spacing)
+        if top in SKIN_SLIM:                       # スリムの腕も同時に覆う
+            p2, f2 = skin_samples(top, spacing, slim=True)
+            pts = np.vstack([pts, p2])
+            faces = faces + f2
         keep = np.ones(len(pts), bool)
         for a in allow:
             if a[0] != top:
@@ -524,6 +560,9 @@ def naming_errors(s_or_geo) -> List[str]:
             if b.get("rotation"):
                 errs.append(f"top-level bone '{n}' must not be rotated")
             continue
+        if n.lower() in RESERVED:
+            errs.append(f"bone '{n}' uses a player bone name (it would follow that bone); "
+                        "prefix it, e.g. 'helmet_crest'")
         if not b.get("parent"):
             errs.append(f"bone '{n}' has no parent (only the 6 skeleton bones are roots)")
         if is_fx(n):
