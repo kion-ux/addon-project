@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import math
 
-from astro_common import (bevel, beam, cbox, line_on, octa, polyline, rbox, ring, stick,
-                          taper)
+from astro_common import (bevel, beam, cbox, chamfer, line_on, octa, polyline, rbox, ring,
+                          stick, taper)
 from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 from astro_weapon import ring as tring     # 接線の向きを解く輪（正面向き・側面向きの輪はこちら）
 
@@ -49,6 +49,8 @@ SUIT_STYLES = {
     "petal_cream": {"kind": "armor", "base": (255, 236, 206), "light": (255, 252, 240),
                     "dark": (226, 196, 150), "line": (170, 120, 80), "panel": 0},
     # 磁器の面
+    "helm": {"kind": "armor", "base": (240, 194, 88), "light": (255, 238, 170),
+             "dark": (176, 120, 38), "line": (110, 70, 20), "panel": 0},
     "face": {"kind": "armor", "base": (255, 246, 234), "light": (255, 255, 252),
              "dark": (226, 206, 186), "panel": 0, "line": (150, 118, 92)},
     # 額の八芒星（明けの明星の白金の光）
@@ -150,7 +152,7 @@ def boots(s):
     X = LEG_X
     b = s.part("boots", "foot_r", "rightLeg")
     cbox(b, (X, -0.35, -0.55), (5.0, 0.7, 6.3), "frame")                    # 靴底
-    bevel(b, (X, 1.75, -0.2), (5.5, 3.3, 5.7), "plate", cut=0.6, axis="z")  # 足の殻（前から見て八角）
+    chamfer(b, (X, 1.75, -0.2), (5.5, 3.3, 5.7), "plate", cut=0.5, axis="z")  # 足の殻（角を落とす）
     toe = rbox(b, (X, 1.05, -3.2), (4.4, 2.0, 1.5), "plate2", rot=(-36, 0, 0))
     stick(b, toe, "north", 0.5, 0.55, (0.36, 1.3, 0.22), "glow", sink=0.05)
     rbox(b, (X, 0.55, -3.85), (2.0, 0.9, 2.0), "gold", rot=(0, 45, 0))   # 尖ったつま先
@@ -204,7 +206,6 @@ def waist(s):
     w = s.part("waist", "belt", "body")
     bevel(w, (0, 12.75, 0), (10.9, 1.5, 8.0), "frame", cut=1.7, axis="y")        # 花弁の付け根を隠す帯
     bevel(w, (0, 13.3, 0), (11.1, 0.4, 8.2), "gold", cut=1.75, axis="y")         # 金の上縁
-    bevel(w, (0, 12.0, 0), (11.0, 0.3, 8.1), "rosegold", cut=1.72, axis="y")     # 薔薇金の下縁
     octa(w, (0, 12.75, -4.05), 2.4, 0.5, "gold", axis="z")                       # 留め金
     rbox(w, (0, 12.75, -4.35), (1.2, 1.2, 0.4), "gem_accent", rot=(0, 0, 45))
     for x in (-2.4, 2.4):                                                        # 左右の小さな光
@@ -248,7 +249,7 @@ def petal(s, name, heading, L, W, flare, style, trim, layer):
 # ---------------------------------------------------------------------------
 def torso(s):
     c = s.part("torso", "chest", "body")
-    bevel(c, (0, 21.05, 0.0), (9.8, 6.1, 5.9), "plate", cut=0.6, axis="y")       # 胸郭（金）
+    bevel(c, (0, 21.05, 0.0), (9.8, 6.1, 5.9), "helm", cut=0.6, axis="y")        # 胸郭（金）
     cbox(c, (0, 24.35, 0.1), (8.6, 0.7, 5.4), "plate_b")                         # 肩の上の板
     cbox(c, (0, 15.85, 0.0), (7.6, 5.1, 5.3), "plate_b")                         # 腹の殻（細い）
     cbox(c, (0, 15.9, -2.62), (5.6, 4.8, 0.4), "frame")                          # 腹の下地
@@ -261,8 +262,8 @@ def torso(s):
     ob = rbox(c, (-3.25, 16.0, -2.3), (1.3, 4.2, 1.0), "plate2", rot=(0, 34, -6))   # 脇腹
     mirror_x(c, ob)
     # 胸板: 角を落としたクリームの板（V 字に開く）と、上縁の金・下縁の発光線
-    pec = bevel(c, (-2.45, 21.3, -3.05), (4.6, 3.8, 1.0), "plate2", cut=0.7, axis="z",
-                rot=(8, 16, 9))
+    pec = chamfer(c, (-2.45, 21.3, -3.05), (4.6, 3.8, 1.0), "plate2", cut=0.6, axis="z",
+                  rot=(8, 16, 9))
     trim = line_on(c, pec[1], "north", (0.05, 0.86), (0.95, 0.96), GOLD_W, 0.2, "gold")
     gl1 = line_on(c, pec[0], "north", (0.95, 0.12), (0.2, 0.0), 0.24, 0.2, "glow_accent")
     gl2 = line_on(c, pec[1], "north", (0.12, 0.25), (0.12, 0.75), 0.22, 0.2, "glow")
@@ -319,8 +320,8 @@ def back(s):
     # 翼の排気フィン（右に 3 枚。背嚢の肩から上外・後ろへ扇に開く羽根。根元が広く先が細い）
     wg = s.part("back", "wing_r", bk, pivot=(-2.6, 21.6, 5.0))
     root = (-2.5, 21.6, 5.6)
-    fins = [((-5.4, 25.4, 8.0), 2.3, "plate2"), ((-6.6, 23.2, 8.1), 2.0, "cloud"),
-            ((-6.2, 20.2, 7.7), 1.7, "plate2")]
+    fins = [((-6.2, 27.2, 8.3), 2.5, "plate2"), ((-7.5, 25.0, 8.4), 2.2, "cloud"),
+            ((-7.8, 22.6, 8.0), 1.8, "plate2")]
     for k, (tip, h, st_) in enumerate(fins):
         mid = tuple(root[i] + (tip[i] - root[i]) * 0.55 for i in range(3))
         polyline(wg, [root, mid, tip], [0.34, 0.3], [h, h * 0.5], st_)
@@ -336,11 +337,13 @@ def back(s):
 # ---------------------------------------------------------------------------
 def arms(s):
     ar = s.part("arms", "upper_r", "rightArm", pivot=(ARM_X, 20.0, 0))
-    up = bevel(ar, (-6.0, 20.1, 0.0), (5.7, 5.4, 5.7), "plate", cut=0.5, axis="y")
-    cbox(ar, (-6.0, 18.1, 0.0), (5.95, 0.3, 5.95), "rosegold")                # 線条細工の帯
-    line_on(ar, up[1], "west", (0.5, 0.35), (0.5, 0.95), 0.24, 0.18, "glow")     # 外側の発光線
-    line_on(ar, up[1], "west", (0.2, 0.5), (0.5, 0.75), 0.22, 0.16, "rosegold")
-    line_on(ar, up[1], "west", (0.8, 0.5), (0.5, 0.75), 0.22, 0.16, "rosegold")
+    # 上腕はインナーの細さのまま。金の腕輪（二重）と、外側の細いクリームの板
+    cbox(ar, (-6.0, 21.6, 0.0), (5.4, 1.6, 5.4), "helm")                      # 肩口
+    cbox(ar, (-6.0, 19.6, 0.0), (5.45, 0.55, 5.45), "gold")                   # 腕輪
+    cbox(ar, (-6.0, 18.5, 0.0), (5.4, 0.3, 5.4), "rosegold")
+    op = rbox(ar, (-8.78, 19.4, 0.0), (0.45, 3.6, 3.0), "plate2", rot=(0, 0, 3))
+    line_on(ar, op, "west", (0.5, 0.1), (0.5, 0.9), 0.22, 0.16, "glow")
+    stick(ar, op, "west", 0.5, 0.5, (1.0, 1.0, 0.2), "gem_accent", spin=45, sink=0.02)
     el = s.part("arms", "elbow_r", "rightArm", pivot=(ARM_X, 16.8, 0))
     cbox(el, (-6.0, 16.75, 0.0), (5.4, 1.3, 5.4), "frame")
     octa(el, (-8.75, 16.75, 0.2), 1.6, 0.45, "gold", axis="x")
@@ -396,9 +399,11 @@ def shoulders(s):
     puff(p, (-8.4, 25.5, -1.55), 1.75, "cloud")
     puff(p, (-8.5, 25.7, 1.7), 1.85, "cloud")
     # 外の排気口（丸い硫黄色の光）と金の縁・中央の宝玉
-    octa(p, (-11.72, C[1], C[2]), 2.2, 0.4, "vent", axis="x")
-    tring(p, (-11.85, C[1], C[2]), 1.38, 10, (0, 0.3, 0.3), "gold", axis="x")
-    octa(p, (-11.98, C[1], C[2]), 0.7, 0.25, "gem", axis="x")
+    octa(p, (-11.6, C[1], C[2]), 2.9, 0.3, "gold", axis="x")
+    octa(p, (-11.78, C[1], C[2]), 2.2, 0.3, "vent", axis="x")
+    octa(p, (-11.95, C[1], C[2]), 0.7, 0.25, "gem", axis="x")
+    tring(p, (-9.1, C[1], C[2]), 2.62, 10, (0, 0.34, 0.55), "gold", axis="x",
+          styles=["gold", "gold", "gold", "gold", "rosegold"])                # 雲を抱く金の輪
     # 下面の排気（雲を噴く口）と前の薔薇色の宝玉
     cbox(p, (-9.1, 20.55, 0.1), (2.6, 0.2, 2.2), "vent")
     rbox(p, (-9.2, 23.3, -2.9), (0.8, 0.8, 0.35), "gem_accent", rot=(0, 0, 45))
@@ -409,10 +414,10 @@ def shoulders(s):
 # ---------------------------------------------------------------------------
 def helmet(s):
     hm = s.part("helmet", "dome", "head")
-    bevel(hm, (0, 31.0, 0.15), (9.9, 4.6, 10.1), "plate", cut=1.1, axis="z")     # 丸い冠（金）
-    bevel(hm, (0, 33.35, 0.3), (7.4, 1.0, 8.6), "plate", cut=1.2, axis="y")      # 頂の段
-    rbox(hm, (0, 31.9, -4.92), (8.2, 2.4, 0.8), "plate", rot=(-28, 0, 0))        # 額の斜面
-    rbox(hm, (0, 31.8, 5.25), (8.2, 2.4, 0.8), "plate", rot=(28, 0, 0))          # 後ろの斜面
+    bevel(hm, (0, 31.0, 0.15), (9.9, 4.6, 10.1), "helm", cut=1.1, axis="z")      # 丸い冠（金）
+    bevel(hm, (0, 33.35, 0.3), (7.4, 1.0, 8.6), "helm", cut=1.2, axis="y")       # 頂の段
+    rbox(hm, (0, 31.9, -4.92), (8.2, 2.4, 0.8), "helm", rot=(-28, 0, 0))         # 額の斜面
+    rbox(hm, (0, 31.8, 5.25), (8.2, 2.4, 0.8), "helm", rot=(28, 0, 0))           # 後ろの斜面
     cbox(hm, (0, 26.9, 4.95), (8.8, 4.6, 0.8), "plate_b")                        # 後頭部
     sd = cbox(hm, (-4.95, 27.3, 0.3), (0.9, 5.0, 8.4), "plate2")                # クリームの側板
     sdt = line_on(hm, sd, "west", (0.04, 0.08), (0.96, 0.08), GOLD_W, 0.2, "gold")
@@ -431,7 +436,10 @@ def helmet(s):
     tl = rbox(hm, (-2.35, 29.75, -5.1), (4.9, 0.62, 0.55), "gold", rot=(-8, 6, -11))
     tg = stick(hm, tl, "north", 0.5, 0.5, (4.2, 0.18, 0.1), "glow_accent", sink=0.04)
     ts = cbox(hm, (-5.0, 29.3, -1.6), (0.6, 0.55, 5.0), "gold")
-    mirror_x(hm, tl, tg, ts)
+    # 冠の尖塔（ティアラから立ち上がる金の細い塔。中央の星を囲む）
+    sp1 = taper(hm, (-1.95, 30.2, -5.5), (-2.15, 34.1, -5.95), 0.62, 0.14, 1, "gold")
+    sp2 = taper(hm, (-3.8, 29.8, -5.3), (-4.35, 32.8, -5.55), 0.55, 0.12, 1, "gold")
+    mirror_x(hm, tl, tg, ts, sp1, sp2)
     # 磁器の面: 額から顎まで一枚の白い面、鼻筋、頬当て（クリーム + 金の縁）、顎、薔薇色の唇
     cbox(hm, (0, 26.6, -4.82), (6.6, 4.6, 0.45), "face")                        # 一枚の白い面
     ck = rbox(hm, (-3.5, 25.9, -3.9), (1.4, 3.8, 3.0), "plate2", rot=(0, 30, -8))   # 頬当て

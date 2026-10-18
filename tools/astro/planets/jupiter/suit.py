@@ -61,20 +61,21 @@ SUIT_STYLES = {
                    "deep": (110, 200, 255), "bevel": False, "outline": False},
     "thruster": {"glow": (120, 220, 255), "light": (240, 255, 255), "deep": (24, 70, 150)},
     # 大赤斑（回る渦）
-    "grs": {"kind": "energy", "glow": (226, 92, 52), "light": (255, 214, 170),
+    "grs": {"kind": "energy", "glow": (196, 58, 34), "light": (255, 168, 118),
             "outline": False, "bevel": False, "waves": 5},
     "grs_arm": {"kind": "glowline", "glow": (255, 150, 96), "light": (255, 236, 214),
                 "bevel": False, "outline": False, "emit": 40},
     "grs_eye": {"kind": "gem", "glow": (255, 120, 70), "deep": (120, 26, 12), "outline": False,
                 "bevel": False},
     # ガリレオ衛星
-    "io": {"kind": "planet", "planet": "venus", "bevel": False, "outline": False, "vary": 0},
-    "europa": {"kind": "planet", "planet": "saturn", "bevel": False, "outline": False, "vary": 0,
-               "spin": 90},
-    "ganymede": {"kind": "planet", "planet": "luna", "bevel": False, "outline": False, "vary": 0},
-    "callisto": {"kind": "armor", "base": (92, 82, 74), "light": (140, 128, 116),
-                 "dark": (52, 46, 42), "line": (30, 26, 22), "panel": 0, "noise": 10,
-                 "sheen": False},
+    "io": {"kind": "gem", "glow": (255, 214, 64), "deep": (176, 92, 20), "outline": False,
+           "bevel": False},
+    "europa": {"kind": "gem", "glow": (236, 232, 222), "deep": (150, 108, 80), "outline": False,
+               "bevel": False},
+    "ganymede": {"kind": "gem", "glow": (176, 170, 162), "deep": (78, 72, 66), "outline": False,
+                 "bevel": False},
+    "callisto": {"kind": "gem", "glow": (120, 100, 86), "deep": (40, 32, 28), "outline": False,
+                 "bevel": False},
     "core": {"halo": VOLT, "spin": 31},
     "serial": {"text": "ZS-05", "under": {"kind": "armor", "base": TAN, "panel": 0,
                                          "line": (92, 52, 28)},
@@ -188,7 +189,7 @@ def legs(s):
 def moon(s, w, name, x, style, size=1.2):
     """ベルトに嵌めたガリレオ衛星: 銅の受け座 + 自転する球（fx_spin_<name>）。"""
     z = -3.45
-    octa(w, (x, 12.55, z + 0.05), 1.4, 0.6, "copper", axis="z")
+    octa(w, (x, 12.55, z + 0.05), 1.3, 0.5, "dark", axis="z")
     sp = s.fx("spin", name, w, pivot=(x, 12.55, z - 0.6))
     cbox(sp, (x, 12.55, z - 0.6), (size, size, size), style)
     rbox(sp, (x, 12.55, z - 0.6), (size * 0.92, size * 0.92, size * 0.92), style, rot=(0, 45, 0))
@@ -206,10 +207,10 @@ def waist(s):
     gl = s.fx("glow", "buckle", w, pivot=(0, 12.55, -4.1))
     ring(gl, (0, 12.55, -4.1), 1.12, 8, (0, 0.2, 0.25), "volt", axis="z")
     # ガリレオ衛星（内から イオ・エウロパ ／ ガニメデ・カリスト）
-    moon(s, w, "io", -1.85, "io", 0.95)
-    moon(s, w, "europa", -3.1, "europa", 0.9)
-    moon(s, w, "ganymede", 1.85, "ganymede", 1.05)
-    moon(s, w, "callisto", 3.1, "callisto", 1.0)
+    moon(s, w, "io", -1.85, "io", 1.0)
+    moon(s, w, "europa", -3.1, "europa", 0.95)
+    moon(s, w, "ganymede", 1.85, "ganymede", 1.1)
+    moon(s, w, "callisto", 3.1, "callisto", 1.05)
     # 前垂れ（縞の板）と、両脇の板
     rbox(w, (0, 10.6, -3.2), (3.4, 3.0, 0.8), "belt", rot=(-10, 0, 0))
     cbox(w, (0, 9.25, -3.45), (2.8, TRIM_W, 0.4), "copper")
@@ -238,25 +239,25 @@ def torso(s):
                           (15.0, 9.5, 6.4, "belt"), (13.95, 9.3, 6.2, "zone")):
         chamfer(c, (0, y, -0.05), (wd, 1.15, dp), st, cut=0.7, axis="y")
     # 胸板: 炉の左右に、外へ回り込む帯の板（縞入り）と、その下の錆色の縞
-    pec = rbox(c, (-3.85, 21.3, -3.45), (3.7, 4.4, 0.9), "zone", rot=(4, 22, 5))
+    pec = rbox(c, (-4.25, 21.3, -3.3), (3.2, 4.4, 0.9), "zone", rot=(4, 24, 5))
     trim = stick(c, pec, "north", 0.5, 0.97, (3.5, TRIM_W, 0.22), "copper", sink=0.05)
     l1 = line_on(c, pec, "north", (0.15, 0.2), (0.55, 0.38), 0.26, 0.2, "volt")
     l2 = line_on(c, pec, "north", (0.55, 0.38), (0.4, 0.55), 0.26, 0.2, "volt")
     l3 = line_on(c, pec, "north", (0.4, 0.55), (0.85, 0.75), 0.26, 0.2, "volt")
-    low = rbox(c, (-3.4, 18.55, -3.2), (3.4, 1.4, 0.8), "rustband", rot=(-6, 18, 8))
+    low = rbox(c, (-3.7, 18.4, -3.15), (3.0, 1.4, 0.8), "rustband", rot=(-6, 20, 8))
     mirror_x(c, pec, trim, l1, l2, l3, low)
     # 大赤斑の炉: 暗い受け座 → 重い襟（銅と暗い金属の八角の枠）→ 金の縁 → 回る渦
     Y = 20.4
-    octa(c, (0, Y, -3.55), 4.4, 0.5, "dark", axis="z")
-    ring(c, (0, Y, -3.95), 2.5, 8, (0, 0.95, 0.8), "copper", axis="z")
-    octa(c, (0, Y, -4.0), 4.05, 0.3, "gold", axis="z")
+    octa(c, (0, Y, -3.55), 4.2, 0.5, "dark", axis="z")
+    ring(c, (0, Y, -3.95), 2.25, 8, (0, 0.85, 0.8), "copper", axis="z")
+    octa(c, (0, Y, -4.0), 3.6, 0.3, "gold", axis="z")
     sp = s.fx("spin", "grs", c, pivot=(0, Y, -4.1))
-    octa(sp, (0, Y, -4.1), 3.6, 0.3, "grs", axis="z")
+    octa(sp, (0, Y, -4.1), 3.2, 0.3, "grs", axis="z")
     for k in range(4):                                                    # 渦の腕（4 本の弧）
         pts = []
         for j in range(3):
             a = math.radians(90 * k + j * 40)
-            r = 0.45 + j * 0.6
+            r = 0.4 + j * 0.52
             pts.append((-r * math.sin(a), Y + r * math.cos(a), -4.32))
         polyline(sp, pts, 0.34, 0.18, "grs_arm", overlap=0.2)
     rbox(sp, (0, Y, -4.35), (1.0, 1.0, 0.3), "grs_eye", rot=(0, 0, 45))
