@@ -196,7 +196,7 @@ def dial_ticks(bone, centre, r, axis, big="gold", small="gold", n=12, size=(0.22
 
 # ===========================================================================
 def build_suit(s: Suit):
-    s.inner_suit(gap=0.3, head_style="plate2_b")
+    s.inner_suit(gap=0.3)
     boots(s)
     legs(s)
     waist(s)
@@ -457,24 +457,24 @@ def helmet(s):
     eard = octa(hm, (-5.75, 27.6, 0.6), 1.9, 0.2, "dial", axis="x")
     mirror_x(hm, sd, ear, eard)
     # 冠: 頭の上半分を巻く褐色の帯（金の縁）と、帯の後ろから立つ金の尖り（菱形の板の上半分が見える）
-    cbox(hm, (0, 31.15, 0.15), (10.15, 2.3, 10.35), "band",
+    cbox(hm, (0, 31.45, 0.15), (10.15, 2.7, 10.35), "band",
          decals={"north": {"decal": "stripe", "dir": "h", "pos": 0.5, "width": 0.12,
                            "color": (214, 160, 104)}})
-    for y in (32.35, 29.95):
+    for y in (32.8, 30.1):
         cbox(hm, (0, y, 0.15), (10.25, 0.22, 10.45), "gold")
     for (x, z, yaw), size in (((0.0, -4.82, 0), 3.1), ((-2.95, -4.82, 0), 2.2),
                               ((-4.82, -1.8, 90), 2.3), ((-4.82, 2.3, 90), 1.8),
                               ((0.0, 5.12, 180), 2.4)):
-        pt = _group(hm, [((x, 32.25, z), (size, size, 0.36), _rot(0, 0, 45), "gold")],
-                    (0, yaw, 0), (x, 32.25, z), (x, 32.25, z))
+        pt = _group(hm, [((x, 32.7, z), (size, size, 0.36), _rot(0, 0, 45), "gold")],
+                    (0, yaw, 0), (x, 32.7, z), (x, 32.7, z))
         if x < -0.01:
             mirror_x(hm, pt)
-    hex_plate(hm, (0, 31.15, -5.25), 0.7, 0.24, "gem_accent", pointy=True, step=0.04)
-    g = rbox(hm, (-2.95, 31.15, -5.25), (0.62, 0.62, 0.24), "gem_accent", rot=(0, 0, 45))
+    hex_plate(hm, (0, 31.45, -5.25), 0.75, 0.24, "gem_accent", pointy=True, step=0.04)
+    g = rbox(hm, (-2.95, 31.45, -5.25), (0.62, 0.62, 0.24), "gem_accent", rot=(0, 0, 45))
     mirror_x(hm, g)
     # 頭頂: 金の段の上に、小さな土星の宝珠（光輪がその環になる）
-    bevel(hm, (0, 33.55, 0.15), (6.4, 0.7, 6.6), "plate", cut=1.5, axis="y")
-    octa(hm, (0, 34.05, 0.15), 1.6, 0.4, "band", axis="y")
+    bevel(hm, (0, 33.4, 0.15), (7.0, 0.8, 7.2), "plate", cut=1.6, axis="y")
+    octa(hm, (0, 34.0, 0.15), 1.6, 0.4, "band", axis="y")
     cbox(hm, (0, 35.0, 0.15), (1.7, 1.7, 1.7), "orb")
     rbox(hm, (0, 35.0, 0.15), (1.5, 1.5, 1.5), "orb", rot=(0, 45, 0))
     # 眉庇

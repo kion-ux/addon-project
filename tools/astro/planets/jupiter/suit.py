@@ -102,16 +102,11 @@ SUIT_ANIMS = {
         "fx_spin_europa": {"rotation": [0, "q.anim_time * 90.0", 0]},
         "fx_spin_ganymede": {"rotation": [0, "-q.anim_time * 60.0", 0]},
         "fx_spin_callisto": {"rotation": [0, "-q.anim_time * 30.0", 0]},
-        "extra_wing_r": {"rotation": ["math.sin(q.anim_time * 60.0) * 2.0", 0,
-                                      "math.sin(q.anim_time * 90.0) * 1.5"]},
     },
     "thrust": {
-        "extra_wing_r": {"rotation": ["v.astro_air * 16.0", 0, "-v.astro_air * 10.0"]},
         "fx_spin_arc_r": {"rotation": [0, "v.astro_air * q.anim_time * 360.0", 0]},
     },
-    "sprint": {
-        "extra_wing_r": {"rotation": ["v.astro_run * 22.0", 0, "-v.astro_run * 6.0"]},
-    },
+    "sprint": {},
 }
 
 
@@ -190,7 +185,7 @@ def legs(s):
 def moon(s, w, name, x, style, size=1.2):
     """ベルトに嵌めたガリレオ衛星: 銅の受け座 + 自転する球（fx_spin_<name>）。"""
     z = -3.45
-    octa(w, (x, 12.55, z + 0.05), 1.65, 0.6, "copper", axis="z")
+    octa(w, (x, 12.55, z + 0.05), 1.4, 0.6, "copper", axis="z")
     sp = s.fx("spin", name, w, pivot=(x, 12.55, z - 0.6))
     cbox(sp, (x, 12.55, z - 0.6), (size, size, size), style)
     rbox(sp, (x, 12.55, z - 0.6), (size * 0.92, size * 0.92, size * 0.92), style, rot=(0, 45, 0))
@@ -203,15 +198,15 @@ def waist(s):
     cbox(w, (0, 13.25, -3.38), (9.4, 0.2, 0.2), "volt")
     cbox(w, (0, 12.05, -3.38), (9.4, 0.2, 0.2), "volt")
     # バックル: 銅の八角の台 + 木星の星核 + 電光の輪（脈動）
-    octa(w, (0, 12.55, -3.45), 3.0, 0.7, "copper", axis="z")
-    cbox(w, (0, 12.55, -3.85), (2.0, 2.0, 0.6), "core")
+    octa(w, (0, 12.55, -3.45), 2.5, 0.7, "copper", axis="z")
+    cbox(w, (0, 12.55, -3.85), (1.7, 1.7, 0.6), "core")
     gl = s.fx("glow", "buckle", w, pivot=(0, 12.55, -4.1))
-    ring(gl, (0, 12.55, -4.1), 1.35, 8, (0, 0.22, 0.25), "volt", axis="z")
+    ring(gl, (0, 12.55, -4.1), 1.12, 8, (0, 0.2, 0.25), "volt", axis="z")
     # ガリレオ衛星（内から イオ・エウロパ ／ ガニメデ・カリスト）
-    moon(s, w, "io", -2.05, "io", 1.1)
-    moon(s, w, "europa", -3.55, "europa", 1.05)
-    moon(s, w, "ganymede", 2.05, "ganymede", 1.25)
-    moon(s, w, "callisto", 3.55, "callisto", 1.2)
+    moon(s, w, "io", -1.85, "io", 0.95)
+    moon(s, w, "europa", -3.1, "europa", 0.9)
+    moon(s, w, "ganymede", 1.85, "ganymede", 1.05)
+    moon(s, w, "callisto", 3.1, "callisto", 1.0)
     # 前垂れ（縞の板）と、両脇の板
     rbox(w, (0, 10.6, -3.2), (3.4, 3.0, 0.8), "belt", rot=(-10, 0, 0))
     cbox(w, (0, 9.25, -3.45), (2.8, TRIM_W, 0.4), "copper")
@@ -368,7 +363,7 @@ def shoulders(s):
     stick(p, l2, "west", 0.5, 0.05, (6.4, TRIM_W, 0.22), "copper", sink=0.05)
     rbox(p, (-10.8, 18.6, 0.2), (0.9, 1.6, 6.0), "zone", rot=(0, 0, 9))
     # テスラコイルの塔: 台座 → 光る芯に銅の巻き線 → 鏡面のトロイド → 電光の玉 → 回る放電の輪
-    X, Z = -8.3, 0.4
+    X, Z = -8.75, 0.4
     tw = s.part("shoulders", "tesla_r", p, pivot=(X, 25.8, Z))
     octa(tw, (X, 26.0, Z), 3.0, 0.8, "frame", axis="y")
     octa(tw, (X, 26.5, Z), 2.4, 0.3, "copper", axis="y")
@@ -379,7 +374,7 @@ def shoulders(s):
     g = s.fx("glow", "tesla_r", tw, pivot=(X, 30.55, Z))
     octa(g, (X, 30.55, Z), 1.25, 1.1, "volt", axis="y")
     arc = s.fx("spin", "arc_r", tw, pivot=(X, 28.4, Z), rotation=(18, 0, 10))
-    ring(arc, (X, 28.4, Z), 1.85, 8, (0, 0.18, 0.18), "volt", axis="y")
+    ring(arc, (X, 28.4, Z), 1.6, 8, (0, 0.16, 0.16), "volt", axis="y")
 
 
 # ---------------------------------------------------------------------------
@@ -412,26 +407,22 @@ def helmet(s):
         for f in ("east", "west"):
             stick(hm, band, f, a, 1.0, (1.9, 1.9, 0.35), "gold", spin=45, sink=0.1)
     big = stick(hm, band, "north", 0.5, 1.15, (3.0, 3.0, 0.45), "gold", spin=45, sink=0.12)
-    stick(hm, big, "north", 0.5, 0.5, (1.0, 1.0, 0.3), "gem", sink=0.1)
-    polyline(hm, [(-0.75, 35.3, -5.65), (0.3, 34.15, -5.65), (-0.25, 33.95, -5.65),
-                  (0.7, 32.75, -5.65)], 0.3, 0.2, "volt", overlap=0.15)       # 額の稲妻
+    stick(hm, big, "north", 0.5, 0.5, (1.1, 1.1, 0.3), "gem", sink=0.1)
     cbox(hm, (0, 30.55, -5.35), (8.4, 0.5, 0.4), "rustband")                    # 冠の下の錆色の縞
     # 眉庇: 中央で下がる褐色の V
     br = rbox(hm, (-2.45, 29.55, -5.0), (4.9, 1.3, 1.1), "plate2", rot=(-14, 6, 7))
     mirror_x(hm, br)
-    # 面: 暗い奥・頬の白い面頬・大きな口ひげ・下へ流れる機械の髭（三筋）
+    # 面: 暗い奥・鼻筋・大きな口ひげ・三段に重なって尖る機械の髭
     cbox(hm, (0, 25.7, -4.62), (7.6, 3.6, 0.5), "frame")
-    mg = rbox(hm, (-1.2, 26.1, -5.0), (2.5, 2.6, 0.7), "face", rot=(0, 28, 0))
-    mu = rbox(hm, (-1.55, 26.55, -5.6), (2.9, 0.75, 0.6), "beard", rot=(0, 16, -16))  # 口ひげ
-    mirror_x(hm, mg, mu)
-    cbox(hm, (0, 27.0, -5.55), (0.6, 1.4, 0.5), "plate2")                       # 鼻筋
-    beard = rbox(hm, (0, 24.6, -5.25), (3.4, 3.0, 0.8), "beard", rot=(10, 0, 0))
-    stick(hm, beard, "north", 0.5, 0.06, (2.6, 0.3, 0.2), "copper", sink=0.05)
-    bs = rbox(hm, (-2.0, 24.9, -4.95), (1.6, 2.8, 0.8), "beard", rot=(8, 26, -10))
-    mirror_x(hm, bs)
-    taper(hm, (0, 23.4, -5.45), (0, 22.0, -5.6), 1.6, 0.5, 2, "beard", round_=False)
-    ck = rbox(hm, (-3.5, 25.9, -3.75), (1.4, 3.4, 3.3), "plate", rot=(0, 34, -6))  # 頬当て
-    ckt = stick(hm, ck, "west", 0.08, 0.5, (0.35, 3.0, 0.2), "copper", sink=0.05)
+    cbox(hm, (0, 26.9, -5.4), (0.7, 1.6, 0.6), "plate2")                        # 鼻筋
+    mu = beam(hm, (-0.2, 26.3, -5.55), (-2.9, 25.3, -5.25), 1.0, 0.7, "beard", roll=-10)  # 口ひげ
+    mirror_x(hm, mu)
+    for y, wd, z in ((25.45, 5.8, -5.2), (24.45, 4.4, -5.35), (23.5, 2.9, -5.5)):
+        rbox(hm, (0, y, z), (wd, 1.2, 0.8), "beard", rot=(14, 0, 0))
+        cbox(hm, (0, y - 0.62, z + 0.05), (wd - 0.6, 0.18, 0.7), "copper")
+    rbox(hm, (0, 22.75, -5.6), (1.3, 1.3, 0.7), "beard", rot=(14, 0, 45))     # 髭の先
+    ck = rbox(hm, (-3.55, 26.0, -3.75), (1.3, 3.2, 3.2), "plate2", rot=(0, 34, -6))  # 頬当て
+    ckt = stick(hm, ck, "west", 0.08, 0.5, (0.35, 2.8, 0.2), "copper", sink=0.05)
     mirror_x(hm, ck, ckt)
     rbox(hm, (0, 24.0, 5.3), (8.8, 2.0, 0.9), "zone", rot=(18, 0, 0))          # しころ
     rbox(hm, (0, 22.7, 5.6), (8.2, 1.4, 0.8), "rustband", rot=(30, 0, 0))

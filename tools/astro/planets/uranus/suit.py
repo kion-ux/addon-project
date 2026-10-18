@@ -63,8 +63,6 @@ SUIT_STYLES = {
     "hazard": {"c1": (150, 244, 255), "c2": NAVY},
     "serial": {"text": "UR-07", "under": {"kind": "armor", "base": (47, 159, 168), "panel": 0,
                                          "line": (14, 50, 64)}, "ink": (226, 250, 255)},
-    "uglobe": {"kind": "planet", "planet": "uranus", "bevel": False, "outline": False,
-               "radius": 1.45, "vary": 0},
     "ringglow": {"kind": "glowline", "glow": (150, 244, 255), "light": (246, 255, 255),
                  "bevel": False, "outline": False},
     "ringband": {"kind": "armor", "base": (60, 150, 170), "light": (140, 220, 230),
@@ -267,10 +265,10 @@ def back(s):
     side = cbox(bk, (-2.75, 19.9, 4.6), (0.4, 4.0, 2.2), "plate")
     sv = cbox(bk, (-2.98, 19.9, 4.6), (0.15, 2.8, 1.4), "vent")
     mirror_x(bk, side, sv)
-    diamond(bk, (0, 19.6, 5.95), 3.8, 0.3, "frost")                        # 背嚢の ◆
-    diamond(bk, (0, 19.6, 6.1), 2.6, 0.3, "navy")
-    diamond(bk, (0, 19.6, 6.25), 1.2, 0.3, "gem")
-    cbox(bk, (0, 16.75, 5.6), (3.4, 0.8, 0.2), "hazard")
+    diamond(bk, (0, 18.2, 5.95), 3.2, 0.3, "frost")                        # 背嚢の ◆
+    diamond(bk, (0, 18.2, 6.1), 2.1, 0.3, "navy")
+    diamond(bk, (0, 18.2, 6.25), 0.9, 0.3, "gem")
+    cbox(bk, (0, 22.3, 5.62), (3.0, 0.6, 0.2), "hazard")
     # 環の軸受けへの支柱（背嚢から後ろへ）
     cbox(bk, (0, RING_C[1], 6.9), (1.3, 1.3, 2.4), "frame")
     cbox(bk, (0, RING_C[1], 6.9), (1.5, 0.3, 2.0), "glow_soft")
@@ -378,6 +376,10 @@ def helmet(s):
     rbox(hm, (0, 32.1, -4.95), (8.6, 2.4, 0.8), "plate", rot=(-32, 0, 0))   # 額の斜面
     rbox(hm, (0, 31.9, 5.25), (8.6, 2.4, 0.8), "plate", rot=(30, 0, 0))    # 後ろの斜面
     cbox(hm, (0, 26.9, 4.95), (8.8, 4.6, 0.8), "plate")                    # 後頭部
+    cbox(hm, (0, 27.2, 5.38), (3.0, 3.4, 0.2), "navy")
+    cbox(hm, (0, 27.2, 5.5), (2.2, 2.6, 0.12), "vent")
+    bl = cbox(hm, (-2.6, 27.0, 5.42), (0.26, 3.6, 0.2), "glow")
+    mirror_x(hm, bl)
     sd = cbox(hm, (-4.95, 27.3, 0.1), (0.9, 5.0, 8.4), "plate2")           # 側板
     ear = octa(hm, (-5.55, 28.0, 0.9), 2.4, 0.5, "chrome", axis="x")
     eg = octa(hm, (-5.85, 28.0, 0.9), 1.0, 0.25, "glow", axis="x")
@@ -420,13 +422,12 @@ def helmet(s):
 def tilt_ring(s):
     C = RING_C
     rg = s.part("extra", "ring", "body", pivot=C, rotation=RING_ROT)
-    # 自転軸（静止）。前は背嚢の支柱へ、後ろへ少し突き出す
-    cbox(rg, (C[0], C[1], C[2] + 0.4), (0.5, 0.5, 6.0), "rim")
-    octa(rg, (C[0], C[1], C[2] + 3.3), 1.2, 0.4, "glow", axis="z")
+    # 軸受け（静止）: 紺の八角のハブ・光る芯・霜の ◆ の蓋・後ろへ突き出す自転軸
+    octa(rg, C, 2.7, 1.4, "navy", axis="z")
+    octa(rg, (C[0], C[1], C[2] + 0.25), 1.5, 1.3, "glow", axis="z")
+    diamond(rg, (C[0], C[1], C[2] + 0.95), 1.6, 0.3, "frost")
+    cbox(rg, (C[0], C[1], C[2] + 1.6), (0.45, 0.45, 2.2), "rim")
     sp = s.fx("spin", "ring", rg, pivot=C)
-    # 天王星そのもの（環と一緒に横倒しの軸で自転する）
-    cbox(sp, C, (3.2, 3.2, 3.2), "uglobe")
-    rbox(sp, C, (3.0, 3.0, 3.0), "uglobe", rot=(0, 0, 45))
     ring(sp, C, RING_R, 28, (0, 0.55, 0.32), "ringglow", axis="z",
          styles=["ringglow", "ringglow", "ice"])
     ring(sp, C, RING_R - 0.95, 28, (0, 0.9, 0.5), "ringband", axis="z",

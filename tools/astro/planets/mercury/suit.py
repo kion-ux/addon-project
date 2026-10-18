@@ -71,6 +71,13 @@ SUIT_STYLES = {
                 "line": (54, 62, 80), "panel": 0},
     "gun": dict(GUN),
     "plate2": dict(GUN),
+    # 羽根（重なった羽根が一枚ずつ読めるよう、上が明るく下が暗い無地の板）
+    "feather": {"kind": "armor", "base": (222, 230, 242), "light": (255, 255, 255),
+                "dark": (132, 144, 166), "line": (60, 70, 92), "panel": 0, "sheen": False,
+                "hi": 0.4, "lo": 0.6, "outline_k": 0.55},
+    "feather2": {"kind": "armor", "base": (130, 142, 162), "light": (196, 206, 222),
+                 "dark": (60, 68, 86), "line": (26, 30, 42), "panel": 0, "sheen": False,
+                 "hi": 0.4, "lo": 0.6, "outline_k": 0.55},
     # 液体金属の流れ（波打つ照りの境が流れる鏡面）
     "quick": {"kind": "blade", "all_faces": True, "base": (196, 208, 224), "light": (250, 252, 255),
               "dark": (116, 128, 150), "line": (56, 64, 84), "glint_period": 18,
@@ -181,7 +188,7 @@ def wing(bone, top, bot, tip, t, style, n=4, curve=0.14, edge=None, edge_w=0.26)
     nrm /= np.linalg.norm(nrm)
     d = tip - top
     span = bot - top
-    h = float(np.linalg.norm(span)) / n * 1.4
+    h = float(np.linalg.norm(span)) / n * 1.6
     out = []
     for i in range(n):
         f = (i + 0.5) / n
@@ -245,11 +252,11 @@ def boots(s):
     # タラリア: 踵の外側から後ろへ扇に開く三枚羽
     w = s.part("boots", "talaria_r", b, pivot=(X - 2.8, 2.4, 1.6))
     octa(w, (X - 2.9, 2.4, 1.7), 1.6, 0.6, "chrome", axis="x")
-    wing(w, (X - 2.95, 3.4, 0.9), (X - 2.95, 2.2, 1.9), (X - 4.6, 8.2, 6.4), 0.32, "chrome",
+    wing(w, (X - 2.95, 3.4, 0.9), (X - 2.95, 2.2, 1.9), (X - 4.6, 8.2, 6.4), 0.32, "feather",
          n=4, edge="glow_day")
-    wing(w, (X - 3.0, 2.8, 1.4), (X - 3.0, 1.7, 2.3), (X - 4.9, 5.4, 8.0), 0.3, "plate",
+    wing(w, (X - 3.0, 2.8, 1.4), (X - 3.0, 1.7, 2.3), (X - 4.9, 5.4, 8.0), 0.3, "feather",
          n=3)
-    wing(w, (X - 2.95, 2.0, 1.9), (X - 2.95, 1.0, 2.6), (X - 4.2, 2.6, 7.6), 0.28, "gun",
+    wing(w, (X - 2.95, 2.0, 1.9), (X - 2.95, 1.0, 2.6), (X - 4.2, 2.6, 7.6), 0.28, "feather2",
          n=3, edge="glow_soft_day")
 
 
@@ -496,11 +503,11 @@ def helmet(s):
     # ヘルメスの翼: こめかみから後ろ上へ大きく開く三枚の三角の羽根
     wg = s.part("helmet", "wing_r", hm, pivot=(-5.6, 28.6, 0.8))
     octa(wg, (-5.85, 28.6, 1.0), 2.0, 0.8, "chrome", axis="x")
-    wing(wg, (-5.7, 31.0, -0.4), (-5.7, 28.8, 0.9), (-8.4, 37.4, 7.8), 0.4, "chrome",
+    wing(wg, (-5.7, 31.0, -0.4), (-5.7, 28.8, 0.9), (-8.4, 37.4, 7.8), 0.4, "feather",
          n=4, edge="glow_day")
-    wing(wg, (-5.8, 29.6, 0.6), (-5.8, 27.8, 1.6), (-9.0, 33.4, 9.6), 0.36, "plate",
+    wing(wg, (-5.8, 29.6, 0.6), (-5.8, 27.8, 1.6), (-9.0, 33.4, 9.6), 0.36, "feather",
          n=4, curve=0.12)
-    wing(wg, (-5.8, 28.2, 1.4), (-5.8, 26.6, 2.2), (-8.0, 29.4, 9.2), 0.32, "gun",
+    wing(wg, (-5.8, 28.2, 1.4), (-5.8, 26.6, 2.2), (-8.0, 29.4, 9.2), 0.32, "feather2",
          n=3, edge="glow_soft_day")
     # バイザー: 顔の中央で鋭く折れた V 字のスリット一本（暗い溝 + シアンの光）
     vz = s.part("visor", "eye", "head")

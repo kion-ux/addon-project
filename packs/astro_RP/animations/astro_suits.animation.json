@@ -13894,30 +13894,30 @@
         },
         "extra_tail_r": {
           "rotation": [
-            "v.astro_air * 30.0",
+            "v.astro_air * 18.0",
             0,
-            "-v.astro_air * 6.0"
+            "v.astro_air * 16.0"
           ]
         },
         "extra_tail2_r": {
           "rotation": [
-            "v.astro_air * (16.0 + math.sin(q.anim_time * 720.0) * 6.0)",
+            "v.astro_air * (14.0 + math.sin(q.anim_time * 720.0) * 6.0)",
             0,
-            0
+            "v.astro_air * 8.0"
           ]
         },
         "extra_tail_l": {
           "rotation": [
-            "v.astro_air * 30.0",
+            "v.astro_air * 18.0",
             0,
-            "-(-v.astro_air * 6.0)"
+            "-(v.astro_air * 16.0)"
           ]
         },
         "extra_tail2_l": {
           "rotation": [
-            "v.astro_air * (16.0 + math.sin(q.anim_time * 720.0) * 6.0)",
+            "v.astro_air * (14.0 + math.sin(q.anim_time * 720.0) * 6.0)",
             0,
-            0
+            "-(v.astro_air * 8.0)"
           ]
         }
       }
