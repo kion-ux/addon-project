@@ -940,7 +940,7 @@ def measure(s: Suit, step: float = 0.1) -> dict:
         prof = _profile(H, float(H[:, 1].min()), htop + 0.1)
         area = [(y, wx * wz) for y, wx, wz in prof]
         amax = max([a for y, a in area if y >= htop - 4.8] or [1.0])
-        neck = [(a, y) for y, a in area if htop - 7.5 <= y <= htop - 2.5 and a > 0]
+        neck = [(a, y) for y, a in area if htop - 7.5 <= y <= htop - 2.5 and a > 0.12 * amax]
         hbot = float(H[:, 1].min())
         if neck:
             amin, yn = min(neck)

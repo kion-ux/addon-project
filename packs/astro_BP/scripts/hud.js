@@ -101,9 +101,10 @@ function moveCell(p, key, kind) {
   if (kind === "ult") {
     const full = novaFull(p);
     const left = cdLeft(p, key, kind);
-    const tail = left > 0 && !full ? `§7${(left / 20).toFixed(1)}s`
+    // 再使用待ちの間はゲージが満タンでも残り時間（その間のスニーク＋右クリックはバリア）
+    const tail = left > 0 ? `§7${(left / 20).toFixed(1)}s`
       : full ? (now() % 10 < 5 ? "§6READY" : "§eREADY") : `§7${Math.floor(st.nova)}%`;
-    return `${moveIconText(key, kind, full)} ${tail}`;
+    return `${moveIconText(key, kind, full && left <= 0)} ${tail}`;
   }
   const left = cdLeft(p, key, kind);
   const cost = pl.moves[kind]?.cost ?? 0;
