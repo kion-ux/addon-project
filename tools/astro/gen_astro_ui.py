@@ -1173,11 +1173,14 @@ def build_hud_page():
         "capL": pg.put(0x0A, prog_cap("L"), "progress.capL", (0, 3)),
         "capR": pg.put(0x0B, prog_cap("R"), "progress.capR", (0, 3)),
     }
-    G["sync"] = {
-        "full": pg.put(0x0C, sync_seg("full"), "sync.full", (0, SYNC_W)),
-        "empty": pg.put(0x0D, sync_seg("empty"), "sync.empty", (0, SYNC_W)),
-        "capL": pg.put(0x0E, sync_cap("L"), "sync.capL", (0, 2)),
-        "capR": pg.put(0x0F, sync_cap("R"), "sync.capR", (0, 2)),
+    # G.sync = 変身・解除の進み具合（DESIGN §4.8 の sync。G.progress と同じグリフ）
+    G["sync"] = dict(G["progress"])
+    # G.xp = 同調率の XP（細い紫のバー）
+    G["xp"] = {
+        "full": pg.put(0x0C, sync_seg("full"), "xp.full", (0, SYNC_W)),
+        "empty": pg.put(0x0D, sync_seg("empty"), "xp.empty", (0, SYNC_W)),
+        "capL": pg.put(0x0E, sync_cap("L"), "xp.capL", (0, 2)),
+        "capR": pg.put(0x0F, sync_cap("R"), "xp.capR", (0, 2)),
     }
     for key in KEYS:
         row = D.PLANETS[key]["order"] * 16
@@ -1202,6 +1205,7 @@ def build_hud_page():
         "capL": pg.put(0xA3, energy_cap("L", RED), "energyLow.capL", (0, CAP_W)),
         "capR": pg.put(0xA4, energy_cap("R", RED), "energyLow.capR", (0, CAP_W)),
     }
+    G["energy"]["low"] = dict(G["energyLow"])          # hud.js は G.energy.low（warn）を見る
     G["icon"] = {}
     for i, name in enumerate(["energy", "nova", "revert", "overheat", "barrier", "sync", "check", "lock",
                               "warn"]):
@@ -2460,7 +2464,7 @@ def pack_icon():
 #  glyphs.js
 # ===========================================================================
 G_ORDER = ["emblem", "emblemBig", "energy", "energyLow", "nova", "move", "icon", "iconBig", "sync", "progress",
-           "banner"]
+           "xp", "banner"]
 
 
 def _js_str(ch):
@@ -2544,9 +2548,9 @@ export function progressBar(frac, cells = 20) {{
   return bar(G.progress, frac, cells);
 }}
 
-/** 同調率の XP（次の Lv までの割合）。 */
-export function syncBar(frac, cells = 10) {{
-  return bar(G.sync, frac, cells);
+/** 同調率の XP（次の Lv までの割合。細い紫のバー）。 */
+export function xpBar(frac, cells = 10) {{
+  return bar(G.xp, frac, cells);
 }}
 
 /** 同調率 Lv の粒（◆◆◆◇◇）。 */
@@ -2592,7 +2596,7 @@ def _g_shape(G):
     return [
         f"emblem:    {{<key>: 文字}}                       （惑星 9 つ: {', '.join(KEYS)}）",
         "emblemBig: {<key>: 文字}",
-        f"energy:    {{<key>: {keys(G['energy'][k0])}}}",
+        f"energy:    {{<key>: {keys(G['energy'][k0])}, low: {keys(G['energy']['low'])}}}",
         f"energyLow: {keys(G['energyLow'])}",
         f"nova:      {keys(G['nova'])}",
         f"move:      {{<key>: {{<kind>: {keys(G['move'][k0]['skill'])}}}}}   kind = {', '.join(KINDS)}",
@@ -2600,6 +2604,7 @@ def _g_shape(G):
         f"iconBig:   {keys(G['iconBig'])}",
         f"sync:      {keys(G['sync'])}",
         f"progress:  {keys(G['progress'])}",
+        f"xp:        {keys(G['xp'])}",
         f"banner:    {keys(G['banner'])}",
     ]
 
@@ -2636,7 +2641,7 @@ def write_ui_md(G, pages, widths_note):
     w("## 2. `glyphs.js` の形")
     w("")
     w("```js")
-    w('import { G, bar, energyBar, novaBar, progressBar, syncBar, pips, moveIcon, textWidth, WIDTH } from "./glyphs.js";')
+    w('import { G, bar, energyBar, novaBar, progressBar, xpBar, pips, moveIcon, textWidth, WIDTH } from "./glyphs.js";')
     w("```")
     w("")
     w("```")
@@ -2644,8 +2649,9 @@ def write_ui_md(G, pages, widths_note):
         w("G." + ln)
     w("```")
     w("")
-    w("* `G.energy[key].capL/capR` は全惑星で同じ金属の端（`G.energyLow` は赤い LED の端）。")
-    w("* `G.sync` = 同調率（XP）の細い紫のバー、`G.progress` = 変身・解除の進み具合（CORE SYNC n%）の白いバー（half あり）。")
+    w("* `G.energy[key].capL/capR` は全惑星で同じ金属の端。`G.energy.low` = `G.energyLow`（星力 20% 未満の赤いセルと赤い LED の端）。")
+    w("* `G.sync` = `G.progress`（同じグリフ）= 変身・解除の進み具合（CORE SYNC n%）の白いバー（half あり）。"
+      "`G.xp` = 同調率の XP の細い紫のバー。")
     w("* `G.icon.sep` は斜めの区切り（│ の代わり）、`G.icon.arrow` はメニュー用の小さな ▶。")
     w("* `G.banner.wingL/wingR`（翼）・`divider`（中央にひし形の線）・`lineL/lineR`（文字を挟む線）と `G.emblemBig`・"
       "`G.iconBig` は EB（タイトル用）。")
@@ -2657,7 +2663,7 @@ def write_ui_md(G, pages, widths_note):
     w("| `bar(set, frac, cells, caps = true)` | `capL + セル×cells + capR`。`set.half` があれば半セル単位。0 < frac なら最低半セル、frac < 1 なら最後のセルは空ける |")
     w("| `energyBar(key, frac, cells = 16, tick)` | 星力。frac < 0.2 で `G.energyLow`（赤）と惑星色が 8 tick ごとに点滅 |")
     w("| `novaBar(frac, cells = 10, tick)` | 超新星。100% で白熱のセル 3 つが流れる（4 tick で 1 セル） |")
-    w("| `progressBar(frac, cells = 20)` / `syncBar(frac, cells = 10)` | 進捗・同調率 |")
+    w("| `progressBar(frac, cells = 20)` / `xpBar(frac, cells = 10)` | 進捗（G.progress = G.sync）・同調率の XP（G.xp） |")
     w("| `pips(n, max = 5)` | 同調率 Lv の粒 ◆◆◆◇◇ |")
     w("| `moveIcon(key, kind, ready)` | 技アイコン（ready = 明るい枠、false = 灰色に惑星色の芯） |")
     w("| `textWidth(str)` | GUI px の幅の目安（グリフは表の幅＋1、ASCII 約 6、日本語 9、空白 4） |")
@@ -2692,7 +2698,7 @@ def write_ui_md(G, pages, widths_note):
     w("| 溜め中 | `` `§r${G.icon.energy} §eCHARGE ${progressBar(c)} §f${pct}%` `` |")
     w("| 星力 20% 未満 | 1 行目の数字の後に `` ` ${G.icon.warn}` `` |")
     w("")
-    w("同調率の表示（ターミナルやチャット）: `` `${G.icon.sync} §dSYNC Lv${lv} ${pips(lv)} ${syncBar(xpFrac)}` ``。")
+    w("同調率の表示（ターミナルやチャット）: `` `${G.icon.sync} §dSYNC Lv${lv} ${pips(lv)} ${xpBar(xpFrac)}` ``。")
     w("")
     w(f"幅の目安（見本の行を実測）: {widths_note}。GUI の幅は 1080p・GUI 倍率 3 で約 640 px、スマホでは 400〜480 px 程度なので"
       "1 行目は 16 + 10 セルで収まる。狭い端末向けに設定で 12 + 8 セルへ減らせるようにしておくとよい。")
@@ -2897,7 +2903,7 @@ def hud_mock(pg, pg2, G):
                        f"{J.nova_bar(0.82, 10, 0)} §782%"),
          f"§r{G['icon']['barrier']} §bNANO BARRIER {J.bar(G['progress'], 0.6, 10)}"),
         ("オーバーヒート（変身していない）", f"§r{G['icon']['overheat']} §cOVERHEAT §f12s {G['icon']['lock']}",
-         f"§r{G['icon']['sync']} §dSYNC Lv3 {J.pips(3)} {J.bar(G['sync'], 0.4, 10)}"),
+         f"§r{G['icon']['sync']} §dSYNC Lv3 {J.pips(3)} {J.bar(G['xp'], 0.4, 10)}"),
     ]
     for k2 in KEYS:
         variants.append((D.PLANETS[k2]["ja"], (f"§r{G['emblem'][k2]} {D.PLANETS[k2]['tc']}{D.PLANETS[k2]['form_ja']} "
@@ -3004,7 +3010,7 @@ def terminal_mock(G, glyphs):
         f"§r{G['emblem']['earth']} §a{pl['form_ja']} §7変身中",
         f"§r{G['icon']['energy']}{J.energy_bar('earth', 0.72, 16, 0)} §f72",
         f"§r{G['icon']['nova']}{J.nova_bar(0.64, 10, 0)} §764%",
-        f"§r{G['icon']['sync']} §dLv3 {J.pips(3)} {J.bar(G['sync'], 0.4, 10)}",
+        f"§r{G['icon']['sync']} §dLv3 {J.pips(3)} {J.bar(G['xp'], 0.4, 10)}",
     ], [(menu["codex"], "§0惑星図鑑"), (menu["revert"], "§4変身解除"), (menu["settings"], "§0設定"),
         (menu["guide"], "§0操作説明"), (menu["records"], "§0記録")])
     emb = {k: np.asarray(Image.open(os.path.join(UI_DIR, f"emblem_{k}.png")).convert("RGBA"), np.float32)

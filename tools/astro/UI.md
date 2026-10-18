@@ -17,25 +17,26 @@
 ## 2. `glyphs.js` の形
 
 ```js
-import { G, bar, energyBar, novaBar, progressBar, syncBar, pips, moveIcon, textWidth, WIDTH } from "./glyphs.js";
+import { G, bar, energyBar, novaBar, progressBar, xpBar, pips, moveIcon, textWidth, WIDTH } from "./glyphs.js";
 ```
 
 ```
 G.emblem:    {<key>: 文字}                       （惑星 9 つ: mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, sol）
 G.emblemBig: {<key>: 文字}
-G.energy:    {<key>: {full, half, empty, capL, capR}}
+G.energy:    {<key>: {full, half, empty, capL, capR}, low: {full, half, empty, capL, capR}}
 G.energyLow: {full, half, empty, capL, capR}
 G.nova:      {full, empty, flow, capL, capR}
 G.move:      {<key>: {<kind>: {ready, wait}}}   kind = skill, dash, air, ult
 G.icon:      {energy, nova, revert, overheat, barrier, sync, check, lock, warn, pipOn, pipOff, sep, arrow}
 G.iconBig:   {energy, nova, revert, overheat, barrier, sync, check, lock, warn}
-G.sync:      {full, empty, capL, capR}
+G.sync:      {full, empty, half, capL, capR}
 G.progress:  {full, empty, half, capL, capR}
+G.xp:        {full, empty, capL, capR}
 G.banner:    {wingL, wingR, divider, lineL, lineR}
 ```
 
-* `G.energy[key].capL/capR` は全惑星で同じ金属の端（`G.energyLow` は赤い LED の端）。
-* `G.sync` = 同調率（XP）の細い紫のバー、`G.progress` = 変身・解除の進み具合（CORE SYNC n%）の白いバー（half あり）。
+* `G.energy[key].capL/capR` は全惑星で同じ金属の端。`G.energy.low` = `G.energyLow`（星力 20% 未満の赤いセルと赤い LED の端）。
+* `G.sync` = `G.progress`（同じグリフ）= 変身・解除の進み具合（CORE SYNC n%）の白いバー（half あり）。`G.xp` = 同調率の XP の細い紫のバー。
 * `G.icon.sep` は斜めの区切り（│ の代わり）、`G.icon.arrow` はメニュー用の小さな ▶。
 * `G.banner.wingL/wingR`（翼）・`divider`（中央にひし形の線）・`lineL/lineR`（文字を挟む線）と `G.emblemBig`・`G.iconBig` は EB（タイトル用）。
 
@@ -46,7 +47,7 @@ G.banner:    {wingL, wingR, divider, lineL, lineR}
 | `bar(set, frac, cells, caps = true)` | `capL + セル×cells + capR`。`set.half` があれば半セル単位。0 < frac なら最低半セル、frac < 1 なら最後のセルは空ける |
 | `energyBar(key, frac, cells = 16, tick)` | 星力。frac < 0.2 で `G.energyLow`（赤）と惑星色が 8 tick ごとに点滅 |
 | `novaBar(frac, cells = 10, tick)` | 超新星。100% で白熱のセル 3 つが流れる（4 tick で 1 セル） |
-| `progressBar(frac, cells = 20)` / `syncBar(frac, cells = 10)` | 進捗・同調率 |
+| `progressBar(frac, cells = 20)` / `xpBar(frac, cells = 10)` | 進捗（G.progress = G.sync）・同調率の XP（G.xp） |
 | `pips(n, max = 5)` | 同調率 Lv の粒 ◆◆◆◇◇ |
 | `moveIcon(key, kind, ready)` | 技アイコン（ready = 明るい枠、false = 灰色に惑星色の芯） |
 | `textWidth(str)` | GUI px の幅の目安（グリフは表の幅＋1、ASCII 約 6、日本語 9、空白 4） |
@@ -81,7 +82,7 @@ p.onScreenDisplay.setActionBar(`${line1}\n${line2}`);
 | 溜め中 | `` `§r${G.icon.energy} §eCHARGE ${progressBar(c)} §f${pct}%` `` |
 | 星力 20% 未満 | 1 行目の数字の後に `` ` ${G.icon.warn}` `` |
 
-同調率の表示（ターミナルやチャット）: `` `${G.icon.sync} §dSYNC Lv${lv} ${pips(lv)} ${syncBar(xpFrac)}` ``。
+同調率の表示（ターミナルやチャット）: `` `${G.icon.sync} §dSYNC Lv${lv} ${pips(lv)} ${xpBar(xpFrac)}` ``。
 
 幅の目安（見本の行を実測）: 1 行目 ≈ 330 GUI px、2 行目 ≈ 165 GUI px（地球・16 + 10 セル）。GUI の幅は 1080p・GUI 倍率 3 で約 640 px、スマホでは 400〜480 px 程度なので1 行目は 16 + 10 セルで収まる。狭い端末向けに設定で 12 + 8 セルへ減らせるようにしておくとよい。
 
@@ -131,10 +132,10 @@ p.onScreenDisplay.setTitle(`§r${G.iconBig.overheat}`, { subtitle: "§cOVERHEAT"
 | U+EA09 | `G.progress.half` | 4 | 5–10 |
 | U+EA0A | `G.progress.capL` | 3 | 4–11 |
 | U+EA0B | `G.progress.capR` | 3 | 4–11 |
-| U+EA0C | `G.sync.full` | 3 | 6–9 |
-| U+EA0D | `G.sync.empty` | 3 | 6–9 |
-| U+EA0E | `G.sync.capL` | 2 | 5–10 |
-| U+EA0F | `G.sync.capR` | 2 | 5–10 |
+| U+EA0C | `G.xp.full` | 3 | 6–9 |
+| U+EA0D | `G.xp.empty` | 3 | 6–9 |
+| U+EA0E | `G.xp.capL` | 2 | 5–10 |
+| U+EA0F | `G.xp.capR` | 2 | 5–10 |
 | U+EA10 | `G.emblem.mercury` | 16 | 3–12 |
 | U+EA11 | `G.energy.mercury.full` | 5 | 4–11 |
 | U+EA12 | `G.energy.mercury.half` | 5 | 4–11 |

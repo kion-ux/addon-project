@@ -18,6 +18,7 @@ export const G = {
     uranus: { full: "\uEA71", half: "\uEA72", empty: "\uEA73", capL: "\uEA00", capR: "\uEA01" },
     neptune: { full: "\uEA81", half: "\uEA82", empty: "\uEA83", capL: "\uEA00", capR: "\uEA01" },
     sol: { full: "\uEA91", half: "\uEA92", empty: "\uEA93", capL: "\uEA00", capR: "\uEA01" },
+    low: { full: "\uEAA0", half: "\uEAA1", empty: "\uEAA2", capL: "\uEAA3", capR: "\uEAA4" },
   },
   energyLow: { full: "\uEAA0", half: "\uEAA1", empty: "\uEAA2", capL: "\uEAA3", capR: "\uEAA4" },
   nova: { full: "\uEA02", empty: "\uEA03", flow: "\uEA04", capL: "\uEA05", capR: "\uEA06" },
@@ -79,8 +80,9 @@ export const G = {
   },
   icon: { energy: "\uEAB0", nova: "\uEAB1", revert: "\uEAB2", overheat: "\uEAB3", barrier: "\uEAB4", sync: "\uEAB5", check: "\uEAB6", lock: "\uEAB7", warn: "\uEAB8", pipOn: "\uEAB9", pipOff: "\uEABA", sep: "\uEABB", arrow: "\uEABC" },
   iconBig: { energy: "\uEB20", nova: "\uEB21", revert: "\uEB22", overheat: "\uEB23", barrier: "\uEB24", sync: "\uEB25", check: "\uEB26", lock: "\uEB27", warn: "\uEB28" },
-  sync: { full: "\uEA0C", empty: "\uEA0D", capL: "\uEA0E", capR: "\uEA0F" },
+  sync: { full: "\uEA07", empty: "\uEA08", half: "\uEA09", capL: "\uEA0A", capR: "\uEA0B" },
   progress: { full: "\uEA07", empty: "\uEA08", half: "\uEA09", capL: "\uEA0A", capR: "\uEA0B" },
+  xp: { full: "\uEA0C", empty: "\uEA0D", capL: "\uEA0E", capR: "\uEA0F" },
   banner: { wingL: "\uEB10", wingR: "\uEB11", divider: "\uEB12", lineL: "\uEB13", lineR: "\uEB14" },
 };
 
@@ -131,9 +133,9 @@ export function progressBar(frac, cells = 20) {
   return bar(G.progress, frac, cells);
 }
 
-/** 同調率の XP（次の Lv までの割合）。 */
-export function syncBar(frac, cells = 10) {
-  return bar(G.sync, frac, cells);
+/** 同調率の XP（次の Lv までの割合。細い紫のバー）。 */
+export function xpBar(frac, cells = 10) {
+  return bar(G.xp, frac, cells);
 }
 
 /** 同調率 Lv の粒（◆◆◆◇◇）。 */

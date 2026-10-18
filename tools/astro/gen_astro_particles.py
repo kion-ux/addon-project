@@ -741,7 +741,7 @@ def sp_plasma(w, h):
     return down(a), down(np.where(core > 0.5, 1.0, 0.8))
 
 
-def _bolt_pts(rng, x0, x1, y0, y1, depth, rough):
+def _bolt_pts(rng, x0, x1, y0, y1, depth, rough, cap=1e9):
     pts = [(x0, y0), (x1, y1)]
     for d in range(depth):
         out = [pts[0]]
@@ -749,7 +749,7 @@ def _bolt_pts(rng, x0, x1, y0, y1, depth, rough):
             (ax, ay), (bx, by) = pts[i], pts[i + 1]
             L = math.hypot(bx - ax, by - ay)
             mx, my = (ax + bx) / 2, (ay + by) / 2
-            off = rng.uniform(-1, 1) * L * rough
+            off = rng.uniform(-1, 1) * min(L * rough, cap)
             nx, ny = -(by - ay) / (L + 1e-9), (bx - ax) / (L + 1e-9)
             out += [(mx + nx * off, my + ny * off), (bx, by)]
         pts = out
@@ -768,7 +768,7 @@ def sp_bolt(w, h, k):
     rng = np.random.RandomState(100 + k)
     pen = Pen(w, h)
     cy = h / 2
-    pts = _fit_y(_bolt_pts(rng, 1, w - 1, cy, cy, 6, 0.3), cy, h / 2 - 7)
+    pts = _fit_y(_bolt_pts(rng, 1, w - 1, cy, cy, 7, 0.38, cap=h * 0.18), cy, h / 2 - 7)
     pen.poly(pts, 5.0)
     core = Pen(w, h)
     core.poly(pts, 2.2)
@@ -777,8 +777,7 @@ def sp_bolt(w, h, k):
         bx, by = pts[i]
         L = rng.uniform(28, 56)
         ey = cy + rng.choice([-1, 1]) * rng.uniform(4, h / 2 - 5)
-        br = _bolt_pts(rng, bx, bx + L, by, ey, 4, 0.25)
-        br = [(px, float(np.clip(py, 4, h - 4))) for px, py in br]
+        br = _fit_y(_bolt_pts(rng, bx, bx + L, by, ey, 4, 0.3, cap=h * 0.15), cy, h / 2 - 5)
         pen.poly(br, 2.4)
     a = pen.alpha()
     white = 0.68 + 0.32 * core.alpha()

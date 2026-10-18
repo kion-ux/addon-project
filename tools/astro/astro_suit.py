@@ -137,6 +137,7 @@ class Suit:
                        visible_bounds=(4, 4), vb_offset=(0, 1.2, 0), max_atlas=(1024, 1024))
         self.top: Dict[str, Bone] = {n: self.m.bone(n, p) for n, p in TOP.items()}
         self.mirror_styles: Dict[str, str] = {}
+        self.inner_box: Dict[str, tuple] = {}     # inner_suit() の殻の (lo, hi)。装甲はこれより外に
         self.allow: List = list(DEFAULT_ALLOW)
 
     # ---- ボーン ---------------------------------------------------------
@@ -193,7 +194,11 @@ class Suit:
                    uv_scale: Optional[float] = None, head_style: Optional[str] = None):
         """肌の 6 部位に、外側レイヤー + gap の殻を張る（群 inner、最初に現れるボディスーツ）。
         左右の脚は正面の面が同じ平面に並ばないよう、左だけ前後を 0.05 厚くする（Z ファイト避け）。
-        hood=False なら頭は張らない（兜で完全に覆う場合）。戻り値: {部位: Bone}"""
+        hood=False なら頭は張らない（兜で完全に覆う場合）。戻り値: {部位: Bone}
+        殻の範囲は s.inner_box[部位] = ((x0,y0,z0), (x1,y1,z1))。装甲の箱はこれより 0.05 以上外へ出す
+        （内側に入った面は見えない。面取りの角からも殻の稜が覗くので、面取りは殻より cut ぶん大きく）。
+        gap=0.3 の時: body ±4.55/11.45..24.55/±2.55、右腕 -8.55..-3.45/10.95..24.55/±2.55、
+        右脚 -4.45..0.65/-0.55..12.55/±2.55（左脚は z ±2.6）、頭 ±4.65/23.35..32.65/±4.65。"""
         out = {}
         for top, (o, sz) in SKIN.items():
             if top == "head" and not hood:
@@ -212,6 +217,8 @@ class Suit:
             size = [hi[i] - lo[i] for i in range(3)]
             if top in ("leftLeg", "leftArm"):
                 size[2] += 0.1
+            self.inner_box[top] = (tuple(round(c[i] - size[i] / 2, 3) for i in range(3)),
+                                   tuple(round(c[i] + size[i] / 2, 3) for i in range(3)))
             kw = {"uv_scale": uv_scale} if uv_scale else {}
             cbox(b, c, size, head_style if (top == "head" and head_style) else style, **kw)
             out[top] = b
