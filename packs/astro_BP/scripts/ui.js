@@ -50,6 +50,8 @@ function click(p) { sound(p.dimension, "astro.ui_select", p.location, 1.0, 0.6);
 function back(p) { sound(p.dimension, "astro.ui_back", p.location, 1.0, 0.6); }
 
 function emblemIcon(key) { return `textures/ui/astro/emblem_${key}`; }
+/** トップのボタンの絵（status / codex / revert / settings / guide / records / back。gen_astro_ui が描く）。 */
+function uiIcon(name) { return `textures/ui/astro/${name}`; }
 
 // ---------------------------------------------------------------------------
 //  トップ
@@ -79,13 +81,13 @@ export function openTerminal(p) {
 
 async function top(p) {
   const st = S(p);
-  const items = [["惑星図鑑", planetList]];
-  if (st.form) items.push(["§c変身解除", doRevert]);
-  items.push(["設定", settingsPage], ["操作説明", controlsPage], ["記録", recordsPage]);
+  const items = [["惑星図鑑", planetList, "codex"]];
+  if (st.form) items.push(["§c変身解除", doRevert, "revert"]);
+  items.push(["設定", settingsPage, "settings"], ["操作説明", controlsPage, "guide"], ["記録", recordsPage, "records"]);
   const form = new ActionFormData()
     .title(`${ADDON.ja} 星核ターミナル`)
     .body(statusText(p));
-  for (const [label] of items) form.button(label);
+  for (const [label, , icon] of items) form.button(label, uiIcon(icon));
   const res = await show(form, p);
   if (!res || res.canceled || res.selection === undefined) return;
   const pick = items[res.selection];
@@ -123,7 +125,7 @@ async function planetList(p) {
     const where = coreWhere(p, key);
     form.button(`${pl.tc}${pl.ja} ${pl.form_ja}\n§8${where ? "所持" : "未入手"}  Lv${level(p, key)}`, emblemIcon(key));
   }
-  form.button("§7戻る");
+  form.button("§7戻る", uiIcon("back"));
   const res = await show(form, p);
   if (!res || res.canceled || res.selection === undefined) return;
   if (res.selection >= PLANET_KEYS.length) { back(p); await top(p); return; }
@@ -169,7 +171,7 @@ async function planetPage(p, key) {
     .title(`${pl.ja} ${pl.form_ja}`)
     .body(planetText(p, key))
     .button("§7図鑑へ戻る", emblemIcon(key))
-    .button("§7閉じる");
+    .button("§7閉じる", uiIcon("back"));
   const res = await show(form, p);
   if (!res || res.canceled) return;
   if (res.selection === 0) { back(p); await planetList(p); }
@@ -228,7 +230,7 @@ async function controlsPage(p) {
   const form = new ActionFormData()
     .title("操作説明")
     .body(CONTROLS.join("\n"))
-    .button("§7戻る");
+    .button("§7戻る", uiIcon("back"));
   const res = await show(form, p);
   if (res && !res.canceled && res.selection === 0) { back(p); await top(p); }
 }
@@ -256,7 +258,7 @@ async function recordsPage(p) {
   const form = new ActionFormData()
     .title("記録")
     .body(recordsText(p))
-    .button("§7戻る");
+    .button("§7戻る", uiIcon("back"));
   const res = await show(form, p);
   if (res && !res.canceled && res.selection === 0) { back(p); await top(p); }
 }

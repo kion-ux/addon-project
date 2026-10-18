@@ -530,6 +530,7 @@ async function testPlanet(key) {
   }
   tick(4);
   ok(String(p.actionbar).includes(pl.form_ja), `${key}: HUD does not show the form`);
+  if (key === (ONLY || "earth")) console.log("  HUD sample: " + JSON.stringify(p.actionbar));
   flushWarns(`${key}.transform`);
 
   // ---- 4 技 --------------------------------------------------------------
@@ -591,6 +592,10 @@ async function testPlanet(key) {
     const h0 = G.__log.sounds.get("astro.barrier_hit") ?? 0;
     H.entityHitEntity({ damagingEntity: foe, hitEntity: p });
     ok((G.__log.sounds.get("astro.barrier_hit") ?? 0) > h0, `${key}: barrier hit not reacted`);
+    // 飛び道具が当たった（projectileHitEntity）
+    const h1 = G.__log.sounds.get("astro.barrier_hit") ?? 0;
+    H.projectileHitEntity?.({ getEntityHit: () => ({ entity: p }), source: foe, projectile: undefined });
+    ok((G.__log.sounds.get("astro.barrier_hit") ?? 0) > h1, `${key}: barrier ignored a projectile hit`);
     // 飛び道具の反射
     const arrow = new FakeEntity(D, "minecraft:arrow", { x: 0.5, y: 65, z: 1.2 }, 0);
     let shot = null;

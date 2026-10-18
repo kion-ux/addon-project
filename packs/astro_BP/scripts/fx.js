@@ -364,14 +364,15 @@ export function title(p, text, sub, o = {}) {
 export function cutin(player, planet, name, en) {
   const dim = player.dimension;
   const em = glyph(["emblem", planet.key], planet.symbol ?? "");
+  const dv = glyph("banner.divider", "§8◆");
   for (const p of allPlayers()) {
     try {
       if (p.dimension?.id !== dim.id) continue;
       if (dist(p.location, player.location) > 28) continue;
       const self = p.id === player.id;
       title(p, `${planet.tc}${name}`,
-        self ? `§r${em}§r §f${en}` : `§r${em}§r §7${player.name} — §f${en}`,
-        { fadeIn: 2, stay: 28, fadeOut: 8 });
+        self ? `§r${dv}§r ${em}§r §f${en} §r${dv}` : `§r${em}§r §7${player.name} — §f${en}`,
+        { fadeIn: 0, stay: 28, fadeOut: 8 });
     } catch (_) { }
   }
 }

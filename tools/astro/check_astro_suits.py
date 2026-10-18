@@ -12,6 +12,7 @@
             部位ボーン `<群>_<名前>`、fx_thrust_/fx_glow_/fx_spin_ は部位ボーンの下、名前の重複なし、
             プレイヤーのボーン名（cape, helmet, waist, rightItem …）を装飾に使っていない
           * キューブ数 250〜650、テクスチャ 1024x1024 以下、炎（flame 系の塗り）は fx_* の下（両面の材質）
+          * 回転体（fx_spin_* の部分木）が idle アニメの一周の間に他の装甲へめり込まないか（警告）
   アニメ  * SUIT_ANIMS のボーンが実在、Molang が読める、部位ボーンの scale を書いていない
             （組み上がり・解除が scale を使うため）
   書き出し（pack に生成済みなら）
@@ -113,6 +114,10 @@ def check_model(key, verbose=False) -> Report:
                 not any(x.startswith("fx_") for x in chain):
             r.warn(f"bone '{b.name}' has flame cubes outside an fx_* bone "
                    "(fx_* bones use the double-sided material)")
+    try:
+        check_orbits(s, r)
+    except Exception as e:  # noqa: BLE001
+        r.warn(f"orbit check failed: {e}")
     # SUIT_ANIMS
     names = {b.name for b in m.bones}
     owned_scale = {nm for nm, _g in G.pop_bones(s)} | \
@@ -133,6 +138,69 @@ def check_model(key, verbose=False) -> Report:
                 if isinstance(v, str) and not _molang_ok(v):
                     r.err(f"SUIT_ANIMS['{anim}']['{bone}']: cannot parse Molang {v!r}")
     return r
+
+
+def check_orbits(s, r, step=0.1, span=6.0):
+    """fx_spin_* の部分木（衛星・環・光輪）を idle で回し、動かない装甲（inner 以外）へのめり込みを探す。"""
+    import numpy as np
+    from astro_common import cube_matrix
+    from astro_scene import eval_animation
+    spins = [b.name for b in s.m.bones if b.name.startswith("fx_spin_")]
+    if not spins:
+        return
+    geo = AS.geo_of(s)
+    idle = G.anim_idle(s)
+    kids = {}
+    for b in s.m.bones:
+        kids.setdefault(b.parent, []).append(b.name)
+
+    def subtree(n):
+        out = [n]
+        for k in kids.get(n, []):
+            out += subtree(k)
+        return out
+
+    def cubes(W, names):
+        out = []
+        for b in geo["bones"]:
+            if b["name"] not in names:
+                continue
+            for c in b.get("cubes", []):
+                o = np.array(c["origin"], float)
+                sz = np.array(c["size"], float)
+                inf = c.get("inflate", 0.0)
+                out.append((W[b["name"]] @ cube_matrix(c), o - inf, o + sz + inf))
+        return out
+    allnames = {b.name for b in s.m.bones}
+    for sp in spins:
+        moving = set(subtree(sp))
+        par = s.bone(sp).parent
+        static = {n for n in allnames if n not in moving and not n.startswith("inner_")
+                  and n != par and not n.startswith("fx_spin_")}
+        hits = {}
+        for k in range(int(span / step)):
+            t = k * step
+            W = AS.suit_world(geo, None, eval_animation(idle, t, {}))
+            pts = []
+            for M, lo, hi in cubes(W, moving):
+                g = np.stack(np.meshgrid(*[np.linspace(lo[i] + 0.1, hi[i] - 0.1, 4)
+                                           for i in range(3)]), -1).reshape(-1, 3)
+                pts.append((np.c_[g, np.ones(len(g))] @ M.T)[:, :3])
+            if not pts:
+                break
+            P = np.vstack(pts)
+            H = np.c_[P, np.ones(len(P))]
+            for b in geo["bones"]:
+                if b["name"] not in static:
+                    continue
+                for M, lo, hi in cubes(W, {b["name"]}):
+                    q = (H @ np.linalg.inv(M).T)[:, :3]
+                    if np.any(np.all((q > lo + 0.05) & (q < hi - 0.05), axis=1)):
+                        hits.setdefault(b["name"], []).append(round(t, 1))
+                        break
+        for bone, ts in hits.items():
+            r.warn(f"{sp} passes through '{bone}' at t={ts[:6]}{'…' if len(ts) > 6 else ''} s "
+                   "(move the orbit or the armor)")
 
 
 def _load(path, r):

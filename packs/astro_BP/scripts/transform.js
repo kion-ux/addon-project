@@ -31,6 +31,7 @@ import {
 } from "./fx.js";
 import { makeCtx, moveImpl } from "./engine.js";
 import { resetMobility } from "./mobility.js";
+import { progressBar } from "./hud.js";
 import { clearShots } from "./projectiles.js";
 import { clearZones } from "./zones.js";
 import {
@@ -437,7 +438,9 @@ function buildSequence(p, key, slot, coreless) {
   // ---- 50: 惑星の力が弾ける -----------------------------------------------
   add_(T.planet_burst - 2, "burst_sound", () => sound(dim, "astro.transform_burst", p.location, 1.0, 1.2));
   add_(T.planet_burst, "planet_burst", () => {
-    title(p, `§r${glyph(["emblemBig", key], pl.symbol)}`, `${pl.tc}${pl.form_ja} §f${pl.form_en}`, { fadeIn: 0, stay: 40, fadeOut: 14 });
+    title(p, `§r${glyph("banner.wingL", "")}${glyph(["emblemBig", key], pl.symbol)}${glyph("banner.wingR", "")}`,
+      `§r${glyph("banner.lineL", "")}§r ${pl.tc}${pl.form_ja} §7| ${pl.tc}${pl.form_en} §r${glyph("banner.lineR", "")}`,
+      { fadeIn: 0, stay: 40, fadeOut: 14 });
     P(dim, "flare", { ...base, y: base.y + 1.1 }, { color: white(c, 0.6), size: 1.6, life: 0.3 });
     P(dim, "shock_flat", { ...base, y: base.y + 0.06 }, { color: c, size: 2.2, life: 0.5 });
     shake(dim, base, 14, 0.35, 0.35);
@@ -463,14 +466,7 @@ function buildSequence(p, key, slot, coreless) {
 }
 
 function progressText(pct) {
-  const n = 10;
-  const k = Math.round(pct / 100 * n);
-  const full = glyph("sync.full", "");
-  const empty = glyph("sync.empty", "");
-  let bar;
-  if (full && empty) bar = `§r${glyph("sync.capL", "")}${full.repeat(k)}${empty.repeat(n - k)}${glyph("sync.capR", "")}§r`;
-  else bar = `§b${"|".repeat(k)}§8${"|".repeat(n - k)}§r`;
-  return `${bar} §f${pct}%`;
+  return `${progressBar(pct / 100, 20)} §f${pct}%`;
 }
 
 /** 頭の組み上がり中のスーツを装着中のスーツに差し替える。 */
@@ -633,7 +629,7 @@ export function revert(p, reason = "manual", o = {}) {
     effect(p, "slowness", Math.round(COMMON.overheat_ticks / 2), 0, true);
     sound(p.dimension, "astro.overheat", p.location, 1.0, 1.0);
     addRecord(p, "overheats", 1, key);
-    title(p, `§r${glyph("icon.overheat", "")}`, "§cOVERHEAT §f星力切れ — 20 秒は再変身できない", { fadeIn: 2, stay: 40, fadeOut: 10 });
+    title(p, `§r${glyph("iconBig.overheat", glyph("icon.overheat", "§c♨"))}`, "§cOVERHEAT §f星力切れ — 20 秒は再変身できない", { fadeIn: 2, stay: 40, fadeOut: 10 });
   }
   save(p);
   BUS.emit("reverted", p, key, reason);
