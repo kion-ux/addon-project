@@ -1,0 +1,50 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "astro:core_neptune",
+      "materials": {
+        "default": "entity_emissive_alpha_one_sided",
+        "fx": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/astro/core_neptune"
+      },
+      "geometry": {
+        "default": "geometry.astro.core_neptune"
+      },
+      "animations": {
+        "tp": "animation.astro.core.neptune.tp",
+        "fp": "animation.astro.core.neptune.fp",
+        "idle": "animation.astro.core.neptune.idle",
+        "use": "animation.astro.core.neptune.use",
+        "form": "animation.astro.core.neptune.form",
+        "ctrl": "controller.animation.astro.weapon_form"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.astro_sw = math.clamp(c.owning_entity->v.attack_time, 0.0, 1.0);",
+          "v.astro_fp = c.is_first_person ? 1.0 : 0.0;",
+          "v.astro_use = q.is_using_item ? 1.0 : 0.0;",
+          "v.astro_usew = (v.astro_usew ?? 0.0) + (v.astro_use - (v.astro_usew ?? 0.0)) * math.min(1.0, q.delta_time * 10.0);"
+        ],
+        "animate": [
+          {
+            "tp": "1.0 - v.astro_fp"
+          },
+          {
+            "fp": "v.astro_fp"
+          },
+          "idle",
+          {
+            "use": "v.astro_usew > 0.01"
+          },
+          "ctrl"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.astro.weapon"
+      ]
+    }
+  }
+}

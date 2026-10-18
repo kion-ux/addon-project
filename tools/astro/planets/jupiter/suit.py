@@ -106,7 +106,10 @@ SUIT_ANIMS = {
     "thrust": {
         "fx_spin_arc_r": {"rotation": [0, "v.astro_air * q.anim_time * 360.0", 0]},
     },
-    "sprint": {},
+    "sprint": {
+        "fx_spin_arc_r": {"rotation": [0, "v.astro_run * q.anim_time * 720.0", 0]},
+        "fx_spin_grs": {"rotation": [0, 0, "v.astro_run * q.anim_time * 180.0"]},
+    },
 }
 
 
@@ -289,9 +292,9 @@ def back(s):
     for k in range(4):
         a = 45 + 90 * k
         r = math.radians(a)
-        rbox(fan, (-0.8 * math.sin(r), 20.0 + 0.8 * math.cos(r), 6.47), (0.55, 1.5, 0.16), "frame",
-             rot=(0, 0, a + 20))
-    cbox(fan, (0, 20.0, 6.55), (0.6, 0.6, 0.2), "copper", rotation=(0, 0, 45))
+        rbox(fan, (-0.75 * math.sin(r), 20.0 + 0.75 * math.cos(r), 6.47), (0.36, 1.35, 0.16), "copper",
+             rot=(0, 0, a + 24))
+    cbox(fan, (0, 20.0, 6.55), (0.7, 0.7, 0.2), "gem", rotation=(0, 0, 45))
     # スラスター（右。下後ろへ）
     th = s.part("back", "thruster_r", bk, pivot=(-1.9, 16.9, 5.6), rotation=(16, 0, -6))
     octa(th, (-1.9, 15.6, 5.6), 2.4, 3.0, "plate", axis="y")

@@ -8860,25 +8860,11 @@
             0
           ]
         },
-        "extra_wing_r": {
-          "rotation": [
-            "math.sin(q.anim_time * 60.0) * 2.0",
-            0,
-            "math.sin(q.anim_time * 90.0) * 1.5"
-          ]
-        },
         "fx_spin_arc_l": {
           "rotation": [
             0,
             "-(q.anim_time * 180.0)",
             0
-          ]
-        },
-        "extra_wing_l": {
-          "rotation": [
-            "math.sin(q.anim_time * 60.0) * 2.0",
-            0,
-            "-(math.sin(q.anim_time * 90.0) * 1.5)"
           ]
         }
       }
@@ -8901,25 +8887,11 @@
             "0.75 + v.astro_air * 0.25"
           ]
         },
-        "extra_wing_r": {
-          "rotation": [
-            "v.astro_air * 16.0",
-            0,
-            "-v.astro_air * 10.0"
-          ]
-        },
         "fx_spin_arc_r": {
           "rotation": [
             0,
             "v.astro_air * q.anim_time * 360.0",
             0
-          ]
-        },
-        "extra_wing_l": {
-          "rotation": [
-            "v.astro_air * 16.0",
-            0,
-            "-(-v.astro_air * 10.0)"
           ]
         },
         "fx_spin_arc_l": {
@@ -8935,18 +8907,25 @@
       "loop": true,
       "animation_length": 12.0,
       "bones": {
-        "extra_wing_r": {
+        "fx_spin_arc_r": {
           "rotation": [
-            "v.astro_run * 22.0",
             0,
-            "-v.astro_run * 6.0"
+            "v.astro_run * q.anim_time * 720.0",
+            0
           ]
         },
-        "extra_wing_l": {
+        "fx_spin_grs": {
           "rotation": [
-            "v.astro_run * 22.0",
             0,
-            "-(-v.astro_run * 6.0)"
+            0,
+            "v.astro_run * q.anim_time * 180.0"
+          ]
+        },
+        "fx_spin_arc_l": {
+          "rotation": [
+            0,
+            "-(v.astro_run * q.anim_time * 720.0)",
+            0
           ]
         }
       }

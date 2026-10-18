@@ -360,22 +360,22 @@ def back(s):
     dial_ticks(bk, (0, 19.4, 4.5), 2.5, "z", size=(0.24, 0.55, 0.16), big_size=(0.4, 0.9, 0.18))
     octa(bk, (0, 19.4, 4.55), 0.9, 0.3, "gem_accent", axis="z")
     sr = s.fx("spin", "bring", bk, pivot=D)
-    ring(sr, (0, 19.4, 4.1), 4.0, 16, (0, 0.34, 0.34), "glow", axis="z",
+    ring(sr, (0, 19.4, 4.1), 3.85, 16, (0, 0.32, 0.34), "glow", axis="z",
          styles=["glow", "ring_b2"])
     hh = s.fx("spin", "bhour", bk, pivot=D)
     cbox(hh, (0, 20.1, 4.68), (0.36, 1.4, 0.12), "hand")
     mh = s.fx("spin", "bmin", bk, pivot=D)
     cbox(mh, (0, 20.45, 4.74), (0.24, 2.1, 0.1), "hand")
     # スラスター（右。下後ろへ）
-    th = s.part("back", "thruster_r", bk, pivot=(-2.4, 16.0, 4.0), rotation=(18, 0, -10))
-    octa(th, (-2.4, 15.0, 4.0), 1.9, 2.6, "plate2", axis="y")
-    octa(th, (-2.4, 15.9, 4.0), 2.2, 0.35, "band", axis="y")
-    octa(th, (-2.4, 13.4, 4.0), 2.4, 1.0, "frame", axis="y")
-    ring(th, (-2.4, 12.85, 4.0), 0.95, 8, (0, 0.24, 0.26), "glow", axis="y")
-    cbox(th, (-2.4, 12.82, 4.0), (1.7, 0.2, 1.7), "thruster")
-    fx = s.fx("thrust", "r", th, pivot=(-2.4, 12.75, 4.0))
-    taper(fx, (-2.4, 12.75, 4.0), (-2.4, 6.4, 4.0), 1.9, 0.4, 3, "flame")
-    taper(fx, (-2.4, 12.7, 4.0), (-2.4, 9.2, 4.0), 0.9, 0.22, 2, "flame_core", round_=False)
+    th = s.part("back", "thruster_r", bk, pivot=(-2.4, 14.5, 4.0), rotation=(18, 0, -10))
+    octa(th, (-2.4, 13.5, 4.0), 1.9, 2.6, "plate2", axis="y")
+    octa(th, (-2.4, 14.4, 4.0), 2.2, 0.35, "band", axis="y")
+    octa(th, (-2.4, 11.9, 4.0), 2.4, 1.0, "frame", axis="y")
+    ring(th, (-2.4, 11.35, 4.0), 0.95, 8, (0, 0.24, 0.26), "glow", axis="y")
+    cbox(th, (-2.4, 11.32, 4.0), (1.7, 0.2, 1.7), "thruster")
+    fx = s.fx("thrust", "r", th, pivot=(-2.4, 11.25, 4.0))
+    taper(fx, (-2.4, 11.25, 4.0), (-2.4, 4.9, 4.0), 1.9, 0.4, 3, "flame")
+    taper(fx, (-2.4, 11.2, 4.0), (-2.4, 7.7, 4.0), 0.9, 0.22, 2, "flame_core", round_=False)
 
 
 # ---------------------------------------------------------------------------
@@ -526,10 +526,10 @@ def great_ring(s):
 # ---------------------------------------------------------------------------
 #  冠の光輪（小さな環が冠の周りを斜めに回る）
 # ---------------------------------------------------------------------------
-HALO_C = (0.0, 34.6, 0.15)
+HALO_C = (0.0, 35.2, 0.15)
 
 
 def halo(s):
-    hl = s.part("extra", "halo", "head", pivot=HALO_C, rotation=(-10, 0, 14))
+    hl = s.part("extra", "halo", "head", pivot=HALO_C, rotation=(-8, 0, 12))
     sp = s.fx("spin", "halo", hl, pivot=HALO_C)
     ring(sp, HALO_C, 6.2, 16, (0, 0.55, 0.18), "ring_b", axis="y", styles=["ring_b", "ring_f"])

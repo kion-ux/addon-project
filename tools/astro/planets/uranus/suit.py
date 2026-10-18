@@ -30,7 +30,7 @@ FROST = (226, 244, 250)
 TRIM_W = 0.4           # 縁取りの幅
 
 # 背中の環（98° の傾き: 縦に立ち、上端が 8° 後ろへ倒れ、左右に 15° ひねる）
-RING_C = (0.0, 21.0, 9.0)
+RING_C = (0.0, 21.0, 9.4)
 RING_R = 12.4
 RING_ROT = (-8, 15, 0)
 
@@ -272,15 +272,15 @@ def back(s):
     # 環の軸受けへの支柱（背嚢から後ろへ）
     cbox(bk, (0, RING_C[1], 6.9), (1.3, 1.3, 2.4), "frame")
     cbox(bk, (0, RING_C[1], 6.9), (1.5, 0.3, 2.0), "glow_soft")
-    # スラスター（右。下へ、少し外と後ろへ）: 胴・縁の輪・ベル・噴射口・炎
-    th = s.part("back", "thruster_r", bk, pivot=(-1.7, 16.6, 5.3), rotation=(10, 0, -10))
+    # スラスター（右。真下へ、少し外へ開く。環の下端に当たらないよう後ろへは倒さない）: 胴・縁の輪・ベル・噴射口・炎
+    th = s.part("back", "thruster_r", bk, pivot=(-1.7, 16.6, 5.3), rotation=(2, 0, 12))
     octa(th, (-1.7, 15.5, 5.3), 2.1, 2.6, "plate", axis="y")
     octa(th, (-1.7, 16.15, 5.3), 2.35, 0.4, "rim", axis="y")
     octa(th, (-1.7, 13.75, 5.3), 2.6, 1.2, "navy", axis="y")
     ring(th, (-1.7, 13.2, 5.3), 1.0, 8, (0, 0.26, 0.28), "glow", axis="y")
     cbox(th, (-1.7, 13.16, 5.3), (1.8, 0.2, 1.8), "thruster")
     fx = s.fx("thrust", "r", th, pivot=(-1.7, 13.1, 5.3))
-    taper(fx, (-1.7, 13.1, 5.3), (-1.7, 7.4, 5.3), 2.0, 0.4, 3, "flame")
+    taper(fx, (-1.7, 13.1, 5.3), (-1.7, 8.0, 5.3), 2.0, 0.4, 3, "flame")
     taper(fx, (-1.7, 13.05, 5.3), (-1.7, 9.8, 5.3), 0.9, 0.22, 2, "flame_core", round_=False)
 
 
@@ -435,5 +435,5 @@ def tilt_ring(s):
     for k in range(5):
         a = math.radians(k * 72 + 18)
         M = (C[0] - RING_R * math.sin(a), C[1] + RING_R * math.cos(a), C[2])
-        rbox(sp, M, (1.3, 1.3, 1.3), "crystal", rot=(45, 0, 45))
+        rbox(sp, M, (1.2, 1.2, 1.2), "crystal", rot=(45, 0, 45))
         cbox(sp, M, (0.75, 0.75, 1.7), "glow")
