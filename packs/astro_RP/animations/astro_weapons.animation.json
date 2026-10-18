@@ -99,7 +99,7 @@
     },
     "animation.astro.core.earth.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 72.0,
       "bones": {
         "origin": {
           "position": [
@@ -157,7 +157,6 @@
     },
     "animation.astro.core.earth.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -170,21 +169,21 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring_a": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring_b": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         }
@@ -288,7 +287,7 @@
     },
     "animation.astro.core.jupiter.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 36.0,
       "bones": {
         "origin": {
           "position": [
@@ -338,7 +337,6 @@
     },
     "animation.astro.core.jupiter.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -351,14 +349,14 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         }
@@ -462,7 +460,7 @@
     },
     "animation.astro.core.mars.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 36.0,
       "bones": {
         "origin": {
           "position": [
@@ -519,7 +517,6 @@
     },
     "animation.astro.core.mars.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -532,21 +529,21 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring_a": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         },
         "fx_spin_moons": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         }
@@ -650,7 +647,7 @@
     },
     "animation.astro.core.mercury.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 36.0,
       "bones": {
         "origin": {
           "position": [
@@ -710,7 +707,6 @@
     },
     "animation.astro.core.mercury.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -723,21 +719,21 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring_a": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring_b": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         }
@@ -841,7 +837,7 @@
     },
     "animation.astro.core.neptune.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 72.0,
       "bones": {
         "origin": {
           "position": [
@@ -898,7 +894,6 @@
     },
     "animation.astro.core.neptune.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -911,21 +906,21 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         },
         "fx_spin_triton": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         }
@@ -1029,7 +1024,7 @@
     },
     "animation.astro.core.saturn.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 72.0,
       "bones": {
         "origin": {
           "position": [
@@ -1086,7 +1081,6 @@
     },
     "animation.astro.core.saturn.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -1099,21 +1093,21 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_rings": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         },
         "fx_spin_gyro_a": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         }
@@ -1217,7 +1211,7 @@
     },
     "animation.astro.core.sol.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 36.0,
       "bones": {
         "origin": {
           "position": [
@@ -1281,7 +1275,6 @@
     },
     "animation.astro.core.sol.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -1294,28 +1287,28 @@
         "fx_spin_sun": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_corona": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring_a": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring_b": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         }
@@ -1419,7 +1412,7 @@
     },
     "animation.astro.core.uranus.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 36.0,
       "bones": {
         "origin": {
           "position": [
@@ -1470,7 +1463,6 @@
     },
     "animation.astro.core.uranus.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -1483,14 +1475,14 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_ring": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         }
@@ -1594,7 +1586,7 @@
     },
     "animation.astro.core.venus.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 36.0,
       "bones": {
         "origin": {
           "position": [
@@ -1644,7 +1636,6 @@
     },
     "animation.astro.core.venus.use": {
       "loop": true,
-      "animation_length": 2.0,
       "bones": {
         "origin": {
           "scale": "1.0 + v.astro_usew * 0.12",
@@ -1657,14 +1648,14 @@
         "fx_spin_globe": {
           "rotation": [
             0,
-            "q.anim_time * 360 * v.astro_usew",
+            "v.astro_usespin",
             0
           ]
         },
         "fx_spin_clouds": {
           "rotation": [
             0,
-            "q.anim_time * -360 * v.astro_usew",
+            "-v.astro_usespin",
             0
           ]
         }
@@ -1768,7 +1759,7 @@
     },
     "animation.astro.weapon.earth.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 180.0,
       "bones": {
         "origin": {
           "position": [
@@ -1976,7 +1967,7 @@
     },
     "animation.astro.weapon.jupiter.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 8.0,
       "bones": {
         "origin": {
           "position": [
@@ -2020,14 +2011,14 @@
         "fx_spin_emit_hi": {
           "rotation": [
             0,
-            "v.astro_sw * 540.0",
+            "v.astro_sw * 720.0",
             0
           ]
         },
         "fx_spin_emit_lo": {
           "rotation": [
             0,
-            "-v.astro_sw * 540.0",
+            "-v.astro_sw * 720.0",
             0
           ]
         }
@@ -2173,7 +2164,7 @@
     },
     "animation.astro.weapon.mars.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -2367,7 +2358,7 @@
     },
     "animation.astro.weapon.mercury.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -2571,7 +2562,7 @@
     },
     "animation.astro.weapon.neptune.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 36.0,
       "bones": {
         "origin": {
           "position": [
@@ -2760,7 +2751,7 @@
     },
     "animation.astro.weapon.saturn.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -2934,7 +2925,7 @@
     },
     "animation.astro.weapon.sol.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -3149,7 +3140,7 @@
     },
     "animation.astro.weapon.uranus.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -3334,7 +3325,7 @@
     },
     "animation.astro.weapon.venus.idle": {
       "loop": true,
-      "animation_length": 6.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [

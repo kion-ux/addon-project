@@ -351,27 +351,31 @@ def hands(s):
 # ---------------------------------------------------------------------------
 def shoulders(s):
     p = s.part("shoulders", "pauldron_r", "rightArm")
-    dome = bevel(p, (-7.0, 25.55, 0.0), (3.4, 2.3, 4.6), "plate", cut=0.75, axis="x",
+    dome = bevel(p, (-7.2, 25.65, 0.0), (3.8, 2.4, 4.8), "plate", cut=0.75, axis="x",
                  rot=(0, 0, -14))
     top = stick(p, dome[0], "up", 0.45, 0.5, (2.4, 3.7, 0.3), "plate2", sink=0.1)
     stick(p, top, "up", 0.08, 0.5, (0.26, 3.7, 0.18), "gold", sink=0.08)
     rdg = stick(p, top, "up", 0.55, 0.5, (0.55, 3.9, 0.3), "plate", sink=0.08)       # 中央の稜
     line_on(p, rdg, "up", (0.5, 0.08), (0.5, 0.92), 0.18, 0.16, "glow")
     rivets(p, top, "up", 6, edge="border", margin=0.25, size=0.24)
-    cbox(p, (-6.4, 24.15, 0.0), (2.0, 0.5, 3.6), "dark")                              # 裏の縁
+    cbox(p, (-6.5, 24.2, 0.0), (2.2, 0.5, 3.8), "dark")                              # 裏の縁
+    # 外の縁: 上・外へ反り返る白い板（上端に金）→ 肩の線を広く見せる
+    rim = rbox(p, (-9.12, 25.35, 0.0), (0.45, 1.9, 4.9), "plate2", rot=(0, 0, -30))
+    stick(p, rim, "up", 0.5, 0.5, (0.45, 4.9, 0.2), "gold", sink=0.05)
+    rivets(p, rim, "west", 4, edge="bottom", margin=0.3, size=0.22)
     # 外へ開いて垂れる板（白・青）と金の縁、紋章、リベットの列
-    l1 = rbox(p, (-8.35, 23.75, 0.0), (0.55, 2.3, 4.5), "plate2", rot=(0, 0, 15),
+    l1 = rbox(p, (-8.62, 23.6, 0.0), (0.55, 2.3, 4.6), "plate2", rot=(0, 0, 15),
               decals={"west": {"decal": "emblem", "color": (84, 255, 146)}})
-    stick(p, l1, "west", 0.5, 0.06, (4.3, GOLD_W, 0.18), "gold", sink=0.05)
+    stick(p, l1, "west", 0.5, 0.06, (4.4, GOLD_W, 0.18), "gold", sink=0.05)
     rivets(p, l1, "west", 5, edge="top", margin=0.24, size=0.22)
-    l2 = rbox(p, (-8.55, 22.05, 0.05), (0.48, 1.55, 3.9), "plate", rot=(0, 0, 11))
+    l2 = rbox(p, (-8.8, 21.9, 0.05), (0.48, 1.55, 4.0), "plate", rot=(0, 0, 11))
     stick(p, l2, "west", 0.5, 0.08, (3.7, GOLD_W, 0.18), "gold", sink=0.05)
     rivets(p, l2, "west", 4, edge="top", margin=0.22, size=0.22)
     # 前後の小さな板とセンサー
-    fr = rbox(p, (-7.05, 24.45, -2.35), (2.4, 1.3, 0.4), "plate_b", rot=(-12, 0, 0))
-    sensor(p, (-7.4, 24.45, -2.6), 0.26, "lamp", "dark")
-    rbox(p, (-7.05, 24.55, 2.35), (2.4, 1.3, 0.4), "plate_b", rot=(12, 0, 0))
-    rbox(p, (-6.9, 26.75, 1.95), (0.42, 1.2, 1.6), "plate2", rot=(-25, 0, -10))       # 後ろのヒレ
+    fr = rbox(p, (-7.25, 24.45, -2.45), (2.6, 1.3, 0.4), "plate_b", rot=(-12, 0, 0))
+    sensor(p, (-7.6, 24.45, -2.7), 0.26, "lamp", "dark")
+    rbox(p, (-7.25, 24.55, 2.45), (2.6, 1.3, 0.4), "plate_b", rot=(12, 0, 0))
+    rbox(p, (-7.1, 26.95, 2.05), (0.42, 1.2, 1.6), "plate2", rot=(-25, 0, -10))       # 後ろのヒレ
     rivets(p, fr, "north", 2, edge="bottom", margin=0.22, span=(0.2, 0.45))
 
 
