@@ -24,7 +24,7 @@ import {
   P, ring, arc, shock, beam, emblem, flash, shake, sound, body, white, mix, afterimage, fxScale,
 } from "../fx.js";
 import {
-  hit, nearestEnemy, hostilesNear, freeze, pull,
+  hit, nearestHostile, hostilesNear, freeze, pull,
 } from "../combat.js";
 import { S } from "../state.js";
 import {
@@ -183,7 +183,9 @@ register(KEY, {
     ctx.at(10, () => {
       const top = hammerTop(ctx);
       const from = ctx.local(1.3, 0.1, 1.5);
-      let first = nearestEnemy(ctx, ctx.chest(), 16, ctx.liveView(), 40) ?? nearestEnemy(ctx, ctx.chest(), 7);
+      // 見ている相手 → 視線の扇の敵対的な相手 → 周りの敵対的な相手（どれも見通せる相手だけ）。
+      // 村人・動物・中立の mob を勝手に狙わない（連鎖も敵対的な相手へだけ飛ぶ）
+      let first = ctx.pick(16, 40) ?? nearestHostile(ctx, ctx.chest(), 7, null, 180, { los: ctx.head() });
       sound(dim, "astro.beam_fire", from, 1.3, 0.8);
       P(dim, "flare", from, { color: HOT, size: 1.4, life: 0.2, rot: yawDeg(ctx.liveDir()) });
       zapLine(dim, top, from, HOT, 0.4);
@@ -197,7 +199,7 @@ register(KEY, {
         for (const e of ctx.foes(2.8, up(g, 0.8))) {
           if (ctx.once(e, 1, "ground")) hit(ctx, e, 9, { color: VOLT, power: 1.4, up: 0.3 });
         }
-        first = nearestEnemy(ctx, up(g, 0.8), 4);
+        first = nearestHostile(ctx, up(g, 0.8), 4);
         if (!first) return;
       }
       chain(ctx, first, {
@@ -394,9 +396,10 @@ register(KEY, {
 
   // =========================================================================
   //  必殺「ガリレオの審判」
-  //  0 時を止める（ultOpen）/ 4〜 鎚を天へ、左手で衛星を一つずつ指す（jupiter.judgement）/
-  //  6〜 頭上に四衛星の輪 / 15 イオ（噴火）→ 24 エウロパ（氷）→ 33 ガニメデ（重力）→ 42 カリスト（衝突）を投げ、
-  //  それぞれ 14 tick 後に着弾 / 56〜 狙いの上に嵐の雲が渦巻く / 60 跳んで振りかぶり /
+  //  0 時を止める（ultOpen）/ 8〜 鎚を天へ、左手で衛星を一つずつ指す（jupiter.judgement。2.6 秒で 60 に終わり、
+  //  同じ構えから thunderfall へ切れ目なく続く）/ 6〜 頭上に四衛星の輪 / 19 イオ（噴火）→ 28 エウロパ（氷）→
+  //  37 ガニメデ（重力）→ 46 カリスト（衝突）を投げ（指し示す瞬間）、それぞれ 14 tick 後に着弾 /
+  //  54〜 狙いの上に嵐の雲が渦巻く / 60 跳んで振りかぶり /
   //  68 極大の雷霆（ケラウノス）が落ちて大地ごと打つ / 〜92 余韻
   // =========================================================================
   ult(ctx) {
@@ -405,7 +408,8 @@ register(KEY, {
     const centre = ctx.aim(16);
     const base = up(ctx.loc(), 7.5);
     const fired = [false, false, false, false];
-    ctx.at(4, () => body(p, "jupiter.judgement"));
+    // judgement（2.6 秒 = 52 tick）は thunderfall（60）の直前に終わる。間が空くと腕が素の構えへ跳ねる
+    ctx.at(8, () => body(p, "jupiter.judgement"));
     // 頭上の四衛星（投げるまで回る）
     ctx.at(6, () => {
       sound(dim, "astro.ring_spin", base, 0.7, 1.0);
@@ -423,7 +427,7 @@ register(KEY, {
     });
     // 狙う相手（いなければ狙いの地点の周りへ）
     const pickTarget = (k) => {
-      const foes = ctx.foes(16, up(centre, 1)).sort((a, b) => dist(a.location, centre) - dist(b.location, centre));
+      const foes = ctx.hostiles(16, up(centre, 1)).sort((a, b) => dist(a.location, centre) - dist(b.location, centre));
       if (foes.length) return foes[k % foes.length];
       return onGround(dim, add(centre, yawRotate(EAST, k * 90 + 45), k === 0 ? 0 : 2.6), 8);
     };
@@ -433,7 +437,10 @@ register(KEY, {
         const q = moonOrbitPos(base, k, now());
         fired[k] = true;
         const tgt = pickTarget(k);
-        const tl = tgt && valid(tgt) ? { ...tgt.location } : (tgt && Number.isFinite(tgt.x) ? tgt : null);
+        // pickTarget は相手（エンティティ）か地点 {x,y,z} を返す（地点は valid() が true になるので先に見分ける）
+        let tl = null;
+        if (tgt && Number.isFinite(tgt.x)) tl = { x: tgt.x, y: tgt.y, z: tgt.z };
+        else if (tgt && valid(tgt)) { try { tl = { ...tgt.location }; } catch (_) { } }
         if (!tl) return;
         const g = onGround(dim, tl);
         const h = Math.max(5, q.y - g.y);
@@ -451,7 +458,7 @@ register(KEY, {
       });
     };
     // イオ: 噴火（溶岩の柱と火の粉、燃やす）
-    launch_(0, 15, {
+    launch_(0, 19, {
       radius: 3.6, damage: 4, hit: { color: IO_LAVA, up: 0.6, power: 1.8 },
       onImpact(g) {
         P(dim, "flare", up(g, 0.8), { color: white(IO, 0.4), size: 2.0, life: 0.25 });
@@ -477,7 +484,7 @@ register(KEY, {
       },
     });
     // エウロパ: 氷（凍らせる）
-    launch_(1, 24, {
+    launch_(1, 28, {
       radius: 3.8, damage: 4, hit: { color: EUROPA, up: 0.3, power: 1.8, sound: "astro.ice_crack" },
       onImpact(g) {
         P(dim, "flare", up(g, 0.8), { color: white(EUROPA, 0.4), size: 2.0, life: 0.25 });
@@ -498,7 +505,7 @@ register(KEY, {
       },
     });
     // ガニメデ: 重力（一点へ吸い込んで押し潰す）
-    launch_(2, 33, {
+    launch_(2, 37, {
       radius: 4.0, damage: 3, hit: { color: GRAVITY, power: 1.6 },
       onImpact(g) {
         const c = up(g, 1.0);
@@ -525,7 +532,7 @@ register(KEY, {
       },
     });
     // カリスト: 衝突（いちばん大きなクレーター）
-    launch_(3, 42, {
+    launch_(3, 46, {
       radius: 5.0, damage: 6, hit: { color: [1.0, 0.62, 0.3], kb: 1.0, up: 0.7, power: 2.0 },
       onImpact(g) {
         P(dim, "flare", up(g, 1.0), { color: white([1.0, 0.62, 0.3], 0.4), size: 2.6, life: 0.3 });
@@ -673,6 +680,9 @@ register(KEY, {
   // =========================================================================
   //  パッシブ static: 当たるたびに 1、攻撃を受けても 1 溜まり、5 で連鎖放電
   // =========================================================================
+  // combo3 は自分で全身モーションの当たり（叩きつけ）まで待つ（combo.js は待たずに呼ぶ）
+  meta: { combo3Synced: true },
+
   passive: {
     tick(p, st) {
       const n = st.charge ?? 0;

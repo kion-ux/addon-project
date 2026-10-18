@@ -159,10 +159,13 @@ function moonfall(ctx, g0, o) {
   return delay + fall;
 }
 
-/** 生き残りの中から二つ目の落下点を選ぶ（first から 2.5〜12m の、いちばん体力の残っている敵の足元）。 */
+/**
+ * 生き残りの中から二つ目の落下点を選ぶ（first から 2.5〜12m の、いちばん体力の残っている敵対的な相手の足元。
+ * 村人・ゴーレム・動物は選ばない）。
+ */
 function secondTarget(ctx, first) {
   let best = null, bh = -1;
-  for (const e of ctx.foes(12, up(first, 1))) {
+  for (const e of ctx.hostiles(12, up(first, 1))) {
     let h = 0;
     try { h = e.getComponent("minecraft:health")?.currentValue ?? 0; } catch (_) { }
     if (hdist(e.location, first) < 2.5 || h <= bh) continue;
@@ -539,7 +542,8 @@ register(KEY, {
       warCry(p);
     },
   },
-  meta: {},
+  // combo3 は自分で全身モーションの当たり（振り下ろし）まで待つ（combo.js は待たずに呼ぶ）
+  meta: { combo3Synced: true },
 });
 
 /** 空中技の着地: 衝撃 → ひび → 六つの噴火口が順に噴き上がり、燃え続ける。 */

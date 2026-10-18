@@ -14,17 +14,18 @@ import {
 } from "./state.js";
 import { setFxScale, forgetFx, announce, sound } from "./fx.js";
 import {
-  flushBank, tickPops, showDamage, sweepTexts, isTarget, onKill, addNova, setNova,
+  flushBank, tickPops, showDamage, sweepTexts, isTarget, onKill, addNova, setNova, noteHurt, markProvoked,
 } from "./combat.js";
 import { tickShots } from "./projectiles.js";
 import { tickZones } from "./zones.js";
 import {
   tickMobility, cancelFall, tryJustDodge, onBarrierHit, forgetMobility, barrierActive, isDodging,
+  cancelBoost,
 } from "./mobility.js";
 import { chooseKind, perform } from "./engine.js";
 import {
   startTransform, revert, tickTransforms, tickOff, sweep, sweepDropped, fixDroppedItem, tickEnergy,
-  onDeath, onSpawn, startupCleanup, forgetTransform, restoreOnJoin,
+  onDeath, onSpawn, startupCleanup, forgetTransform, restoreOnJoin, tickCloak,
 } from "./transform.js";
 import { onMeleeHit, forgetCombo } from "./combo.js";
 import { tickPassives, tickPassiveEffects, PASSIVE_EVERY } from "./passives.js";
@@ -65,6 +66,7 @@ function onUse(p, item) {
   const wk = WEAPON_TO_PLANET[id];
   if (wk) {
     if (!isReady(p) || st.form !== wk) return;
+    cancelBoost(p);   // 空中でスニーク＋右クリック（バリア・必殺）はブースト・ダッシュにしない
     perform(p, chooseKind(p));
     return;
   }
@@ -95,6 +97,11 @@ world.afterEvents.entityHurt.subscribe(guard("entityHurt", (ev) => {
   const src = ev.damageSource;
   const attacker = src?.damagingEntity;
   if (!valid(e)) return;
+  if (valid(attacker) && attacker.id !== e.id && ev.damage > 0) {
+    // プレイヤーの攻撃が通った（被弾の無敵時間の始まり。バニラの通常攻撃も）/ 戦った mob を覚える
+    if (isPlayer(attacker)) { noteHurt(e); markProvoked(e, attacker); }
+    else if (isPlayer(e)) markProvoked(attacker, e);
+  }
   const quiet = EN.onEntityHurt(e, ev.damage, src) === true;
   if (!quiet) {
     if (valid(attacker) && isPlayer(attacker) && S(attacker).form && attacker.id !== e.id) showDamage(e, ev.damage, attacker);
@@ -206,6 +213,7 @@ function perSecond() {
   for (const p of allPlayers()) {
     step("energy", () => tickEnergy(p));
     step("sweep", () => sweep(p));
+    step("cloak", () => tickCloak(p));
     if (now() % 40 === 0) step("dropped", () => sweepDropped(p));
     k = Math.min(k, FX_SCALE[settings(p).fx] ?? 1);
   }

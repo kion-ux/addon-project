@@ -386,7 +386,8 @@ register(KEY, {
     });
     // 星光の柱（最大 6 本。標的が少なければ周りへ）
     ctx.at(22, () => {
-      const spots = ctx.foes(16, up(centre, 1)).slice(0, 6).map((e) => onGround(dim, e.location));
+      // 標的は敵対的な相手だけ（畑の牛や村人に柱を落とさない）。足りない分は周りへ
+      const spots = ctx.hostiles(16, up(centre, 1)).slice(0, 6).map((e) => onGround(dim, e.location));
       for (let k = spots.length; k < 4; k++) {
         spots.push(onGround(dim, add(centre, yawRotate(f, k * 90 + 45), 4.5)));
       }
@@ -398,7 +399,7 @@ register(KEY, {
     ctx.at(28, () => body(p, "venus.star_fall"));
     // 明星そのものが落ちる大柱
     ctx.at(48, () => {
-      const tgt = ctx.foes(14, up(centre, 1))[0];
+      const tgt = ctx.hostiles(14, up(centre, 1))[0];
       const g = tgt ? onGround(dim, tgt.location) : onGround(dim, add(centre, f, 4));
       ctx.at(0, () => P(dim, "warning", up(g, 0.06), { color: [1, 0.6, 0.3], size: 5.5, life: 0.35 }));
       ctx.at(6, () => {
@@ -568,5 +569,6 @@ register(KEY, {
       sound(dim, "astro.flare", at, 1.8, 0.4);
     },
   },
-  meta: {},
+  // combo3 は自分で全身モーションの当たり（差し出す瞬間）まで待つ（combo.js は待たずに呼ぶ）
+  meta: { combo3Synced: true },
 });
