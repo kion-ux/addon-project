@@ -81,42 +81,45 @@ def build_weapon(m, root):
     for s in (-1, 1):
         W.cbox(sock, (0, s * 3.2, Z_BAR), (1.3, 1.0, 1.5), "pearl", uv_scale=10)
         # 波頭の白い鍔: 横木の端から後ろへ巻く（YZ 平面のヒレ）
-        fan_fin(sock, (0, s * 3.0, Z_BAR + 0.2), (0, s * 1.4, Z_BAR + 1.2),
-                [(0, s * 4.8, -16.4), (0, s * 3.9, -15.3), (0, s * 2.6, -15.0)], 0.5, "fin",
-                styles=FIN, uv_scale=8)
-        W.beam(sock, (0, s * 3.0, Z_BAR + 0.2), (0, s * 4.8, -16.4), 0.62, 0.55, "pearl",
+        fan_fin(sock, (0, s * 3.2, Z_BAR + 0.1), (0, s * 1.3, Z_BAR + 1.3),
+                [(0, s * 5.6, -16.0), (0, s * 4.6, -14.6), (0, s * 3.0, -14.2)], 0.6, "fin",
+                uv_scale=8)
+        W.beam(sock, (0, s * 3.2, Z_BAR + 0.1), (0, s * 5.6, -16.0), 0.7, 0.6, "pearl",
                extend=0.2, uv_scale=10)
+        W.beam(sock, (0, s * 5.5, -16.1), (0, s * 5.0, -17.4), 0.5, 0.5, "pearl", uv_scale=10)
     # 衛星トリトン: 付け根の下の傾いた軌道を逆向きに回る（WEAPON_ANIMS）
-    orbit = W.part(m, sock, "orbit", (0, 0, -15.4), rotation=(0, 18, 0))
-    W.ring(orbit, (0, 0, -15.4), 2.5, 10, (0, 0.14, 0.16), "glow_soft", axis="z", uv_scale=10)
-    moon = W.spin(m, orbit, "moon", (0, 0, -15.4))
-    W.sphere(moon, (0, 2.5, -15.4), 0.6, "triton", uv_scale=14)
+    orbit = W.part(m, sock, "orbit", (0, 0, -12.6), rotation=(0, 18, 0))
+    W.ring(orbit, (0, 0, -12.6), 2.7, 10, (0, 0.14, 0.16), "glow_soft", axis="z", uv_scale=10)
+    moon = W.spin(m, orbit, "moon", (0, 0, -12.6))
+    W.sphere(moon, (0, 2.7, -12.6), 0.8, "triton", uv_scale=14)
 
     # =====================================================================
     #  form_3_prongs — 三本の穂先（台から -Z へ伸びる）
     # =====================================================================
     pr = W.form(m, root, 3, "prongs", (0, 0, Z_BAR))
-    # 中央の穂: 真珠の芯・水色の刃・返しの付いた鏃
-    taper(pr, (0, 0, Z_BAR - 0.5), (0, 0, -29.4), 1.25, 0.75, 3, "prong", round_=False,
-            uv_scale=8)
+    # 中央の穂: 真珠の芯・水色の刃・返しの付いた大きな鏃
+    taper(pr, (0, 0, Z_BAR - 0.5), (0, 0, -28.6), 1.5, 1.0, 3, "prong", round_=False,
+          uv_scale=8)
     for s in (-1, 1):
-        W.beam(pr, (0, s * 0.62, Z_BAR - 0.8), (0, s * 0.42, -29.2), 0.5, 0.3, "edge",
+        W.beam(pr, (0, s * 0.72, Z_BAR - 0.8), (0, s * 0.5, -28.4), 0.56, 0.3, "edge",
                uv_scale=8)
-    diamond(pr, (0, 0, -30.2), 2.9, 0.75, "prong", tilt=90, uv_scale=8)       # 鏃（YZ 平面の菱形）
-    diamond(pr, (0, 0, -30.2), 1.7, 0.85, "edge", tilt=90, uv_scale=10)
-    taper(pr, (0, 0, -31.6), (0, 0, Z_TIP), 0.7, 0.18, 2, "prong", round_=False, uv_scale=10)
+    diamond(pr, (0, 0, -30.0), 3.8, 0.8, "prong", tilt=90, uv_scale=8)       # 鏃（YZ 平面の菱形）
+    diamond(pr, (0, 0, -30.0), 2.4, 0.92, "edge", tilt=90, uv_scale=10)
+    diamond(pr, (0, 0, -30.0), 1.0, 1.0, "prong", tilt=90, uv_scale=12)
+    taper(pr, (0, 0, -31.8), (0, 0, Z_TIP), 0.9, 0.2, 2, "prong", round_=False, uv_scale=10)
     # 左右の穂: 外へ張ってから前へ。先に鏃と外向きの返し
     for s in (-1, 1):
-        pts = [(0, s * 3.2, Z_BAR - 0.4), (0, s * 3.9, -23.6), (0, s * 3.7, -26.6),
-               (0, s * 3.2, -28.2)]
-        W.polyline(pr, pts, [0.95, 0.85, 0.75], [0.95, 0.85, 0.75], "prong", uv_scale=8)
-        W.polyline(pr, [(0, s * 4.4, -23.2), (0, s * 4.2, -26.6)], 0.55, 0.3, "edge",
+        pts = [(0, s * 3.2, Z_BAR - 0.4), (0, s * 4.0, -23.4), (0, s * 3.85, -26.2),
+               (0, s * 3.4, -27.6)]
+        W.polyline(pr, pts, [1.1, 1.0, 0.9], [1.1, 1.0, 0.9], "prong", uv_scale=8)
+        W.polyline(pr, [(0, s * 4.6, -23.0), (0, s * 4.45, -26.2)], 0.62, 0.34, "edge",
                    uv_scale=8)
-        W.beam(pr, (0, s * 3.4, -28.0), (0, s * 3.0, -30.6), 0.62, 0.62, "prong", uv_scale=8)
-        diamond(pr, (0, s * 3.05, -29.4), 1.9, 0.62, "prong", tilt=90, uv_scale=8)
-        taper(pr, (0, s * 3.0, -30.4), (0, s * 2.8, -31.6), 0.55, 0.14, 1, "prong",
-                round_=False, uv_scale=10)
-        W.beam(pr, (0, s * 3.6, -28.6), (0, s * 4.6, -27.4), 0.45, 0.4, "edge", uv_scale=10)
+        diamond(pr, (0, s * 3.3, -29.0), 2.7, 0.7, "prong", tilt=90, uv_scale=8)
+        diamond(pr, (0, s * 3.3, -29.0), 1.6, 0.82, "edge", tilt=90, uv_scale=10)
+        taper(pr, (0, s * 3.3, -30.3), (0, s * 3.1, -31.8), 0.65, 0.16, 1, "prong",
+              round_=False, uv_scale=10)
+        W.beam(pr, (0, s * 3.9, -28.2), (0, s * 5.0, -26.8), 0.55, 0.5, "prong", uv_scale=10)
+        W.beam(pr, (0, s * 4.95, -26.85), (0, s * 5.15, -25.9), 0.45, 0.42, "edge", uv_scale=10)
 
 
 def build_core(m, root):
@@ -183,10 +186,10 @@ def WEAPON_STYLES(key):
         # 柄: 藍の地に、斜めに巡る水色の波の刻み（発光の筋）
         shaft={"kind": "armor", "base": INDIGO, "light": (92, 116, 218), "dark": (18, 24, 86),
                "line": (8, 10, 44), "panel": 0, "bolts": False,
-               "stripe": {"dir": "d", "period": 9, "width": 2, "color": AQUA, "glow": True,
-                          "emit": 60}},
+               "stripe": {"dir": "d", "period": 16, "width": 1, "color": AQUA, "glow": True,
+                          "emit": 50}},
         # 穂: 真珠の鋼（鏡面）
-        prong={"kind": "chrome", "base": (196, 222, 244), "light": (250, 254, 255),
+        prong={"kind": "chrome", "base": (214, 234, 250), "light": (255, 255, 255),
                "line": (34, 52, 96)},
         edge={"glow": EDGE, "sat": 0.45, "emit": 30},
         wrap={"base": (14, 20, 48), "strap": (40, 120, 220), "skin": (200, 230, 246)},

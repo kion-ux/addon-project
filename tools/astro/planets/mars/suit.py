@@ -32,7 +32,7 @@ from astro_suit import ARM_X, LEG_X, Suit, mirror_x
 #  色
 # ---------------------------------------------------------------------------
 CRIMSON = (196, 58, 34)
-RUST = (138, 66, 40)
+RUST = (146, 74, 44)
 IRON = (40, 34, 34)
 OCHRE = (217, 137, 58)
 DUST = (166, 104, 66)            # 火星の赤い砂ぼこり
@@ -228,6 +228,8 @@ SUIT_ANIMS = {
         "fx_spin_deimos": {"rotation": [0, 0, "q.anim_time * 30.0 + 150.0"]},
         "fx_spin_deimos_roll": {"rotation": [0, "q.anim_time * 90.0", "q.anim_time * 30.0"]},
         "extra_orrery": {"position": [0, "math.sin(q.anim_time * 60.0) * 0.3", 0]},
+        # 一人称（v.astro_fp = 1）では巨大な肩当てをたたむ（カメラの横を塞がない）
+        "shoulders_plates_r": {"scale": "1.0 - v.astro_fp"},
     },
     "thrust": {
         # 空中では軌道が後ろへ倒れ、炎の上に回る
@@ -290,7 +292,6 @@ def legs(s):
     keel = rbox(g, (X - 0.8, 5.25, -3.1), (1.8, 4.6, 0.9), "plate", rot=(0, 24, 0))
     mirror_x(g, keel, about=X)                                           # 脛の稜（真紅の V 字）
     cbox(g, (X, 5.2, -3.62), (0.32, 3.4, 0.2), "glow")                    # 稜の溶岩の線
-    cbox(g, (X, 3.25, -3.3), (4.6, BRASS_W, 0.5), "brass")
     cbox(g, (X, 8.15, 0.15), (5.7, 1.5, 5.7), "frame")                   # 膝の関節
     # 膝当て: 面取りの板 + 上の庇 + 鈍いトゲ
     bevel(g, (X, 7.85, -3.2), (4.3, 3.2, 1.4), "plate", cut=0.6, axis="z")
@@ -301,17 +302,19 @@ def legs(s):
     calf = rbox(g, (X, 5.7, 3.1), (5.0, 4.4, 1.0), "plate2", rot=(-8, 0, 0))
     stick(g, calf, "south", 0.5, 0.5, (3.2, 2.8, 0.3), "vent", sink=0.1)
     # 外側の板（下端が外へ）と警告ストライプ
-    side = rbox(g, (X - 3.0, 5.6, 0.4), (0.7, 4.3, 4.8), "plate2", rot=(0, 0, 5),
+    side = rbox(g, (X - 3.1, 5.1, 0.4), (0.8, 4.6, 5.2), "plate2", rot=(0, 0, 10),
                 decals={"west": {"decal": "hazard", "band": "bottom", "c1": OCHRE,
                                  "c2": (44, 36, 34)}})
     line_on(g, side, "west", (0.12, 0.72), (0.88, 0.72), 0.24, 0.2, "glow")
+    lip = rbox(g, (X, 3.75, -3.3), (5.0, 1.5, 0.8), "plate2", rot=(-20, 0, 0))   # 脛の裾（前へ反る）
+    stick(g, lip, "north", 0.5, 0.15, (4.8, BRASS_W, 0.2), "brass", sink=0.05)
     # 腿
     t = s.part("legs", "thigh_r", "rightLeg", pivot=(X, 11.6, 0))
-    cbox(t, (X - 0.05, 10.5, 0.15), (5.5, 3.4, 5.6), "steel_b")
-    tf = rbox(t, (X, 10.4, -2.95), (4.8, 3.4, 0.9), "plate", rot=(-6, 0, 0))
+    cbox(t, (X - 0.05, 10.5, 0.15), (5.3, 3.4, 5.6), "steel_b")
+    tf = rbox(t, (X, 10.4, -2.95), (4.4, 3.4, 0.9), "plate", rot=(-6, 0, 0))
     line_on(t, tf, "north", (0.2, 0.25), (0.8, 0.25), 0.24, 0.2, "glow")
     cbox(t, (X, 8.85, -3.05), (4.4, BRASS_W, 0.6), "brass")
-    cbox(t, (X - 2.85, 10.3, 0.25), (0.7, 3.2, 4.6), "plate2",
+    cbox(t, (X - 2.75, 10.3, 0.25), (0.6, 3.2, 4.6), "plate2",
          decals={"west": {"decal": "serial", "text": "AR-04", "ink": (236, 170, 96)}})
 
 
@@ -400,7 +403,8 @@ def back(s):
     for y in (20.9, 19.4):                                              # 炉の格子（橙に光る）
         cbox(bk, (0, y, 6.5), (3.8, 0.9, 0.2), "vent")
     side = cbox(bk, (-3.38, 19.7, 5.15), (0.3, 4.6, 1.8), "plate2")
-    mirror_x(bk, side)
+    sv = cbox(bk, (-3.95, 20.3, 4.02), (0.9, 4.6, 0.2), "vent")         # 背の排気口
+    mirror_x(bk, side, sv)
     # 煙突（右。肩の後ろから上へ、先が赤熱）
     st = s.part("back", "stack_r", bk, pivot=(-3.3, 21.5, 5.6), rotation=(-10, 0, 8))
     octa(st, (-3.3, 23.2, 5.6), 1.5, 3.8, "frame", axis="y")
@@ -461,7 +465,9 @@ def arms(s):
 #  肩（三段に重ねた巨大な肩当て・鈍い三本のトゲ）
 # ---------------------------------------------------------------------------
 def shoulders(s):
-    p = s.part("shoulders", "pauldron_r", "rightArm")
+    root = s.part("shoulders", "pauldron_r", "rightArm")
+    # 装甲は同じ群の子ボーンに入れる（一人称では縮めて画面を塞がない: SUIT_ANIMS の idle）
+    p = s.part("shoulders", "plates_r", root, pivot=root.pivot)
     dome = bevel(p, (-7.5, 24.3, 0.0), (7.2, 3.8, 8.8), "plate", cut=1.3, axis="x",
                  rot=(0, 0, -14))
     top = stick(p, dome[0], "up", 0.45, 0.5, (4.6, 6.4, 0.55), "plate2", sink=0.15)
@@ -477,12 +483,12 @@ def shoulders(s):
               decals={"west": {"decal": "hazard", "c1": OCHRE, "c2": (44, 36, 34)}})
     stick(p, l2, "west", 0.5, 0.05, (7.2, BRASS_W, 0.22), "brass", sink=0.05)
     rbox(p, (-11.45, 18.55, 0.1), (0.9, 1.7, 6.6), "plate", rot=(0, 0, 11))
-    # 鈍いトゲ（外の縁から外上へ。真ん中が長い。真鍮の座金から先細りの円錐）
-    for z, k in ((-3.0, 0.8), (0.0, 1.0), (3.0, 0.8)):
-        base = (-10.3, 25.2, z)
-        tip = (-12.4 - 1.0 * k, 26.6 + 1.6 * k, z * 1.08)
-        octa(p, base, 2.0, 0.7, "brass", axis="x", rot=(0, 0, -32), pivot=base)
-        taper(p, base, tip, 1.9, 0.42, 3, "iron")
+    # 鈍いトゲ（肩の上から外上へ。前が少し短い。真鍮の座金から先細りの円錐）
+    for z, k in ((-2.1, 0.85), (2.1, 1.0)):
+        base = (-8.9, 26.0, z)
+        tip = (-11.0 - 0.6 * k, 28.4 + 2.2 * k, z * 1.25)
+        octa(p, (-8.9, 25.85, z), 2.6, 0.6, "brass", axis="y", rot=(0, 0, -20), pivot=base)
+        taper(p, base, tip, 2.4, 0.5, 3, "iron")
     # 前後の当て板
     fr = rbox(p, (-7.6, 23.6, -4.65), (5.2, 2.6, 0.8), "plate2", rot=(-14, 0, -12))
     stick(p, fr, "north", 0.5, 0.5, (3.4, 0.4, 0.2), "glow", sink=0.05)
