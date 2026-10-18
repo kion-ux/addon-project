@@ -49,7 +49,7 @@ c3_up = P(b=(-16, 0, 0), h=(-18, 0, 0),
 c3_over = P(c3_up, b=(-6, 0, 0), root_pos=(0, 2.0, 0),
             rA=wield(blade=dirv(u=0.9, f=0.3, r=0.1), arm=dirv(u=0.9, f=0.45, r=0.4)))
 c3_hit = P(w=(34, 0, 0), h=(-28, 0, 0),
-           rA=wield(blade=dirv(f=0.55, u=-1.0), arm=dirv(f=1.0, u=-0.5)),
+           rA=wield(blade=dirv(f=1.0, u=-0.7), arm=dirv(f=1.0, u=-0.45)),
            lA=aim(dirv(f=1.0, u=-0.7, r=-0.2)),
            rL=(34, 0, 9), lL=(-48, 0, -9), root_pos=(0, 0, -2.0), ground=True)
 
@@ -88,7 +88,7 @@ dive.update(flip(0.12, 1.02, -2.0, "y", base=spin_out, tuck=False, steps=12))
 dive[1.2] = P(spin_out, root=(0, -720, 0), rA=wield(blade=dirv(u=0.6, f=-0.75, r=0.2),
                                                     arm=dirv(u=1.0, f=0.15, r=0.35)))
 land_down = P(w=(32, 0, 0), h=(-26, 0, 0),
-              rA=wield(blade=dirv(f=0.6, u=-1.0), arm=dirv(f=1.0, u=-0.6)),
+              rA=wield(blade=dirv(f=1.0, u=-0.72), arm=dirv(f=1.0, u=-0.55)),
               lA=aim(dirv(f=0.6, u=-1.0, r=0.2)),
               rL=(-46, 0, 8), lL=(40, 0, -8), ground=True)
 
@@ -106,7 +106,7 @@ t_jump = P(b=(-18, 0, 0), h=(-24, 0, 0),
 t_over = P(t_jump, rA=wield(blade=dirv(u=0.9, f=0.35, r=0.1), arm=dirv(u=0.9, f=0.45, r=0.4)),
            b=(-6, 0, 0), root_pos=(0, 2.6, 0))
 t_smash = P(w=(36, 0, 0), h=(-30, 0, 0), b=(4, 0, 0),
-            rA=wield(blade=dirv(f=0.4, u=-1.0), arm=dirv(f=1.0, u=-0.75)),
+            rA=wield(blade=dirv(f=1.0, u=-0.75), arm=dirv(f=1.0, u=-0.6)),
             lA=aim(dirv(f=0.5, u=-1.0, r=0.3)),
             rL=(60, 0, 6), lL=(-54, 0, -6), ground=True)
 

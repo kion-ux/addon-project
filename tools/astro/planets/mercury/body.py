@@ -123,7 +123,6 @@ fl_out = P(b=(-4, 10, 0), h=(-6, -6, 0),
 
 # 自然体から最初の構えへ移る間に、刃を一度体の外（右前）へ出す（刃が胴を通らないように）
 out_r = P(b=(0, 14, 0), rA=wield(blade=dirv(r=1.0, f=0.45, u=-0.35), arm=dirv(r=0.85, u=-0.5, f=0.35)))
-out_low = P(w=(8, 0, 0), rA=wield(blade=dirv(r=0.9, f=0.2, u=-0.5), arm=dirv(r=0.7, u=-0.7, f=0.3)))
 
 # 共通の「投げる」を水銀刃に合わせて（振りかぶりで拳を頭の右へ逃がす）
 throw_wind = P(rA=wield(blade=dirv(u=0.55, f=-0.8, r=0.35), arm=dirv(u=1.0, f=-0.2, r=0.6)),
@@ -144,13 +143,20 @@ BODY_ANIMS = {
                           0.33: P(c1_follow, b=(6, -40, 0)), 0.45: H}),
     "combo2": anim(0.45, {0.0: H, 0.07: c2_wind, 0.17: c2_hit, 0.26: c2_follow,
                           0.34: P(c2_follow, b=(-8, 32, 0)), 0.45: H}),
-    "combo3": anim(0.7, {0.0: H, 0.04: out_r, 0.1: c3_coil, 0.16: P(c3_out, root=(0, 30, 0)),
+    "combo3": anim(0.7, {0.0: H, 0.04: out_r,
+                         0.07: P(out_r, b=(2, 30, 0), w=(8, 0, 0),
+                                 rA=wield(blade=dirv(r=1.0, f=-0.1, u=-0.2), arm=dirv(r=0.95, u=-0.35, f=0.15))),
+                         0.1: c3_coil, 0.16: P(c3_out, root=(0, 30, 0)),
                          0.24: P(c3_out, root=(0, -90, 0)), 0.32: P(c3_out, root=(0, -200, 0)),
                          0.4: P(c3_out, root=(0, -300, 0)),
                          0.48: P(c3_end, root=(0, -360, 0)),
                          0.6: P(c3_end, w=(12, 0, 0), root=(0, -360, 0)),
                          0.7: P(root=(0, -360, 0))}, blend=False),
-    "flash_slash": anim(0.85, {0.0: H, 0.05: out_low, 0.12: fs_draw, 0.28: P(fs_draw, w=(30, 0, 0)),
+    "flash_slash": anim(0.85, {0.0: H, 0.05: out_r,
+                               0.09: P(w=(18, 0, 0), b=(0, 22, 0), h=(-16, -16, 0),
+                                       rA=wield(blade=dirv(f=-0.3, r=0.9, u=-0.3),
+                                                arm=dirv(f=0.5, u=-1.0, r=0.15))),
+                               0.12: fs_draw, 0.28: P(fs_draw, w=(30, 0, 0)),
                                0.34: fs_dash, 0.46: P(fs_dash, w=(32, 0, 0)), 0.52: fs_after,
                                0.72: P(fs_after, b=(4, -40, 0)), 0.85: H}),
     "hermes_wings": anim(1.2, {0.0: H, 0.04: P(c1_wind, root_pos=(0, 0.6, 0)), 0.1: hw1,
@@ -158,7 +164,7 @@ BODY_ANIMS = {
                                0.64: P(hw2, b=(-12, 30, 0)), 0.8: hw3_pre, 0.9: hw3,
                                1.04: P(hw3, w=(26, 0, 0)), 1.2: H}),
     "needle_rain": anim(1.3, {0.0: H, 0.05: out_r, 0.12: nr_up, 0.3: nr_shot, 0.42: nr_up, 0.6: nr_shot,
-                              0.72: nr_up, 0.9: nr_shot, 1.1: P(nr_shot, b=(8, 0, 0)), 1.3: H}),
+                              0.72: nr_up, 0.9: nr_shot, 1.1: P(nr_shot, b=(8, 0, 0)), 1.2: out_r, 1.3: H}),
     "peri_draw": anim(0.9, {0.0: H, 0.2: pd_low, 0.7: P(pd_low, w=(32, 0, 0), h=(-34, -32, 0)),
                             0.9: P(pd_low, w=(28, 0, 0))}),
     "peri_finish": anim(1.1, {0.0: P(pd_low, w=(28, 0, 0)), 0.18: pf_up, 0.4: P(pf_up, b=(-16, 0, 0)),

@@ -58,21 +58,21 @@ c3_offer = P(b=(10, -6, 0), h=(4, 0, 0),
 
 # ---- 惑星技 アシッド・ヴェール ----------------------------------------------
 ac_wind = P(b=(-6, 30, 0), h=(0, -24, 0),
-            rA=wield(blade=dirv(u=0.75, f=-0.55, r=0.35), arm=dirv(u=1.0, f=-0.15, r=0.45)),
+            rA=wield(blade=dirv(u=0.6, f=-0.75, r=0.25), arm=dirv(f=0.7, u=0.25, r=0.55)),
             lA=aim(dirv(f=1.0, u=0.25, r=-0.15)),
             rL=(12, 0, 6), lL=(-16, 0, -6), ground=True)
 ac_cast = P(b=(12, -18, 0), h=(-8, 16, 0),
-            rA=wield(blade=dirv(f=1.0, u=0.2), arm=dirv(f=1.0, u=0.1, r=-0.05)),
+            rA=wield(blade=dirv(f=1.0, u=0.35), arm=dirv(u=-1.0, f=0.15, r=0.3)),
             lA=aim(dirv(f=-0.3, u=-1.0, r=-0.45)),
             rL=(26, 0, 4), lL=(-36, 0, -4), root_pos=(0, 0, -1.2), ground=True)
 
 # ---- 機動技 レトログレード（逆回り = 時計回りに二回転） ------------------------
 rg_pose = P(w=(16, 0, 0), h=(-14, 0, 0),
-            rA=wield(blade=dirv(r=1.0, f=0.15, u=0.1), arm=dirv(r=1.0, f=0.1, u=-0.1)),
+            rA=wield(blade=dirv(r=1.0, u=0.4, f=0.1), arm=dirv(u=-1.0, r=0.2)),
             lA=aim(dirv(r=-1.0, u=-0.3, f=0.1)),
             rL=(-12, 0, 8), lL=(16, 0, -8))
 rg_throw = P(w=(10, 0, 0), b=(0, 30, 0), h=(-6, -24, 0),
-             rA=wield(blade=dirv(f=-0.8, u=0.2, r=0.45), arm=dirv(f=-0.55, u=-0.6, r=0.55)),
+             rA=wield(blade=dirv(f=-0.7, u=0.4, r=0.45), arm=dirv(u=-1.0, f=0.35, r=0.25)),
              lA=aim(dirv(f=1.0, u=0.1, r=-0.3)),
              rL=(16, 0, 6), lL=(-20, 0, -6), ground=True)
 
@@ -91,15 +91,15 @@ def _retro():
 
 # ---- 空中技 グリーンハウス -----------------------------------------------------
 dv_up = P(b=(-10, 0, 0), h=(-16, 0, 0),
-          rA=wield(blade=dirv(u=1.0, f=0.15), arm=dirv(u=1.0, f=0.3, r=0.3)),
+          rA=wield(blade=dirv(u=1.0, f=0.1), arm=dirv(f=0.9, u=-0.35, r=0.3)),
           lA=aim(dirv(u=1.0, f=0.3, r=-0.15)),
           rL=(-50, 0, 4), lL=(-22, 0, -4))
 dv_down = P(w=(14, 0, 0), h=(14, 0, 0),
-            rA=wield(blade=dirv(u=-1.0, f=0.3), arm=dirv(f=0.75, u=-0.6, r=0.2)),
+            rA=wield(blade=dirv(f=0.75, u=-0.7), arm=dirv(f=0.3, u=0.95, r=0.2)),
             lA=aim(dirv(f=0.7, u=-0.7, r=-0.2)),
             rL=(-6, 0, 3), lL=(8, 0, -3))
 dm_kneel = P(w=(18, 0, 0), h=(-10, 0, 0),
-             rA=wield(blade=dirv(u=1.0, f=0.1), arm=dirv(f=0.75, u=-0.45, r=0.35)),
+             rA=wield(blade=dirv(u=1.0, f=0.05), arm=dirv(r=0.7, f=0.5, u=-0.4)),
              lA=aim(dirv(r=-1.0, u=0.45, f=0.35)),
              rL=(60, 0, 6), lL=(-56, 0, -6), ground=True)
 dm_open = P(dm_kneel, w=(10, 0, 0), h=(-22, 0, 0),
@@ -107,15 +107,15 @@ dm_open = P(dm_kneel, w=(10, 0, 0), h=(-22, 0, 0),
 
 # ---- 必殺 モーニングスター -------------------------------------------------------
 sc_rise = P(b=(-12, 0, 0), h=(-34, 0, 0),
-            rA=wield(blade=dirv(u=1.0, f=0.05), arm=dirv(u=1.0, f=0.2, r=0.3)),
+            rA=wield(blade=dirv(u=1.0, f=-0.35), arm=dirv(f=1.0, u=0.15, r=0.25)),
             lA=aim(dirv(u=1.0, f=0.2, r=-0.35)),
             rL=(-4, 0, 9), lL=(4, 0, -9), ground=True)
 sf_point = P(b=(14, -10, 0), h=(-4, 8, 0),
-             rA=wield(blade=dirv(f=1.0, u=-0.25), arm=dirv(f=1.0, u=0.05, r=0.05)),
+             rA=wield(blade=dirv(f=1.0, u=-0.25), arm=dirv(u=-1.0, f=-0.45, r=0.2)),
              lA=aim(dirv(f=-0.3, u=-1.0, r=-0.5)),
              rL=(24, 0, 6), lL=(-32, 0, -6), root_pos=(0, 0, -0.8), ground=True)
 rn_bless = P(b=(-8, 0, 0), h=(-22, 0, 0),
-             rA=wield(blade=dirv(u=0.85, r=0.45, f=0.1), arm=dirv(r=1.0, u=0.45, f=0.15)),
+             rA=wield(blade=dirv(u=1.0, r=-0.2, f=-0.2), arm=dirv(r=1.0, u=0.1, f=0.2)),
              lA=aim(dirv(r=-1.0, u=0.45, f=0.15)),
              rL=(-6, 0, 10), lL=(6, 0, -10), ground=True)
 

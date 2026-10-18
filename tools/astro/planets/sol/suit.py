@@ -434,8 +434,8 @@ def helmet(s):
     CC = (0.0, 30.4, -5.55)
     octa(hm, CC, 2.4, 0.6, "plate2", axis="z")
     cbox(hm, (CC[0], CC[1], CC[2] - 0.35), (1.5, 1.5, 0.5), "core")
-    for a, L, w in ((0, 5.0, 1.3), (30, 3.4, 1.1), (62, 2.5, 1.0)):
-        rr = spear(hm, CC, a, 1.15, L, w, 0.45, "plate2", tilt=-16)
+    for a, L, w in ((0, 5.2, 1.4), (30, 3.5, 1.15), (62, 2.5, 1.0)):
+        rr = spear(hm, CC, a, 1.15, L, w, 0.45, "plate", tilt=-16, tip="plate2")
         if a:
             mirror_x(hm, rr)
     ray(hm, (CC[0], CC[1], CC[2] - 0.12), 0, 1.4, 4.0, 0.3, 0.3, 1, 0.5, "glow_hot", tilt=-16)
