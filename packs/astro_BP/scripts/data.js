@@ -13,4 +13,4 @@ export const WEAPON_TO_PLANET = Object.fromEntries(Object.values(PLANETS).map((p
 export const SUIT_TO_PLANET = Object.fromEntries(Object.values(PLANETS).flatMap((p) => [[p.suit, p.key], [p.suitOn, p.key], [p.suitOff, p.key]]));
 export const MATERIALS = {"nano_cell":{"ja":"ナノマシン・セル","en":"Nanomachine Cell"},"core_frame":{"ja":"コア・フレーム","en":"Core Frame"},"solar_fragment":{"ja":"太陽の欠片 ソーラー・フラグメント","en":"Solar Fragment"},"terminal":{"ja":"星核ターミナル","en":"Star Core Terminal"},"void_signal":{"ja":"ヴォイド・シグナル","en":"Void Signal"}};
 export const ENEMIES = {"void_drone":{"ja":"ヴォイド・ドローン","en":"Void Drone","health":20},"void_sentinel":{"ja":"ヴォイド・センチネル","en":"Void Sentinel","health":44},"nemesis":{"ja":"虚星王 ネメシス","en":"Nemesis, the Void Star","health":480},"hologram_target":{"ja":"ホログラム標的","en":"Hologram Target","health":200}};
-export const ADDON = {"ja":"アストロ・ナノギア","en":"Astro Nanogear","version":"1.1.0"};
+export const ADDON = {"ja":"アストロ・ナノギア","en":"Astro Nanogear","version":"1.1.1"};

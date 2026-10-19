@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_core_frame"
+        },
         "texture": "astro_core_frame"
       },
       "minecraft:display_name": {

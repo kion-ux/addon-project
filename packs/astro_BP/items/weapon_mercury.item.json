@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_weapon_mercury"
+        },
         "texture": "astro_weapon_mercury"
       },
       "minecraft:display_name": {
@@ -23,6 +26,7 @@
         "use_duration": 1.0,
         "movement_modifier": 1.0
       },
+      "minecraft:interact_button": true,
       "minecraft:can_destroy_in_creative": false,
       "minecraft:should_despawn": false,
       "minecraft:glint": false

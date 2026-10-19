@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_suit_mars"
+        },
         "texture": "astro_suit_mars"
       },
       "minecraft:display_name": {

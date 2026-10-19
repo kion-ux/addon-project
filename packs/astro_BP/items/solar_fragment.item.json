@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_solar_fragment"
+        },
         "texture": "astro_solar_fragment"
       },
       "minecraft:display_name": {

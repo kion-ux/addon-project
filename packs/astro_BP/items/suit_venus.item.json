@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_suit_venus"
+        },
         "texture": "astro_suit_venus"
       },
       "minecraft:display_name": {

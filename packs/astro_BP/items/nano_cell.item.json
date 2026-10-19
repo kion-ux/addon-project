@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_nano_cell"
+        },
         "texture": "astro_nano_cell"
       },
       "minecraft:display_name": {

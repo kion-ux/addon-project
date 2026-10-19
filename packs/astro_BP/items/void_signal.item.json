@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_void_signal"
+        },
         "texture": "astro_void_signal"
       },
       "minecraft:display_name": {
@@ -19,7 +22,8 @@
       "minecraft:use_modifiers": {
         "use_duration": 0.6,
         "movement_modifier": 0.5
-      }
+      },
+      "minecraft:interact_button": true
     }
   }
 }

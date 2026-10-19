@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_terminal"
+        },
         "texture": "astro_terminal"
       },
       "minecraft:display_name": {
@@ -19,7 +22,8 @@
       "minecraft:use_modifiers": {
         "use_duration": 0.2,
         "movement_modifier": 1.0
-      }
+      },
+      "minecraft:interact_button": true
     }
   }
 }

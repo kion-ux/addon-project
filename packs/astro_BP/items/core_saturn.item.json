@@ -5,11 +5,14 @@
       "identifier": "astro:core_saturn",
       "menu_category": {
         "category": "equipment",
-        "group": "itemGroup.name.sword"
+        "group": "minecraft:itemGroup.name.sword"
       }
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_core_saturn"
+        },
         "texture": "astro_core_saturn"
       },
       "minecraft:display_name": {
@@ -21,6 +24,7 @@
         "use_duration": 0.2,
         "movement_modifier": 1.0
       },
+      "minecraft:interact_button": true,
       "minecraft:should_despawn": false,
       "minecraft:glint": false
     }

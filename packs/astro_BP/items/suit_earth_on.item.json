@@ -9,6 +9,9 @@
     },
     "components": {
       "minecraft:icon": {
+        "textures": {
+          "default": "astro_suit_earth"
+        },
         "texture": "astro_suit_earth"
       },
       "minecraft:display_name": {
