@@ -239,11 +239,11 @@ SUIT_ANIMS = {
         "fx_spin_rotor": {"rotation": [0, 0, "v.astro_spin * 240.0"]},
     },
     "thrust": {
-        # 空中では軌道が後ろへ倒れ、炎の上に回る
-        "extra_orrery": {"rotation": ["-v.astro_air * 14.0", 0, 0]},
+        # 空中では軌道の下側がさらに後ろへはね上がり、炎から離れて回る
+        "extra_orrery": {"rotation": ["v.astro_air * 12.0", 0, 0]},
     },
     "sprint": {
-        "extra_orrery": {"rotation": ["-v.astro_run * 10.0", 0, 0]},
+        "extra_orrery": {"rotation": ["v.astro_run * 10.0", 0, 0]},
     },
 }
 
@@ -679,8 +679,9 @@ def helmet(s):
 #  衛星（背中の後ろの傾いた軌道。フォボス = 内側で速い芋形 / ダイモス = 外側で遅い小さく滑らか）
 # ---------------------------------------------------------------------------
 def moons(s):
-    C = (0.0, 22.6, 8.2)
-    orr = s.part("extra", "orrery", "body", pivot=C, rotation=(-10, 0, 0))
+    # 軌道の下側を後ろへ逃がす（rx 正 = 下端が後ろ）: ノズルと炎（z 6.6 まで）に当たらない
+    C = (0.0, 23.0, 8.8)
+    orr = s.part("extra", "orrery", "body", pivot=C, rotation=(6, 0, 0))
     # フォボス: いびつに重ねた岩・真鍮の帯・橙の目（子機）
     sp = s.fx("spin", "phobos", orr, pivot=C)
     M = (C[0] - 3.7, C[1], C[2])
