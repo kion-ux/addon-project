@@ -2853,20 +2853,6 @@
             0
           ]
         },
-        "fx_spin_pommel": {
-          "rotation": [
-            0,
-            0,
-            "q.anim_time * 120"
-          ]
-        },
-        "fx_spin_moons": {
-          "rotation": [
-            0,
-            0,
-            "q.anim_time * -120"
-          ]
-        },
         "fx_spin_saw": {
           "rotation": [
             "q.anim_time * 120.0",
@@ -2886,6 +2872,20 @@
             "q.anim_time * 360.0",
             0,
             0
+          ]
+        },
+        "fx_spin_moons": {
+          "rotation": [
+            "-q.anim_time * 60.0",
+            0,
+            0
+          ]
+        },
+        "fx_spin_pommel": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 90.0"
           ]
         }
       }
@@ -2910,6 +2910,13 @@
         "fx_spin_min": {
           "rotation": [
             "v.astro_sw * 360.0",
+            0,
+            0
+          ]
+        },
+        "fx_spin_moons": {
+          "rotation": [
+            "-v.astro_sw * 360.0",
             0,
             0
           ]
