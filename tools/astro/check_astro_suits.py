@@ -222,7 +222,11 @@ def check_orbits(s, r, step=0.1, span=6.0):
         hits = {}
         for k in range(int(span / step)):
             t = k * step
-            W = AS.suit_world(geo, None, eval_animation(idle, t, {}))
+            # 累積の位相（gen_astro_suits の PRE）も進める。v.astro_spin は 2 倍速にして、span の間に
+            # q.anim_time の一周（12 秒）ぶんの角度を通す（空中・疾走では実際にこれより速く回る）
+            env = {"v.astro_air": 0.0, "v.astro_run": 0.0, "v.astro_fp": 0.0, "q.is_on_ground": 1.0,
+                   "v.astro_t": t, "v.astro_spin": 2.0 * t}
+            W = AS.suit_world(geo, None, eval_animation(idle, t, env))
             pts = []
             for M, lo, hi in cubes(W, moving):
                 g = np.stack(np.meshgrid(*[np.linspace(lo[i] + 0.1, hi[i] - 0.1, 4)

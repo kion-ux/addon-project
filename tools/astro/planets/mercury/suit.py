@@ -613,8 +613,8 @@ def helmet(s):
     cbox(hm, (0, 28.5, HZ - 2.5), (0.3, 1.2, 0.3), "chrome")
     taper(hm, (0, 27.7, HZ - 2.15), (0, 27.38, HZ - 2.35), 0.8, 0.3, 1, "chrome", round_=False)
     # 後頭部（稜が後ろへ降りる・小さな排気口）としころ
-    bh = cbox(hm, (0, 29.35, HZ + 2.55), (3.9, 2.3, 0.44), "gun")
-    vents(hm, bh, "south", 3, box=(0.28, 0.25, 0.72, 0.65), w=0.18, style="vent")
+    bh = rbox(hm, (0, 29.4, HZ + 2.5), (3.7, 2.2, 0.44), "chrome2", rot=(-10, 0, 0))
+    vents(hm, bh, "south", 3, box=(0.3, 0.25, 0.7, 0.62), w=0.18, style="vent", rim="frame")
     rbox(hm, (0, 31.3, HZ + 2.45), (0.7, 1.5, 0.4), "chrome", rot=(35, 0, 0))
     rbox(hm, (0, 28.05, HZ + 2.6), (3.6, 0.7, 0.44), "chrome2", rot=(22, 0, 0))
     rbox(hm, (0, 27.6, HZ + 2.75), (3.1, 0.58, 0.42), "gun", rot=(32, 0, 0))

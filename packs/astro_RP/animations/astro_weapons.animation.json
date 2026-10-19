@@ -3476,6 +3476,9 @@
             0
           ]
         },
+        "fx_glow_emit": {
+          "scale": "1 + math.sin(q.anim_time * 150) * 0.06"
+        },
         "fx_spin_star": {
           "rotation": [
             0,
@@ -3488,6 +3491,13 @@
             0,
             0,
             "-q.anim_time * 90.0"
+          ]
+        },
+        "fx_spin_gyro": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 180.0"
           ]
         }
       }
@@ -3507,6 +3517,13 @@
             0,
             0,
             "v.astro_sw * 360.0"
+          ]
+        },
+        "fx_spin_gyro": {
+          "rotation": [
+            0,
+            0,
+            "-v.astro_sw * 720.0"
           ]
         }
       }

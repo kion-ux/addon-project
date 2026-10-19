@@ -5,12 +5,24 @@
 握りの前後 ±2.9 は篭手に隠れるので、口金はそれより先・後ろに置く。
 上の十字の横木と、その上の輪と星の頭とで、杖全体が金星の記号「♀」の形になる。
 
-  form_0_shaft   金の柄（クリームの象嵌・金の口金・硫黄色の光の筋）、石突きの薔薇色の宝玉と小さな四芒星。
-                 握りから両方向へ伸びる（form_axes z）
-  form_1_cross   ♀ の横木: クリームと金の十字の腕（先に薔薇色の宝玉）、星を受ける金の萼（がく）
+v1.1（7 頭身のスーツに合わせた細部）: 大きな形（全長・握り・横木・星・雲の輪）は v1.0 のまま、部品を細かく割った。
+  form_0_shaft   金の柄（握りから両方向へ伸びる。form_axes z）
+                   握り: 柄巻・二重の口金（金 + 薔薇金の細い輪）・口金の鋲
+                   石突き: 金の柄に薔薇金の螺旋の線条細工・クリームの象嵌・金の台・4 本の爪で留めた薔薇色の宝玉・
+                           小さな四芒星
+                   上の柄: 平（±X）に硫黄色に光る溝、横（±Y）に彫った暗い溝と硫黄色の菱形の象嵌、
+                           クリームの象嵌に巻き付く薔薇金の螺旋、鋲を打った金の口金と薔薇金の細い輪
+                 └ fx_spin_gyro   柄を巻いて回る小さな輪（薔薇金と光の輪・二つの宝玉）
+                 └ fx_glow_emit   横木の下の 4 つの小さな放射口（脈打つ）
+  form_1_cross   ♀ の横木: 金の台（薔薇金の襟）、クリームの腕（光る溝・鋲を打った金の帯）・反った金の先・
+                 爪で留めた薔薇色の宝玉、星を受ける八枚の萼（金・クリーム・薔薇金）と先の光、星へ昇る光
   form_2_star    八芒星の頭（fx_spin_star で回る）: 金の円盤に金星の球、♀ の細い輪、
-                 白金に光る長い光条 4 本と金の短い光条 4 本
-  form_3_clouds  頭を包んで回る雲の輪（fx_spin_clouds、静止の傾き 24°）: 金の細い輪とクリームの雲の玉 5 つ
+                 白金に光る長い光条 4 本（先に光の菱形）と金の短い光条 4 本（根元に硫黄色の放射口）
+  form_3_clouds  頭を包んで回る雲の輪（fx_spin_clouds、静止の傾き 24°）: 金の細い輪（薔薇金の玉）、
+                 金の留め具で留めたクリームの雲の玉 4 つ（硫黄色の排気口）と小さな雲
+
+細かい部品は、柄を X / Y 方向に **貫く** 細い箱で作る（1 個で両面に出る）。面より 0.04 以上外へ出し、
+0.15 単位より細い部品は作らない。
 """
 from __future__ import annotations
 
@@ -24,6 +36,7 @@ KIND = "scepter"
 Z_STAR = -22.6          # 星の頭の中心
 R_LONG, R_SHORT = 6.2, 4.9      # 光条の長さ（中心から）
 R_CLOUD = 7.0           # 雲の輪の半径
+Z_GYRO = -12.0          # 柄を巻く小さな輪の中心
 
 STAR = (255, 240, 150)  # 明けの明星の白金の光
 SULFUR = (226, 255, 96)
@@ -36,45 +49,102 @@ def _puff(bone, c, r, style, uv=10):
     W.rbox(bone, (c[0], c[1], c[2]), (r * 1.7, r * 1.0, r * 1.0), style, rot=(45, 0, 0), uv_scale=uv)
 
 
+def _studs(bone, z, r, style="rosegold", s=0.32, uv=14):
+    """柄の 4 面（±X・±Y）に打つ鋲（X / Y を貫く細い箱 2 個で 4 つの頭）。"""
+    W.cbox(bone, (0, 0, z), (2 * r, s, s), style, uv_scale=uv)
+    W.cbox(bone, (0, 0, z), (s, 2 * r, s), style, uv_scale=uv)
+
+
+def _helix(bone, z0, z1, r, turns, style, n_per=6, w=0.2, uv=14):
+    """柄に巻き付く螺旋の線条細工（1 区間 1.0 以下の細い角柱）。"""
+    n = max(1, int(round(turns * n_per)))
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        a = 2 * math.pi * turns * t
+        pts.append((r * math.cos(a), r * math.sin(a), z0 + (z1 - z0) * t))
+    for i in range(n):
+        W.beam(bone, pts[i], pts[i + 1], w, w, style, uv_scale=uv)
+
+
 def build_weapon(m, root):
     # =====================================================================
     #  form_0_shaft — 柄（握り・石突き・上の柄）
     # =====================================================================
     sh = W.form(m, root, 0, "shaft", (0, 0, 0))
-    W.octa(sh, (0, 0, 0.0), 1.5, 5.8, "wrap", uv_scale=8)                      # 握り（篭手の中）
-    for z, ln in ((-3.15, 0.7), (3.15, 0.7)):                                  # 握りの口金
-        W.octa(sh, (0, 0, z), 2.0, ln, "gold", uv_scale=8)
-    # 石突き: 金の柄 → クリームの象嵌 → 金の台 → 薔薇色の宝玉 → 小さな四芒星
+    W.octa(sh, (0, 0, 0), 1.5, 5.8, "wrap", uv_scale=8)                      # 握り（篭手の中）
+    for z, zr in ((-3.15, -3.62), (3.15, 3.62)):                               # 二重の口金と鋲
+        W.octa(sh, (0, 0, z), 2.0, 0.7, "gold", uv_scale=8)
+        W.octa(sh, (0, 0, zr), 1.72, 0.26, "rosegold", uv_scale=10)
+        _studs(sh, z, 1.04)
+    # 石突き: 金の柄（薔薇金の螺旋）→ クリームの象嵌 → 金の台 → 爪で留めた薔薇色の宝玉 → 小さな四芒星
     W.octa(sh, (0, 0, 5.1), 1.35, 3.4, "plate", uv_scale=8)
     W.octa(sh, (0, 0, 5.0), 1.45, 1.1, "plate2", uv_scale=8)
+    _helix(sh, 5.6, 6.65, 0.72, 1.0, "rosegold")
     W.octa(sh, (0, 0, 7.15), 2.1, 0.9, "gold", uv_scale=8)
+    _studs(sh, 7.15, 1.1, "plate2", 0.3)
+    for k in range(4):                                                         # 宝玉の爪
+        a = math.radians(45 + 90 * k)
+        W.beam(sh, (0.78 * math.cos(a), 0.78 * math.sin(a), 7.45),
+               (0.42 * math.cos(a), 0.42 * math.sin(a), 8.35), 0.24, 0.24, "gold", uv_scale=14)
     W.cbox(sh, (0, 0, 8.05), (1.3, 1.3, 1.3), "gem_accent", rotation=(45, 0, 0), uv_scale=12)
     for a in (0, 90):
         W.rbox(sh, (0, 0, 8.05), (0.3, 3.2, 0.3), "gold", rot=(a, 0, 0), uv_scale=12)
-    # 上の柄: 金の柄にクリームの象嵌の帯と金の口金を交互に。平（±X）に硫黄色の光の筋
+    # 上の柄: 金の柄にクリームの象嵌（薔薇金の螺旋）と鋲を打った金の口金を交互に
     W.octa(sh, (0, 0, -9.6), 1.3, 12.6, "plate", uv_scale=7)
     for z in (-6.2, -11.6):
         W.octa(sh, (0, 0, z), 1.42, 2.2, "plate2", uv_scale=8)                 # クリームの象嵌
+        _helix(sh, z + 0.95, z - 0.95, 0.76, 1.0, "rosegold")
     for z in (-4.4, -8.0, -13.3):
         W.octa(sh, (0, 0, z), 1.8, 0.5, "gold", uv_scale=8)                    # 金の口金
+        W.octa(sh, (0, 0, z + 0.42), 1.56, 0.24, "rosegold", uv_scale=10)
+        _studs(sh, z, 0.95)
+    # 平（±X）の硫黄色に光る溝と、横（±Y）の彫った暗い溝・硫黄色の菱形の象嵌
     for s in (-1, 1):
-        W.cbox(sh, (s * 0.66, 0, -9.6), (0.08, 0.3, 11.0), "glow", uv_scale=10)
+        W.cbox(sh, (s * 0.62, 0, -9.6), (0.2, 0.3, 11.0), "glow", uv_scale=10)
+        W.cbox(sh, (0, s * 0.62, -9.6), (0.3, 0.2, 10.6), "dark", uv_scale=10)
+    for z in (-5.3, -7.1, -9.0, -10.4, -12.4):
+        W.cbox(sh, (0, 0, z), (0.34, 1.42, 0.34), "energy", rotation=(0, 45, 0), uv_scale=14)
+    # 横木の下の 4 つの小さな放射口（脈打つ）
+    em = W.glow(m, sh, "emit", (0, 0, -14.6))
+    for a in (45, 135):
+        W.cbox(em, (0, 0, -14.6), (1.6, 0.3, 0.3), "energy", rotation=(0, 0, a), uv_scale=14)
+    W.octa(sh, (0, 0, -14.6), 1.45, 0.3, "dark", uv_scale=10)
+    # 柄を巻いて回る小さな輪（薔薇金と光の輪・二つの宝玉）
+    gy = W.spin(m, sh, "gyro", (0, 0, Z_GYRO), rotation=(18, 0, 0))
+    W.ring(gy, (0, 0, Z_GYRO), 1.3, 8, (0, 0.2, 0.26), "rosegold", axis="z",
+           styles=["rosegold", "glow"], uv_scale=14)
+    for s in (-1, 1):
+        W.cbox(gy, (0, s * 1.36, Z_GYRO), (0.36, 0.36, 0.36), "gem_accent", rotation=(0, 0, 45),
+               uv_scale=14)
 
     # =====================================================================
     #  form_1_cross — ♀ の横木と、星を受ける萼
     # =====================================================================
     cr = W.form(m, root, 1, "cross", (0, 0, -15.0))
     W.bevel(cr, (0, 0, -15.0), (2.0, 2.4, 2.0), "gold", cut=0.5, axis="x", uv_scale=8)
+    W.octa(cr, (0, 0, -13.95), 1.9, 0.3, "rosegold", uv_scale=10)             # 台の襟
     for s in (-1, 1):
-        # 横木（クリームの腕に金の縁、先が少し星の側へ反る）
+        # 横木（クリームの腕に光る溝と鋲を打った金の帯、先が少し星の側へ反る）
         W.beam(cr, (0, s * 1.0, -15.0), (0, s * 3.8, -15.3), 1.3, 1.3, "plate2", uv_scale=8)
+        W.beam(cr, (0, s * 1.3, -15.03), (0, s * 3.5, -15.27), 1.42, 0.22, "glow", uv_scale=10)
         W.beam(cr, (0, s * 3.7, -15.3), (0, s * 4.9, -16.4), 1.05, 1.05, "gold", uv_scale=10, extend=0.2)
+        W.cbox(cr, (0, s * 2.2, -15.05), (1.16, 0.3, 1.16), "gold", uv_scale=10)        # 腕の金の帯
+        W.cbox(cr, (0, s * 2.2, -15.05), (1.46, 0.3, 0.3), "rosegold", uv_scale=14)     # 帯の鋲
         W.cbox(cr, (0, s * 5.1, -16.7), (1.0, 1.0, 1.0), "gem_accent", rotation=(45, 0, 0),
                uv_scale=12)
-        W.cbox(cr, (0, s * 2.2, -15.05), (1.16, 0.3, 1.16), "gold", uv_scale=10)        # 腕の金の帯
-        # 萼（星を受ける金の花弁。上外へ開く）
+        W.cbox(cr, (0, s * 5.1, -16.7), (1.3, 0.24, 0.24), "gold", rotation=(45, 0, 0),
+               uv_scale=14)                                                              # 宝玉の爪
+        W.cbox(cr, (0, s * 5.72, -17.32), (0.3, 0.3, 0.3), "star", rotation=(45, 0, 0),
+               uv_scale=14)                                                              # 先の光
+        # 萼（星を受ける金とクリームの花弁。上外へ開く）と先の光
         W.beam(cr, (0, s * 0.5, -15.6), (0, s * 1.9, -17.6), 0.8, 0.5, "gold", uv_scale=10)
         W.beam(cr, (s * 0.5, 0, -15.6), (s * 1.9, 0, -17.6), 0.5, 0.8, "plate2", uv_scale=10)
+        W.cbox(cr, (0, s * 1.95, -17.7), (0.3, 0.3, 0.3), "star", uv_scale=14)
+        W.cbox(cr, (s * 1.95, 0, -17.7), (0.3, 0.3, 0.3), "star", uv_scale=14)
+        for t in (-1, 1):                                                       # 斜めの薔薇金の萼
+            W.beam(cr, (s * 0.36, t * 0.36, -15.6), (s * 1.3, t * 1.3, -17.35), 0.4, 0.4,
+                   "rosegold", uv_scale=12)
     W.cbox(cr, (0, 0, -16.4), (0.9, 0.9, 1.6), "energy", rotation=(0, 0, 45), uv_scale=10)  # 星へ昇る光
 
     # =====================================================================
@@ -93,12 +163,17 @@ def build_weapon(m, root):
         pts = [tuple(S[i] + d[i] * r for i in range(3)) for r in (1.3, 1.3 + (L - 1.3) * 0.38,
                                                                   1.3 + (L - 1.3) * 0.72, L)]
         if k % 2 == 0:
-            # 長い光条: 金の縁（根元が太く先が尖る）+ 白金に光る芯
+            # 長い光条: 金の縁（根元が太く先が尖る）+ 白金に光る芯 + 先の光の菱形
             W.polyline(sp, pts, [0.66, 0.62, 0.56], [2.3, 1.45, 0.6], "gold", uv_scale=10)
             W.polyline(sp, pts[:3], [0.76, 0.72], [1.15, 0.6], "star", uv_scale=10)
+            tip = tuple(S[i] + d[i] * (L + 0.25) for i in range(3))
+            W.cbox(sp, tip, (0.5, 0.42, 0.42), "star", rotation=(45, 0, 0), uv_scale=14)
         else:
+            # 短い光条: 金の縁 + 光の芯 + 根元の硫黄色の放射口（平を貫く）
             W.polyline(sp, pts, [0.54, 0.5, 0.46], [1.6, 1.0, 0.42], "gold", uv_scale=10)
             W.polyline(sp, pts[:2], [0.62], [0.7], "star", uv_scale=10)
+            em_ = tuple(S[i] + d[i] * 2.55 for i in range(3))
+            W.cbox(sp, em_, (0.8, 0.34, 0.34), "energy", rotation=(-k * 45, 0, 0), uv_scale=14)
 
     # =====================================================================
     #  form_3_clouds — 頭を包んで回る雲の輪（静止の傾き 24°）
@@ -112,20 +187,34 @@ def build_weapon(m, root):
         W.sphere(rg, c, 1.25, "cloud", uv_scale=10)                            # 雲の玉
         t_ = (math.cos(a), math.sin(a), 0.0)                                  # 輪に沿って少し後ろに小さな玉
         _puff(rg, (c[0] + t_[0] * 1.35, c[1] + t_[1] * 1.35, c[2] + 0.3), 0.62, "cloud")
+        # 金の留め具（輪を挟む）と、雲の外側の硫黄色の排気口
+        W.cbox(rg, c, (0.5, 0.5, 2.9), "gold", rotation=(0, 0, -k * 90 - 45), uv_scale=12)
+        o = (-(R_CLOUD + 1.2) * math.sin(a), (R_CLOUD + 1.2) * math.cos(a), Z_STAR)
+        W.cbox(rg, o, (0.7, 0.24, 0.7), "vent", rotation=(0, 0, -k * 90 - 45), uv_scale=14)
+        # 雲の間の輪の上の薔薇金の玉
+        b = math.radians(k * 90)
+        W.cbox(rg, (-R_CLOUD * math.sin(b), R_CLOUD * math.cos(b), Z_STAR), (0.6, 0.6, 0.6),
+               "rosegold", rotation=(0, 0, 45), uv_scale=14)
 
 
 def build_core(m, root):
-    """金星核: 金色の雲の渦の球を、金の籠（正面の輪と極の冠）と、傾いて回る雲の輪が囲む。直径 6.6。"""
+    """金星核: 金色の雲の渦の球を、金の籠（正面の輪と極の冠）と、傾いて回る雲の輪が囲む。直径 6.6。
+    v1.1: 籠の輪に薔薇金の鋲、極の冠に光の芯、雲の玉に金の留め具を足した。"""
     globe = W.form(m, root, 0, "globe", (0, 0, 0))
     gs = W.spin(m, globe, "globe", (0, 0, 0))
     W.sphere(gs, (0, 0, 0), 1.75, "globe", uv_scale=16)
     cage = W.form(m, root, 1, "cage", (0, 0, 0))
     W.ring(cage, (0, 0, 0), 3.2, 12, (0, 0.42, 0.6), "gold", axis="z", styles=["gold", "plate2"],
            uv_scale=8)
+    for k in range(4):                                                          # 輪の鋲
+        a = math.radians(45 + 90 * k)
+        W.cbox(cage, (-3.2 * math.sin(a), 3.2 * math.cos(a), 0), (0.3, 0.3, 0.76), "rosegold",
+               rotation=(0, 0, -45 - 90 * k), uv_scale=14)
     for s in (-1, 1):
         y = s * 3.3
         W.octa(cage, (0, y, 0), 1.5, 0.7, "plate2", axis="y", uv_scale=10)
         W.octa(cage, (0, y + s * 0.5, 0), 0.95, 0.4, "gold", axis="y", uv_scale=10)
+        W.cbox(cage, (0, y + s * 0.5, 0), (0.42, 0.5, 0.42), "glow", uv_scale=14)      # 冠の光の芯
         # 極の小さな四芒星（白金に光る）
         for a in (0, 90):
             W.rbox(cage, (0, y + s * 0.95, 0), (0.22, 1.1, 0.22), "star", rot=(0, a, 45 * s), uv_scale=12)
@@ -136,7 +225,9 @@ def build_core(m, root):
     W.ring(rc, (0, 0, 0), 2.45, 12, (0, 0.2, 0.24), "gold", axis="y", uv_scale=10)
     for k in range(4):
         a = math.radians(k * 90 + 45)
-        W.sphere(rc, (-2.45 * math.sin(a), 0, -2.45 * math.cos(a)), 0.62, "cloud", uv_scale=14)
+        c = (-2.45 * math.sin(a), 0, -2.45 * math.cos(a))
+        W.sphere(rc, c, 0.62, "cloud", uv_scale=14)
+        W.cbox(rc, c, (0.3, 0.3, 1.5), "gold", rotation=(0, k * 90 + 45 + 90, 0), uv_scale=14)
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +235,8 @@ def build_core(m, root):
 # ---------------------------------------------------------------------------
 _GOLD = {"kind": "trim", "base": (214, 146, 40), "light": (255, 240, 168), "dark": (128, 74, 18),
          "line": (78, 42, 10)}
+_ROSE = {"kind": "trim", "base": (236, 150, 132), "light": (255, 226, 208), "dark": (156, 74, 72),
+         "line": (96, 40, 44)}
 _CLOUD = {"kind": "armor", "base": (255, 243, 214), "light": (255, 255, 248), "dark": (226, 200, 150),
           "line": (176, 134, 76), "panel": 0, "sheen": False, "outline": False, "bevel": False}
 _STAR = {"kind": "glowline", "glow": STAR, "light": (255, 255, 236), "bevel": False, "outline": False}
@@ -153,6 +246,7 @@ def WEAPON_STYLES(key):
     return weapon_styles(
         key,
         gold=dict(_GOLD),
+        rosegold=dict(_ROSE),
         cloud=dict(_CLOUD),
         star=dict(_STAR),
         plate={"panel": 0},
@@ -163,21 +257,23 @@ def WEAPON_STYLES(key):
 
 
 def CORE_STYLES(key):
-    return core_styles(key, gold=dict(_GOLD), cloud=dict(_CLOUD), star=dict(_STAR),
-                       globe=W.globe_style("venus", emit=96, shade=0.35))
+    return core_styles(key, gold=dict(_GOLD), rosegold=dict(_ROSE), cloud=dict(_CLOUD),
+                       star=dict(_STAR), globe=W.globe_style("venus", emit=96, shade=0.35))
 
 
 # ---------------------------------------------------------------------------
-#  アニメ（アタッチャブル）
+#  アニメ（アタッチャブル）。q.anim_time は「* 整数の度/秒」の形だけで使う（ループの長さは自動）
 # ---------------------------------------------------------------------------
 WEAPON_ANIMS = {
     "idle": {
         "fx_spin_star": {"rotation": [0, 0, "q.anim_time * 60.0"]},
         "fx_spin_clouds": {"rotation": [0, 0, "-q.anim_time * 90.0"]},
+        "fx_spin_gyro": {"rotation": [0, 0, "q.anim_time * 180.0"]},
     },
     "swing": {
-        # 振ると星が一回転ぶん加速する
+        # 振ると星が一回転ぶん、柄の輪が二回転ぶん加速する
         "fx_spin_star": {"rotation": [0, 0, "v.astro_sw * 360.0"]},
+        "fx_spin_gyro": {"rotation": [0, 0, "-v.astro_sw * 720.0"]},
     },
     "form_axes": {"form_0_shaft": "z"},
 }
