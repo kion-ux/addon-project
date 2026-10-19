@@ -472,7 +472,7 @@ def dump_geo(model) -> str:
     """ジオメトリを「キューブ 1 個 = 1 行」の JSON に（indent=2 の 1/3 ほどの大きさで、差分も読める）。"""
     import json
     g = model.to_json()
-    out = ['{', '  "format_version": "1.12.0",', '  "minecraft:geometry": [', '    {',
+    out = ['{', '  "format_version": "1.16.0",', '  "minecraft:geometry": [', '    {',
            '      "description": ' + json.dumps(g["description"], ensure_ascii=False) + ',',
            '      "bones": [']
     bones = g["bones"]

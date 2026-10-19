@@ -59,7 +59,7 @@ def _fingerprint(geo_doc, styles, what):
 
 
 def _geo_doc(m):
-    return {"format_version": "1.12.0", "minecraft:geometry": [m.to_json()]}
+    return {"format_version": "1.16.0", "minecraft:geometry": [m.to_json()]}
 
 
 def build_planet(key, force, cache, log):

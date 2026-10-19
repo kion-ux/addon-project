@@ -78,7 +78,9 @@ def item(ident, icon, comps, category="equipment", group=None):
     desc = {"identifier": f"{NS}:{ident}", "menu_category": {"category": category}}
     if group:
         desc["menu_category"]["group"] = group
-    base = {"minecraft:icon": {"texture": icon},
+    # アイコンは textures.default（今の版の書き方。"texture" は廃止され、今の Minecraft では読まれず透明になる）。
+    # 古い版（1.21.30 前後）のために "texture" も並べる（新しい版では無視される）
+    base = {"minecraft:icon": {"textures": {"default": icon}, "texture": icon},
             "minecraft:display_name": {"value": f"item.{NS}.{ident}.name"}}
     base.update(comps)
     return {"format_version": "1.21.20", "minecraft:item": {"description": desc, "components": base}}

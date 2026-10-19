@@ -1694,7 +1694,7 @@ def write_models(only):
         os.makedirs(GEO_DIR, exist_ok=True)
         os.makedirs(TEX_DIR, exist_ok=True)
         if styles is None:
-            write_json(geo_path, {"format_version": "1.12.0", "minecraft:geometry": [m.to_json()]})
+            write_json(geo_path, {"format_version": "1.16.0", "minecraft:geometry": [m.to_json()]})
             Image.new("RGBA", (16, 16), (0, 0, 0, 0)).save(tex_path)
         else:
             m.write(geo_path)

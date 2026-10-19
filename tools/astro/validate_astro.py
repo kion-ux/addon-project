@@ -111,7 +111,12 @@ def main() -> int:
     # ---- ジオメトリ ----------------------------------------------------
     geos = {}
     for p in walk(os.path.join(RP, "models")):
-        for g in load(p)["minecraft:geometry"]:
+        doc = load(p)
+        fv = tuple(int(x) for x in str(doc.get("format_version", "0")).split("."))
+        for g in doc["minecraft:geometry"]:
+            # bone の binding（手に持つ物の付け先）は geometry 1.16.0 から。古い版だと無視され、手に付かない
+            if fv < (1, 16, 0) and any("binding" in b for b in g.get("bones", [])):
+                errors.append(f"{rel(p)}: bone binding needs geometry format_version >= 1.16.0")
             d = g["description"]
             if d["identifier"] in geos:
                 errors.append(f"duplicate geometry {d['identifier']} ({rel(p)})")
@@ -275,8 +280,12 @@ def main() -> int:
         it = load(p)["minecraft:item"]
         ident = it["description"]["identifier"]
         item_ids.add(ident)
-        icon = it["components"]["minecraft:icon"]["texture"]
-        if icon not in atlas:
+        ic = it["components"]["minecraft:icon"]
+        # 今の版が読むのは textures.default（"texture" は廃止。それだけだとアイコンが透明になる）
+        icon = ic.get("textures", {}).get("default") if isinstance(ic, dict) else ic
+        if not icon:
+            errors.append(f"{rel(p)}: minecraft:icon needs textures.default (\"texture\" alone is ignored now)")
+        elif icon not in atlas:
             errors.append(f"{rel(p)}: icon {icon} not in item_texture.json")
         key = it["components"].get("minecraft:display_name", {}).get("value")
         for lf, keys in langs.items():
