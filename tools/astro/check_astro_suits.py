@@ -30,7 +30,8 @@
           * geo / png / アタッチャブル 3 種 / アニメ / コントローラ / レンダーコントローラが揃い JSON が読める
           * UV がテクスチャの内側、テクスチャの大きさが geo と一致
           * アニメが参照するボーンが geo に実在、アタッチャブルが参照するアニメ・コントローラが実在
-          * hide_all は `c.item_slot != 'head'` だけで判定（q.is_invisible を使うと透明化でスーツが消える）
+          * hide_all は手のスロット（c.item_slot == 'main_hand' || 'off_hand'）だけで判定（q.is_invisible を使うと
+            透明化でスーツが消える。「head 以外」は想定外の値で着ているスーツまで消えるので使わない）
 旧版（v1.0）の肌の被覆検査は astro_suit.coverage() に残っている（使わない）。
 """
 from __future__ import annotations

@@ -458,6 +458,7 @@ function buildSequence(p, key, slot, coreless) {
     const worn = getEquip(p, "Head");
     if (it && worn && !isOurSuit(worn)) stowWorn(p, "Head", worn);
     if (it && setEquip(p, "Head", it)) cloak(p);
+    else report("transform.suit_equip", new Error(`could not put ${pl.suitOn ?? pl.suit} on the head (item ${it ? "ok" : "missing"})`));
     sound(dim, "astro.armor_lock", p.location, 1.2, 0.6);
     P(dim, "scan", { ...base, y: base.y + 0.05 }, { color: hot, size: 1.6, height: 2.2, life: 1.8 });
   });
@@ -753,6 +754,7 @@ export function sweep(p) {
   if (st.form) {
     const pl = PLANETS[st.form];
     if (headKey !== st.form || head.typeId === pl.suitOff) {
+      report("transform.sweep", new Error(`form ${st.form} but head holds ${head?.typeId ?? "nothing"}: reverting`));
       revert(p, "invalid", { instant: true });
       return;
     }

@@ -413,7 +413,9 @@ PRE = [
 PARENT_SETUP = ("v.helmet_layer_visible = 0.0; v.chest_layer_visible = 0.0; "
                 "v.leg_layer_visible = 0.0; v.boot_layer_visible = 0.0;")
 VARIANTS = ("on", "", "off")          # astro:suit_<key>_on / astro:suit_<key> / astro:suit_<key>_off
-HIDE_ALL = "c.item_slot != 'head'"
+# 手に持った時だけ全身を隠す（スーツは頭スロット専用）。「head 以外」と書くと、c.item_slot が想定外の値の時に
+# 着ているスーツまで消える（透明化と重なって何も見えなくなる）ので、安全側に倒して手のスロットだけを名指しする
+HIDE_ALL = "c.item_slot == 'main_hand' || c.item_slot == 'off_hand'"
 
 
 def ident(key, variant=""):

@@ -99,9 +99,10 @@ def items():
             {"minecraft:max_stack_size": 1,
              "minecraft:hand_equipped": True,
              "minecraft:use_modifiers": {"use_duration": 0.2, "movement_modifier": 1.0},
+             "minecraft:interact_button": True,
              "minecraft:should_despawn": False,
              "minecraft:glint": False},
-            "equipment", "itemGroup.name.sword"))
+            "equipment", "minecraft:itemGroup.name.sword"))
         # ナノウェポン: 変身中だけ手に現れる（一覧には出さない）
         write_json(os.path.join(d, f"weapon_{key}.item.json"), item(
             f"weapon_{key}", f"{NS}_weapon_{key}",
@@ -109,6 +110,7 @@ def items():
              "minecraft:hand_equipped": True,
              "minecraft:damage": {"value": pl["damage"]},
              "minecraft:use_modifiers": {"use_duration": 1.0, "movement_modifier": 1.0},
+             "minecraft:interact_button": True,
              "minecraft:can_destroy_in_creative": False,
              "minecraft:should_despawn": False,
              "minecraft:glint": False},
@@ -128,9 +130,11 @@ def items():
         cat = "items"
         if name == "terminal":
             comps["minecraft:use_modifiers"] = {"use_duration": 0.2, "movement_modifier": 1.0}
+            comps["minecraft:interact_button"] = True
             cat = "equipment"
         if name == "void_signal":
             comps["minecraft:use_modifiers"] = {"use_duration": 0.6, "movement_modifier": 0.5}
+            comps["minecraft:interact_button"] = True
         write_json(os.path.join(d, f"{name}.item.json"), item(name, f"{NS}_{name}", comps, cat))
 
 

@@ -298,7 +298,7 @@ v1.0 のスーツはプレイヤーの肌（4 頭身の箱）を覆う形だっ�
 * **肌は隠す**: 変身中（スーツが頭にある間、組み上がりの始まりから解除の分解が終わるまで）はスクリプトが
   `invisibility`（粒なし）を掛け続け、プレイヤーの肌・外側のレイヤー・名札を消す。スーツのアタッチャブルは
   透明化の間も描かれる（バニラの防具と同じ。kaiju8 の怪獣化もこの方式）。
-  → スーツの `hide_all` は `c.item_slot != 'head'` **だけ**で判定する（`q.is_invisible` を入れると自分で消える）。
+  → スーツの `hide_all` は `c.item_slot == 'main_hand' || c.item_slot == 'off_hand'` **だけ**で判定する（`q.is_invisible` を入れると自分で消える）。
 * **肌の被覆検査はしない**。代わりに check_astro_suits が **プロポーションと細かさ** を検査する。
 * 骨格（トップレベルのボーン名とピボット）は変わらない（プレイヤーの動き・全身モーションにそのまま追従）。
   手足の「見た目の付け根」はピボットより上に伸ばしてよい（腿の上端は腰鎧の下、二の腕の上端は肩当ての下に隠す）。
@@ -385,7 +385,7 @@ materials default=entity_emissive_alpha_one_sided, fx=entity_emissive_alpha
 render_controllers: controller.render.astro.suit
 scripts.parent_setup: "v.helmet_layer_visible = 0.0; v.chest_layer_visible = 0.0; v.leg_layer_visible = 0.0; v.boot_layer_visible = 0.0;"
 animate: controller, idle, {thrust: !q.is_on_ground（なめらかに）}, {sprint: q.is_sprinting}, {fp_hide: c.is_first_person},
-         {hide_all: c.item_slot != 'head'}（v1.1: q.is_invisible は入れない。§4.3b）
+         {hide_all: c.item_slot == 'main_hand' || c.item_slot == 'off_hand'}（v1.1: q.is_invisible は入れない。§4.3b）
 ```
 `fp_hide`: 一人称では head・body・rightLeg・leftLeg を scale 0（腕だけ残る）。`hide_all`: 6 つのトップレベルボーンを scale 0。
 
@@ -546,7 +546,7 @@ register("<key>", {
   見えている脚 0.44 × 背丈以上。飾り・extra_*・fx_thrust_*・fx_spin_* は除く）、細かさ（キューブ 600〜1400、
   3 辺とも 1.0 以下の部品が 35% 以上、0.15 未満の辺が無い）、部位ボーンの命名・ボーン名の重複、テクスチャ 1024²
   以下（テクセル x3 未満は警告）、炎の塗りは fx_* の下、回転体と手足のめり込み（警告）、SUIT_ANIMS の
-  ボーン・Molang・ループの継ぎ目、書き出したファイルの揃い・UV・hide_all（`c.item_slot != 'head'` だけ）。
+  ボーン・Molang・ループの継ぎ目、書き出したファイルの揃い・UV・hide_all（`c.item_slot == 'main_hand' || c.item_slot == 'off_hand'` だけ）。
 * **gen_astro_entities.py --test**: 侵略者 3 種と標的の Node スモークテスト（全攻撃・第二形態・子機の上限・
   撃破の演出。体力 40 以下で崩れる演出に入りドロップ・経験値・remove まで進むこと、BOSS_LOOT がルートテーブルと、
   dyingHp が damage_sensor の閾値と一致すること）。
