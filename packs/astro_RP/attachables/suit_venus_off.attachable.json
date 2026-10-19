@@ -42,7 +42,7 @@
             "fp_hide": "v.astro_fp > 0.5"
           },
           {
-            "hide_all": "c.item_slot != 'head'"
+            "hide_all": "c.item_slot == 'main_hand' || c.item_slot == 'off_hand'"
           }
         ]
       },
