@@ -1,32 +1,40 @@
 # -*- coding: utf-8 -*-
-"""金星 — 明星機装 モーニングスター（Morning Star Frame）。
+"""金星 — 明星機装 モーニングスター（Morning Star Frame）。v1.1: 7 頭身の女神像。
 
-明けの明星の女神。金（plate）とクリーム（plate2）のしなやかな装甲。
-  * 腰: 金とクリームの花弁を二重に重ねたスカート（外の金 6 枚 + 内のクリーム 8 枚）。花弁は 1 枚ずつ
-    ボーンを持ち、蝶番（上端）から外へ開く。空中では花が咲くように大きく開き、疾走では後ろへなびく
-  * 兜: 磁器のような面、硫黄色の切れ長の目、金のティアラと額に光る八芒星（fx_glow）、こめかみの金の唐草、
-    後ろへ流れる金の髪の板。頭の後ろで回る八芒の光輪（fx_spin）
-  * 肩: 丸い「雲のポッド」（クリームの雲の玉を重ねたもの）。外側に硫黄色に光る排気口と金の縁
-  * 胸: 金の八芒星の枠に金星の黄色い雲の渦（星核）。周りを回る金と光の輪。クリームの胸板と金の縁、
-    コルセットのような山形の腹
-  * 細い手足: クリームの長手袋（花弁のように開く袖口）・金のサイハイブーツ（尖ったつま先とヒール）、
-    金の線条細工（フィリグリー）の帯、硫黄色の発光線と薔薇色の宝玉
-  * 背: 丸いクリームの背嚢、翼のような排気フィン（左右 3 枚）、金のノズルの双発スラスター（金色の炎）
+明けの明星の女神。frame7 の暗い青銅の骨格（bulk 0.92 の細身）の上に、金（plate）とクリーム（plate2）の
+縁取りのある多層の装甲を重ねる。
+  * 腰: 金とクリームの花弁を二重に重ねたスカート（外の金 3 枚 + 内のクリーム 3 枚 × 左右 + 背の裳裾 1 枚）。
+    前は割れて長い脚を見せる（前ほど短く、後ろほど長い）。花弁は細い首・丸い胴・尖った先の槍形で、
+    1 枚ずつ extra_* のボーンを持ち蝶番から外へ開く。組み上がりの最後に咲き、空中では花が咲くように
+    大きく開き、疾走では後ろへなびく
+  * 兜: 小さな金の冠、磁器の面（V の面・鼻筋・薔薇色の唇）、硫黄色の切れ長の目と金のまぶた、
+    金のティアラと額で脈打つ八芒星（fx_glow）、薔薇金の尖塔（飾り）、耳の金の円盤、こめかみの唐草、
+    後ろへ流れる五本の金の髪の刃（飾り）、頭の後ろで回る八芒の光輪（fx_spin）
+  * 肩: 小さな金の肩当ての上の「雲のポッド」（クリームの雲の玉）。外に硫黄色に光る排気口と、中で回る
+    排気ファン（fx_spin）、雲を抱く金の輪、下の排気スリット
+  * 胸: 金の胸郭と襟、クリームの胸板（金の縁・唐草・リベット）、胸骨に金の八芒星の枠の星核（回る輪）、
+    金の下胸帯、コルセット（三段のクリームの板・金の芯と骨・山形の金具・背の交差する紐）。脇の油圧シリンダーは見せる
+  * 細い手足: クリームの長手袋（花弁のように開く袖口・金の腕輪・薔薇色の宝玉）、金の指の甲当て、
+    金のサイハイブーツ（花弁形の履き口・四芒星の膝当て・膝の脇のピストン・ふくらはぎの排気口と羽根のヒレ）、
+    尖ったつま先とピンヒール
+  * 背: 丸いクリームの背嚢（排気スリット・四芒星の紋）、羽根の排気フィン（左右 3 枚。飾り）、
+    金のノズルの双発スラスター（金色の炎）、腰へ垂れる蛇腹のホース
 
-座標: 16 単位 = 1 ブロック、-Z が正面、右手が -X。右側だけ作り `_r` を付ける → 左は自動で鏡映。
-回転（統合版の rotation）: rx 正 = 上端が前へ / ry 正 = 正面が右（-X）を向く /
+座標: 16 単位 = 1 ブロック、-Z が正面、右手が -X。寸法は astro_suit.A。右側だけ作り `_r` を付ける → 左は自動で
+鏡映。回転（統合版の rotation）: rx 正 = 上端が前へ / ry 正 = 正面が右（-X）を向く（+X の端が前へ）/
 rz 正 = 上端が +X へ（右側の部品なら下端が外へ開く。横板なら -X の端が上がる）。
 """
 from __future__ import annotations
 
 import math
 
-from astro_common import (bevel, beam, cbox, chamfer, line_on, octa, polyline, rbox, ring,
-                          stick, taper)
-from astro_suit import ARM_X, LEG_X, Suit, mirror_x
-from astro_weapon import ring as tring     # 接線の向きを解く輪（正面向き・側面向きの輪はこちら）
+from astro_suit import (A, Suit, beam, bevel, cable, cbox, chamfer, finger_chain,  # noqa: F401
+                        joint_drum, layered_plate, line_on, mirror_x, octa, piston, polyline,
+                        rbox, ring, rivets, rod, sensor, stick, taper, vents)
 
-GOLD_W = 0.36          # 金の縁取りの幅
+GOLD_W = 0.24          # 金の縁取りの幅
+LX = A.LEG_X           # 脚の軸 -2.15
+HZ = A.HEAD_Z          # 頭の中心の奥行き -0.25
 
 # ===========================================================================
 #  塗り（astro_paint.suit_styles("venus") への上書き・追加）
@@ -35,10 +43,10 @@ SUIT_STYLES = {
     # 金の縁取りは主装甲（淡い金）より一段濃く、照りを強く（金の上でも縁が読めるように）
     "gold": {"base": (214, 146, 40), "light": (255, 240, 168), "dark": (128, 74, 18),
              "line": (78, 42, 10)},
-    # 薔薇金の線条細工（金の装甲の上に乗せる縁）
+    # 薔薇金の線条細工・リベット（金の装甲の上に乗せる）
     "rosegold": {"kind": "trim", "base": (236, 150, 132), "light": (255, 226, 208),
                  "dark": (156, 74, 72), "line": (96, 40, 44)},
-    # 雲のポッド・花弁の地（パネル線の無いなめらかなクリーム）
+    # 雲のポッド・背嚢の地（パネル線の無いなめらかなクリーム）
     "cloud": {"kind": "armor", "base": (255, 243, 214), "light": (255, 255, 248),
               "dark": (226, 200, 150), "line": (176, 134, 76), "panel": 0, "sheen": False,
               "outline": False, "bevel": False},
@@ -48,7 +56,7 @@ SUIT_STYLES = {
                               "k": 0.5}},
     "petal_cream": {"kind": "armor", "base": (255, 236, 206), "light": (255, 252, 240),
                     "dark": (226, 196, 150), "line": (170, 120, 80), "panel": 0},
-    # 磁器の面
+    # 冠（金。パネル線なし）と磁器の面
     "helm": {"kind": "armor", "base": (240, 194, 88), "light": (255, 238, 170),
              "dark": (176, 120, 38), "line": (110, 70, 20), "panel": 0},
     "face": {"kind": "armor", "base": (255, 246, 234), "light": (255, 255, 252),
@@ -67,47 +75,49 @@ SUIT_STYLES = {
                                            "panel": 0, "line": (150, 110, 70)},
                "ink": (150, 92, 30)},
     "hazard": {"c1": (226, 255, 96), "c2": (62, 42, 24)},
-    "grille": {"kind": "vent", "base": (120, 92, 60), "glow": (60, 44, 30), "deep": (24, 16, 10),
-               "slat": 2},
-    "inner": {"base": (64, 42, 34)},
+    # 骨格: 暗い青銅のボディスーツ
+    "inner": {"base": (60, 40, 32)},
 }
 
 # ===========================================================================
 #  スカートの花弁（名前, 向き°, 長さ, 幅, 開き°, 塗り, 縁, 層）
-#  向き 0 = 正面、90 = 右（-X）、180 = 背中。右側だけ書き、左は自動で鏡映
+#  向き 0 = 正面、90 = 右（-X）、180 = 背中。右側だけ書き、左は自動で鏡映。前（±45° の内）は割れて脚を見せる
 # ===========================================================================
-SKIRT_RX, SKIRT_RZ = 5.15, 3.75      # 蝶番の楕円（横・前後の半径）
-SKIRT_Y = 12.2                       # 蝶番の高さ
+SKIRT_RX, SKIRT_RZ = 3.65, 2.6      # 蝶番の楕円（横・前後の半径）
+SKIRT_Y = 16.4                      # 蝶番の高さ（腰帯の下）
 PETALS = [
-    # 外の金の花弁（長い）
-    ("outer1_r", 45.0, 7.0, 3.8, 24.0, "petal_gold", "rosegold", 0),
-    ("outer2_r", 90.0, 6.8, 3.8, 16.0, "petal_gold", "rosegold", 0),
-    ("outer3_r", 135.0, 7.0, 3.8, 24.0, "petal_gold", "rosegold", 0),
+    # 外の金の花弁（後ろほど長い）
+    ("petal_o1_r", 68.0, 5.4, 2.3, 20.0, "petal_gold", "rosegold", 0),
+    ("petal_o2_r", 112.0, 6.2, 2.4, 19.0, "petal_gold", "rosegold", 0),
+    ("petal_o3_r", 152.0, 6.8, 2.4, 21.0, "petal_gold", "rosegold", 0),
     # 内のクリームの花弁（金の花弁の間からのぞく）
-    ("inner1_r", 16.0, 5.4, 3.1, 24.0, "petal_cream", "gold", 1),
-    ("inner2_r", 67.5, 6.0, 2.9, 19.0, "petal_cream", "gold", 1),
-    ("inner3_r", 112.5, 6.0, 2.9, 19.0, "petal_cream", "gold", 1),
-    ("inner4_r", 164.0, 5.8, 3.1, 26.0, "petal_cream", "gold", 1),
+    ("petal_i1_r", 47.0, 4.4, 1.85, 15.0, "petal_cream", "gold", 1),
+    ("petal_i2_r", 90.0, 5.2, 1.95, 14.0, "petal_cream", "gold", 1),
+    ("petal_i3_r", 132.0, 6.0, 2.0, 16.0, "petal_cream", "gold", 1),
 ]
+TRAIN = ("petal_train", 180.0, 7.4, 2.5, 18.0, "petal_gold", "gold", 0)   # 背の裳裾（左右なし）
+HALO_C = (0.0, 30.4, 4.5)          # 光輪の中心（頭の後ろ）
+CORE_C = (0.0, 22.25, -3.2)        # 胸の星核の中心
+
 
 # ===========================================================================
 #  部位アニメ（Molang。q.anim_time は 12 秒でループするので周波数は 30°/秒の倍数に）
-#  v.astro_air: 空中で 1 に近づく / v.astro_run: 疾走で 1 に近づく。`_r` は左へ自動で鏡映
+#  回る物は v.astro_spin（空中・疾走で速く進む累積の位相）× 角速度。重みは振れ幅にだけ掛ける
 # ===========================================================================
 def _petal_anims():
     idle, thrust, sprint = {}, {}, {}
-    for i, (name, hd, *_rest) in enumerate(PETALS):
-        bone = f"waist_{name}"
+    for i, (name, hd, _L, _W, _fl, _st, _tr, layer) in enumerate(PETALS + [TRAIN]):
+        bone = f"extra_{name}"
         ph = (i * 53) % 360
         idle[bone] = {"rotation": [f"math.sin(q.anim_time * 60.0 + {ph}) * 1.2", 0, 0]}
         # 空中: 花が咲くように開く（外の花弁ほど大きく）
-        k_air = 20.0 if _rest[-1] == 0 else 15.0
-        thrust[bone] = {"rotation": [f"-v.astro_air * ({k_air} + math.sin(q.anim_time * 360.0 + {ph}) * 2.5)",
-                                     0, 0]}
+        k_air = 26.0 if layer == 0 else 18.0
+        thrust[bone] = {"rotation": [
+            f"-v.astro_air * ({k_air} + math.sin(q.anim_time * 360.0 + {ph}) * 2.5)", 0, 0]}
         # 疾走: 前の花弁は脚に押されて開き、後ろの花弁は風になびく
-        k_run = 14.0 if hd < 40 or hd > 140 else 8.0
-        sprint[bone] = {"rotation": [f"-v.astro_run * ({k_run} + math.sin(q.anim_time * 720.0 + {ph}) * 3.0)",
-                                     0, 0]}
+        k_run = 16.0 if hd < 75 or hd > 140 else 9.0
+        sprint[bone] = {"rotation": [
+            f"-v.astro_run * ({k_run} + math.sin(q.anim_time * 720.0 + {ph}) * 3.0)", 0, 0]}
     return idle, thrust, sprint
 
 
@@ -115,24 +125,32 @@ _PI, _PT, _PS = _petal_anims()
 
 SUIT_ANIMS = {
     "idle": dict(_PI, **{
-        "fx_spin_halo": {"rotation": [0, 0, "q.anim_time * 30.0"]},
-        "extra_halo": {"position": [0, "math.sin(q.anim_time * 90.0) * 0.25", 0]},
-        "fx_spin_core": {"rotation": [0, 0, "-q.anim_time * 60.0"]},
+        "fx_spin_halo": {"rotation": [0, 0, "v.astro_spin * 30.0"]},
+        "extra_halo": {"position": [0, "math.sin(q.anim_time * 90.0) * 0.2", 0]},
+        "fx_spin_core": {"rotation": [0, 0, "-v.astro_spin * 60.0"]},
+        "fx_spin_fan_r": {"rotation": ["v.astro_spin * 240.0", 0, 0]},
         "back_wing_r": {"rotation": [0, 0, "math.sin(q.anim_time * 60.0) * 2.0"]},
+        "helmet_plume": {"rotation": ["math.sin(q.anim_time * 60.0 + 40.0) * 1.5", 0, 0]},
     }),
     "thrust": dict(_PT, **{
-        # 翼のフィンが上外へ広がる
-        "back_wing_r": {"rotation": ["-v.astro_air * 6.0", "v.astro_air * 10.0", "-v.astro_air * 16.0"]},
+        # 羽根のフィンが上外へ広がり、髪が後ろへなびく
+        "back_wing_r": {"rotation": ["-v.astro_air * 6.0", "v.astro_air * 10.0",
+                                     "-v.astro_air * 16.0"]},
+        "helmet_plume": {"rotation": ["v.astro_air * (6.0 + math.sin(q.anim_time * 360.0) * 2.0)",
+                                      0, 0]},
     }),
     "sprint": dict(_PS, **{
         "back_wing_r": {"rotation": ["-v.astro_run * 8.0", 0, "-v.astro_run * 6.0"]},
+        "helmet_plume": {"rotation": ["v.astro_run * (9.0 + math.sin(q.anim_time * 720.0) * 2.0)",
+                                      0, 0]},
     }),
 }
 
 
 # ===========================================================================
 def build_suit(s: Suit):
-    s.inner_suit(gap=0.3)
+    # 細身の骨格（組み上がりの最初に全身が揃うように、省くのはブーツと同時に包まれる足だけ）
+    s.frame7(bulk=0.92, skip=("foot",))
     boots(s)
     legs(s)
     waist(s)
@@ -140,360 +158,492 @@ def build_suit(s: Suit):
     torso(s)
     back(s)
     arms(s)
+    hands(s)
     shoulders(s)
     helmet(s)
     halo(s)
 
 
 # ---------------------------------------------------------------------------
-#  ブーツ（足首から。尖ったつま先・ヒール・金の足首の帯・薔薇色の宝玉）
+#  局所の道具
+# ---------------------------------------------------------------------------
+def star8(bone, c, rl, rs, w, t, style_l, style_s=None):
+    """正面向き（XY 平面）の八芒星: 縦横の長い光条 2 本 + 斜めの短い光条 2 本（4 個）。"""
+    out = [cbox(bone, c, (w, 2 * rl, t), style_l), cbox(bone, c, (2 * rl, w, t), style_l)]
+    for a in (45, -45):
+        out.append(rbox(bone, (c[0], c[1], c[2] + 0.03), (w * 0.85, 2 * rs, t * 0.9),
+                        style_s or style_l, rot=(0, 0, a)))
+    return out
+
+
+def puff(bone, c, r, style):
+    """角を落とした雲の玉（4 個）: 中心の箱 + 3 軸に寝かせた 45° の箱。"""
+    d = 2 * r
+    return [cbox(bone, c, (d * 0.76, d * 0.76, d * 0.76), style),
+            rbox(bone, c, (d, d * 0.58, d * 0.58), style, rot=(45, 0, 0)),
+            rbox(bone, c, (d * 0.58, d * 0.96, d * 0.58), style, rot=(0, 45, 0)),
+            rbox(bone, c, (d * 0.58, d * 0.58, d * 0.98), style, rot=(0, 0, 45))]
+
+
+def diamond(bone, c, d, t, style, rot=(0, 0)):
+    """正面向きの菱形（45° 回した板）。rot = (rx, ry) で面の向き。"""
+    return rbox(bone, c, (d, d, t), style, rot=(rot[0], rot[1], 45))
+
+
+# ---------------------------------------------------------------------------
+#  ブーツ（足首から。尖ったつま先・甲・ピンヒール・外くるぶしの宝玉）
 # ---------------------------------------------------------------------------
 def boots(s):
-    X = LEG_X
     b = s.part("boots", "foot_r", "rightLeg")
-    cbox(b, (X, -0.35, -0.55), (5.0, 0.7, 6.3), "frame")                    # 靴底
-    chamfer(b, (X, 1.75, -0.2), (5.5, 3.3, 5.7), "plate", cut=0.5, axis="z")  # 足の殻（角を落とす）
-    toe = rbox(b, (X - 0.15, 1.05, -3.2), (3.6, 2.0, 1.5), "plate2", rot=(-36, 0, 0))
-    stick(b, toe, "north", 0.5, 0.55, (0.36, 1.3, 0.22), "glow", sink=0.05)
-    rbox(b, (X - 0.15, 0.55, -3.85), (2.0, 0.9, 2.0), "gold", rot=(0, 45, 0))   # 尖ったつま先
-    ins = rbox(b, (X - 0.15, 3.15, -2.35), (3.4, 1.9, 0.8), "plate2", rot=(-30, 0, 0))   # 甲
-    cbox(b, (X + 2.45, 1.8, -3.0), (0.5, 3.0, 0.3), "dark")                  # 内側の継ぎ目
-    line_on(b, ins, "north", (0.1, 0.5), (0.9, 0.5), GOLD_W, 0.2, "gold")
-    rbox(b, (X, 1.6, 2.75), (4.4, 2.8, 0.9), "plate_b", rot=(8, 0, 0))      # 踵
-    taper(b, (X, 1.0, 3.25), (X, -0.6, 3.55), 1.3, 0.7, 1, "gold", round_=False)   # ヒール
-    cbox(b, (X, 3.55, 0.0), (5.75, 0.34, 6.0), "gold")                      # 足首の帯
-    octa(b, (X - 2.8, 2.2, 0.35), 1.7, 0.4, "gold", axis="x")              # 外くるぶしの台
-    rbox(b, (X - 3.02, 2.2, 0.35), (0.3, 0.95, 0.95), "gem_accent", rot=(45, 0, 0))
-    cbox(b, (X - 2.78, 0.95, -0.8), (0.2, 0.28, 3.6), "glow")                # 外側の発光線
+    # つま先の箱（金）と靴底、つま先の板、尖った先
+    toe = bevel(b, (LX, 0.62, -2.55), (2.25, 1.0, 2.5), "plate", cut=0.34, axis="z")
+    cbox(b, (LX, 0.09, -2.6), (2.15, 0.18, 2.6), "dark")                            # 靴底
+    rbox(b, (LX, 0.5, -3.7), (1.0, 0.66, 1.0), "gold", rot=(0, 45, 0))             # 尖った先
+    tp = rbox(b, (LX, 1.02, -3.05), (1.85, 0.36, 1.1), "plate2", rot=(-14, 0, 0))  # つま先の板
+    stick(b, tp, "up", 0.5, 0.15, (1.6, 0.2, 0.16), "gold", sink=0.05)
+    rbox(b, (LX, 0.82, -3.62), (0.46, 0.46, 0.24), "gem_accent", rot=(-14, 0, 45))
+    line_on(b, toe[0], "west", (0.1, 0.45), (0.92, 0.45), 0.18, 0.16, "glow")
+    rivets(b, toe[0], "west", 2, edge="top", margin=0.24, span=(0.3, 0.75), size=0.22,
+           style="rosegold")
+    # 甲（クリーム）: つま先から足首へ上る板
+    ins = rbox(b, (LX, 1.5, -1.42), (2.0, 0.42, 2.05), "plate2", rot=(-34, 0, 0))
+    line_on(b, ins, "up", (0.5, 0.1), (0.5, 0.9), 0.2, 0.16, "gold")
+    # 土踏まずの金の側壁（つま先から踵へ上る）と暗い靴底の芯
+    rbox(b, (LX, 0.95, -0.85), (2.15, 0.9, 1.7), "plate", rot=(-24, 0, 0))
+    beam(b, (LX, 0.12, -1.45), (LX, 0.72, 0.25), 1.6, 0.24, "dark")
+    # 踵の殻（金）とピンヒール
+    hl = chamfer(b, (LX, 1.35, 0.65), (2.3, 1.3, 2.0), "plate", cut=0.4, axis="y")
+    cbox(b, (LX, 0.72, 0.85), (1.85, 0.2, 1.6), "dark")                             # 踵の底
+    taper(b, (LX, 0.72, 1.25), (LX, 0.12, 1.42), 0.62, 0.4, 2, "gold")             # ピンヒール
+    cbox(b, (LX, 0.08, 1.44), (0.46, 0.16, 0.46), "dark")
+    line_on(b, hl[0], "south", (0.15, 0.5), (0.85, 0.5), 0.2, 0.16, "glow_soft")
+    # 外くるぶしの金の台と薔薇色の宝玉
+    octa(b, (LX - 1.24, 1.35, 0.45), 1.0, 0.26, "gold", axis="x")
+    rbox(b, (LX - 1.4, 1.35, 0.45), (0.2, 0.52, 0.52), "gem_accent", rot=(45, 0, 0))
 
 
 # ---------------------------------------------------------------------------
-#  脚（金のサイハイブーツ: 丸い脛・クリームの膝当てと脛板・線条細工・腿の帯）
+#  脚（腿の板・ガーター・花弁形のブーツの履き口・四芒星の膝当て・脛当て・ふくらはぎ）
 # ---------------------------------------------------------------------------
 def legs(s):
-    X = LEG_X
-    g = s.part("legs", "greave_r", "rightLeg")
-    sh = bevel(g, (X, 6.0, 0.05), (5.6, 5.2, 5.6), "plate", cut=0.5, axis="y")   # 丸い脛の殻
-    # 外側の金の線条細工（斜めの二本）と発光線
-    line_on(g, sh[1], "west", (0.15, 0.15), (0.85, 0.65), 0.28, 0.18, "rosegold")
-    line_on(g, sh[1], "west", (0.5, 0.05), (0.5, 0.95), 0.24, 0.18, "glow_soft")
-    # 脛の前のクリームの板（下が細い盾形）と、中央を走る光・葉の唐草
-    sp = rbox(g, (X - 0.2, 6.0, -2.95), (2.7, 4.2, 0.7), "plate2", rot=(-4, 0, 0))
-    rbox(g, (X - 0.2, 3.85, -2.8), (1.9, 1.9, 0.62), "plate2", rot=(-4, 0, 45))
-    cbox(g, (X + 2.4, 6.1, -2.88), (0.55, 5.0, 0.3), "dark")                  # 内側の継ぎ目（左右の脚を分ける）
-    line_on(g, sp, "north", (0.5, 0.05), (0.5, 0.92), 0.26, 0.2, "glow")
-    line_on(g, sp, "north", (0.5, 0.45), (0.12, 0.8), 0.22, 0.18, "gold")
-    cbox(g, (X, 8.95, 0.05), (5.4, 1.3, 5.4), "frame")                       # 膝の関節
-    # 膝当て: 菱形のクリームの板 + 金の十字の光条 + 薔薇色の宝玉（四芒の星の形）
-    rbox(g, (X, 8.75, -3.0), (2.6, 2.6, 1.0), "plate2", rot=(0, 0, 45))
-    cbox(g, (X, 8.75, -3.55), (0.3, 3.2, 0.3), "gold")
-    cbox(g, (X, 8.75, -3.55), (2.8, 0.3, 0.3), "gold")
-    rbox(g, (X, 8.75, -3.75), (0.95, 0.95, 0.4), "gem_accent", rot=(0, 0, 45))
-    # ふくらはぎと排気口
-    calf = rbox(g, (X, 6.1, 2.95), (4.4, 4.2, 0.9), "plate_b", rot=(-6, 0, 0))
-    stick(g, calf, "south", 0.5, 0.55, (1.5, 2.0, 0.25), "vent", sink=0.1)
-    # 腿: 濃い金の殻 + ブーツの口の金の帯 + 花弁のような前の折り返し
-    t = s.part("legs", "thigh_r", "rightLeg", pivot=(X, 11.6, 0))
-    cbox(t, (X, 10.95, 0.05), (5.3, 2.9, 5.4), "plate_b")
-    cbox(t, (X, 9.75, 0.05), (5.6, 0.45, 5.7), "gold")
-    cuff = rbox(t, (X, 10.25, -2.95), (3.6, 1.4, 0.7), "plate2", rot=(10, 0, 0))
-    rbox(t, (X, 9.65, -3.05), (1.5, 1.5, 0.6), "plate2", rot=(10, 0, 45))
-    line_on(t, cuff, "north", (0.1, 0.85), (0.9, 0.85), 0.22, 0.18, "gold")
+    # 腿: 前のクリームの板（金の上板・発光線）、外の細い金の板、金のガーターと宝玉。後ろと内は骨格を見せる
+    t = s.part("legs", "thigh_r", "rightLeg", pivot=A.HIP)
+    fr = layered_plate(t, (LX + 0.05, 11.75, -1.42), (2.1, 2.7, 0.4), "plate", top="petal_cream",
+                       rot=(-3, 0, 0), inset=0.24, trim="gold", trim_edge="top",
+                       rivet="gold", n_rivets=2, rivet_edge="bottom")
+    line_on(t, fr["top"], "north", (0.5, 0.22), (0.5, 0.86), 0.18, 0.16, "rosegold")
+    side = rbox(t, (LX - 1.48, 11.45, 0.1), (0.36, 2.4, 2.1), "plate", rot=(0, 0, -3))
+    stick(t, side, "west", 0.5, 0.5, (1.4, 1.8, 0.16), "plate2", sink=0.05,
+          decals={"west": {"decal": "serial", "text": "VE-02", "ink": (150, 92, 30)}})
+    rivets(t, side, "west", 2, edge="bottom", margin=0.22, span=(0.25, 0.75), size=0.22,
+           style="rosegold")
+    octa(t, (LX, 12.85, 0.0), 2.84, 0.3, "gold", axis="y")                          # ガーター
+    rbox(t, (LX + 0.1, 12.85, -1.48), (0.5, 0.5, 0.26), "gem_accent", rot=(0, 0, 45))
+    # ブーツの履き口（腿の中ほど）: 金の帯 + 前へ尖る花弁形のクリームの折り返し
+    cf = s.part("legs", "cuff_r", "rightLeg", pivot=A.KNEE)
+    octa(cf, (LX, 9.95, 0.0), 2.78, 0.36, "gold", axis="y")
+    fold = diamond(cf, (LX, 10.25, -1.48), 1.45, 0.3, "plate2", rot=(-6, 0))
+    diamond(cf, (LX, 10.22, -1.38), 1.75, 0.24, "gold", rot=(-6, 0))
+    stick(cf, fold, "north", 0.5, 0.5, (0.36, 0.36, 0.16), "gem_accent", sink=0.04)
+    rbox(cf, (LX - 1.35, 10.2, 0.05), (0.3, 1.0, 1.0), "plate2", rot=(0, 0, -10))   # 外の折り返し
+    # 膝: 四芒星の膝当て（金の菱形 → クリームの菱形 → 金の光条 → 宝玉）と外の油圧シリンダー
+    k = s.part("legs", "knee_r", "rightLeg", pivot=A.KNEE)
+    KZ = -1.62
+    diamond(k, (LX, 8.5, KZ), 1.95, 0.5, "plate", rot=(-4, 0))
+    kc = diamond(k, (LX, 8.5, KZ - 0.28), 1.35, 0.3, "plate2", rot=(-4, 0))
+    cbox(k, (LX, 8.5, KZ - 0.48), (0.24, 3.1, 0.2), "gold")                       # 縦の光条
+    cbox(k, (LX, 8.5, KZ - 0.48), (2.4, 0.24, 0.2), "gold")                       # 横の光条
+    rbox(k, (LX, 8.5, KZ - 0.62), (0.52, 0.52, 0.24), "gem_accent", rot=(0, 0, 45))
+    rivets(k, kc, "north", 4, edge="border", margin=0.22, size=0.18, style="gold")
+    piston(k, (LX - 1.5, 10.7, 0.55), (LX - 1.42, 6.5, 0.45), r=0.24, style="frame",
+           rod_style="chrome", cap_style="dark")
+    # 脛: 前の金の板 + クリームの V の稜（発光線）、両脇の板、ふくらはぎの排気口、外の羽根のヒレ
+    g = s.part("legs", "shin_r", "rightLeg", pivot=A.KNEE)
+    front = rbox(g, (LX, 5.25, -1.3), (2.35, 4.0, 0.45), "plate", rot=(5, 0, 0))
+    low = rbox(g, (LX, 3.05, -1.08), (1.85, 1.6, 0.42), "plate", rot=(-3, 0, 0))
+    stick(g, low, "north", 0.5, 0.08, (1.75, GOLD_W, 0.16), "gold", sink=0.05)
+    keel = rbox(g, (LX - 0.3, 5.3, -1.6), (0.66, 3.5, 0.4), "plate2", rot=(5, 24, 0))
+    mirror_x(g, keel, about=LX)
+    line_on(g, front, "north", (0.5, 0.12), (0.5, 0.86), 0.18, 0.18, "glow", lift=0.18)
+    sd = rbox(g, (LX - 1.22, 4.75, -0.1), (0.38, 4.4, 2.1), "plate", rot=(0, 0, -6))
+    sdr = rivets(g, sd, "west", 1, edge="bottom", margin=0.28, size=0.22, style="rosegold")
+    sdl = line_on(g, sd, "west", (0.15, 0.62), (0.85, 0.62), 0.16, 0.16, "glow_soft")
+    mirror_x(g, sd, sdr, sdl, about=LX)
+    calf = rbox(g, (LX, 5.8, 1.6), (1.95, 2.6, 0.42), "plate_b", rot=(-12, 0, 0))
+    vents(g, calf, "south", 3, box=(0.25, 0.2, 0.75, 0.8))
+    fin = rbox(g, (LX - 1.6, 6.0, 1.0), (0.28, 2.7, 1.5), "plate2", rot=(-16, 0, -8))
+    stick(g, fin, "west", 0.08, 0.5, (0.22, 2.5, 0.16), "gold", sink=0.04)
+    line_on(g, fin, "west", (0.3, 0.2), (0.75, 0.85), 0.16, 0.16, "glow")
+    octa(g, (LX, 3.05, 0.15), 2.42, 0.32, "gold", axis="y")                         # 足首の帯
 
 
 # ---------------------------------------------------------------------------
-#  腰（八角の腰帯・宝玉の留め金）
+#  腰（腰帯・宝玉の留め金・前垂れ・腰の脇の板・後ろ垂れ）
 # ---------------------------------------------------------------------------
 def waist(s):
     w = s.part("waist", "belt", "body")
-    bevel(w, (0, 12.75, 0), (10.9, 1.5, 8.0), "frame", cut=1.7, axis="y")        # 花弁の付け根を隠す帯
-    bevel(w, (0, 13.3, 0), (11.1, 0.4, 8.2), "gold", cut=1.75, axis="y")         # 金の上縁
-    octa(w, (0, 12.75, -4.05), 2.4, 0.5, "gold", axis="z")                       # 留め金
-    rbox(w, (0, 12.75, -4.35), (1.2, 1.2, 0.4), "gem_accent", rot=(0, 0, 45))
-    for x in (-2.4, 2.4):                                                        # 左右の小さな光
-        cbox(w, (x, 12.75, -3.98), (1.4, 0.24, 0.2), "glow")
+    belt = chamfer(w, (0, 16.85, 0.12), (6.7, 0.85, 4.6), "frame", cut=0.5, axis="y")
+    chamfer(w, (0, 17.33, 0.12), (6.85, 0.24, 4.72), "gold", cut=0.52, axis="y")    # 金の上縁
+    bl = rivets(w, belt[0], "north", 2, edge="bottom", margin=0.42, span=(0.12, 0.3),
+                size=0.2, style="gold")
+    mirror_x(w, bl)
+    # 留め金: 金の八角 + 薔薇色の宝玉 + 小さな四芒星
+    octa(w, (0, 16.85, -2.3), 1.5, 0.34, "gold", axis="z")
+    rbox(w, (0, 16.85, -2.52), (0.7, 0.7, 0.26), "gem_accent", rot=(0, 0, 45))
+    cbox(w, (0, 16.85, -2.62), (0.2, 1.0, 0.16), "star")
+    cbox(w, (0, 16.85, -2.62), (1.0, 0.2, 0.16), "star")
+    # 前垂れ（細いクリームの花弁。腿の前を隠さない幅）
+    fp = rbox(w, (0, 15.05, -2.12), (1.3, 2.5, 0.38), "plate2", rot=(-8, 0, 0))
+    diamond(w, (0, 13.75, -2.3), 0.92, 0.36, "plate2", rot=(-8, 0))
+    stick(w, fp, "north", 0.5, 0.5, (0.2, 2.2, 0.16), "glow", sink=0.05)
+    stick(w, fp, "north", 0.5, 0.97, (1.2, 0.2, 0.16), "gold", sink=0.05)
+    # 腰の脇の金の板（股関節の前を覆う）
+    hp = rbox(w, (-2.25, 15.85, -1.95), (1.7, 1.1, 0.38), "plate", rot=(-8, 18, 6))
+    hpr = rivets(w, hp, "north", 2, edge="top", margin=0.24, span=(0.25, 0.75), size=0.2,
+                 style="rosegold")
+    mirror_x(w, hp, hpr)
+    # 後ろ垂れ（短い。裳裾の花弁の下地）
+    rs = rbox(w, (0, 15.3, 2.35), (3.6, 2.0, 0.4), "plate_b", rot=(12, 0, 0))
+    rivets(w, rs, "south", 3, edge="top", margin=0.22, size=0.2, style="gold")
 
 
 def skirt(s):
-    for name, hd, L, W, flare, style, trim, layer in PETALS:
-        petal(s, name, hd, L, W, flare, style, trim, layer)
+    for pt in PETALS:
+        petal(s, *pt)
+    petal(s, *TRAIN)
 
 
 def petal(s, name, heading, L, W, flare, style, trim, layer):
     """花弁 1 枚。蝶番（上端）を楕円の上に置き、ボーンの rotation (−開き, 向き, 0) で外へ開く。
-    キューブは「正面向き（向き 0）・開き 0」の形でモデル空間に置く（ボーンの回転がまとめて回す）。"""
+    キューブは「正面向き（向き 0）・開き 0」の形で蝶番の位置に置く（ボーンの回転がまとめて回す）。
+    形（槍形）: 蝶番の金具 → 細い首 → 角を落とした丸い胴 → 尖った先。縁取りの裏板、中央の葉脈（発光）、
+    首のリベット、外の花弁は先に宝玉。"""
     a = math.radians(heading)
-    rx = SKIRT_RX - 0.25 * layer
-    rz = SKIRT_RZ - 0.25 * layer
-    H = (round(-rx * math.sin(a), 3), SKIRT_Y, round(-rz * math.cos(a), 3))
-    b = s.part("waist", name, "body", pivot=H, rotation=(-flare, heading, 0))
+    rx = SKIRT_RX - 0.2 * layer
+    rz = SKIRT_RZ - 0.2 * layer
+    H = (round(-rx * math.sin(a), 3), SKIRT_Y - 0.15 * layer, round(-rz * math.cos(a), 3))
+    b = s.part("extra", name, "body", pivot=H, rotation=(-flare, heading, 0))
     hx, hy, hz = H
-    T = 0.5
-    body_h = L - W / 2
-    yb = hy - body_h                                   # 板の下端（ここから菱形の先が下へ）
-    d = W / math.sqrt(2)
-    # 縁: 一回り大きい裏の板（縁取りの色）
-    cbox(b, (hx, hy - body_h / 2, hz + 0.18), (W + 0.5, body_h, T * 0.8), trim)
-    rbox(b, (hx, yb, hz + 0.18), (d + 0.35, d + 0.35, T * 0.8), trim, rot=(0, 0, 45))
-    # 表の板と尖った先
-    main = cbox(b, (hx, hy - body_h / 2, hz - 0.1), (W, body_h, T), style)
-    rbox(b, (hx, yb, hz - 0.1), (d, d, T), style, rot=(0, 0, 45))
-    # 中央の葉脈（発光）
-    line_on(b, main, "north", (0.5, 0.0), (0.5, 0.95), 0.24, 0.16,
-            "glow" if layer == 0 else "glow_soft", extend=0.6)
+    T = 0.3
+    neck = 1.0                                   # 首の長さ
+    body_h = L - neck - W * 0.45
+    yb = hy - neck - body_h                      # 胴の下端（ここから菱形の先が下へ）
+    d = W * 0.72
+    zf = hz - 0.08
+    cut = W * 0.22
+    # 蝶番の金具と首（細い）
+    cbox(b, (hx, hy - 0.08, hz + 0.02), (0.95, 0.42, 0.52), "gold")
+    nk = cbox(b, (hx, hy - neck / 2 - 0.15, zf), (W * 0.56, neck, T), style)
+    # 縁: 一回り大きい裏の板（縁取りの色）と尖った先の裏
+    cbox(b, (hx, yb + body_h / 2, hz + 0.14), (W + 0.32, body_h - 2 * cut - 0.1, 0.24), trim)
+    diamond(b, (hx, yb + 0.05, hz + 0.14), d + 0.3, 0.22, trim)
+    # 表の胴（角を落とした丸い胴）と尖った先
+    main = chamfer(b, (hx, yb + body_h / 2, zf), (W, body_h, T), style, cut=cut, axis="z")
+    diamond(b, (hx, yb + 0.05, zf), d, T, style)
+    # 中央の葉脈（外は発光、内は柔らかい発光）と首のリベット
+    line_on(b, main[1], "north", (0.5, 0.0), (0.5, 1.0), 0.2, 0.16,
+            "glow" if layer == 0 else "glow_soft", extend=0.7)
+    rivets(b, nk, "north", 2, edge="top", margin=0.22, span=(0.25, 0.75), size=0.2,
+           style="rosegold" if layer == 0 else "gold")
     if layer == 0:
-        # 先の薔薇色の宝玉
-        rbox(b, (hx, yb - d * 0.32, hz - 0.42), (0.55, 0.55, 0.3), "gem_accent", rot=(0, 0, 45))
+        rbox(b, (hx, yb - d * 0.3, zf - 0.2), (0.46, 0.46, 0.2), "gem_accent", rot=(0, 0, 45))
 
 
 # ---------------------------------------------------------------------------
-#  胴（クリームの胸板・八芒星の枠の星核・回る輪・山形の腹・襟）
+#  胴（金の胸郭・クリームの胸板・八芒星の星核・襟・下胸帯・コルセット）
 # ---------------------------------------------------------------------------
 def torso(s):
     c = s.part("torso", "chest", "body")
-    bevel(c, (0, 21.05, 0.0), (9.8, 6.1, 5.9), "helm", cut=0.6, axis="y")        # 胸郭（金）
-    cbox(c, (0, 24.35, 0.1), (8.6, 0.7, 5.4), "plate_b")                         # 肩の上の板
-    cbox(c, (0, 15.85, 0.0), (7.6, 5.1, 5.3), "plate_b")                         # 腹の殻（細い）
-    cbox(c, (0, 15.9, -2.62), (5.6, 4.8, 0.4), "frame")                          # 腹の下地
-    cbox(c, (0, 15.9, -2.95), (0.7, 5.0, 0.55), "gold")                          # 中央の金の背骨
-    cbox(c, (0, 15.9, -3.24), (0.22, 4.4, 0.12), "glow")
-    # コルセット: 下を向く山形のクリームの板（三段、下ほど細い）
-    for i, y in enumerate((17.55, 16.25, 14.95)):
-        cv = rbox(c, (-1.85, y, -2.9), (3.0 - i * 0.3, 1.0, 0.6), "petal_cream", rot=(-6, 0, 22))
-        mirror_x(c, cv)
-    ob = rbox(c, (-3.25, 16.0, -2.3), (1.3, 4.2, 1.0), "plate2", rot=(0, 34, -6))   # 脇腹
-    mirror_x(c, ob)
-    # 胸板: 角を落としたクリームの板（V 字に開く）と、上縁の金・下縁の発光線
-    pec = chamfer(c, (-2.45, 21.3, -3.05), (4.6, 3.8, 1.0), "petal_cream", cut=0.6, axis="z",
-                  rot=(8, 16, 9))
-    trim = line_on(c, pec[1], "north", (0.05, 0.86), (0.95, 0.96), GOLD_W, 0.2, "gold")
-    gl1 = line_on(c, pec[0], "north", (0.95, 0.12), (0.2, 0.0), 0.24, 0.2, "glow_accent")
-    gl2 = line_on(c, pec[1], "north", (0.12, 0.25), (0.12, 0.75), 0.22, 0.2, "glow")
-    low = rbox(c, (-2.2, 18.6, -2.85), (3.6, 1.4, 0.8), "plate", rot=(-6, 12, 14))
-    mirror_x(c, pec, trim, gl1, gl2, low)
-    # 襟（首の両脇に立つクリーム）と金のチョーカー
-    col = rbox(c, (-3.0, 24.4, -0.2), (2.1, 1.5, 5.0), "plate2", rot=(0, 0, -18))
-    colt = stick(c, col, "up", 0.5, 0.5, (1.7, 4.6, 0.22), "gold", sink=0.08)
-    mirror_x(c, col, colt)
-    cbox(c, (0, 23.9, -2.98), (3.6, 0.5, 0.5), "gold")
-    rbox(c, (0, 23.55, -3.2), (0.8, 0.8, 0.35), "gem_accent", rot=(0, 0, 45))
-    # 星核: 金の八芒星の枠（長い光条 4 + 短い光条 4）→ 黒い台 → 金星の雲の渦
-    Y, Z = 20.4, -3.55
-    rbox(c, (0, Y, Z), (3.2, 3.2, 0.8), "dark", rot=(0, 0, 45))
-    cbox(c, (0, Y, Z - 0.35), (0.75, 6.2, 0.4), "gold")
-    cbox(c, (0, Y, Z - 0.35), (5.0, 0.75, 0.4), "gold")
-    rbox(c, (0, Y, Z - 0.3), (0.6, 4.2, 0.35), "gold", rot=(0, 0, 45))
-    rbox(c, (0, Y, Z - 0.3), (0.6, 4.2, 0.35), "gold", rot=(0, 0, -45))
-    cbox(c, (0, Y, Z - 0.75), (2.3, 2.3, 0.9), "core")
-    sp = s.fx("spin", "core", c, pivot=(0, Y, Z - 1.05))
-    tring(sp, (0, Y, Z - 1.05), 1.62, 8, (0, 0.28, 0.3), "gold", axis="z", styles=["gold", "glow"])
-    # 脇: クリームの板と、縦に並ぶ三つの排気口（硫黄色の光）
-    fl = cbox(c, (-4.8, 21.0, 0.3), (0.5, 3.8, 3.2), "plate2")
-    v1 = cbox(c, (-5.07, 21.0, 0.3), (0.15, 3.0, 2.2), "vent")
-    mirror_x(c, fl, v1)
+    # 胸郭の金の殻（上が広い逆三角形）と脇の斜面
+    up = bevel(c, (0, 24.45, 0.0), (8.5, 3.0, 5.5), "plate", cut=0.85, axis="y")
+    chamfer(c, (0, 22.15, 0.05), (6.9, 2.0, 5.2), "plate_b", cut=0.7, axis="y")
+    sl = rbox(c, (-3.8, 22.85, 0.1), (0.45, 2.5, 4.0), "plate", rot=(0, 0, -24))
+    rivets(c, up[1], "south", 2, edge="top", margin=0.32, span=(0.3, 0.7), size=0.22,
+           style="rosegold")
+    # クリームの胸板（丸く V に開く。金の上縁・下の薔薇色の線・リベット・唐草）
+    PC, PR = (-1.72, 23.3, -2.92), (10, 15, 8)
+    rim = chamfer(c, (PC[0], PC[1], PC[2] + 0.22), (3.5, 2.8, 0.3), "gold", cut=0.72, axis="z",
+                  rot=PR)
+    pec = chamfer(c, PC, (3.2, 2.5, 0.5), "petal_cream", cut=0.6, axis="z", rot=PR)
+    pt = line_on(c, pec[0], "north", (0.12, 0.9), (0.88, 0.9), 0.18, 0.16, "rosegold")
+    pg = line_on(c, pec[0], "north", (0.88, 0.16), (0.24, 0.1), 0.18, 0.16, "glow_accent")
+    pr = rivets(c, rim[1], "north", 2, edge="top", margin=0.16, span=(0.35, 0.75), size=0.2,
+                style="rosegold")
+    fil = polyline(c, [(-3.3, 24.2, -2.85), (-2.55, 23.3, -3.38), (-1.6, 22.95, -3.5)],
+                   0.18, 0.18, "rosegold")                                           # 唐草
+    mirror_x(c, sl, rim, pec, pt, pg, pr, fil)
+    # V の襟ぐり: 襟から胸の谷へ降りるクリームの帯（金の縁）と、上の殻の縁のリベットの列
+    vn = beam(c, (-1.45, 25.8, -2.78), (-0.18, 23.95, -2.98), 0.62, 0.3, "petal_cream")
+    vg = beam(c, (-1.75, 25.65, -2.8), (-0.48, 23.85, -2.98), 0.18, 0.24, "gold")
+    vr = rivets(c, up[0], "north", 2, edge="top", margin=0.32, span=(0.12, 0.26), size=0.2,
+                style="rosegold")
+    mirror_x(c, vn, vg, vr)
+    # 金の襟（首の両脇に立つ V の板）と肩の付け根、喉の宝玉
+    col = rbox(c, (-1.55, 26.0, 0.2), (1.35, 0.95, 3.3), "plate", rot=(0, 0, -26))
+    colt = stick(c, col, "up", 0.5, 0.5, (0.95, 3.0, 0.18), "plate2", sink=0.05)
+    cf = rbox(c, (-0.95, 26.1, -2.35), (1.5, 0.7, 0.38), "plate2", rot=(-18, 30, -12))
+    yk = rbox(c, (-3.7, 26.0, 0.0), (1.9, 0.5, 3.6), "plate_b", rot=(0, 0, -9))    # 肩の付け根
+    mirror_x(c, col, colt, cf, yk)
+    rbox(c, (0, 25.55, -2.85), (0.5, 0.5, 0.24), "gem_accent", rot=(-10, 0, 45))
+    # 脇の排気口（クリームの板に硫黄色のスリット）
+    sv = cbox(c, (-4.28, 23.6, 0.55), (0.36, 1.7, 1.9), "plate2")
+    svv = vents(c, sv, "west", 2, box=(0.24, 0.25, 0.76, 0.75))
+    mirror_x(c, sv, svv)
+    # 星核: 黒い菱形の台 → 金の八芒星の枠 → 金の八角 → 金星の雲の渦 → 回る輪（金と光）
+    X, Y, Z = CORE_C
+    diamond(c, (X, Y, Z + 0.42), 2.1, 0.4, "dark")
+    star8(c, (X, Y, Z + 0.18), 2.2, 1.5, 0.4, 0.3, "gold", "rosegold")
+    octa(c, (X, Y, Z), 1.5, 0.3, "gold", axis="z")
+    cbox(c, (X, Y, Z - 0.22), (1.0, 1.0, 0.5), "core")
+    sp = s.fx("spin", "core", c, pivot=(X, Y, Z - 0.42))
+    ring(sp, (X, Y, Z - 0.42), 0.98, 8, (0, 0.2, 0.2), "gold", axis="z",
+         styles=["gold", "glow"])
+    # 下胸帯（金）
+    chamfer(c, (0, 20.85, 0.12), (5.9, 0.42, 4.2), "gold", cut=0.5, axis="y")
+    # コルセット: 三段のクリームの板（下ほど細い）・金の芯・金の骨・山形の金具。脇の油圧シリンダーは見せる
+    ab = s.part("torso", "corset", "body", pivot=(0, A.WAIST_Y, 0))
+    for i, (y, ww) in enumerate(((19.95, 3.3), (18.9, 3.0), (17.88, 2.75))):
+        rbox(ab, (0, y, -1.86 + i * 0.03), (ww, 0.95, 0.4), "petal_cream", rot=(-5, 0, 0))
+        cv = rbox(ab, (-0.58, y - 0.05, -2.1 + i * 0.03), (0.98, 0.2, 0.16), "gold",
+                  rot=(-5, 0, 24))
+        mirror_x(ab, cv)
+    busk = cbox(ab, (0, 18.9, -2.12), (0.44, 3.2, 0.34), "gold")
+    stick(ab, busk, "north", 0.5, 0.5, (0.18, 2.7, 0.16), "glow", sink=0.05)
+    bn = beam(ab, (-1.45, 20.3, -2.1), (-1.15, 17.5, -2.06), 0.18, 0.18, "gold")
+    mirror_x(ab, bn)
+    # 背のコルセット: 背骨の両脇の板と、交差する金の紐
+    bp = rbox(ab, (-0.95, 18.7, 2.25), (0.75, 3.2, 0.36), "plate_b", rot=(4, 0, 6))
+    mirror_x(ab, bp)
+    for y in (19.75, 18.75, 17.75):
+        beam(ab, (-0.4, y + 0.28, 2.98), (0.4, y - 0.28, 2.98), 0.16, 0.16, "gold")
+        beam(ab, (0.4, y + 0.28, 3.03), (-0.4, y - 0.28, 3.03), 0.16, 0.16, "gold")
 
 
 # ---------------------------------------------------------------------------
-#  背中（背板・丸い背嚢・翼の排気フィン・金のノズルの双発スラスター）
+#  背中（丸い背嚢・排気スリット・四芒星の紋・ホース・双発スラスター・羽根の排気フィン）
 # ---------------------------------------------------------------------------
 def back(s):
     bk = s.part("back", "pack", "body")
-    cbox(bk, (0, 18.8, 2.95), (8.8, 10.0, 0.7), "plate_b")                       # 背板
-    cbox(bk, (0, 18.2, 3.6), (2.2, 8.6, 1.0), "frame")                           # 背骨
-    bevel(bk, (0, 19.9, 4.55), (5.6, 6.4, 2.6), "cloud", cut=1.2, axis="z")      # 丸い背嚢
-    cbox(bk, (0, 20.1, 5.88), (2.4, 2.4, 0.2), "vent")                           # 排気の格子
-    cbox(bk, (0, 20.1, 6.02), (0.55, 4.4, 0.3), "gold")                          # 金の四芒星
-    cbox(bk, (0, 20.1, 6.02), (3.6, 0.55, 0.3), "gold")
-    rbox(bk, (0, 20.1, 6.18), (0.9, 0.9, 0.3), "gem_accent", rot=(0, 0, 45))
-    rbox(bk, (0, 23.15, 4.05), (4.6, 1.0, 2.4), "plate", rot=(25, 0, 0))         # 上の覆い
-    sd = cbox(bk, (-2.85, 19.9, 4.55), (0.3, 3.8, 1.8), "gold")                  # 背嚢の金の側板
-    mirror_x(bk, sd)
-    cbox(bk, (0, 16.4, 5.55), (3.0, 0.8, 0.2), "hazard")
+    pk = bevel(bk, (0, 22.5, 3.35), (3.7, 4.4, 1.7), "cloud", cut=0.55, axis="z")
+    rbox(bk, (0, 24.9, 3.1), (3.3, 0.6, 1.7), "plate", rot=(22, 0, 0))              # 上の蓋
+    rbox(bk, (0, 20.15, 3.1), (3.0, 0.55, 1.5), "plate", rot=(-18, 0, 0))           # 下の蓋
+    vents(bk, pk[0], "south", 4, box=(0.32, 0.12, 0.68, 0.42))
+    rivets(bk, pk[0], "south", 4, edge="border", margin=0.22, size=0.2, style="gold")
+    # 金の四芒星の紋（薔薇色の宝玉）
+    SZ = 4.28
+    cbox(bk, (0, 23.45, SZ), (0.3, 2.2, 0.16), "gold")
+    cbox(bk, (0, 23.45, SZ), (2.0, 0.3, 0.16), "gold")
+    rbox(bk, (0, 23.45, SZ + 0.08), (0.5, 0.5, 0.18), "gem_accent", rot=(0, 0, 45))
+    sensor(bk, (0, 24.55, 4.0), 0.24, "glow", "dark", facing=1)
+    # 金の側板（縦の帯）とホース
+    sd = cbox(bk, (-1.92, 22.5, 3.3), (0.3, 3.8, 1.3), "gold")
+    hs = cable(bk, [(-1.4, 20.3, 3.3), (-2.85, 17.3, 1.7)], 0.26, "dark", sag=0.3,
+               rib="gold", rib_every=2)
+    mirror_x(bk, sd, hs)
     # スラスター（右。下後ろ・少し外へ）: 金の胴・帯・広がったベル・光る縁・噴射口・炎
-    th = s.part("back", "thruster_r", bk, pivot=(-1.6, 17.2, 5.3), rotation=(16, 0, -10))
-    octa(th, (-1.6, 16.0, 5.3), 1.9, 2.6, "plate", axis="y")
-    octa(th, (-1.6, 16.95, 5.3), 2.15, 0.35, "rosegold", axis="y")
-    octa(th, (-1.6, 14.3, 5.3), 2.6, 1.0, "gold", axis="y")
-    octa(th, (-1.6, 13.75, 5.3), 2.3, 0.2, "glow", axis="y")
-    cbox(th, (-1.6, 13.62, 5.3), (1.9, 0.2, 1.9), "thruster")
-    fx = s.fx("thrust", "r", th, pivot=(-1.6, 13.55, 5.3))
-    taper(fx, (-1.6, 13.55, 5.3), (-1.6, 7.0, 5.3), 2.0, 0.4, 3, "flame")
-    taper(fx, (-1.6, 13.5, 5.3), (-1.6, 9.8, 5.3), 0.95, 0.25, 2, "flame_core", round_=False)
-    # 翼の排気フィン（右に 3 枚。背嚢の肩から上外・後ろへ扇に開く羽根。根元が広く先が細い）
-    wg = s.part("back", "wing_r", bk, pivot=(-2.6, 21.6, 5.0))
-    root = (-2.5, 21.6, 5.6)
-    fins = [((-6.4, 26.8, 8.1), 2.5, "plate2"), ((-7.5, 25.0, 8.4), 2.2, "cloud"),
-            ((-7.8, 22.6, 8.0), 1.8, "plate2")]
-    for k, (tip, h, st_) in enumerate(fins):
-        mid = tuple(root[i] + (tip[i] - root[i]) * 0.55 for i in range(3))
-        polyline(wg, [root, mid, tip], [0.34, 0.3], [h, h * 0.5], st_)
-        if k == 0:
-            beam(wg, (root[0], root[1] + h * 0.42, root[2] - 0.03), tip, 0.4, 0.3, "gold")
-        else:
-            beam(wg, (root[0], root[1] - h * 0.05, root[2] + 0.03), mid, 0.4, h * 0.26, "vent")
-    octa(wg, (-2.6, 21.1, 5.6), 1.9, 1.0, "gold", axis="x")                         # 付け根
+    th = s.part("back", "thruster_r", bk, pivot=(-1.15, 20.6, 3.9), rotation=(18, 0, -8))
+    octa(th, (-1.15, 19.85, 3.9), 1.3, 1.5, "plate", axis="y")
+    octa(th, (-1.15, 18.75, 3.9), 1.75, 0.8, "gold", axis="y")
+    ring(th, (-1.15, 18.33, 3.9), 0.72, 8, (0, 0.2, 0.2), "glow", axis="y")
+    cbox(th, (-1.15, 18.32, 3.9), (1.2, 0.16, 1.2), "thruster")
+    fx = s.fx("thrust", "r", th, pivot=(-1.15, 18.28, 3.9))
+    taper(fx, (-1.15, 18.28, 3.9), (-1.15, 12.8, 3.9), 1.35, 0.3, 3, "flame")
+    taper(fx, (-1.15, 18.24, 3.9), (-1.15, 15.4, 3.9), 0.65, 0.2, 2, "flame_core", round_=False)
+    # 羽根の排気フィン（右に 3 枚。背嚢の肩から上外・後ろへ扇に開く。根元が広く先が細い。飾り）
+    wg = s.part("back", "wing_r", bk, pivot=(-1.75, 23.9, 4.0), ornament=True)
+    root = (-1.75, 23.9, 4.1)
+    octa(wg, root, 1.1, 0.7, "gold", axis="x")
+    rbox(wg, (root[0] - 0.4, root[1], root[2]), (0.24, 0.5, 0.5), "gem_accent", rot=(45, 0, 0))
+    for tip, h, st_ in (((-4.5, 28.6, 6.0), 1.7, "plate2"), ((-5.7, 26.6, 6.4), 1.5, "cloud"),
+                        ((-5.9, 24.2, 6.0), 1.25, "plate2")):
+        feather(wg, root, tip, h, st_)
+
+
+def feather(bone, root, tip, h, style):
+    """羽根の排気フィン 1 枚: 二段の羽根（根元が広く先が細い）、金の羽軸、硫黄色の排気スリット。"""
+    r = [root[i] + (tip[i] - root[i]) * 0.08 for i in range(3)]
+    mid = [r[i] + (tip[i] - r[i]) * 0.55 for i in range(3)]
+    vane = polyline(bone, [r, mid, tip], [0.24, 0.2], [h, h * 0.55], style)
+    beam(bone, r, tip, 0.3, 0.26, "gold", extend=0.1)                               # 羽軸
+    for f in (0.36,):
+        p0 = [r[i] + (tip[i] - r[i]) * f for i in range(3)]
+        p1 = [r[i] + (tip[i] - r[i]) * (f + 0.14) for i in range(3)]
+        beam(bone, p0, p1, 0.32, h * (0.62 - f * 0.5), "vent")
+    return vane
 
 
 # ---------------------------------------------------------------------------
-#  腕（クリームの長手袋・金の線条細工・花弁のように開く袖口・金の指）
+#  腕（二の腕の金の板と腕輪・長手袋の履き口・肘当て・花弁のように開く篭手）
 # ---------------------------------------------------------------------------
 def arms(s):
-    ar = s.part("arms", "upper_r", "rightArm", pivot=(ARM_X, 20.0, 0))
-    # 上腕はインナーの細さのまま。金の腕輪（二重）と、外側の細いクリームの板
-    cbox(ar, (-6.0, 21.6, 0.0), (5.4, 1.6, 5.4), "helm")                      # 肩口
-    cbox(ar, (-6.0, 19.6, 0.0), (5.45, 0.55, 5.45), "gold")                   # 腕輪
-    cbox(ar, (-6.0, 18.5, 0.0), (5.4, 0.3, 5.4), "rosegold")
-    op = rbox(ar, (-8.78, 19.4, 0.0), (0.45, 3.6, 3.0), "plate2", rot=(0, 0, 3))
-    line_on(ar, op, "west", (0.5, 0.1), (0.5, 0.9), 0.22, 0.16, "glow")
-    stick(ar, op, "west", 0.5, 0.5, (1.0, 1.0, 0.2), "gem_accent", spin=45, sink=0.02)
-    el = s.part("arms", "elbow_r", "rightArm", pivot=(ARM_X, 16.8, 0))
-    cbox(el, (-6.0, 16.75, 0.0), (5.4, 1.3, 5.4), "frame")
-    octa(el, (-8.75, 16.75, 0.2), 1.6, 0.45, "gold", axis="x")
-    rbox(el, (-6.2, 16.9, 2.8), (2.6, 1.9, 0.8), "plate", rot=(-16, 0, 0))     # 肘当て（金）
-    # 前腕: クリームの手袋 + 手首で花弁のように開く袖口（外・前・後ろ）
-    fa = s.part("arms", "vambrace_r", "rightArm", pivot=(ARM_X, 15.0, 0))
-    vb = chamfer(fa, (-6.0, 14.8, 0.0), (5.5, 3.3, 5.6), "petal_cream", cut=0.45, axis="y")
-    line_on(fa, vb[1], "west", (0.5, 0.2), (0.5, 0.95), 0.24, 0.18, "glow")
-    octa(fa, (-8.72, 15.4, 0.0), 1.5, 0.35, "gold", axis="x")                  # 宝玉の台
-    rbox(fa, (-8.95, 15.4, 0.0), (0.3, 0.85, 0.85), "gem_accent", rot=(45, 0, 0))
-    for c, sz, rot_ in (((-8.82, 13.75, 0.0), (0.45, 2.0, 3.9), (0, 0, 11)),      # 外
-                        ((-6.15, 13.75, -2.85), (3.9, 2.0, 0.45), (-11, 0, 0)),   # 前
-                        ((-6.15, 13.75, 2.85), (3.9, 2.0, 0.45), (11, 0, 0))):    # 後ろ
-        cf = rbox(fa, c, sz, "petal_cream", rot=rot_)
+    X = A.UPPER_ARM_X
+    ua = s.part("arms", "upper_r", "rightArm", pivot=A.SHOULDER)
+    op = rbox(ua, (X - 1.2, 21.4, 0.0), (0.36, 2.6, 1.8), "plate", rot=(0, 0, 3))
+    stick(ua, op, "west", 0.5, 0.5, (1.2, 2.0, 0.16), "plate2", sink=0.05)
+    line_on(ua, op, "west", (0.5, 0.15), (0.5, 0.85), 0.18, 0.18, "glow", lift=0.14)
+    sensor(ua, (X + 0.05, 22.0, -1.12), 0.2, "glow", "dark")
+    for y in (22.75, 20.45):                                                         # 腕輪
+        octa(ua, (X, y, 0.05), 2.42, 0.3, "gold", axis="y")
+    octa(ua, (X - 1.2, 22.75, 0.05), 0.72, 0.26, "gold", axis="x")
+    rbox(ua, (X - 1.34, 22.75, 0.05), (0.18, 0.42, 0.42), "gem_accent", rot=(45, 0, 0))
+    # 長手袋の履き口（クリーム + 金の線）
+    gl = chamfer(ua, (X + 0.02, 19.72, 0.08), (2.5, 0.42, 2.55), "plate2", cut=0.4, axis="y")
+    stick(ua, gl[0], "north", 0.5, 0.5, (1.6, 0.18, 0.16), "gold", sink=0.04)
+    # 肘当て（後ろ。金の尖った板）
+    el = s.part("arms", "elbow_r", "rightArm", pivot=A.ELBOW)
+    cop = bevel(el, (A.ELBOW[0], 18.55, 1.62), (1.6, 1.4, 0.46), "plate", cut=0.28, axis="z")
+    diamond(el, (A.ELBOW[0], 17.78, 1.6), 0.78, 0.4, "plate")
+    rivets(el, cop[0], "south", 2, edge="top", margin=0.25, span=(0.3, 0.7), size=0.2,
+           style="rosegold")
+    # 篭手: クリームの長手袋（手首へ少し開く二段）+ 外の金の板（宝玉・発光線）+ 花弁の袖口三枚 + 金の帯
+    fa = s.part("arms", "vambrace_r", "rightArm", pivot=A.WRIST)
+    FX_ = A.FOREARM_X
+    chamfer(fa, (FX_, 17.35, 0.0), (2.2, 1.3, 2.25), "plate2", cut=0.4, axis="y")
+    vb = chamfer(fa, (FX_, 16.0, 0.0), (2.4, 1.5, 2.45), "plate2", cut=0.42, axis="y")
+    octa(fa, (FX_, 17.95, 0.0), 2.4, 0.26, "gold", axis="y")
+    octa(fa, (FX_, 16.72, 0.0), 2.46, 0.26, "rosegold", axis="y")
+    ob = rbox(fa, (FX_ - 1.25, 16.3, 0.0), (0.32, 1.9, 1.4), "plate", rot=(0, 0, 4))
+    octa(fa, (FX_ - 1.42, 16.6, 0.0), 0.8, 0.26, "gold", axis="x")
+    rbox(fa, (FX_ - 1.54, 16.6, 0.0), (0.18, 0.44, 0.44), "gem_accent", rot=(45, 0, 0))
+    line_on(fa, ob, "west", (0.5, 0.06), (0.5, 0.38), 0.16, 0.16, "glow")
+    line_on(fa, vb[0], "north", (0.5, 0.12), (0.5, 0.88), 0.18, 0.16, "gold")
+    sensor(fa, (FX_ + 0.05, 16.9, 1.18), 0.2, "glow", "dark", facing=1)
+    for cc, sz, rot_ in (((FX_ - 1.3, 15.0, 0.0), (0.28, 1.0, 1.9), (0, 0, 16)),      # 外
+                         ((FX_, 15.0, -1.32), (1.9, 1.0, 0.28), (-16, 0, 0)),         # 前
+                         ((FX_, 15.0, 1.32), (1.9, 1.0, 0.28), (16, 0, 0))):          # 後ろ
+        cf = rbox(fa, cc, sz, "petal_cream", rot=rot_)
         face = "west" if sz[0] < 1 else ("north" if rot_[0] < 0 else "south")
-        stick(fa, cf, face, 0.5, 0.08, (3.8, 0.28, 0.14), "gold", sink=0.05)
-    # 拳: 金の甲・クリームの甲板・金の指の関節・二節の細い指・親指
-    h = s.part("arms", "gauntlet_r", "rightArm", pivot=(ARM_X, 13.2, 0))
-    cbox(h, (-6.0, 12.1, 0.0), (5.3, 2.7, 5.5), "plate")
-    rbox(h, (-6.0, 12.6, -2.92), (4.4, 1.2, 0.6), "plate2", rot=(-10, 0, 0))
-    for i in range(4):
-        x = -7.6 + i * 1.07
-        cbox(h, (x, 12.6, -3.3), (0.62, 0.42, 0.3), "gold")
-        rbox(h, (x, 11.7, -2.86), (0.78, 1.15, 0.58), "plate_b", rot=(18, 0, 0))
-        rbox(h, (x, 10.9, -2.48), (0.72, 0.9, 0.52), "plate", rot=(40, 0, 0))
-    rbox(h, (-3.25, 12.2, -1.3), (0.6, 1.8, 1.3), "plate_b", rot=(0, 0, -10))
+        stick(fa, cf, face, 0.5, 0.12, ((sz[2] if sz[0] < 1 else sz[0]) - 0.1, 0.2, 0.15),
+              "gold", sink=0.04)
+
+
+def hands(s):
+    """手の甲の金の板と宝玉、指の甲当て（4 本の基節・金）、親指の当て。指そのものは frame7。"""
+    h = s.part("arms", "hand_r", "rightArm", pivot=A.WRIST)
+    hb = rbox(h, (-7.4, 13.62, 0.0), (0.34, 1.65, 2.2), "plate", rot=(0, 0, 4))
+    stick(h, hb, "west", 0.5, 0.55, (0.55, 0.55, 0.18), "gem_accent", spin=45, sink=0.04)
+    stick(h, hb, "west", 0.5, 0.06, (2.0, 0.2, 0.15), "rosegold", sink=0.04)
+    for zf in (-0.93, -0.31, 0.31, 0.93):
+        p0, p1 = (-6.98, 12.45, zf), (-6.48, 11.75, zf)
+        n = (-0.81, -0.58, 0.0)
+        o = 0.32
+        beam(h, (p0[0] + n[0] * o, p0[1] + n[1] * o, zf), (p1[0] + n[0] * o, p1[1] + n[1] * o, zf),
+             0.5, 0.2, "plate")
+    rbox(h, (-5.62, 13.55, -1.72), (0.58, 0.85, 0.2), "plate", rot=(0, 0, -36))
 
 
 # ---------------------------------------------------------------------------
-#  肩（雲のポッド: クリームの雲の玉を重ね、外に光る排気口と金の縁、下に金の台）
+#  肩（金の肩当て + 雲のポッド: クリームの雲の玉、外の排気口と回るファン、金の輪、下のスリット）
 # ---------------------------------------------------------------------------
-def puff(bone, c, r, style):
-    """角を落とした玉（7 個）。雲の一つ。"""
-    d = 2 * r
-    cbox(bone, c, (d * 0.66,) * 3, style)
-    for ax in range(3):
-        sz = [d * 0.46] * 3
-        sz[ax] = d
-        cbox(bone, c, sz, style)
-    for rot_, ax in (((45, 0, 0), 0), ((0, 45, 0), 1), ((0, 0, 45), 2)):
-        sz = [d * 0.66] * 3
-        sz[ax] = d * 0.86
-        rbox(bone, c, sz, style, rot=rot_)
-
-
 def shoulders(s):
     p = s.part("shoulders", "pod_r", "rightArm")
-    # 金の台（肩を包む肩当て。雲の下に隠れる）
-    rbox(p, (-6.6, 24.0, 0.0), (4.4, 1.3, 5.6), "plate", rot=(0, 0, -10))
+    cap = chamfer(p, (-6.85, 25.3, 0.0), (3.0, 1.4, 3.6), "plate", cut=0.5, axis="x",
+                  rot=(0, 0, -16))
+    stick(p, cap[0], "up", 0.5, 0.5, (0.3, 3.3, 0.16), "rosegold", sink=0.05)
+    rivets(p, cap[0], "up", 2, edge="right", margin=0.3, span=(0.2, 0.8), size=0.2,
+           style="rosegold")
     # 雲の玉: 大きな本体 + 上前・上後ろの小さな玉（輪郭線なしで一つの雲に溶ける）
-    C = (-9.1, 23.4, 0.1)
-    puff(p, C, 2.8, "cloud")
-    puff(p, (-8.4, 25.5, -1.55), 1.75, "cloud")
-    puff(p, (-8.5, 25.7, 1.7), 1.85, "cloud")
-    # 外の排気口（丸い硫黄色の光）と金の縁・中央の宝玉
-    octa(p, (-11.6, C[1], C[2]), 2.9, 0.3, "gold", axis="x")
-    octa(p, (-11.78, C[1], C[2]), 2.2, 0.3, "vent", axis="x")
-    octa(p, (-11.95, C[1], C[2]), 0.7, 0.25, "gem", axis="x")
-    tring(p, (-9.1, C[1], C[2]), 2.62, 10, (0, 0.34, 0.55), "gold", axis="x",
-          styles=["gold", "gold", "gold", "gold", "rosegold"])                # 雲を抱く金の輪
-    # 下面の排気（雲を噴く口）と前の薔薇色の宝玉
-    cbox(p, (-9.1, 20.55, 0.1), (2.6, 0.2, 2.2), "vent")
-    rbox(p, (-9.2, 23.3, -2.9), (0.8, 0.8, 0.35), "gem_accent", rot=(0, 0, 45))
+    C = (-8.05, 24.45, 0.0)
+    puff(p, C, 1.42, "cloud")
+    puff(p, (-7.55, 25.55, -1.05), 0.92, "cloud")
+    puff(p, (-7.6, 25.6, 1.1), 0.98, "cloud")
+    # 雲を抱く金の輪（縦の半円）と前の薔薇色の宝玉
+    ring(p, C, 1.5, 4, (0, 0.24, 0.34), "gold", axis="x", a0=-90, a1=90,
+         styles=["gold", "rosegold"])
+    rbox(p, (-8.05, 24.45, -1.62), (0.5, 0.5, 0.24), "gem_accent", rot=(0, 0, 45))
+    # 外の排気口: 金の縁 → 硫黄色の口 → 中で回るファン（4 枚羽根と宝玉の軸）
+    VX = -9.42
+    octa(p, (VX, C[1], C[2]), 1.85, 0.3, "gold", axis="x")
+    octa(p, (VX - 0.08, C[1], C[2]), 1.42, 0.26, "vent", axis="x")
+    fn = s.fx("spin", "fan_r", p, pivot=(VX - 0.24, C[1], C[2]))
+    for a in (0, 45, 90, 135):
+        rbox(fn, (VX - 0.24, C[1], C[2]), (0.16, 1.0, 0.26), "frame_lt", rot=(a, 0, 0))
+    cbox(fn, (VX - 0.3, C[1], C[2]), (0.2, 0.38, 0.38), "gem")
 
 
 # ---------------------------------------------------------------------------
-#  兜（クリームの丸い兜・磁器の面・ティアラと八芒星・こめかみの唐草・金の髪）とバイザー
+#  兜（小さな金の冠・磁器の面・ティアラと八芒星・耳・こめかみの唐草・後ろへ流れる髪）とバイザー
 # ---------------------------------------------------------------------------
 def helmet(s):
     hm = s.part("helmet", "dome", "head")
-    bevel(hm, (0, 31.0, 0.15), (9.9, 4.6, 10.1), "helm", cut=1.1, axis="z")      # 丸い冠（金）
-    bevel(hm, (0, 33.35, 0.3), (7.4, 1.0, 8.6), "helm", cut=1.2, axis="y")       # 頂の段
-    chamfer(hm, (0, 34.05, 0.5), (5.2, 0.7, 6.4), "helm", cut=0.9, axis="y")     # 頂の丸み
-    rbox(hm, (0, 31.9, -4.92), (8.2, 2.4, 0.8), "helm", rot=(-28, 0, 0))         # 額の斜面
-    rbox(hm, (0, 31.8, 5.25), (8.2, 2.4, 0.8), "helm", rot=(28, 0, 0))           # 後ろの斜面
-    cbox(hm, (0, 26.9, 4.95), (8.8, 4.6, 0.8), "plate_b")                        # 後頭部
-    sd = cbox(hm, (-4.95, 27.3, 0.3), (0.9, 5.0, 8.4), "plate2")                # クリームの側板
-    sdt = line_on(hm, sd, "west", (0.04, 0.08), (0.96, 0.08), GOLD_W, 0.2, "gold")
-    # 側頭から垂れる金の髪（前後二房。下ほど外へ流れる）と、房の間の薔薇金の髪留め
-    lk1 = rbox(hm, (-5.08, 26.9, -2.15), (0.7, 6.0, 2.5), "plate", rot=(6, 0, 5))
-    lk2 = rbox(hm, (-5.22, 26.5, 0.55), (0.7, 6.8, 2.9), "plate_b", rot=(-3, 0, 7))
-    lkg = line_on(hm, lk1, "west", (0.5, 0.15), (0.5, 0.92), 0.22, 0.16, "glow_soft")
-    clip = octa(hm, (-5.5, 29.3, -0.9), 1.3, 0.4, "rosegold", axis="x")
-    # こめかみから後ろ上へ流れる薔薇金の唐草（二本）
-    v1 = polyline(hm, [(-5.6, 28.7, 0.0), (-5.45, 30.6, 1.5), (-4.85, 32.3, 3.6), (-3.7, 33.3, 5.6)],
-                  [0.42, 0.36, 0.3], [0.5, 0.42, 0.34], "rosegold")
-    v2 = polyline(hm, [(-5.55, 28.9, 1.6), (-5.3, 30.0, 3.4), (-4.7, 30.4, 5.3)],
-                  [0.34, 0.28], [0.4, 0.32], "rosegold")
-    mirror_x(hm, sd, sdt, lk1, lk2, lkg, clip, v1, v2)
-    # ティアラ: 中央へ向かって上る金の帯（V の頂に八芒星）と、側頭を回る帯
-    tl = rbox(hm, (-2.35, 29.75, -5.1), (4.9, 0.62, 0.55), "gold", rot=(-8, 6, -11))
-    tg = stick(hm, tl, "north", 0.5, 0.5, (4.2, 0.18, 0.1), "glow_accent", sink=0.04)
-    ts = cbox(hm, (-5.0, 29.3, -1.6), (0.6, 0.55, 5.0), "gold")
-    # 冠の尖塔（ティアラから立ち上がる金の細い塔。中央の星を囲む）
-    sp1 = taper(hm, (-1.0, 30.6, -5.62), (-3.0, 34.0, -5.75), 0.6, 0.12, 1, "rosegold")
-    sp2 = taper(hm, (-2.9, 30.0, -5.45), (-4.95, 32.3, -5.3), 0.5, 0.1, 1, "rosegold")
-    mirror_x(hm, tl, tg, ts, sp1, sp2)
-    # 磁器の面: 額から顎まで一枚の白い面、鼻筋、頬当て（クリーム + 金の縁）、顎、薔薇色の唇
-    cbox(hm, (0, 26.6, -4.82), (6.6, 4.6, 0.45), "face")                        # 一枚の白い面
-    ck = rbox(hm, (-3.5, 25.9, -3.9), (1.4, 3.8, 3.0), "plate2", rot=(0, 30, -8))   # 頬当て
-    ckt = stick(hm, ck, "west", 0.1, 0.5, (0.35, 3.4, 0.2), "gold", sink=0.05)
-    mirror_x(hm, ck, ckt)
-    cbox(hm, (0, 26.75, -5.15), (0.4, 1.2, 0.3), "face")                        # 鼻筋
-    rbox(hm, (0, 24.3, -4.62), (2.6, 0.9, 1.0), "face", rot=(-30, 0, 0))        # 顎
-    cbox(hm, (0, 25.2, -5.22), (1.1, 0.2, 0.2), "glow_accent")                  # 唇
-    # 後ろへ流れる金の髪（三段、下ほど後ろへ開く）
-    rbox(hm, (0, 30.0, 5.55), (8.4, 2.6, 0.7), "plate", rot=(10, 0, 0))         # 髪の根元
-    for x, top, ln, w, st_ in ((0.0, 29.4, 6.6, 3.2, "plate"), (-2.75, 29.2, 5.4, 2.7, "plate_b")):
-        a = 16
-        yb = top - ln
-        lk = rbox(hm, (x, (top + yb) / 2, 5.95 + ln * 0.14), (w, ln, 0.7), st_, rot=(a, 0, 0))
-        d = w / math.sqrt(2)
-        tp = rbox(hm, (x, yb + 0.1, 5.95 + ln * 0.28), (d, d, 0.66), st_, rot=(a, 0, 45))
-        gl = line_on(hm, lk, "south", (0.5, 0.08), (0.5, 0.95), 0.22, 0.16,
+    bevel(hm, (0, 30.98, HZ + 0.3), (4.4, 1.85, 4.65), "helm", cut=0.6, axis="z")
+    chamfer(hm, (0, 31.72, HZ + 0.45), (3.3, 0.55, 3.9), "helm", cut=0.45, axis="y")
+    cbox(hm, (0, 31.95, HZ + 0.5), (0.6, 0.3, 3.6), "plate2")                       # 頂の稜
+    rbox(hm, (0, 30.35, HZ - 2.15), (3.9, 1.0, 0.42), "helm", rot=(-20, 0, 0))      # 額の斜面
+    # 後頭部（金の板・排気スリット・しころ）
+    bh = cbox(hm, (0, 29.45, HZ + 2.52), (3.5, 2.3, 0.4), "helm")
+    vents(hm, bh, "south", 3, box=(0.36, 0.25, 0.64, 0.65), w=0.16)
+    rbox(hm, (0, 28.2, HZ + 2.5), (3.1, 0.7, 0.4), "plate_b", rot=(24, 0, 0))
+    # こめかみ（クリーム + 金の縁）・耳（金の円盤 + 光）・頬当て
+    sd = cbox(hm, (-2.08, 29.15, HZ + 0.65), (0.4, 2.4, 3.3), "plate2")
+    sdt = stick(hm, sd, "west", 0.5, 0.95, (3.1, 0.2, 0.15), "gold", sink=0.04)
+    ear = octa(hm, (-2.32, 29.2, HZ + 0.6), 1.0, 0.28, "gold", axis="x")
+    eg = cbox(hm, (-2.5, 29.2, HZ + 0.6), (0.16, 0.42, 0.42), "glow")
+    ck = rbox(hm, (-1.7, 28.35, HZ - 1.2), (0.4, 1.8, 1.9), "plate2", rot=(0, 22, -8))
+    ckg = stick(hm, ck, "west", 0.08, 0.5, (0.2, 1.6, 0.15), "gold", sink=0.04)
+    # こめかみから後ろ上へ流れる薔薇金の唐草
+    v1 = polyline(hm, [(-2.36, 29.95, HZ + 0.5), (-2.2, 30.75, HZ + 1.45), (-1.75, 31.35, HZ + 2.3)],
+                  [0.24, 0.2], [0.26, 0.22], "rosegold")
+    mirror_x(hm, sd, sdt, ear, eg, ck, ckg, v1)
+    # 磁器の面: 額から顎までの一枚の白い面・後ろへ回る頬・顎・鼻筋・薔薇色の唇
+    rbox(hm, (0, 28.85, HZ - 2.2), (2.5, 2.6, 0.36), "face", rot=(4, 0, 0))
+    fs = rbox(hm, (-1.32, 28.75, HZ - 1.82), (0.42, 2.3, 1.05), "face", rot=(0, 32, -4))
+    mirror_x(hm, fs)
+    rbox(hm, (0, 27.62, HZ - 2.0), (1.3, 0.5, 0.5), "face", rot=(-24, 0, 0))       # 顎
+    cbox(hm, (0, 28.68, HZ - 2.46), (0.24, 0.8, 0.2), "face")                      # 鼻筋
+    cbox(hm, (0, 28.02, HZ - 2.42), (0.52, 0.16, 0.16), "glow_accent")             # 唇
+    # ティアラ: こめかみから中央へ上る金の帯（V の頂に八芒星）
+    tl = rbox(hm, (-1.12, 30.42, HZ - 2.42), (2.3, 0.34, 0.3), "gold", rot=(-14, 18, -18))
+    tg = stick(hm, tl, "north", 0.5, 0.5, (1.9, 0.16, 0.15), "glow_accent", sink=0.04)
+    mirror_x(hm, tl, tg)
+    # 額の八芒星（金の台 + 光条。ゆっくり脈打つ）
+    SY, SZ = 30.95, HZ - 2.62
+    diamond(hm, (0, SY, SZ + 0.12), 1.2, 0.3, "gold")
+    st = s.fx("glow", "star", hm, pivot=(0, SY, SZ - 0.1))
+    star8(st, (0, SY, SZ - 0.1), 1.25, 0.82, 0.3, 0.2, "star")
+    rbox(st, (0, SY, SZ - 0.26), (0.46, 0.46, 0.2), "gem_accent", rot=(0, 0, 45))
+    # 冠の尖塔（ティアラから立ち上がる薔薇金の細い塔。中央の星を囲む。飾り）
+    cr = s.part("helmet", "crest", "head", pivot=(0, SY, SZ), ornament=True)
+    sp1 = taper(cr, (-0.7, 31.3, SZ + 0.12), (-1.45, 32.75, SZ + 0.2), 0.3, 0.18, 1,
+                "rosegold", round_=False)
+    mirror_x(cr, sp1)
+    taper(cr, (0, 32.0, SZ + 0.2), (0, 33.6, SZ + 0.25), 0.34, 0.18, 1, "gold", round_=False)
+    rbox(cr, (0, 33.72, SZ + 0.25), (0.36, 0.36, 0.2), "star", rot=(0, 0, 45))
+    # 後ろへ流れる金の髪の刃（5 本。冠の後ろから首の後ろへ、下ほど後ろ・外へ流れる。飾り）
+    pl = s.part("helmet", "plume", "head", pivot=(0, 31.6, HZ + 2.2), ornament=True)
+    for x, dx, top, ln, w, st_ in ((0.0, 0.0, 31.75, 5.8, 0.8, "petal_gold"),
+                                   (-1.0, -0.7, 31.5, 5.1, 0.7, "plate_b"),
+                                   (-1.85, -1.35, 31.0, 4.2, 0.6, "petal_gold")):
+        pts = [(x, top, HZ + 1.9), (x + dx * 0.4, top - ln * 0.32, HZ + 3.05),
+               (x + dx * 0.8, top - ln * 0.7, HZ + 3.55), (x + dx, top - ln, HZ + 3.45)]
+        bl = polyline(pl, pts, [w, w * 0.82, w * 0.55], [0.34, 0.3, 0.26], st_)
+        lk = line_on(pl, bl[1], "up", (0.5, 0.1), (0.5, 0.9), 0.16, 0.16,
                      "glow_soft" if x == 0 else "rosegold")
         if x:
-            mirror_x(hm, lk, tp, gl)
-    # 額の八芒星（金の台 + 光条。ゆっくり脈打つ）
-    SY, SZ = 30.85, -5.55
-    rbox(hm, (0, SY, SZ + 0.25), (1.9, 1.9, 0.45), "gold", rot=(0, 0, 45))
-    st = s.fx("glow", "star", hm, pivot=(0, SY, SZ - 0.1))
-    cbox(st, (0, SY, SZ - 0.1), (0.5, 3.5, 0.28), "star")
-    cbox(st, (0, SY, SZ - 0.1), (3.3, 0.5, 0.28), "star")
-    rbox(st, (0, SY, SZ - 0.05), (0.42, 2.3, 0.26), "star", rot=(0, 0, 45))
-    rbox(st, (0, SY, SZ - 0.05), (0.42, 2.3, 0.26), "star", rot=(0, 0, -45))
-    rbox(st, (0, SY, SZ - 0.3), (0.9, 0.9, 0.3), "gem_accent", rot=(0, 0, 45))
-    # バイザー: 磁器の面に切れ込んだ切れ長の目（外の端が上がる）
+            mirror_x(pl, bl, lk)
+    # バイザー: 磁器の面に切れ込んだ切れ長の目（外の端が上がる）と金のまぶた
     vz = s.part("visor", "eye", "head")
-    sock = rbox(vz, (-1.75, 27.95, -5.1), (2.6, 0.95, 0.2), "dark", rot=(0, 8, -3))
-    lid = rbox(vz, (-1.75, 28.5, -5.12), (2.8, 0.22, 0.2), "gold", rot=(0, 8, -3))
+    sock = rbox(vz, (-0.66, 29.42, HZ - 2.4), (1.05, 0.36, 0.16), "dark", rot=(4, 6, 9))
+    lid = rbox(vz, (-0.68, 29.7, HZ - 2.43), (1.15, 0.16, 0.16), "gold", rot=(4, 6, 12))
     mirror_x(vz, sock, lid)
-    fg = s.fx("glow", "visor", vz, pivot=(0, 27.95, -5.2))
-    eye = rbox(fg, (-1.75, 27.95, -5.2), (2.2, 0.5, 0.2), "visor", rot=(0, 8, -3))
+    fg = s.fx("glow", "visor", vz, pivot=(0, 29.42, HZ - 2.5))
+    eye = rbox(fg, (-0.66, 29.42, HZ - 2.46), (0.88, 0.2, 0.16), "visor", rot=(4, 6, 9))
     mirror_x(fg, eye)
 
 
 # ---------------------------------------------------------------------------
-#  光輪（頭の後ろで回る八芒の輪。金と光の輪 + 八本の光条）
+#  光輪（頭の後ろで回る八芒の輪。金と光の輪 + 八本の光条 + 内の薔薇金の輪）
 # ---------------------------------------------------------------------------
 def halo(s):
-    C = (0.0, 30.2, 8.8)
+    C = HALO_C
     h = s.part("extra", "halo", "head", pivot=C)
     sp = s.fx("spin", "halo", h, pivot=C)
-    R = 5.3
-    tring(sp, C, R, 12, (0, 0.42, 0.34), "gold", axis="z", styles=["gold", "gold", "glow"])
+    R = 3.05
+    ring(sp, C, R, 12, (0, 0.26, 0.28), "gold", axis="z", styles=["gold", "glow"])
     for k in range(8):
         a = math.radians(k * 45)
-        L = 7.3 if k % 2 == 0 else 6.4
-        p0 = (C[0] - (R - 0.1) * math.sin(a), C[1] + (R - 0.1) * math.cos(a), C[2])
+        L = 4.3 if k % 2 == 0 else 3.75
+        p0 = (C[0] - (R + 0.1) * math.sin(a), C[1] + (R + 0.1) * math.cos(a), C[2])
         p1 = (C[0] - L * math.sin(a), C[1] + L * math.cos(a), C[2])
-        taper(sp, p0, p1, 0.7 if k % 2 == 0 else 0.55, 0.14, 1, "star" if k % 2 == 0 else "gold")
+        taper(sp, p0, p1, 0.42 if k % 2 == 0 else 0.34, 0.2, 1,
+              "star" if k % 2 == 0 else "gold", round_=False)

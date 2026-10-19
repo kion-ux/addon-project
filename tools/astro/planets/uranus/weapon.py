@@ -1,25 +1,30 @@
 # -*- coding: utf-8 -*-
-"""天王星（ウラノス）のナノウェポン「傾天弩 ティルト・ボウガン」と星核「天王星核 ウラヌス・コア」。
+"""天王星（ウラノス）のナノウェポン「傾天弩 ティルト・ボウガン」と星核「天王星核 ウラヌス・コア」（v1.1: 細部の作り込み）。
 
 武器空間: 握りの中心 = 原点、銃口 = -Z、弓は ±X に張る、機関部は握りの上（+Y）。16 単位 = 1 ブロック。
 手に持つと 0.85 倍（astro_hold.SPEC["crossbow"]）。握りの前後 ±3.1 は篭手に隠れる。
 
-  form_0_grip    握り（溝のある芯と青緑の板・発光線）・紺の口金・引き金と用心金・握りの尻
-  form_1_body    機関部: 面を切った淡い青緑の胴、青緑の側板（発光線と霜の ◆）、紺の矢溝と光る矢道、
-                 霜の ◆ の照門、短い銃床、銃口の八角の発射口
-  form_2_limbs   弓: 紺の弓台から ±X へ後ろへ反って張る二段の弓（霜の前縁・発光線）、
-                 先端の滑車と氷晶の弓端、光る弦（矢の尻へ）。形成で ±X へ「開く」
-  form_3_bolt    装填された絶対零度の矢（氷の矢柄・結晶の鏃・◆ の矢羽根。fx_glow_bolt で脈打つ）
-  form_4_ring    銃口の前で 98° 傾いて回る小さな環（fx_spin_tilt: 二重の帯と 3 つの氷の衛星）
+  form_0_grip    握り（溝のある芯・青緑の板と発光線・紺の口金）、握りと機関部の首と脇の油圧の管、
+                 引き金と用心金、霜の輪と ◆ の宝玉と後ろへ伸びる氷の棘の握りの尻
+  form_1_body    機関部: 面を切った淡い青緑の胴に彫った紺の溝、二層の側板（青緑 → 霜の縁 → 発光線）とリベットの列・
+                 枠付きの排気スリット・霜の ◆、紺の矢溝と歯の並ぶレールと光る矢道、照門の ◆ と 98° 傾いた小さな環の照準
+                 （fx_spin_sight）、下の氷晶の弾倉（窓から光る）、銃口の霜の覆いと左右の小さな放射器、
+                 弓へ行くケーブル
+  form_2_limbs   弓: 紺の弓台から ±X へ後ろへ反って張る二段の弓（霜の前縁・発光線・青緑の重ね板・◆・関節の軸）、
+                 先端の滑車（ボルトの輪・光る軸）と氷晶の弓端、弦の留め具と光る弦（矢の尻へ）。形成で ±X へ「開く」
+  form_3_bolt    装填された絶対零度の矢（氷の矢柄・霜の帯・光る象嵌・結晶の鏃・◆ の矢羽根・紺の筈。fx_glow_bolt で脈打つ）
+  form_4_ring    銃口の前で 98° 傾いて回る小さな環（fx_spin_tilt: 光の帯・紺の帯と 5 つの氷の衛星 /
+                 fx_spin_dust: 逆へ回る氷の塵）
 """
 from __future__ import annotations
 
 import math
 
 import astro_weapon as W
+from astro_common import cable, line_on, rivets, sensor, stick, vents
 from astro_paint import core_styles, weapon_styles
 
-from .suit import SUIT_STYLES, crystal, diamond
+from .suit import SUIT_STYLES, crystal, diamond, diamond_stack, moon
 
 KIND = "crossbow"
 
@@ -36,101 +41,179 @@ ICON = {"weapon": (24, -58, -38), "core": (28, -16, 0)}
 # スーツと同じ素材（霜の白・紺・氷・結晶・縁）
 _SHARED = {k: SUIT_STYLES[k] for k in ("frost", "frost_p", "navy", "rim", "ice", "crystal", "ringglow",
                                        "ringband", "gem", "glow")}
+_SHARED["rivet"] = {"kind": "trim", "base": (186, 206, 216), "light": (246, 252, 255),
+                    "dark": (96, 120, 138), "line": (36, 52, 66), "bevel": False}
+
+FINE = 12           # 小物の uv_scale（1 単位あたりのテクセル）
 
 
 # ===========================================================================
 #  ナノウェポン
 # ===========================================================================
 def build_weapon(m, root):
-    # =====================================================================
-    #  form_0_grip — 握り・口金・引き金と用心金・握りの尻
-    # =====================================================================
-    grip = W.form(m, root, 0, "grip", (0, 0, 0))
-    W.octa(grip, (0, 0, 0.0), 1.6, 5.2, "frame", uv_scale=8)                         # 溝のある握りの芯
-    for s in (-1, 1):                                                                  # 握りの青緑の板と発光線
-        W.cbox(grip, (s * 0.72, -0.1, 0.0), (0.3, 1.1, 4.4), "plate2", uv_scale=8)
-        W.cbox(grip, (s * 0.88, -0.1, 0.0), (0.06, 0.2, 3.6), "glow", uv_scale=12)
-    for z in (-2.75, 2.75):
-        W.octa(grip, (0, 0, z), 2.0, 0.5, "navy", uv_scale=8)
-    W.beam(grip, (0, 0.6, -3.2), (0, Y0 - 0.6, -4.2), 1.3, 1.5, "frame", uv_scale=8)     # 握りと機関部の首
-    W.polyline(grip, [(0, Y0 - 1.2, -5.8), (0, -0.8, -5.4), (0, -1.4, -3.6)], 0.5, 0.5, "navy", uv_scale=10)
-    W.beam(grip, (0, Y0 - 1.3, -4.5), (0, 0.4, -4.7), 0.45, 0.4, "rim", uv_scale=12)  # 引き金
-    W.octa(grip, (0, -0.05, 3.35), 1.7, 0.8, "plate2", uv_scale=8)                    # 握りの尻
-    diamond(grip, (0, -0.05, 3.85), 0.9, 0.25, "gem", (0, 0, 0), uv_scale=14)
+    grip(m, root)
+    body(m, root)
+    limbs(m, root)
+    bolt(m, root)
+    tilt_ring(m, root)
 
-    # =====================================================================
-    #  form_1_body — 機関部（握りの前上。後端は篭手の前）
-    # =====================================================================
-    body = W.form(m, root, 1, "body", (0, Y0, Z_BACK))
+
+def grip(m, root):
+    """form_0_grip — 握り・口金・首と油圧の管・引き金と用心金・握りの尻。"""
+    g = W.form(m, root, 0, "grip", (0, 0, 0))
+    W.octa(g, (0, 0, 0.0), 1.6, 5.2, "frame", uv_scale=8)                           # 溝のある握りの芯
+    for s in (-1, 1):                                                                # 握りの青緑の板と発光線
+        W.cbox(g, (s * 0.72, -0.1, 0.0), (0.3, 1.1, 4.4), "plate2", uv_scale=8)
+        W.cbox(g, (s * 0.9, -0.1, 0.0), (0.12, 0.2, 3.6), "glow", uv_scale=FINE)
+    for z in (-2.75, 2.75):
+        W.octa(g, (0, 0, z), 2.0, 0.5, "navy", uv_scale=8)
+    # 握りと機関部の首（紺）と、両脇を走る細い油圧の管
+    W.beam(g, (0, 0.6, -3.2), (0, Y0 - 0.6, -4.2), 1.3, 1.5, "frame", uv_scale=8)
+    for s in (-1, 1):
+        cable(g, [(s * 0.78, 0.55, -2.4), (s * 0.82, 1.6, -3.4), (s * 0.7, Y0 - 1.25, -4.6)], 0.24,
+              "navy", seg=0.9, uv_scale=FINE)
+    # 用心金と引き金
+    W.polyline(g, [(0, Y0 - 1.2, -5.8), (0, -0.8, -5.4), (0, -1.4, -3.6)], 0.5, 0.5, "navy", uv_scale=10)
+    W.beam(g, (0, Y0 - 1.3, -4.5), (0, 0.4, -4.7), 0.45, 0.4, "rim", uv_scale=12)
+    W.cbox(g, (0, -0.95, -4.95), (0.36, 0.3, 0.3), "rivet", uv_scale=FINE)
+    # 握りの尻: 淡い八角 + 霜の輪 + ◆ の宝玉 + 後ろへ伸びる小さな氷の棘
+    W.octa(g, (0, -0.05, 3.3), 1.7, 0.75, "plate2", uv_scale=8)
+    W.octa(g, (0, -0.05, 3.0), 1.86, 0.22, "rim", uv_scale=FINE)
+    diamond_stack(g, (0, -0.05, 3.72), [(1.0, 0.2, "frost"), (0.55, 0.2, "gem")], facing=1)
+    crystal(g, (0, -0.05, 3.8), (0, -0.25, 1.0), 1.0, 0.36, "ice", tip=0.55, uv_scale=FINE)
+
+
+def body(m, root):
+    """form_1_body — 機関部（握りの前上。後端は篭手の前）。"""
+    b = W.form(m, root, 1, "body", (0, Y0, Z_BACK))
     L = Z_BACK - Z_FRONT
     zc = (Z_BACK + Z_FRONT) / 2
-    W.bevel(body, (0, Y0, zc), (2.8, 2.8, L), "plate", cut=0.65, axis="z", uv_scale=6)
-    W.cbox(body, (0, Y0, Z_BACK + 0.2), (2.4, 2.4, 0.5), "navy", uv_scale=8)            # 後端の蓋
-    W.cbox(body, (0, Y0, Z_BACK + 0.48), (0.9, 0.9, 0.12), "glow", uv_scale=12)
-    W.cbox(body, (0, Y0 + 1.5, zc - 0.6), (1.3, 0.45, L + 1.6), "navy", uv_scale=6)      # 矢溝
-    W.cbox(body, (0, Y0 + 1.74, zc - 0.6), (0.45, 0.12, L + 1.2), "energy", uv_scale=8)  # 光る矢道
+    core = W.bevel(b, (0, Y0, zc), (2.8, 2.8, L), "plate", cut=0.65, axis="z", uv_scale=6)
+    # 後端の蓋（紺）と ◆ の灯り
+    W.cbox(b, (0, Y0, Z_BACK + 0.2), (2.4, 2.4, 0.5), "navy", uv_scale=8)
+    diamond(b, (0, Y0, Z_BACK + 0.48), 1.0, 0.16, "glow", uv_scale=FINE)
+    # 矢溝（紺）・光る矢道・レールの歯
+    W.cbox(b, (0, Y0 + 1.5, zc - 0.6), (1.3, 0.45, L + 1.6), "navy", uv_scale=6)
+    W.cbox(b, (0, Y0 + 1.74, zc - 0.6), (0.45, 0.16, L + 1.2), "energy", uv_scale=8)
+    for k in range(5):
+        z = Z_BACK - 1.6 - k * 1.85
+        for s in (-1, 1):
+            W.cbox(b, (s * 0.5, Y0 + 1.82, z), (0.24, 0.2, 0.55), "frame", uv_scale=FINE)
+    # 胴の側面に彫った紺の溝（上下 2 本）
     for s in (-1, 1):
-        W.rbox(body, (s * 1.55, Y0 - 0.1, zc), (0.6, 2.3, L - 1.6), "plate2", rot=(0, 0, -12 * s), uv_scale=6)
-        W.cbox(body, (s * 1.86, Y0 + 0.55, zc - 0.4), (0.14, 0.26, L - 3.4), "glow", uv_scale=10)
-        diamond(body, (s * 1.92, Y0 - 0.25, Z_BACK - 2.0), 1.5, 0.25, "frost", (0, 90, 0), uv_scale=12)
-        diamond(body, (s * 2.05, Y0 - 0.25, Z_BACK - 2.0), 0.7, 0.2, "gem", (0, 90, 0), uv_scale=14)
-        W.cbox(body, (s * 1.86, Y0 - 0.6, Z_FRONT + 3.4), (0.14, 0.9, 2.2), "vent", uv_scale=10)
-    W.rbox(body, (0, Y0 - 1.55, Z_FRONT + 3.0), (1.7, 1.0, 5.0), "navy", rot=(-10, 0, 0), uv_scale=6)  # 下の竜骨
-    # 照門: 立てた霜の ◆
-    W.cbox(body, (0, Y0 + 1.95, Z_BACK - 0.9), (0.6, 0.8, 0.8), "navy", uv_scale=10)
-    diamond(body, (0, Y0 + 2.75, Z_BACK - 0.9), 1.6, 0.3, "frost", uv_scale=12)
-    diamond(body, (0, Y0 + 2.75, Z_BACK - 1.1), 0.7, 0.2, "gem", uv_scale=14)
-    # 発射口（八角）と縁の光
-    W.octa(body, (0, Y0 + 0.6, Z_MUZ), 2.0, 1.4, "navy", uv_scale=8)
-    W.ring(body, (0, Y0 + 0.6, Z_MUZ - 0.75), 0.85, 8, (0, 0.24, 0.2), "glow", axis="z", uv_scale=12)
+        face = "east" if s > 0 else "west"
+        for bb in (0.3, 0.72):
+            line_on(b, core[1], face, (0.08, bb), (0.92, bb), 0.16, 0.16, "navy", sink=0.1,
+                    uv_scale=FINE)
+    # 二層の側板: 青緑の板 → 霜の縁 → 発光線、リベットの列、霜の ◆、枠付きの排気スリット
+    for s in (-1, 1):
+        face = "east" if s > 0 else "west"
+        sp = W.rbox(b, (s * 1.55, Y0 - 0.1, zc), (0.6, 2.3, L - 1.6), "plate2", rot=(0, 0, -12 * s),
+                    uv_scale=6)
+        stick(b, sp, face, 0.5, 0.94, (L - 1.8, 0.24, 0.16), "rim", sink=0.05, uv_scale=FINE)
+        line_on(b, sp, face, (0.06, 0.66), (0.62, 0.66), 0.16, 0.16, "glow", uv_scale=FINE)
+        rivets(b, sp, face, 5, edge="bottom", margin=0.24, span=(0.08, 0.92), size=0.22, h=0.15,
+               style="rivet", uv_scale=FINE)
+        diamond_stack(b, (s * 1.92, Y0 - 0.2, Z_BACK - 2.0), [(1.5, 0.25, "frost"), (0.7, 0.2, "gem")],
+                      tilt=(0, 90, 0), facing=-s)
+        vents(b, sp, face, 3, box=(0.68, 0.22, 0.92, 0.55), axis="v", w=0.2, uv_scale=FINE)
+    # 下の竜骨と、氷晶の弾倉（紺の枠の窓から光る結晶）
+    W.rbox(b, (0, Y0 - 1.55, Z_FRONT + 3.0), (1.7, 1.0, 5.0), "navy", rot=(-10, 0, 0), uv_scale=6)
+    mz = -6.9
+    W.cbox(b, (0, Y0 - 1.95, mz), (1.3, 1.5, 2.1), "navy", uv_scale=8)
+    W.cbox(b, (0, Y0 - 2.05, mz), (1.42, 0.9, 1.5), "ice", uv_scale=FINE)
+    for s in (-1, 1):
+        W.cbox(b, (s * 0.72, Y0 - 2.05, mz), (0.16, 0.3, 1.2), "glow", uv_scale=FINE)
+    crystal(b, (0, Y0 - 2.6, mz - 0.3), (0, -1.0, -0.45), 1.3, 0.5, "crystal", tip=0.5, uv_scale=FINE)
+    # 照門: 立てた霜の ◆ と、その前の 98° 傾いた小さな環の照準
+    W.cbox(b, (0, Y0 + 1.95, Z_BACK - 0.9), (0.6, 0.8, 0.8), "navy", uv_scale=10)
+    diamond(b, (0, Y0 + 2.75, Z_BACK - 0.9), 1.6, 0.3, "frost", uv_scale=12)
+    diamond(b, (0, Y0 + 2.75, Z_BACK - 1.1), 0.7, 0.2, "gem", uv_scale=14)
+    SC = (0, Y0 + 2.45, Z_BACK - 3.4)
+    W.cbox(b, (0, Y0 + 1.95, SC[2]), (0.4, 0.6, 0.4), "navy", uv_scale=FINE)
+    sg = W.part(m, b, "sight", SC, rotation=(0, 70, 8))
+    ss = W.spin(m, sg, "sight", SC)
+    W.ring(ss, SC, 0.62, 8, (0, 0.18, 0.18), "ringglow", axis="z", uv_scale=FINE)
+    W.cbox(ss, SC, (0.34, 0.34, 0.34), "gem", rotation=(45, 0, 45), uv_scale=FINE)
+    # 銃口: 八角の発射口・霜の覆い・縁の光・四隅の小さな放射器
+    W.octa(b, (0, Y0 + 0.6, Z_MUZ), 2.0, 1.4, "navy", uv_scale=8)
+    W.octa(b, (0, Y0 + 0.6, Z_MUZ + 0.95), 2.2, 0.3, "rim", uv_scale=FINE)
+    W.ring(b, (0, Y0 + 0.6, Z_MUZ - 0.75), 0.85, 8, (0, 0.24, 0.2), "glow", axis="z", uv_scale=12)
+    for sx in (-1, 1):
+        sensor(b, (sx * 0.82, Y0 + 0.6, Z_MUZ - 0.62), 0.2, "glow", "frame", uv_scale=FINE)
+    # 機関部から弓台へのケーブル（垂れる）
+    for s in (-1, 1):
+        cable(b, [(s * 1.7, Y0 - 0.9, Z_FRONT + 3.2), (s * 1.95, Y0 - 0.4, Z_FRONT + 0.6)], 0.24,
+              "navy", sag=0.25, seg=0.9, uv_scale=FINE)
 
-    # =====================================================================
-    #  form_2_limbs — 弓（±X へ開く）
-    # =====================================================================
-    limbs = W.form(m, root, 2, "limbs", (0, Y0, Z_FRONT))
-    W.bevel(limbs, (0, Y0 + 0.1, Z_FRONT), (4.2, 2.4, 2.2), "navy", cut=0.5, axis="z", uv_scale=8)
-    W.cbox(limbs, (0, Y0 + 0.1, Z_FRONT - 1.12), (2.6, 0.3, 0.12), "glow", uv_scale=10)
+
+def limbs(m, root):
+    """form_2_limbs — 弓（±X へ開く）。"""
+    lb = W.form(m, root, 2, "limbs", (0, Y0, Z_FRONT))
+    W.bevel(lb, (0, Y0 + 0.1, Z_FRONT), (4.2, 2.4, 2.2), "navy", cut=0.5, axis="z", uv_scale=8)
+    W.cbox(lb, (0, Y0 + 0.1, Z_FRONT - 1.12), (2.6, 0.3, 0.12), "glow", uv_scale=10)
+    diamond_stack(lb, (0, Y0 + 0.1, Z_FRONT - 1.2), [(0.9, 0.2, "frost"), (0.45, 0.16, "gem")])
     for s in (-1, 1):
         base = (s * 1.9, Y0 + 0.2, Z_FRONT - 0.2)
         mid = (s * 5.0, Y0 + 0.5, Z_FRONT + 0.5)
         tip = (s * 8.0, Y0 + 0.7, Z_FRONT + 2.8)
-        W.polyline(limbs, [base, mid, tip], [1.5, 1.15], [1.0, 0.8], "plate", uv_scale=8)
-        W.polyline(limbs, [(s * 1.9, Y0 + 0.25, Z_FRONT - 0.9), (s * 5.0, Y0 + 0.5, Z_FRONT - 0.2),
-                           (s * 7.7, Y0 + 0.7, Z_FRONT + 2.0)], 0.4, 0.55, "frost", uv_scale=10)
-        W.polyline(limbs, [(s * 2.0, Y0 + 0.75, Z_FRONT - 0.1), (s * 5.0, Y0 + 0.95, Z_FRONT + 0.55),
-                           (s * 7.6, Y0 + 1.1, Z_FRONT + 2.6)], 0.22, 0.14, "glow", uv_scale=12)
-        # 滑車と氷晶の弓端
-        W.octa(limbs, tip, 1.5, 1.2, "navy", axis="y", uv_scale=10)
-        W.octa(limbs, (tip[0], tip[1] + 0.65, tip[2]), 0.8, 0.2, "glow", axis="y", uv_scale=12)
-        crystal(limbs, (tip[0] + s * 0.3, tip[1], tip[2] + 0.2), (s * 0.85, 0.12, 0.5), 3.4, 0.95, "ice",
+        segs = W.polyline(lb, [base, mid, tip], [1.5, 1.15], [1.0, 0.8], "plate", uv_scale=8)
+        W.polyline(lb, [(s * 1.9, Y0 + 0.25, Z_FRONT - 0.9), (s * 5.0, Y0 + 0.5, Z_FRONT - 0.2),
+                        (s * 7.7, Y0 + 0.7, Z_FRONT + 2.0)], 0.4, 0.55, "frost", uv_scale=10)
+        W.polyline(lb, [(s * 2.0, Y0 + 0.75, Z_FRONT - 0.1), (s * 5.0, Y0 + 0.95, Z_FRONT + 0.55),
+                        (s * 7.6, Y0 + 1.1, Z_FRONT + 2.6)], 0.22, 0.16, "glow", uv_scale=12)
+        # 重ね板（青緑）とリベット、関節の軸と霜の ◆
+        for seg in segs:
+            stick(lb, seg, "down", 0.5, 0.5, (1.0, 2.2, 0.2), "plate2", sink=0.05, uv_scale=8)
+        W.octa(lb, (mid[0], mid[1] + 0.05, mid[2]), 1.1, 1.3, "frame", axis="y", uv_scale=10)
+        diamond(lb, (mid[0], mid[1] + 0.72, mid[2]), 0.8, 0.2, "frost", (90, 0, 0), uv_scale=FINE)
+        # 滑車（紺）・ボルトの輪・光る軸と氷晶の弓端
+        W.octa(lb, tip, 1.5, 1.2, "navy", axis="y", uv_scale=10)
+        W.octa(lb, (tip[0], tip[1] + 0.65, tip[2]), 0.8, 0.2, "glow", axis="y", uv_scale=12)
+        W.ring(lb, (tip[0], tip[1] + 0.68, tip[2]), 0.62, 4, (0.2, 0.2, 0.16), "rivet", axis="y",
+               phase=45, uv_scale=FINE)
+        crystal(lb, (tip[0] + s * 0.3, tip[1], tip[2] + 0.2), (s * 0.85, 0.12, 0.5), 3.4, 0.95, "ice",
                 uv_scale=10)
-        # 弦（滑車から矢の尻へ）
-        W.beam(limbs, (s * 7.8, Y0 + 0.75, Z_FRONT + 2.7), (s * 0.15, Y0 + 2.0, Z_NOCK), 0.18, 0.18, "edge",
+        crystal(lb, (tip[0] + s * 0.2, tip[1] + 0.2, tip[2] + 0.6), (s * 0.4, 0.5, 0.9), 1.6, 0.45,
+                "crystal", tip=0.5, uv_scale=FINE)
+        # 弦（滑車から矢の尻へ）と留め具
+        W.beam(lb, (s * 7.8, Y0 + 0.75, Z_FRONT + 2.7), (s * 0.15, Y0 + 2.0, Z_NOCK), 0.18, 0.18, "edge",
                uv_scale=12)
+        W.cbox(lb, (s * 7.55, Y0 + 0.78, Z_FRONT + 2.95), (0.4, 0.4, 0.4), "rim", uv_scale=FINE)
 
-    # =====================================================================
-    #  form_3_bolt — 装填された絶対零度の矢
-    # =====================================================================
+
+def bolt(m, root):
+    """form_3_bolt — 装填された絶対零度の矢。"""
     YB = Y0 + 2.05
-    bolt = W.form(m, root, 3, "bolt", (0, YB, Z_NOCK))
-    gb = W.glow(m, bolt, "bolt", (0, YB, Z_NOCK - 5.0))
+    bt = W.form(m, root, 3, "bolt", (0, YB, Z_NOCK))
+    gb = W.glow(m, bt, "bolt", (0, YB, Z_NOCK - 5.0))
     W.beam(gb, (0, YB, Z_NOCK), (0, YB, Z_MUZ - 0.6), 0.34, 0.34, "ice", uv_scale=10)
+    W.beam(gb, (0, YB + 0.12, Z_NOCK - 1.4), (0, YB + 0.12, Z_MUZ + 0.6), 0.16, 0.16, "energy",
+           uv_scale=FINE)                                                                 # 光る象嵌
+    for z in (Z_NOCK - 1.25, -9.2, Z_MUZ + 0.4):
+        W.octa(gb, (0, YB, z), 0.5, 0.22, "frost", uv_scale=FINE)                      # 霜の帯
     crystal(gb, (0, YB, Z_MUZ - 0.4), (0, 0, -1), 2.6, 0.85, "crystal", tip=0.55, uv_scale=12)
-    diamond(gb, (0, YB, Z_NOCK - 0.6), 1.1, 0.14, "ice", (0, 90, 0), uv_scale=12)     # 矢羽根（縦）
-    diamond(gb, (0, YB, Z_NOCK - 0.6), 1.1, 0.14, "ice", (90, 0, 0), uv_scale=12)     # 矢羽根（横）
+    W.octa(gb, (0, YB, Z_MUZ - 0.45), 0.98, 0.3, "rim", uv_scale=FINE)
+    diamond(gb, (0, YB, Z_NOCK - 0.6), 1.1, 0.16, "ice", (0, 90, 0), uv_scale=12)     # 矢羽根（縦）
+    diamond(gb, (0, YB, Z_NOCK - 0.6), 1.1, 0.16, "ice", (90, 0, 0), uv_scale=12)     # 矢羽根（横）
+    W.cbox(gb, (0, YB, Z_NOCK + 0.1), (0.42, 0.42, 0.3), "navy", uv_scale=FINE)          # 筈
 
-    # =====================================================================
-    #  form_4_ring — 銃口の前で傾いて回る小さな環
-    # =====================================================================
+
+def tilt_ring(m, root):
+    """form_4_ring — 銃口の前で傾いて回る小さな環（光の帯・紺の帯・5 つの氷の衛星・逆へ回る氷の塵）。"""
     C = (0, Y0 + 0.6, Z_RING)
     rg = W.form(m, root, 4, "ring", C, rotation=TILT)
     sp = W.spin(m, rg, "tilt", C)
-    W.ring(sp, C, 2.8, 16, (0, 0.42, 0.34), "ringglow", axis="z", styles=["ringglow", "ice"], uv_scale=10)
-    W.ring(sp, C, 2.2, 16, (0, 0.55, 0.5), "ringband", axis="z", styles=["ringband", "navy"], uv_scale=10)
-    for k in range(3):
-        a = math.radians(k * 120 + 30)
+    W.ring(sp, C, 2.8, 20, (0, 0.36, 0.32), "ringglow", axis="z", styles=["ringglow"] * 3 + ["ice"],
+           uv_scale=10)
+    W.ring(sp, C, 2.25, 12, (0, 0.5, 0.46), "ringband", axis="z", styles=["ringband", "navy"],
+           uv_scale=10)
+    for k in range(5):
+        a = math.radians(k * 72 + 30)
         M = (C[0] - 2.8 * math.sin(a), C[1] + 2.8 * math.cos(a), C[2])
-        W.rbox(sp, M, (0.8, 0.8, 0.8), "crystal", rot=(45, 0, 45), uv_scale=14)
+        moon(sp, M, 0.4 if k % 2 else 0.33)
+    du = W.spin(m, rg, "dust", C)
+    W.ring(du, C, 3.35, 10, (0.36, 0.2, 0.2), "ice", axis="z", uv_scale=FINE)
 
 
 # ===========================================================================
@@ -144,9 +227,10 @@ def build_core(m, root):
     globe = W.form(m, root, 0, "globe", (0, 0, 0), rotation=CORE_TILT)
     gs = W.spin(m, globe, "globe", (0, 0, 0))
     W.sphere(gs, (0, 0, 0), 1.6, "globe", uv_scale=16)
-    # 籠: 正面向きの輪（紺と青緑）・上下の極の冠（淡い八角 + 霜の ◆ + 宝玉）・左右の留め具
+    # 籠: 正面向きの輪（紺と青緑）・上下の極の冠（淡い八角 + 霜の ◆ + 宝玉）・左右の留め具と発光・リベット
     cage = W.form(m, root, 1, "cage", (0, 0, 0))
     W.ring(cage, (0, 0, 0), 3.1, 16, (0, 0.42, 0.7), "navy", axis="z", styles=["navy", "plate2"], uv_scale=8)
+    W.ring(cage, (0, 0, 0), 3.1, 8, (0.22, 0.2, 0.86), "rim", axis="z", phase=11.25, uv_scale=14)
     for s in (-1, 1):
         y = s * 3.25
         W.octa(cage, (0, y, 0), 1.6, 0.8, "plate", axis="y", uv_scale=10)
@@ -190,6 +274,8 @@ def CORE_STYLES(key):
 WEAPON_ANIMS = {
     "idle": {
         "fx_spin_tilt": {"rotation": [0, 0, "q.anim_time * 120.0"]},
+        "fx_spin_dust": {"rotation": [0, 0, "q.anim_time * -60.0"]},
+        "fx_spin_sight": {"rotation": [0, 0, "q.anim_time * 180.0"]},
         "fx_glow_bolt": W.pulse_expr(180, 0.05),
     },
     "swing": {

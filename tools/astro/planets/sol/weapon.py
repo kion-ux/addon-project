@@ -5,11 +5,13 @@
 武器空間: 握りの中心 = 原点、刃先 = -Z、刃の幅 = ±Y、刃の平の法線 = ±X（16 単位 = 1 ブロック）。
 握りの前後 ±3.0 は篭手に隠れるので、鍔は z = -3.3 より先、柄頭は z = +4.2 より後ろに置く。
 
-  form_0_grip    紅の柄巻・金の口金・柄頭の小さな太陽（金の光条の冠）
-  form_1_guard   太陽フレアの形に反り返る金の鍔（二重の翼と発光の筋）・中央の金の輪に浮かぶ小さな太陽
-                 （fx_spin_sun が自転）・翼の先で揺れる紅炎（fx_glow_guard）・刃を受ける発振器
-  form_2_blade   刃（鍔から z 方向へ伸びる）: 紅の金属の背骨と金の節・両側のプラズマの刃（fx_glow_blade）・
-                 刃先へ向かって反った炎の舌の歯（縁の切り欠きが炎の形になる）・プラズマの切先
+  form_0_grip    紅の柄巻・金の口金と巻きの輪・柄頭の小さな太陽と、その周りを回る光条の冠（fx_spin_crown）・
+                 柄頭の宝玉・台座の鋲
+  form_1_guard   太陽フレアの形に反り返る金の鍔（二重の翼・彫りの溝・発光の筋・付け根と肘の鋲・翼の先の発振口）・
+                 中央の金の輪（縁の鋲）に浮かぶ小さな太陽（fx_spin_sun が自転）・翼の先で揺れる紅炎（fx_glow_guard）・
+                 刃を受ける発振器（四隅の鋲と放熱の光）
+  form_2_blade   刃（鍔から z 方向へ伸びる）: 紅の金属の背骨と金の節・彫りの溝に光る日輪の象嵌・背骨の縁の発振突起・
+                 両側のプラズマの刃（fx_glow_blade）・刃先へ反った炎の舌の歯と、歯の間に散る火の粉・プラズマの切先
 """
 from __future__ import annotations
 
@@ -62,6 +64,24 @@ def build_weapon(m, root):
     W.octa(grip, (0, 0, 4.5), 1.7, 0.8, "spine", uv_scale=8)               # 柄頭の台（紅）
     W.sphere(grip, (0, 0, 5.45), 0.85, "sun", uv_scale=14)                  # 柄頭の小さな太陽
     W.ring(grip, (0, 0, 5.35), 0.95, 6, (0, 0.22, 0.3), "gold", axis="z", uv_scale=12)
+    for z in (-1.9, 2.3):                                                   # 柄巻の輪
+        W.octa(grip, (0, 0, z), 2.02, 0.26, "gold", uv_scale=10)
+    for a in range(4):                                                      # 台座の鋲
+        t = math.radians(a * 90 + 45)
+        W.cbox(grip, (0.78 * math.cos(t), 0.78 * math.sin(t), 4.5), (0.26, 0.26, 0.26), "rivet",
+               rotation=(0, 0, a * 90 + 45), uv_scale=12)
+    W.cbox(grip, (0, 0, 6.42), (0.5, 0.5, 0.4), "gem", rotation=(0, 0, 45), uv_scale=12)   # 柄頭の宝玉
+    # 柄頭の太陽の周りを回る光条の冠（金の棘と炎の棘が交互）
+    cr = W.spin(m, grip, "crown", (0, 0, 5.45))
+    for i in range(6):
+        a = i * 60.0
+        Rm = rot(0, 0, a)
+        u = Rm @ np.array([0.0, 1.0, 0.0])
+        if i % 2 == 0:
+            mat_cube(cr, u * 1.42 + np.array([0, 0, 5.45]), (0.32, 0.62, 0.26), "gold", Rm, uv_scale=12)
+        else:
+            mat_cube(cr, u * 1.38 + np.array([0, 0, 5.45]), (0.36, 0.56, 0.24), "flame_t", Rm,
+                     uv_scale=12)
 
     # ---- form_1_guard: 太陽フレアの鍔・中央の太陽 ------------------------------------------
     guard = W.form(m, root, 1, "guard", (0, 0, -3.6))
@@ -70,6 +90,10 @@ def build_weapon(m, root):
     W.sphere(sun, (0, 0, zc), 1.7, "sun", uv_scale=14)
     for s in (-1, 1):                                                       # 太陽を囲む金の輪（両面）
         W.ring(guard, (s * 0.72, 0, zc), 2.45, 14, (0, 0.46, 0.38), "gold", axis="x", uv_scale=10)
+        for k in range(6):                                                  # 輪の縁の鋲
+            t = math.radians(k * 60 + 30)
+            W.cbox(guard, (s * 0.95, 2.45 * math.cos(t), zc - 2.45 * math.sin(t)), (0.16, 0.3, 0.3),
+                   "rivet", rotation=(k * 60 + 30, 0, 0), uv_scale=12)
     for s in (-1, 1):
         # 主翼: 輪から外へ張り出し、刃の側へ反り返る太陽フレアの弧（太い金 → 細い先）と、外縁の発光・内の紅
         main = [(0, s * 2.6, -4.3), (0, s * 4.5, -3.4), (0, s * 6.5, -3.9), (0, s * 7.9, -5.7),
@@ -79,6 +103,16 @@ def build_weapon(m, root):
                    [2.2, 1.9, 1.6, 1.2], [0.3, 0.3, 0.3, 0.3], "glow", uv_scale=10)
         W.polyline(guard, [(q[0], q[1] - s * 0.55, q[2] - 0.35) for q in main[1:5]],
                    [1.0, 0.9, 0.7], [0.7, 0.6, 0.5], "crimson", uv_scale=8)
+        # 翼の平に彫った溝（両面へ少しだけ出る暗い帯）
+        W.polyline(guard, [(q[0], q[1] - s * 0.05, q[2]) for q in main[1:5]],
+                   [1.86, 1.56, 1.16], [0.26, 0.26, 0.24], "dark", uv_scale=10)
+        # 翼の付け根と肘の鋲（両面）・翼の先の発振口
+        for fx in (-1, 1):
+            for (y, z, sz) in ((s * 3.2, -4.0, 0.3), (s * 3.2, -4.75, 0.3), (s * 6.55, -3.95, 0.26)):
+                W.cbox(guard, (fx * (0.98 if abs(y) < 5 else 0.8), y, z), (0.18, sz, sz), "rivet",
+                       uv_scale=12)
+        W.cbox(guard, (0, s * 7.5, -10.0), (0.5, 0.42, 0.42), "edge_hot", rotation=(45, 0, 0),
+               uv_scale=12)
         # 副翼: 輪の脇から刃の側へ細く巻く（紅）
         W.polyline(guard, [(0, s * 2.7, -6.9), (0, s * 4.1, -7.6), (0, s * 4.6, -9.2)],
                    [1.3, 0.9], [1.0, 0.7], "crimson", uv_scale=8)
@@ -93,7 +127,9 @@ def build_weapon(m, root):
     # 刃の発振器（刃を受ける黒い襟と放熱の光）
     W.cbox(guard, (0, 0, -6.95), (2.0, 4.6, 1.1), "frame", uv_scale=8)
     for s in (-1, 1):
-        W.cbox(guard, (s * 1.02, 0, -6.95), (0.1, 3.6, 0.35), "edge_hot", uv_scale=10)
+        W.cbox(guard, (s * 1.02, 0, -6.95), (0.16, 3.0, 0.35), "edge_hot", uv_scale=10)
+        for y in (-1.95, 1.95):                                             # 発振器の四隅の鋲
+            W.cbox(guard, (s * 1.04, y, -6.95), (0.18, 0.3, 0.3), "rivet", uv_scale=12)
 
     # ---- form_2_blade: 刃 ------------------------------------------------------------------
     blade = W.form(m, root, 2, "blade", (0, 0, Z_BLADE0))
@@ -103,6 +139,16 @@ def build_weapon(m, root):
     W.cbox(blade, (0, 0, zm), (1.3, SPINE_W * 2, L), "spine", uv_scale=5)
     for s in (-1, 1):
         W.cbox(blade, (0, s * 0.45, zm - 0.6), (1.36, 0.16, L - 2.4), "energy", uv_scale=8)
+    W.cbox(blade, (0, 0, zm - 0.6), (1.4, 0.26, L - 2.6), "dark", uv_scale=8)        # 中央の彫りの溝
+    # 溝に光る日輪の象嵌（両面・節の間）と、背骨の縁の発振突起
+    for z in (-8.5, -12.6, -17.8, -23.0, -28.2, -32.9):
+        for fx in (-1, 1):
+            W.cbox(blade, (fx * 0.72, 0, z), (0.16, 0.44, 0.44), "edge_hot", rotation=(45, 0, 0),
+                   uv_scale=12)
+    for z in (-12.6, -23.0):
+        for s in (-1, 1):
+            W.cbox(blade, (0, s * 0.92, z), (1.02, 0.32, 0.62), "gold", uv_scale=10)
+            W.cbox(blade, (0, s * 1.02, z), (0.5, 0.3, 0.3), "edge_hot", uv_scale=12)
     for i in range(5):
         z = -10.0 - i * 5.2
         k = 1.0 - i * 0.08
@@ -127,12 +173,16 @@ def build_weapon(m, root):
                        w0 * (1 - j * 0.3), w0 * (1 - (j + 1) * 0.3), 0.64 - j * 0.06, "flame_t", n=1)
                 ar = math.radians(a)
                 base = base + np.array([0.0, s * math.cos(ar), -math.sin(ar)]) * (Lt / 3)
+        # 歯の間に散る火の粉（小さな炎の舌）
+        for z, a0 in ((-12.2, 40), (-17.3, 44), (-22.3, 42), (-27.2, 48), (-31.4, 52)):
+            tongue(pl, (0, s * (PLASMA_W - 0.1), z), a0 if s > 0 else 180 - a0, 0.9, 0.7, 0.25,
+                   0.44, "flame_t", n=1)
     W.blade_point(pl, Z_BLADE1 + 0.05, PLASMA_W, Z_TIP, 0.8, "plasma_flat", layer=0.8, uv_scale=6)
     W.blade_point(pl, Z_BLADE1 + 0.3, 1.2, Z_TIP + 1.6, 0.86, "edge_hot", layer=0.6, uv_scale=6)
 
 
 # ===========================================================================
-#  星核: 粒状斑の小さな太陽・炎のコロナの輪・金の籠
+#  星核: 粒状斑の小さな太陽・炎のコロナの輪・金の籠（極の軸受けにボルト）
 # ===========================================================================
 def build_core(m, root):
     sun = W.form(m, root, 0, "sun", (0, 0, 0))
@@ -161,6 +211,10 @@ def build_core(m, root):
         W.octa(cage, (0, y, 0), 1.4, 0.7, "crimson", axis="y", uv_scale=10)
         W.octa(cage, (0, y + s * 0.5, 0), 0.9, 0.4, "gold", axis="y", uv_scale=10)
         W.cbox(cage, (0, y + s * 0.85, 0), (0.42, 0.45, 0.42), "gem", rotation=(0, 45, 0), uv_scale=12)
+        for k in range(4):                                                  # 軸受けのボルト
+            t = math.radians(k * 90 + 45)
+            W.cbox(cage, (0.66 * math.cos(t), y, 0.66 * math.sin(t)), (0.24, 0.32, 0.24), "rivet",
+                   rotation=(0, -(k * 90 + 45), 0), uv_scale=12)
     rb = W.spin(m, cage, "ring_b", (0, 0, 0), rotation=(26, 0, 0))
     W.ring(rb, (0, 0, 0), 3.35, 16, (0, 0.26, 0.36), "plate", axis="y", styles=["plate", "glow"],
            uv_scale=10)
@@ -193,6 +247,9 @@ def WEAPON_STYLES(key):
         crimson={"kind": "armor", "base": (178, 40, 26), "light": (236, 104, 64), "dark": (112, 22, 14),
                  "line": (64, 12, 8), "panel": 0},
         glow={"glow": (255, 170, 40), "light": (255, 246, 200)},
+        rivet={"kind": "trim", "base": (232, 200, 138), "light": (255, 246, 214), "dark": (150, 104, 52),
+               "line": (80, 46, 18), "bevel": False},
+        dark={"kind": "dark", "base": (40, 16, 12), "glow": (255, 150, 40), "line": (12, 4, 2)},
     )
 
 
@@ -205,6 +262,8 @@ def CORE_STYLES(key):
                  "line": (64, 12, 8), "panel": 0},
         gem={"glow": (255, 140, 40), "deep": (150, 20, 10)},
         glow={"glow": (255, 170, 40), "light": (255, 246, 200)},
+        rivet={"kind": "trim", "base": (232, 200, 138), "light": (255, 246, 214), "dark": (150, 104, 52),
+               "line": (80, 46, 18), "bevel": False},
     )
 
 
@@ -214,6 +273,7 @@ def CORE_STYLES(key):
 WEAPON_ANIMS = {
     "idle": {
         "fx_spin_sun": {"rotation": [0, 0, "q.anim_time * 90.0"]},
+        "fx_spin_crown": {"rotation": [0, 0, "-q.anim_time * 120.0"]},
         # プラズマの刃は太さだけ脈打つ（長さは変えない）・鍔の炎は揺らめく
         "fx_glow_blade": {"scale": ["1.0 + math.sin(q.anim_time * 240.0) * 0.06",
                                     "1.0 + math.sin(q.anim_time * 240.0) * 0.06", "1.0"]},
@@ -221,8 +281,9 @@ WEAPON_ANIMS = {
                                     "1.0 + math.sin(q.anim_time * 300.0) * 0.08"]},
     },
     "swing": {
-        # 振ると鍔の太陽が一回転ぶん加速する
+        # 振ると鍔の太陽と柄頭の冠が一回転ぶん加速する
         "fx_spin_sun": {"rotation": [0, 0, "v.astro_sw * 360.0"]},
+        "fx_spin_crown": {"rotation": [0, 0, "-v.astro_sw * 360.0"]},
     },
     "form_axes": {"form_2_blade": "z"},
 }

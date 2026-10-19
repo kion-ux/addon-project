@@ -5,10 +5,15 @@
 手に持つと 0.9 倍（astro_hold.SPEC["axe"]）。握りの前後 ±2.9 は篭手に隠れるので、
 口金は z = -3.4 より先、柄頭は z = +3.9 より後ろに置く。
 
-  form_0_grip    柄巻・真鍮の口金・重い柄頭（鈍い鉄の石突き）
-  form_1_haft    鉄の柄・回る弾み車（fx_spin_gear）・柄に沿った杭打ち機（錆色の筒・赤熱の線・二本の棒）
-  form_2_head    真紅の斧頭の台・窓から覗く火星（fx_spin_globe）・背の鈍いトゲ・先端の杭（pile。振ると突き出る）
-  form_3_blade   三日月の刃（暗い鋼の放射状の板・溶岩のように赤熱した刃先・上下の角）。-Y へ伸びて現れる
+v1.1 の細部（7 頭身のスーツに合わせた作り込み）:
+  form_0_grip    柄巻と暗い革の締め紐・鋲の打たれた真鍮の口金・真紅の柄頭（真鍮の鋲・赤熱の輪 fx_glow）・
+                 鈍い鉄の石突き
+  form_1_haft    鉄の柄（両面に溶岩の光る彫り溝）・鋲の真鍮の帯・歯の付いた弾み車（fx_spin_gear）・
+                 柄に沿った杭打ち機（錆色の筒・冷却フィン・警告の帯・両脇の圧力計・赤熱の線・鋲の蓋・二本の棒）
+  form_2_head    真紅の斧頭の台（真鍮の帯）・窓から覗く火星（fx_spin_globe）と両面の真鍮の輪・四隅の鋲・
+                 光る彫り溝・上面の小さな発光器・背の鈍いトゲ（鉄の先）・先端の杭（pile。振ると突き出る）と鋲の案内輪
+  form_3_blade   三日月の刃（暗い鋼の放射状の板・研いだ刃・溶岩のように脈打つ刃先 fx_glow_edge・上下の角と鉄の先）・
+                 刃の付け根の真紅の当て板と真鍮の縁・鋲の列・刃先に沿う光る彫り溝と放射状のひび。-Y へ伸びて現れる
 
 星核: 錆色の火星（白い極冠）を、鋲の打たれた鉄の籠（縦の二重の輪・極の重い冠・赤道の留め具）が囲み、
 傾いた真鍮の輪と、フォボス・ダイモスの小さな衛星が回る。
@@ -18,7 +23,7 @@ from __future__ import annotations
 import math
 
 import astro_weapon as W
-from astro_common import taper
+from astro_common import cable, taper
 from astro_paint import core_styles, weapon_styles
 from planets.mars import suit as S
 
@@ -50,45 +55,79 @@ def _r_in(a):
     return -b + math.sqrt(b * b - c)
 
 
+def _studs(bone, z, r, style="rivet", size=0.3, n=4, phase=0.0):
+    """Z 軸の筒（口金・帯）の周りに打つ鋲（n 個。phase=0 で ±X・±Y）。"""
+    for i in range(n):
+        a = math.radians(phase + 360.0 * i / n)
+        p = (r * math.cos(a), r * math.sin(a), z)
+        W.cbox(bone, p, (size, size, size), style, rotation=(0, 0, phase + 360.0 * i / n),
+               uv_scale=12)
+
+
 def build_weapon(m, root):
     # =====================================================================
-    #  form_0_grip — 柄巻・口金・重い柄頭
+    #  form_0_grip — 柄巻・締め紐・鋲の口金・柄頭（鋲・赤熱の輪）・石突き
     # =====================================================================
     grip = W.form(m, root, 0, "grip", (0, 0, 0))
     W.octa(grip, (0, 0, 0.35), 1.75, 7.4, "wrap", uv_scale=8)
-    for z, ln in ((-3.45, 0.7), (4.05, 0.7)):
-        W.octa(grip, (0, 0, z), 2.3, ln, "brass", uv_scale=8)
+    for z in (-1.75, 2.4):                                                 # 暗い革の締め紐
+        W.octa(grip, (0, 0, z), 1.92, 0.3, "dark", uv_scale=10)
     W.octa(grip, (0, 0, 0.35), 1.95, 0.45, "brass", uv_scale=8)
-    W.octa(grip, (0, 0, 5.15), 2.5, 1.5, "plate", uv_scale=8)            # 柄頭
-    W.cbox(grip, (0, 0, 5.15), (2.7, 0.5, 1.0), "frame", uv_scale=8)
-    W.octa(grip, (0, 0, 6.05), 1.9, 0.4, "brass", uv_scale=8)
+    for z in (-3.45, 4.05):                                                # 真鍮の口金と鋲
+        W.octa(grip, (0, 0, z), 2.3, 0.7, "brass", uv_scale=8)
+        _studs(grip, z, 1.2, "rivet", 0.28)
+    W.octa(grip, (0, 0, 5.1), 2.5, 1.3, "plate", uv_scale=8)              # 柄頭
+    W.cbox(grip, (0, 0, 5.1), (2.7, 0.5, 0.9), "frame", uv_scale=8)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            W.cbox(grip, (sx * 1.27, sy * 0.72, 5.1), (0.2, 0.3, 0.3), "brass", uv_scale=12)
+    pom = W.glow(m, grip, "pommel", (0, 0, 5.86))
+    W.octa(pom, (0, 0, 5.86), 2.2, 0.24, "edge_hot", uv_scale=10)
+    W.octa(grip, (0, 0, 6.12), 1.9, 0.4, "brass", uv_scale=8)
     W.cbox(grip, (0, 0, 6.65), (1.2, 1.2, 0.9), "iron", rotation=(0, 0, 45), uv_scale=8)   # 石突き
 
     # =====================================================================
-    #  form_1_haft — 鉄の柄・弾み車・杭打ち機
+    #  form_1_haft — 鉄の柄・光る彫り溝・弾み車・杭打ち機
     # =====================================================================
     haft = W.form(m, root, 1, "haft", (0, 0, -3.8))
     W.octa(haft, (0, 0, -9.4), 1.6, 11.4, "metal", uv_scale=6)
     for z in (-6.1, -13.4):
         W.octa(haft, (0, 0, z), 2.0, 0.5, "brass", uv_scale=8)
+        for sx in (-1, 1):
+            W.cbox(haft, (sx * 1.02, -0.3, z), (0.2, 0.28, 0.28), "rivet", uv_scale=12)
+    for sx in (-1, 1):                                                     # 両面の溶岩の彫り溝
+        W.cbox(haft, (sx * 0.79, -0.25, -9.75), (0.18, 0.22, 6.4), "edge", uv_scale=10)
     gear = W.spin(m, haft, "gear", (0, 0, -4.7))
-    W.ring(gear, (0, 0, -4.7), 1.4, 8, (0, 0.45, 0.55), "brass", axis="z", styles=["brass", "frame"],
+    W.ring(gear, (0, 0, -4.7), 1.4, 10, (0, 0.45, 0.55), "brass", axis="z", styles=["brass", "frame"],
            uv_scale=10)
+    W.ring(gear, (0, 0, -4.7), 1.78, 10, (0.36, 0.34, 0.4), "iron", axis="z", phase=18.0,
+           uv_scale=12)                                                   # 歯
     W.octa(gear, (0, 0, -4.7), 1.2, 0.4, "glow", uv_scale=10)
-    # 杭打ち機: 柄の背（+Y）に沿う錆色の筒、両端の真鍮の蓋、柄への留め具、赤熱の線、斧頭へ伸びる二本の棒
+    # 杭打ち機: 柄の背（+Y）に沿う錆色の筒、両端の鋲の蓋、冷却フィン、警告の帯、圧力計、赤熱の線、
+    # 柄への留め具、斧頭へ伸びる二本の棒
     W.octa(haft, (0, 1.95, -9.2), 2.1, 6.0, "plate2", uv_scale=7)
     for z in (-6.35, -12.05):
         W.octa(haft, (0, 1.95, z), 2.35, 0.5, "brass", uv_scale=8)
         W.cbox(haft, (0, 0.95, z), (1.1, 1.1, 0.7), "frame", uv_scale=8)
-    W.cbox(haft, (0, 1.95, -9.2), (2.25, 0.5, 3.4), "hazard", uv_scale=8)
+        for sx in (-1, 1):
+            W.cbox(haft, (sx * 1.2, 2.3, z), (0.2, 0.28, 0.28), "rivet", uv_scale=12)
+    for z in (-7.05, -11.35):
+        W.octa(haft, (0, 1.95, z), 2.4, 0.26, "frame", uv_scale=10)
+    W.cbox(haft, (0, 1.95, -9.2), (2.25, 0.5, 2.6), "hazard", uv_scale=8)
+    for sx in (-1, 1):                                                     # 圧力計（両脇）
+        W.octa(haft, (sx * 1.12, 2.15, -10.6), 0.9, 0.3, "iron", axis="x", uv_scale=12)
+        W.cbox(haft, (sx * 1.3, 2.15, -10.6), (0.16, 0.4, 0.4), "glow", uv_scale=12)
     heat = W.glow(m, haft, "heat", (0, 3.05, -9.2))
     W.cbox(heat, (0, 3.02, -9.2), (0.36, 0.2, 4.4), "edge_hot", uv_scale=10)
     for x in (-0.55, 0.55):
         W.beam(haft, (x, 1.75, -12.3), (x, 1.2, -15.3), 0.42, 0.42, "iron", uv_scale=10)
     W.cbox(haft, (0, -0.95, -9.0), (0.9, 0.3, 2.6), "vent", uv_scale=10)   # 柄の腹の排気口
+    # 蛇腹の油圧ホース（筒の前の蓋から斧頭の脇へ）
+    cable(haft, [(1.0, 2.5, -12.2), (1.25, 2.1, -13.5), (1.05, 1.6, -14.7)], 0.3, "dark",
+          rib="brass", rib_every=2, uv_scale=12)
 
     # =====================================================================
-    #  form_2_head — 斧頭の台・火星の窓・背のトゲ・杭
+    #  form_2_head — 斧頭の台・火星の窓・鋲・彫り溝・発光器・背のトゲ・杭
     # =====================================================================
     head = W.form(m, root, 2, "head", (0, 0, -14.9))
     W.bevel(head, (0, 0.3, Z_HEAD), (2.6, 4.2, 6.8), "plate", cut=0.7, axis="x", edge_style="plate_b",
@@ -98,12 +137,26 @@ def build_weapon(m, root):
     globe = W.spin(m, head, "globe", (0, 0.2, Z_HEAD))
     W.sphere(globe, (0, 0.2, Z_HEAD), 1.5, "globe", uv_scale=14)
     for s in (-1, 1):
-        W.ring(head, (s * 1.32, 0.2, Z_HEAD), 1.72, 10, (0, 0.34, 0.3), "brass", axis="x", uv_scale=10)
-    # 背の鈍いトゲ（真鍮の座金 → 先細りの鉄）
+        x = s * 1.32
+        W.ring(head, (x, 0.2, Z_HEAD), 1.72, 10, (0, 0.34, 0.3), "brass", axis="x", uv_scale=10)
+        for dz in (-2.65, 2.65):                                           # 四隅の鋲
+            for y in (-1.25, 1.75):
+                W.cbox(head, (s * 1.36, y, Z_HEAD + dz), (0.2, 0.3, 0.3), "rivet", uv_scale=12)
+        for z0, z1 in ((Z_HEAD + 2.0, Z_HEAD + 3.15), (Z_HEAD - 2.0, Z_HEAD - 3.15)):   # 光る彫り溝
+            W.cbox(head, (s * 1.33, 0.2, (z0 + z1) / 2), (0.18, 0.2, abs(z1 - z0)), "edge",
+                   uv_scale=12)
+    for z in (Z_HEAD - 2.3, Z_HEAD + 2.5):                                  # 上面の小さな発光器
+        W.cbox(head, (0, 2.44, z), (0.62, 0.16, 0.62), "dark", uv_scale=12)
+        W.cbox(head, (0, 2.5, z), (0.32, 0.16, 0.32), "glow", uv_scale=12)
+    # 背の鈍いトゲ（真鍮の座金 → 先細りの鉄 → 鉄の先）
     W.octa(head, (0, 2.55, Z_HEAD + 0.4), 2.1, 0.55, "brass", axis="y", uv_scale=8)
     taper(head, (0, 2.6, Z_HEAD + 0.4), (0, 7.0, Z_HEAD + 1.6), 1.9, 0.45, 3, "steel", uv_scale=8)
-    # 杭（先端から突き出る。振ると前へ打ち出す: WEAPON_ANIMS の swing）
+    W.octa(head, (0, 4.1, Z_HEAD + 0.82), 1.55, 0.3, "brass", axis="y", rot=(-15, 0, 0),
+           uv_scale=10)
+    W.cbox(head, (0, 7.05, Z_HEAD + 1.62), (0.5, 0.5, 0.5), "iron", rotation=(0, 45, 0), uv_scale=12)
+    # 杭（先端から突き出る。振ると前へ打ち出す: WEAPON_ANIMS の swing）と鋲の案内輪
     W.octa(head, (0, 0, Z_HEAD - 4.25), 2.0, 0.9, "frame", uv_scale=8)
+    _studs(head, Z_HEAD - 4.25, 1.05, "brass", 0.3, 4, 45.0)
     pile = W.part(m, head, "pile", (0, 0, Z_HEAD - 4.4))
     W.octa(pile, (0, 0, Z_HEAD - 5.3), 1.25, 2.0, "iron", uv_scale=8)
     W.octa(pile, (0, 0, Z_HEAD - 6.6), 0.95, 0.8, "steel", uv_scale=8)
@@ -122,30 +175,41 @@ def build_weapon(m, root):
         y2, z2 = _yz(CO, RO - 1.55, a)                                      # 研いだ刃（明るい鋼）
         y3, z3 = _yz(CO, RO, a)
         W.beam(blade, (0, y2, z2), (0, y3, z3), 0.7, 1.75, "blade", uv_scale=6)
-    # 角（上下へ反り返る先）
+    # 角（上下へ反り返る先）と鉄の先
     for s in (-1, 1):
         p0 = _yz(CO, RO - 2.0, s * 44)
         p1 = _yz(CO, RO - 1.2, s * 56)
         p2 = _yz(CO, RO - 1.8, s * 66)
         W.polyline(blade, [(0, p0[0], p0[1]), (0, p1[0], p1[1]), (0, p2[0], p2[1])], [0.86, 0.76],
                    [3.0, 1.2], "blade_body", uv_scale=6)
-    # 赤熱した刃先（外の弧に沿って）
+        W.cbox(blade, (0, p2[0], p2[1]), (0.95, 0.5, 0.5), "iron", rotation=(s * -66.0, 0, 0),
+               uv_scale=12)
+    # 赤熱した刃先（外の弧に沿って。ゆっくり脈打つ）
+    eg = W.glow(m, blade, "edge", (0, CO[0], CO[1]))
     pts = []
     for k in range(15):
         a = -63.0 + 126.0 * k / 14
         r = RO + 0.1 if abs(a) <= 46 else RO + 0.1 - (abs(a) - 46) * 0.1
         y, z = _yz(CO, r, a)
         pts.append((0, y, z))
-    W.polyline(blade, pts, 1.05, 0.62, "edge_hot", uv_scale=8)
-    # 刃の付け根の鋲の列と、放射状の溶岩のひび（両面）
-    for a in (-36, -12, 12, 36):
-        y, z = _yz(CO, _r_in(a) + 0.35, a)
-        W.cbox(blade, (0, y, z), (1.04, 0.5, 0.5), "brass", rotation=(45, 0, 0), uv_scale=12)
+    W.polyline(eg, pts, 1.05, 0.62, "edge_hot", uv_scale=8)
+    # 刃先に沿う光る彫り溝（両面に見える）と、放射状の溶岩のひび
+    arc = [(0,) + _yz(CO, 6.95, -40.0 + 80.0 * k / 7) for k in range(8)]
+    W.polyline(blade, arc, 0.98, 0.22, "edge", uv_scale=10)
     for a, r0, r1 in ((-26, 5.0, 7.4), (4, 4.6, 7.0), (30, 5.2, 7.6)):
         y0, z0 = _yz(CO, r0, a)
         y1, z1 = _yz(CO, r1, a + 6)
         W.beam(blade, (0, y0, z0), (0, y1, z1), 0.98, 0.3, "edge", uv_scale=10)
-    # 刃と台の継ぎ目の鉄の帯
+    # えぐれの縁の黒い鋼の帯（刃の内側の重ね）
+    inner = [(0,) + _yz(CO, _r_in(a) - 0.55, a) for a in (-46, -34, -22, -10, 0, 10, 22, 34, 46)]
+    W.polyline(blade, inner, 1.06, 0.4, "steel", uv_scale=10)
+    # 刃の付け根: 鋲の列・真紅の当て板と真鍮の縁（両面）・鉄の帯
+    for a in (-40, -27, -13, 0, 13, 27, 40):
+        y, z = _yz(CO, _r_in(a) + 0.35, a)
+        W.cbox(blade, (0, y, z), (1.04, 0.42, 0.42), "brass", rotation=(45, 0, 0), uv_scale=12)
+    for s in (-1, 1):
+        W.cbox(blade, (s * 0.55, -2.75, Z_HEAD), (0.24, 1.1, 5.6), "plate", uv_scale=8)
+        W.cbox(blade, (s * 0.6, -3.22, Z_HEAD), (0.2, 0.24, 5.4), "brass", uv_scale=10)
     W.cbox(blade, (0, -2.1, Z_HEAD), (1.3, 0.8, 6.4), "frame", uv_scale=8)
 
 
@@ -191,7 +255,8 @@ def build_core(m, root):
 def _common():
     st = S.SUIT_STYLES
     return {k: dict(st[k]) for k in ("plate", "plate_b", "plate2", "plate2_b", "steel", "steel_b",
-                                     "iron", "brass", "frame", "hazard", "phobos", "deimos")}
+                                     "iron", "brass", "frame", "hazard", "phobos", "deimos",
+                                     "rivet")}
 
 
 def WEAPON_STYLES(key):
@@ -218,12 +283,15 @@ def CORE_STYLES(key):
 
 # ---------------------------------------------------------------------------
 #  アニメ（アタッチャブル）。v.astro_sw 攻撃の振り 0→1 / v.astro_usew 右クリック中 0→1
-#  ループは 6 秒（idle_length）なので周波数は 60°/秒の倍数
+#  待機の q.anim_time は `q.anim_time * 度/秒` の形だけ（速さは 60°/秒の倍数にそろえてループを短く）
 # ---------------------------------------------------------------------------
 WEAPON_ANIMS = {
     "idle": {
         "fx_spin_gear": {"rotation": [0, 0, "q.anim_time * 120.0"]},
         "fx_spin_globe": {"rotation": ["q.anim_time * 60.0", 0, 0]},
+        "fx_glow_heat": W.pulse_expr(180, 0.06),
+        "fx_glow_pommel": W.pulse_expr(120, 0.05),
+        "fx_glow_edge": W.pulse_expr(60, 0.012),      # 刃先の溶岩がゆっくり脈打つ（弧の中心まわり）
     },
     "swing": {
         # 振り下ろした瞬間に杭が打ち出され、弾み車が一回転する

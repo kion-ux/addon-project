@@ -54,46 +54,74 @@ def width(t):
 
 def build_weapon(m, root):
     # =====================================================================
-    #  form_0_grip — 柄・口金・柄頭（水銀の雫）
+    #  form_0_grip — 柄・口金・柄頭（水銀の雫を三本の爪と光の冠が抱き、小さな滴が周りを回る）
     # =====================================================================
     grip = W.form(m, root, 0, "grip", (0, 0, 0))
     W.octa(grip, (0, 0, 0.25), 1.6, 6.6, "wrap", uv_scale=8)
     for z, ln in ((-3.25, 0.7), (3.75, 0.7)):
         W.octa(grip, (0, 0, z), 2.15, ln, "chrome", uv_scale=8)
     W.octa(grip, (0, 0, 0.25), 1.8, 0.4, "chrome", uv_scale=8)
-    # 柄頭: 細い首 → 三本の爪 → 水銀の雫（後ろへ尖る）
+    for z in (-1.6, 2.1):                                                 # 柄巻の締め輪
+        W.octa(grip, (0, 0, z), 1.74, 0.26, "frame", uv_scale=10)
+    for sx in (-1, 1):                                                    # 目貫（柄の両側の菱形）
+        W.rbox(grip, (sx * 0.8, 0, 0.95), (0.2, 0.62, 0.62), "chrome", rot=(45, 0, 0), uv_scale=12)
+    # 柄頭: 細い首 → 締め輪 → 三本の爪 → 水銀の雫（後ろへ尖る）
     W.octa(grip, (0, 0, 4.5), 1.3, 0.9, "frame", uv_scale=10)
+    W.octa(grip, (0, 0, 4.15), 1.7, 0.3, "chrome", uv_scale=10)
     for k in range(3):
         a = math.radians(k * 120 + 90)
         p0 = (math.cos(a) * 0.55, math.sin(a) * 0.55, 4.7)
         p1 = (math.cos(a) * 1.25, math.sin(a) * 1.25, 5.8)
         p2 = (math.cos(a) * 0.7, math.sin(a) * 0.7, 6.9)
         W.polyline(grip, [p0, p1, p2], 0.32, 0.32, "chrome", uv_scale=12)
+        W.cbox(grip, p1, (0.36, 0.36, 0.36), "glow_night", uv_scale=16)    # 爪の節の灯り
     drop = W.glow(m, grip, "drop", (0, 0, 5.9))
     W.sphere(drop, (0, 0, 5.9), 1.0, "drop", uv_scale=14)
     W.beam(drop, (0, 0, 6.7), (0, 0, 7.9), 0.9, 0.9, "drop", uv_scale=14)
     W.cbox(drop, (0, 0, 8.05), (0.45, 0.45, 0.5), "drop", rotation=(0, 0, 45), uv_scale=14)
+    W.ring(drop, (0, 0, 5.75), 1.38, 6, (0.5, 0.18, 0.22), "glow_night", axis="z",
+           styles=["glow_night", "chrome"], uv_scale=14)                 # 爪の光の冠
+    # 柄頭の周りを回る三つの小さな滴（液体金属の衛星）
+    orb = W.spin(m, grip, "orbit", (0, 0, 6.35))
+    for k in range(3):
+        a = math.radians(k * 120 + 30)
+        c = (math.cos(a) * 1.85, math.sin(a) * 1.85, 6.35)
+        W.cbox(orb, c, (0.46, 0.46, 0.46), "drop", uv_scale=16)
+        W.rbox(orb, c, (0.4, 0.4, 0.4), "drop", rot=(45, 45, 0), uv_scale=16)
 
     # =====================================================================
-    #  form_1_guard — 鍔・冷却フィンのタービン・放熱口
+    #  form_1_guard — 鍔（鏡面の芯 + 両面の銀の板・放熱スリット・リベット）・上下の放射口・冷却フィン
     # =====================================================================
     guard = W.form(m, root, 1, "guard", (0, 0, -3.4))
     W.bevel(guard, (0, 0, -4.0), (1.9, 3.4, 1.4), "chrome", cut=0.45, axis="z",
             edge_style="chrome2", uv_scale=8)
     W.octa(guard, (0, 0, -4.9), 2.2, 0.6, "frame", uv_scale=8)            # 刃を受ける襟
-    for s, st in ((-1, "glow_day"), (1, "glow_night")):                  # 放熱口（昼 / 夜）
-        W.cbox(guard, (s * 0.97, 0, -4.0), (0.1, 2.2, 0.5), st, uv_scale=12)
+    W.chamfer(guard, (0, 0, -3.36), (1.55, 2.9, 0.24), "frame", cut=0.3, axis="z", uv_scale=10)
+    for sx, st in ((-1, "glow_day"), (1, "glow_night")):                 # 昼（-X）と夜（+X）の面
+        W.cbox(guard, (sx * 1.02, 0, -4.0), (0.2, 2.3, 1.0), "plate", uv_scale=10)
+        for y in (-0.62, 0.0, 0.62):                                     # 放熱スリット
+            W.cbox(guard, (sx * 1.15, y, -4.02), (0.16, 0.24, 0.62), st, uv_scale=14)
+        for y in (-0.95, 0.95):
+            for z in (-3.67, -4.35):
+                W.cbox(guard, (sx * 1.15, y, z), (0.16, 0.24, 0.24), "rivet", uv_scale=16)
+    for sy, st in ((1, "glow_night"), (-1, "glow_day")):                 # 上下（峰・刃の側）の放射口
+        W.octa(guard, (0, sy * 1.95, -4.0), 0.78, 0.5, "frame", axis="y", uv_scale=12)
+        W.cbox(guard, (0, sy * 2.26, -4.0), (0.42, 0.16, 0.42), st, uv_scale=16)
     # 鍔の外周の細い輪（静止）
     W.ring(guard, (0, 0, -4.15), 2.4, 14, (0, 0.26, 0.55), "chrome", axis="z", uv_scale=10)
-    # 冷却フィン: 刃の軸まわりに回る六枚の放熱板（ねじれた羽根）
+    W.ring(guard, (0, 0, -4.15), 2.4, 4, (0.36, 0.4, 0.66), "glow_day", axis="z", phase=45,
+           styles=["glow_day", "glow_day", "glow_night", "glow_night"], uv_scale=16)  # 輪の灯り
+    # 冷却フィン: 刃の軸まわりに回る六枚の放熱板（ねじれた羽根。先が昼と夜に交互に光る）
     fins = W.spin(m, guard, "fins", (0, 0, -4.15))
     for k in range(6):
         a = k * 60.0
-        c = (math.cos(math.radians(a)) * 1.55, math.sin(math.radians(a)) * 1.55, -4.15)
-        # 半径方向に長い板を軸まわりに a 度、羽根のねじれ 30°
-        W.rbox(fins, c, (1.35, 0.26, 1.2), "fin", rot=(30, 0, -a), uv_scale=10)
+        ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
+        W.rbox(fins, (ca * 1.5, sa * 1.5, -4.15), (1.25, 0.26, 1.2), "fin", rot=(30, 0, -a),
+               uv_scale=10)
+        W.rbox(fins, (ca * 2.08, sa * 2.08, -4.15), (0.28, 0.2, 0.62),
+               "glow_day" if k % 2 else "glow_night", rot=(30, 0, -a), uv_scale=16)
     W.octa(fins, (0, 0, -4.15), 1.5, 1.1, "frame", uv_scale=10)          # フィンの軸
-    W.ring(fins, (0, 0, -4.15), 1.05, 8, (0, 0.14, 0.2), "glow_soft", axis="z", uv_scale=12)
+    W.ring(fins, (0, 0, -4.15), 1.05, 8, (0, 0.16, 0.2), "glow_soft", axis="z", uv_scale=12)
 
     # =====================================================================
     #  form_2_blade — 反りのある片刃（-Y が刃）
@@ -115,12 +143,18 @@ def build_weapon(m, root):
                    "spine", extend=0.12, uv_scale=8)
             W.beam(blade, p0 - n0 * (w / 2 - 0.05), p1 - n1 * (w / 2 - 0.05), THICK * 0.7, 0.5,
                    "edge", extend=0.12, uv_scale=8)
-            # 樋（峰寄りの暗い溝）とその芯の光
             if i < N_SEG - 2:
+                # 樋（峰寄りの暗い溝）とその芯の光、刃寄りの細い彫りの溝
                 W.beam(blade, p0 + n0 * (w * 0.18), p1 + n1 * (w * 0.18), THICK + 0.1, 0.36,
                        "dark", extend=0.12, uv_scale=8)
-                W.beam(blade, p0 + n0 * (w * 0.18), p1 + n1 * (w * 0.18), THICK + 0.14, 0.12,
+                W.beam(blade, p0 + n0 * (w * 0.18), p1 + n1 * (w * 0.18), THICK + 0.14, 0.16,
                        "energy", extend=0.0, uv_scale=8)
+                W.beam(blade, p0 - n0 * (w * 0.17), p1 - n1 * (w * 0.17), THICK + 0.06, 0.18,
+                       "dark", extend=0.04, uv_scale=10)
+            if 1 <= i <= 4:
+                # 峰の帯に象嵌した夜側の光の筋
+                W.beam(blade, p0 + n0 * (w / 2 - 0.2), p1 + n1 * (w / 2 - 0.2), THICK + 0.14, 0.16,
+                       "glow_night", extend=-0.3, uv_scale=10)
         else:
             # 切先: 刃が峰へ反り上がる三角（峰の線の延長が頂点）
             tip = centre(1.0) + spine_dir(1.0) * (w / 2) + np.array([0, 0, -0.6])
@@ -130,31 +164,73 @@ def build_weapon(m, root):
                           uv_scale=6)
             W.beam(blade, ed - n0 * 0.2, tip, THICK * 0.7, 0.42, "edge", extend=0.2, uv_scale=8)
             W.beam(blade, sp, tip, THICK + 0.08, 0.32, "spine", extend=0.2, uv_scale=8)
+            # 横手（切先の付け根を横切る鏡面の稜）
+            W.beam(blade, p0 - n0 * (w / 2 - 0.3), p0 + n0 * (w / 2 - 0.25), THICK + 0.06, 0.16,
+                   "spine", uv_scale=10)
     # 平を横切る波紋の筋（液体金属の波。刃から峰へ斜めに、先へ行くほど細かく）
-    for t in (0.14, 0.3, 0.46, 0.62):
+    for t in (0.14, 0.3, 0.46, 0.62, 0.76):
         c = centre(t)
         n = spine_dir(t)
         w = width(t)
         a = c - n * (w / 2 - 0.45) + np.array([0, 0, 0.5])
         b = c + n * (w / 2 - 0.55) + np.array([0, 0, -0.7])
         W.beam(blade, a, b, THICK + 0.06, 0.16, "ripple", uv_scale=10)
-    # 刃元: 液体金属が鍔から流れ出す鏡面の段
+    # 峰の三つの小さな放射口（暗い台 + 夜側の光）
+    for t in (0.32, 0.5, 0.68):
+        c = centre(t)
+        n = spine_dir(t)
+        d = centre(t + 0.02) - centre(t - 0.02)
+        d = d / np.linalg.norm(d)
+        a = c + n * (width(t) / 2 + 0.12)
+        W.beam(blade, a - d * 0.4, a + d * 0.4, THICK * 0.7, 0.3, "frame", uv_scale=14)
+        W.beam(blade, a + n * 0.18 - d * 0.22, a + n * 0.18 + d * 0.22, THICK * 0.45, 0.16,
+               "glow_night", uv_scale=16)
+    # 峰の根元の三つの歯（液体金属が固まった鋸）
+    for t in (0.05, 0.1, 0.15):
+        c = centre(t) + spine_dir(t) * (width(t) / 2 + 0.05)
+        W.rbox(blade, tuple(c), (THICK * 0.6, 0.42, 0.42), "chrome", rot=(45, 0, 0), uv_scale=14)
+    # 刃元: 液体金属が鍔から流れ出す鏡面の段と、ハバキ（鏡面の襟・暗い帯・両面の目釘）
     for s in (-1, 1):
         W.beam(blade, (s * 0.2, 0.9, -5.2), (s * 0.2, 1.1, -7.6), 0.5, 0.9, "chrome", uv_scale=8)
+    W.chamfer(blade, (0, 0.05, -5.75), (THICK + 0.42, W0 + 0.3, 0.9), "chrome", cut=0.24, axis="z",
+              uv_scale=10)
+    W.cbox(blade, (0, 0.05, -6.28), (THICK + 0.5, W0 + 0.1, 0.24), "frame", uv_scale=12)
+    for sx in (-1, 1):
+        for y in (-0.7, 0.7):
+            W.cbox(blade, (sx * (THICK / 2 + 0.26), y + 0.05, -5.75), (0.16, 0.26, 0.26), "rivet",
+                   uv_scale=16)
+    # 刃寄りの溝に象嵌した光（昼と夜が交互に脈打つ）
+    inl = W.glow(m, blade, "inlay", (0, 0, Z0))
+    for k, t in enumerate((0.1, 0.26, 0.42, 0.58, 0.72)):
+        c = centre(t) - spine_dir(t) * (width(t) * 0.17)
+        W.rbox(inl, tuple(c), (THICK + 0.2, 0.3, 0.3), "glow_day" if k % 2 == 0 else "glow_night",
+               rot=(45, 0, 0), uv_scale=16)
 
     # =====================================================================
-    #  form_3_wings — 鍔の両脇から刃に沿って前へ流れるヘルメスの小翼
+    #  form_3_wings — 鍔の両脇から刃に沿って前へ流れるヘルメスの小翼（四枚の羽根・付け根の留め具）
     # =====================================================================
     wings = W.form(m, root, 3, "wings", (0, 0, -4.2))
     for s in (-1, 1):
+        gl = "glow_day" if s < 0 else "glow_night"
         base = np.array([s * 1.05, 0.9, -4.3])
+        W.cbox(wings, tuple(base + np.array([s * 0.08, 0.15, -0.1])), (0.5, 0.7, 0.7), "frame",
+               uv_scale=12)
         for k, (tip, st) in enumerate((((s * 2.1, 3.6, -8.4), "plate"),
                                        ((s * 2.3, 2.6, -9.2), "chrome"),
-                                       ((s * 2.0, 1.5, -8.6), "plate"))):
+                                       ((s * 2.0, 1.5, -8.6), "plate"),
+                                       ((s * 1.75, 0.75, -7.4), "chrome"))):
             W.beam(wings, base + np.array([0, -0.4 * k, 0.1 * k]), tip, 0.26, 0.7 - 0.1 * k, st,
                    uv_scale=10)
-        W.beam(wings, base + np.array([0, 0.35, 0]), (s * 2.15, 3.95, -8.5), 0.3, 0.14,
-               "glow_day" if s < 0 else "glow_night", uv_scale=12)
+        for tip in ((s * 1.6, 2.55, -6.4), (s * 1.55, 1.45, -6.2)):        # 付け根の雨覆
+            W.beam(wings, base + np.array([s * 0.05, -0.1, -0.2]), tip, 0.3, 0.85, "chrome2",
+                   uv_scale=10)
+        W.beam(wings, base + np.array([0, 0.35, 0]), (s * 2.15, 3.95, -8.5), 0.3, 0.16, gl,
+               uv_scale=12)
+        W.beam(wings, base + np.array([0, -0.15, 0.05]), (s * 2.35, 2.95, -9.25), 0.3, 0.16, gl,
+               uv_scale=12)
+        for y in (0.75, 1.3):                                               # 留め具のピン
+            W.cbox(wings, (s * 1.38, y, -4.35), (0.16, 0.22, 0.22), "rivet", uv_scale=16)
+        W.cbox(wings, (s * 2.32, 2.62, -9.25), (0.3, 0.3, 0.3), gl, uv_scale=16)
 
 
 def build_core(m, root):
@@ -178,6 +254,7 @@ def build_core(m, root):
         W.octa(cage, (0, s * 3.35, 0), 0.6, 0.4, "frame", axis="y", uv_scale=12)
         W.cbox(cage, (0, s * 3.7, 0), (0.36, 0.5, 0.36), "gem", rotation=(0, 45, 0), uv_scale=14)
         W.beam(cage, (0, s * 2.75, 0), (0, s * 2.05, 0), 0.22, 0.22, "glow", uv_scale=14)
+        W.octa(cage, (0, s * 2.62, 0), 0.62, 0.24, "frame", axis="y", uv_scale=14)  # 極の締め輪
     # 二重の輪: 縦の輪 A（極を通る）と、傾いた輪 B（首を振って回る）。輪 A には液体金属の滴が乗る
     rings = W.form(m, root, 2, "rings", (0, 0, 0))
     ra = W.spin(m, rings, "ring_a", (0, 0, 0))
@@ -190,6 +267,11 @@ def build_core(m, root):
     rb = W.spin(m, rings, "ring_b", (0, 0, 0), rotation=(22, 0, -12))
     W.ring(rb, (0, 0, 0), 2.35, 10, (0, 0.2, 0.26), "silver", axis="y",
            styles=["silver", "silver", "glow_day"], uv_scale=10)
+    for a in (60, 240):                      # 輪 B に乗る小さな滴（角を落とした 2 個）
+        t = math.radians(a)
+        c = (-2.35 * math.sin(t), 0, -2.35 * math.cos(t))
+        W.cbox(rb, c, (0.6, 0.6, 0.6), "drop", uv_scale=16)
+        W.rbox(rb, c, (0.52, 0.52, 0.52), "drop", rot=(45, 45, 0), uv_scale=16)
 
 
 # ---------------------------------------------------------------------------
@@ -258,11 +340,14 @@ def CORE_STYLES(key):
 WEAPON_ANIMS = {
     "idle": {
         "fx_spin_fins": {"rotation": [0, 0, "q.anim_time * 240.0"]},
+        "fx_spin_orbit": {"rotation": [0, 0, "-q.anim_time * 180.0"]},
         "fx_glow_drop": W.pulse_expr(180, 0.06),
+        "fx_glow_inlay": W.pulse_expr(240, 0.08),
     },
     "swing": {
-        # 振るとフィンが一気に回って熱を吐く
+        # 振るとフィンが一気に回って熱を吐き、柄頭の滴が一周する
         "fx_spin_fins": {"rotation": [0, 0, "v.astro_sw * 720.0"]},
+        "fx_spin_orbit": {"rotation": [0, 0, "-v.astro_sw * 360.0"]},
     },
     "form_axes": {"form_2_blade": "z", "form_3_wings": "z"},
 }

@@ -134,6 +134,13 @@
             "-q.anim_time * 120.0",
             0
           ]
+        },
+        "fx_spin_luna": {
+          "rotation": [
+            0,
+            "q.anim_time * 120.0",
+            0
+          ]
         }
       }
     },
@@ -184,6 +191,13 @@
           "rotation": [
             0,
             "v.astro_usespin",
+            0
+          ]
+        },
+        "fx_spin_luna": {
+          "rotation": [
+            0,
+            "-v.astro_usespin",
             0
           ]
         }
@@ -1759,7 +1773,7 @@
     },
     "animation.astro.weapon.earth.idle": {
       "loop": true,
-      "animation_length": 180.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -1772,14 +1786,28 @@
           "rotation": [
             0,
             0,
-            "q.anim_time * 140.0"
+            "q.anim_time * 150.0"
           ]
         },
         "fx_spin_globe": {
           "rotation": [
-            "q.anim_time * 36.0",
+            "q.anim_time * 30.0",
             0,
             0
+          ]
+        },
+        "fx_spin_bezel": {
+          "rotation": [
+            "-q.anim_time * 60.0",
+            0,
+            0
+          ]
+        },
+        "fx_glow_core": {
+          "scale": [
+            "1.0 + math.sin(q.anim_time * 240.0) * 0.14",
+            "1.0 + math.sin(q.anim_time * 240.0) * 0.22",
+            "1.0"
           ]
         }
       }
@@ -1967,7 +1995,7 @@
     },
     "animation.astro.weapon.jupiter.idle": {
       "loop": true,
-      "animation_length": 8.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -1995,6 +2023,27 @@
         },
         "fx_glow_emit_lo": {
           "scale": "1 + math.sin(q.anim_time * 360) * 0.08"
+        },
+        "fx_spin_helix": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 120.0"
+          ]
+        },
+        "fx_spin_globe_r": {
+          "rotation": [
+            0,
+            "q.anim_time * 60.0",
+            0
+          ]
+        },
+        "fx_spin_globe_l": {
+          "rotation": [
+            0,
+            "-q.anim_time * 60.0",
+            0
+          ]
         }
       }
     },
@@ -2020,6 +2069,13 @@
             0,
             "-v.astro_sw * 720.0",
             0
+          ]
+        },
+        "fx_spin_helix": {
+          "rotation": [
+            0,
+            0,
+            "v.astro_sw * 360.0"
           ]
         }
       }
@@ -2173,9 +2229,6 @@
             0
           ]
         },
-        "fx_glow_heat": {
-          "scale": "1 + math.sin(q.anim_time * 150) * 0.06"
-        },
         "fx_spin_gear": {
           "rotation": [
             0,
@@ -2189,6 +2242,15 @@
             0,
             0
           ]
+        },
+        "fx_glow_heat": {
+          "scale": "1 + math.sin(q.anim_time * 180) * 0.06"
+        },
+        "fx_glow_pommel": {
+          "scale": "1 + math.sin(q.anim_time * 120) * 0.05"
+        },
+        "fx_glow_edge": {
+          "scale": "1 + math.sin(q.anim_time * 60) * 0.012"
         }
       }
     },
@@ -2374,8 +2436,18 @@
             "q.anim_time * 240.0"
           ]
         },
+        "fx_spin_orbit": {
+          "rotation": [
+            0,
+            0,
+            "-q.anim_time * 180.0"
+          ]
+        },
         "fx_glow_drop": {
           "scale": "1 + math.sin(q.anim_time * 180) * 0.06"
+        },
+        "fx_glow_inlay": {
+          "scale": "1 + math.sin(q.anim_time * 240) * 0.08"
         }
       }
     },
@@ -2394,6 +2466,13 @@
             0,
             0,
             "v.astro_sw * 720.0"
+          ]
+        },
+        "fx_spin_orbit": {
+          "rotation": [
+            0,
+            0,
+            "-v.astro_sw * 360.0"
           ]
         }
       }
@@ -2941,6 +3020,13 @@
             "q.anim_time * 90.0"
           ]
         },
+        "fx_spin_crown": {
+          "rotation": [
+            0,
+            0,
+            "-q.anim_time * 120.0"
+          ]
+        },
         "fx_glow_blade": {
           "scale": [
             "1.0 + math.sin(q.anim_time * 240.0) * 0.06",
@@ -2972,6 +3058,13 @@
             0,
             0,
             "v.astro_sw * 360.0"
+          ]
+        },
+        "fx_spin_crown": {
+          "rotation": [
+            0,
+            0,
+            "-v.astro_sw * 360.0"
           ]
         }
       }
@@ -3154,6 +3247,20 @@
             0,
             0,
             "q.anim_time * 120.0"
+          ]
+        },
+        "fx_spin_dust": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * -60.0"
+          ]
+        },
+        "fx_spin_sight": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 180.0"
           ]
         },
         "fx_glow_bolt": {
