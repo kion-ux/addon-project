@@ -286,7 +286,7 @@ def boots(s):
     stick(b, hl, "up", 0.5, 0.5, (2.4, 0.7, 0.16), "hazard", sink=0.05)
     octa(b, (LX, 0.85, 1.92), 1.3, 0.5, "iron", axis="z")
     cbox(b, (LX, 0.85, 2.2), (0.95, 0.95, 0.16), "furnace")
-    fx = s.fx("thrust", "heel_r", b, pivot=(LX, 0.85, 2.3), rotation=(-70, 0, 0))
+    fx = s.fx("thrust", "heel_r", b, pivot=(LX, 0.85, 2.3), rotation=(55, 0, 0))   # 下後ろへ
     taper(fx, (LX, 0.85, 2.3), (LX, -1.35, 2.3), 0.8, 0.22, 2, "flame")
     # 足首の外を守る板（ドラムは見せる）と甲の光る継ぎ目
     ag = rbox(b, (LX - 1.52, 2.45, 0.9), (0.32, 1.1, 1.3), "plate2", rot=(0, 0, -6))

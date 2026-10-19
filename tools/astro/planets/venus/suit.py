@@ -226,17 +226,13 @@ def boots(s):
 #  脚（腿の板・ガーター・花弁形のブーツの履き口・四芒星の膝当て・脛当て・ふくらはぎ）
 # ---------------------------------------------------------------------------
 def legs(s):
-    # 腿: 前のクリームの板（金の上板・発光線）、外の細い金の板、金のガーターと宝玉。後ろと内は骨格を見せる
+    # 腿（ストッキング）: 前のクリームの板（金の縁・薔薇金の線・リベット）と金のガーターと宝玉。
+    # 外は花弁のスカートが覆い、後ろと内は骨格を見せる
     t = s.part("legs", "thigh_r", "rightLeg", pivot=A.HIP)
     fr = layered_plate(t, (LX + 0.05, 11.75, -1.42), (2.1, 2.7, 0.4), "plate", top="petal_cream",
                        rot=(-3, 0, 0), inset=0.24, trim="gold", trim_edge="top",
                        rivet="gold", n_rivets=2, rivet_edge="bottom")
     line_on(t, fr["top"], "north", (0.5, 0.22), (0.5, 0.86), 0.18, 0.16, "rosegold")
-    side = rbox(t, (LX - 1.48, 11.45, 0.1), (0.36, 2.4, 2.1), "plate", rot=(0, 0, -3))
-    stick(t, side, "west", 0.5, 0.5, (1.4, 1.8, 0.16), "plate2", sink=0.05,
-          decals={"west": {"decal": "serial", "text": "VE-02", "ink": (150, 92, 30)}})
-    rivets(t, side, "west", 2, edge="bottom", margin=0.22, span=(0.25, 0.75), size=0.22,
-           style="rosegold")
     octa(t, (LX, 12.85, 0.0), 2.84, 0.3, "gold", axis="y")                          # ガーター
     rbox(t, (LX + 0.1, 12.85, -1.48), (0.5, 0.5, 0.26), "gem_accent", rot=(0, 0, 45))
     # ブーツの履き口（腿の中ほど）: 金の帯 + 前へ尖る花弁形のクリームの折り返し
@@ -259,13 +255,14 @@ def legs(s):
            rod_style="chrome", cap_style="dark")
     # 脛: 前の金の板 + クリームの V の稜（発光線）、両脇の板、ふくらはぎの排気口、外の羽根のヒレ
     g = s.part("legs", "shin_r", "rightLeg", pivot=A.KNEE)
-    front = rbox(g, (LX, 5.25, -1.3), (2.35, 4.0, 0.45), "plate", rot=(5, 0, 0))
-    low = rbox(g, (LX, 3.05, -1.08), (1.85, 1.6, 0.42), "plate", rot=(-3, 0, 0))
-    stick(g, low, "north", 0.5, 0.08, (1.75, GOLD_W, 0.16), "gold", sink=0.05)
+    front = rbox(g, (LX, 5.25, -1.3), (2.2, 4.0, 0.45), "plate", rot=(5, 0, 0))
+    low = rbox(g, (LX, 3.05, -1.08), (1.7, 1.6, 0.42), "plate", rot=(-3, 0, 0),
+               decals={"north": {"decal": "serial", "text": "VE-02", "ink": (110, 60, 20)}})
+    stick(g, low, "north", 0.5, 0.08, (1.6, GOLD_W, 0.16), "gold", sink=0.05)
     keel = rbox(g, (LX - 0.3, 5.3, -1.6), (0.66, 3.5, 0.4), "plate2", rot=(5, 24, 0))
     mirror_x(g, keel, about=LX)
     line_on(g, front, "north", (0.5, 0.12), (0.5, 0.86), 0.18, 0.18, "glow", lift=0.18)
-    sd = rbox(g, (LX - 1.22, 4.75, -0.1), (0.38, 4.4, 2.1), "plate", rot=(0, 0, -6))
+    sd = rbox(g, (LX - 1.16, 4.75, -0.1), (0.36, 4.4, 2.0), "plate", rot=(0, 0, -6))
     sdr = rivets(g, sd, "west", 1, edge="bottom", margin=0.28, size=0.22, style="rosegold")
     sdl = line_on(g, sd, "west", (0.15, 0.62), (0.85, 0.62), 0.16, 0.16, "glow_soft")
     mirror_x(g, sd, sdr, sdl, about=LX)
@@ -287,11 +284,9 @@ def waist(s):
     bl = rivets(w, belt[0], "north", 2, edge="bottom", margin=0.42, span=(0.12, 0.3),
                 size=0.2, style="gold")
     mirror_x(w, bl)
-    # 留め金: 金の八角 + 薔薇色の宝玉 + 小さな四芒星
+    # 留め金: 金の八角 + 薔薇色の宝玉
     octa(w, (0, 16.85, -2.3), 1.5, 0.34, "gold", axis="z")
     rbox(w, (0, 16.85, -2.52), (0.7, 0.7, 0.26), "gem_accent", rot=(0, 0, 45))
-    cbox(w, (0, 16.85, -2.62), (0.2, 1.0, 0.16), "star")
-    cbox(w, (0, 16.85, -2.62), (1.0, 0.2, 0.16), "star")
     # 前垂れ（細いクリームの花弁。腿の前を隠さない幅）
     fp = rbox(w, (0, 15.05, -2.12), (1.3, 2.5, 0.38), "plate2", rot=(-8, 0, 0))
     diamond(w, (0, 13.75, -2.3), 0.92, 0.36, "plate2", rot=(-8, 0))
@@ -336,7 +331,8 @@ def petal(s, name, heading, L, W, flare, style, trim, layer):
     nk = cbox(b, (hx, hy - neck / 2 - 0.15, zf), (W * 0.56, neck, T), style)
     # 縁: 一回り大きい裏の板（縁取りの色）と尖った先の裏
     cbox(b, (hx, yb + body_h / 2, hz + 0.14), (W + 0.32, body_h - 2 * cut - 0.1, 0.24), trim)
-    diamond(b, (hx, yb + 0.05, hz + 0.14), d + 0.3, 0.22, trim)
+    if layer == 0:
+        diamond(b, (hx, yb + 0.05, hz + 0.14), d + 0.3, 0.22, trim)
     # 表の胴（角を落とした丸い胴）と尖った先
     main = chamfer(b, (hx, yb + body_h / 2, zf), (W, body_h, T), style, cut=cut, axis="z")
     diamond(b, (hx, yb + 0.05, zf), d, T, style)
@@ -426,7 +422,6 @@ def back(s):
     bk = s.part("back", "pack", "body")
     pk = bevel(bk, (0, 22.5, 3.35), (3.7, 4.4, 1.7), "cloud", cut=0.55, axis="z")
     rbox(bk, (0, 24.9, 3.1), (3.3, 0.6, 1.7), "plate", rot=(22, 0, 0))              # 上の蓋
-    rbox(bk, (0, 20.15, 3.1), (3.0, 0.55, 1.5), "plate", rot=(-18, 0, 0))           # 下の蓋
     vents(bk, pk[0], "south", 4, box=(0.32, 0.12, 0.68, 0.42))
     rivets(bk, pk[0], "south", 4, edge="border", margin=0.22, size=0.2, style="gold")
     # 金の四芒星の紋（薔薇色の宝玉）
@@ -453,7 +448,6 @@ def back(s):
     wg = s.part("back", "wing_r", bk, pivot=(-1.75, 23.9, 4.0), ornament=True)
     root = (-1.75, 23.9, 4.1)
     octa(wg, root, 1.1, 0.7, "gold", axis="x")
-    rbox(wg, (root[0] - 0.4, root[1], root[2]), (0.24, 0.5, 0.5), "gem_accent", rot=(45, 0, 0))
     for tip, h, st_ in (((-4.5, 28.6, 6.0), 1.7, "plate2"), ((-5.7, 26.6, 6.4), 1.5, "cloud"),
                         ((-5.9, 24.2, 6.0), 1.25, "plate2")):
         feather(wg, root, tip, h, st_)

@@ -194,12 +194,12 @@ def boots(s):
     t1 = rbox(b, (LX, 1.05, -3.2), (2.85, 0.95, 1.1), "zone", rot=(-16, 0, 0))
     stick(b, t1, "north", 0.5, 0.5, (0.5, 0.5, 0.2), "gem", spin=45, sink=0.05)
     cbox(b, (LX, 0.62, -3.78), (2.5, 0.3, 0.3), "dark")
-    rbox(b, (LX, 0.62, -4.08), (2.65, 0.72, 0.8), "rustband", rot=(-26, 0, 0))
+    rbox(b, (LX, 0.74, -4.06), (2.65, 0.72, 0.8), "rustband", rot=(-26, 0, 0))
     cbox(b, (LX, 0.33, -4.5), (2.3, 0.4, 0.34), "copper")                          # つま先の金具
     # 踵（褐色）と噴射口
     hl = cbox(b, (LX, 1.05, 1.38), (2.7, 1.5, 1.05), "plate2_b")
-    octa(b, (LX, 0.75, 2.02), 1.3, 0.5, "frame", axis="z")
-    cbox(b, (LX, 0.75, 2.3), (0.95, 0.95, 0.16), "thruster")
+    octa(b, (LX, 0.92, 2.02), 1.22, 0.5, "frame", axis="z")
+    cbox(b, (LX, 0.92, 2.3), (0.9, 0.9, 0.16), "thruster")
     # 足首の外を守る小さな板（ドラムは見せる）
     ag = rbox(b, (LX - 1.68, 2.6, 0.85), (0.32, 1.2, 1.4), "plate2", rot=(0, 0, -6))
     stick(b, ag, "west", 0.5, 0.5, (0.36, 0.36, 0.16), "volt", sink=0.05)
@@ -293,12 +293,12 @@ def moons(s):
     """ベルトに嵌めたガリレオ衛星: 暗い受け座 + 銅の留め具 + 自転する球（fx_spin_<名前>）。
     内から イオ・エウロパ（右）／ ガニメデ・カリスト（左）。"""
     w = s.bone("waist_belt")
-    for name, x, st, sz in (("io", -1.55, "io", 0.6), ("europa", -2.62, "europa", 0.55),
-                            ("ganymede", 1.55, "ganymede", 0.66), ("callisto", 2.62, "callisto", 0.62)):
-        octa(w, (x, 17.05, -2.5), 0.9, 0.24, "dark", axis="z")
-        sp = s.fx("spin", name, w, pivot=(x, 17.05, -2.85))
-        cbox(sp, (x, 17.05, -2.85), (sz, sz, sz), st)
-        rbox(sp, (x, 17.05, -2.85), (sz * 0.92, sz * 0.92, sz * 0.92), st, rot=(0, 45, 0))
+    for name, x, st, sz in (("io", -1.55, "io", 0.7), ("europa", -2.62, "europa", 0.66),
+                            ("ganymede", 1.55, "ganymede", 0.76), ("callisto", 2.62, "callisto", 0.72)):
+        octa(w, (x, 17.05, -2.5), 0.95, 0.24, "dark", axis="z")
+        sp = s.fx("spin", name, w, pivot=(x, 17.05, -2.9))
+        cbox(sp, (x, 17.05, -2.9), (sz, sz, sz), st)
+        rbox(sp, (x, 17.05, -2.9), (sz * 0.92, sz * 0.92, sz * 0.92), st, rot=(0, 45, 0))
 
 
 # ---------------------------------------------------------------------------
@@ -362,7 +362,8 @@ def torso(s):
     # 背の肩甲の板（バックパックの両脇）
     sb = rbox(c, (-3.35, 24.35, 2.95), (2.9, 2.6, 0.45), "zone", rot=(-6, -10, 0))
     sbs = stick(c, sb, "south", 0.5, 0.35, (2.8, 0.45, 0.16), "belt", sink=0.04)
-    mirror_x(c, sb, sbs)
+    sbv = vents(c, sb, "south", 3, box=(0.12, 0.55, 0.45, 0.9), w=0.18)
+    mirror_x(c, sb, sbs, sbv)
     # 腹: 下ほど細い三枚の帯（クリーム・褐色・錆色）と中央の溝・脇のリベット
     ab = s.part("torso", "abs", "body", pivot=(0, A.WAIST_Y, 0))
     for i, (y, ww, st) in enumerate(((19.95, 4.2, "zone"), (18.95, 3.8, "belt"),

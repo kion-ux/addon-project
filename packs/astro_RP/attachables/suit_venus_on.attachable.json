@@ -29,7 +29,9 @@
         "pre_animation": [
           "v.astro_fp = c.is_first_person ? 1.0 : 0.0;",
           "v.astro_air = (v.astro_air ?? 0.0) + ((q.is_on_ground ? 0.0 : 1.0) - (v.astro_air ?? 0.0)) * math.min(1.0, q.delta_time * 6.0);",
-          "v.astro_run = (v.astro_run ?? 0.0) + ((q.is_sprinting ? 1.0 : 0.0) - (v.astro_run ?? 0.0)) * math.min(1.0, q.delta_time * 6.0);"
+          "v.astro_run = (v.astro_run ?? 0.0) + ((q.is_sprinting ? 1.0 : 0.0) - (v.astro_run ?? 0.0)) * math.min(1.0, q.delta_time * 6.0);",
+          "v.astro_t = (v.astro_t ?? 0.0) + q.delta_time;",
+          "v.astro_spin = (v.astro_spin ?? 0.0) + q.delta_time * (1.0 + v.astro_air * 1.5 + v.astro_run * 2.0);"
         ],
         "animate": [
           "controller",

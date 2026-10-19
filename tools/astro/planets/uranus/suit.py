@@ -9,7 +9,7 @@
     尖った面頬と ◆ の顎、後ろへ水平に流れる氷の耳（横倒しの惑星）
   * 肩: 三層の結晶の肩当て（外に ◆ の垂れ板）。右肩の氷晶は 98° 横倒しに突き出し、左肩は天を突く（非対称）
   * 胸: 霜の白の上の面と青緑の下の面が稜で折れる結晶の胸板、◆ の枠の中の天王星の星核と縦に立つ小さな環
-  * 腕: 肘の後ろの氷晶、篭手の外に沿って肘の上まで伸びる氷晶の刃、手の甲の ◆
+  * 腕: 二の腕の惑星の紋章、肘の後ろの氷晶、篭手の外に沿って肘の上まで伸びる氷晶の刃、手の甲の ◆
   * 腰: ◆ のバックル、◆ の前垂れ、面を切った草摺（下端に氷の尖り）
   * 脚: ◆ の膝当て、V の稜の脛、ふくらはぎの排気口、外の氷晶のヒレ、◆ のつま先、踵の氷の棘
 
@@ -17,8 +17,8 @@
 右側だけ作り `_r` を付ける → 左は自動で鏡映（肩の氷晶だけは左右で別の物）。回転（統合版の rotation）:
 rx 正 = 上端が前へ / ry 正 = 正面が右（-X）を向く（+X の端が前へ）/ rz 正 = 上端が +X へ（横の板なら +X の端が下へ）。
 
-ローカルの道具（weapon.py も使う）: crystal（氷晶）・diamond（◆ の板）。他に diamond_stack（◆ の重ね）・
-bicrystal（両錐の結晶）・moon（氷の衛星）。
+ローカルの道具: crystal（氷晶）・diamond（◆ の板）・diamond_stack（◆ の重ね）・moon（氷の衛星）は weapon.py も使う。
+他に bicrystal（両錐の結晶）。
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ import math
 import numpy as np
 
 from astro_suit import (A, Suit, beam, bevel, cable, cbox, chamfer, layered_plate,  # noqa: F401
-                        line_on, mat_cube, mirror_x, octa, piston, polyline, rbox, rivets,
+                        line_on, mat_cube, mirror_x, octa, piston, rbox, rivets,
                         sensor, stick, taper, vents)
 from astro_weapon import ring as wring   # 接線の向きを回転行列で解く輪（傾けたボーンの中でも正しい）
 from hd_space import rot
@@ -243,22 +243,22 @@ def legs(s):
     # 脛: 前の青緑の板 + V の稜（淡い二枚と発光の稜線）+ 下の ◆、下へ絞る両脇の板、ふくらはぎの排気口、
     #     外の氷晶のヒレ
     g = s.part("legs", "shin_r", "rightLeg", pivot=A.KNEE)
-    front = rbox(g, (LX, 4.72, -1.42), (2.7, 5.0, 0.55), "plate2", rot=(4, 0, 0))
-    stick(g, front, "north", 0.5, 0.04, (2.55, TR, 0.18), "rim", sink=0.05)
+    front = rbox(g, (LX, 4.72, -1.42), (2.5, 5.0, 0.55), "plate2", rot=(4, 0, 0))
+    stick(g, front, "north", 0.5, 0.04, (2.35, TR, 0.18), "rim", sink=0.05)
     keel = rbox(g, (LX - 0.4, 5.05, -1.76), (0.86, 4.2, 0.46), "plate", rot=(4, 28, 0))
     kr = rivets(g, keel, "north", 2, edge="left", margin=0.24, span=(0.25, 0.75), size=0.2,
                 style="rivet")
     mirror_x(g, keel, kr, about=LX)
     rbox(g, (LX, 5.05, -2.04), (0.2, 3.8, 0.2), "glow", rot=(4, 0, 0))              # 稜の発光
     diamond_stack(g, (LX, 2.72, -1.86), [(0.95, 0.3, "frost"), (0.5, 0.2, "gem")], tilt=(4, 0, 0))
-    sd = rbox(g, (LX - 1.42, 4.85, -0.15), (0.45, 4.8, 2.6), "plate", rot=(0, 0, -6))
+    sd = rbox(g, (LX - 1.3, 4.7, -0.15), (0.42, 4.6, 2.5), "plate", rot=(0, 0, -3))
     sdr = rivets(g, sd, "west", 2, edge="bottom", margin=0.3, span=(0.25, 0.75), style="rivet")
     mirror_x(g, sd, sdr, about=LX)
     calf = rbox(g, (LX, 6.1, 1.62), (2.3, 2.5, 0.45), "plate2_b", rot=(-12, 0, 0))
     vents(g, calf, "south", 3, box=(0.2, 0.2, 0.8, 0.8))
-    fin = rbox(g, (LX - 1.84, 5.5, 0.8), (0.36, 3.1, 1.9), "plate2", rot=(-10, 0, -8))
+    fin = rbox(g, (LX - 1.68, 5.5, 0.8), (0.34, 3.0, 1.8), "plate2", rot=(-10, 0, -8))
     line_on(g, fin, "west", (0.15, 0.28), (0.85, 0.7), 0.18, 0.16, "glow")
-    crystal(g, (LX - 1.98, 6.8, 1.15), (-0.28, 1.0, 0.5), 1.9, 0.42, "ice", tip=0.5)
+    crystal(g, (LX - 1.82, 6.75, 1.15), (-0.28, 1.0, 0.5), 1.9, 0.42, "ice", tip=0.5)
 
 
 # ---------------------------------------------------------------------------

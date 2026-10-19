@@ -2641,7 +2641,7 @@
     },
     "animation.astro.weapon.neptune.idle": {
       "loop": true,
-      "animation_length": 36.0,
+      "animation_length": 12.0,
       "bones": {
         "origin": {
           "position": [
@@ -2661,7 +2661,14 @@
           "rotation": [
             0,
             0,
-            "q.anim_time * 40.0"
+            "q.anim_time * 60.0"
+          ]
+        },
+        "fx_spin_vortex": {
+          "rotation": [
+            0,
+            0,
+            "-q.anim_time * 180.0"
           ]
         }
       }
@@ -2686,6 +2693,13 @@
             0,
             0,
             "-v.astro_sw * 360.0"
+          ]
+        },
+        "fx_spin_vortex": {
+          "rotation": [
+            0,
+            0,
+            "-v.astro_sw * 720.0"
           ]
         }
       }
@@ -2837,6 +2851,20 @@
             0,
             "math.sin(q.anim_time * 90.0) * 0.1",
             0
+          ]
+        },
+        "fx_spin_pommel": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * 120"
+          ]
+        },
+        "fx_spin_moons": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time * -120"
           ]
         },
         "fx_spin_saw": {
