@@ -145,8 +145,14 @@ root                               足元 (0,0,0)。歩き・倒れ・這いの�
   部品用の子ボーンを足すのは自由（例 `head` の子に `hat`、`chest` の子に `armor_chest`）。
   ただし上の名前は消さない・親を変えない。装甲のある種類は `armor_head`、`armor_chest`、`armor_arm_r`…
   （`nr:armor` で表示を切る）。
-* **`part_visibility` でボーンを隠すと子も隠れる**（要確認事項。`reference/rendering.md` に根拠を書く）。
-  だから断面ボーンは「消える部位の親」に付ける（例: 肩の断面は `chest` の子、肘の断面は `arm_r` の子）。
+* **`part_visibility` は子へ伝わらない**（`reference/rendering.md` §1。親を隠しても子は描かれる。変換は伝わる）。
+  だから**すべてのボーンに「自分と全祖先の条件の AND」の式を生成する**（`nr_rig.visibility_rules()`）。
+  断面ボーンは「消える部位の親」に付ける（例: 肩の断面は `chest` の子、肘の断面は `arm_r` の子）。
+* 追加の子ボーン（spec が使う）: `gear_tank` `gear_flashlight` `gear_shield` `held_tool` `held_debris` `throat_sac`
+  `acid_sac_<場所>` `extra_head_<n>` `armor_<部位>`。`nr:armor` は装甲の段階に加えて、壊れて外れる装備
+  （spec の `gore.breakables = {bone: 最低段階}`）の表示にも使う。初期値は spec の `initial_armor(z)`。
+* `nr:ability` の値 1..7 は種類ごとに spec の `ability_states(z)` が割り当てる（能力の順 → 段階の順）。
+  アニメは `animation.nr.z.ab_<ability>_<phase>`（`zombie_animations(z)` が列挙）。0 は「能力なし」。
 * 断面（stump）は、赤い筋肉・白い骨の断面・黄色い脂肪の輪・滴る血の小キューブで作り、
   `nr_paint` の `cut_flesh` / `bone` / `gore_wet` で塗る。
 * 光る目などは `entity_emissive_alpha` 系のマテリアル（`reference/rendering.md` に従う）。
@@ -335,6 +341,7 @@ dict(
 |---|---|
 | ゾンビ 1 体のキューブ | 一般 ≤ 450、特殊 ≤ 650、ボス ≤ 1100 |
 | ゾンビのテクスチャ | 512×512（ボスは 1024×1024 まで）。PNG はパレット化してよい（アルファは保つ） |
+| 全テクスチャ（展開後 Σw·h·4） | ≤ 150 MiB（Mojang の検証の予算。`validate_nr.py` が止める） |
 | 武器 | ≤ 180 キューブ、≤ 512×512 |
 | 小道具 | ≤ 700 キューブ、≤ 1024×1024 |
 | パック全体 | ≤ 80 MB |
@@ -398,3 +405,20 @@ ui/     terminal.js（設定・図鑑・クラフト・スキル・説明） wel
 モジュール間の呼び出しは、`gore/gore.js` の `applyHit(zombie, hit)`（`hit = {attacker, part?, point?, dir, dtype,
 weight, damage, power, source: "melee"|"projectile"|"hitscan"|"blast"|"trap"|"fire"|"shock"|"toxic"|"fall", weapon?, mods?}`）
 を中心にする。**ゾンビへのダメージは必ず `applyHit` を通す**（体力・部位・ゴア・死亡・演出が一か所で決まる）。
+
+---
+
+## 13. 描画の規則（`reference/rendering.md` §11 のチェックリストが正）
+
+* **ジオメトリはすべて `format_version: "1.16.0"`**（`binding` は 1.16.0 から。`mcmodel.Model.write` は 1.12.0 固定
+  なので、NR の書き出しは `nr_common.write_geometry()` を通す）。回転するキューブには必ず pivot。
+* **面の名前と向き（ファイル座標）**: Bedrock は描画のとき X を反転する。ファイル座標では
+  **`east` が min-X の面（体の右側。u は -Z へ）、`west` が max-X の面（u は +Z へ）**、up/down/north/south は従来どおり。
+  `tools/preview.py` / `hd_scene.py` は east を +X に置いているので、NR の確認画像は `nr_preview.py`（正しい対応）で描く。
+  `nr_paint` の 3D ノイズと左右非対称の模様もこの対応で塗る。
+* ゾンビの向き: 顔は north（-Z）面、体の右（`arm_r`）は -X。当たり箱の `r/u/f` は `r = -x, u = y, f = -z`（ブロック単位）。
+* 発光: `entity_emissive_alpha`。発光画素の α は小さい値（`nr_paint.EMISSIVE_ALPHA`）、それ以外は 255、空きは (0,0,0,0)。
+  `entity_alphatest_one_sided` は存在しない。
+* `playAnimation` は一発ものだけ（必ず `controller`・`stopExpression`・`nextState` を渡す。加算・最初と最後のキーが 0）。
+  ゾンビの常時の見た目（切断・這う・死体・燃焼・感電）はプロパティ駆動の自前コントローラ。
+

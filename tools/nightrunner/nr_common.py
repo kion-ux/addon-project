@@ -102,3 +102,21 @@ def write_data_js(name: str, exports: dict, header: str = "") -> None:
     for k, v in exports.items():
         lines.append(f"export const {k} = {js_literal(v)};")
     write_text(os.path.join(DATA_JS, f"{name}.js"), "\n".join(lines) + "\n")
+
+
+GEOMETRY_FORMAT = "1.16.0"   # binding は 1.16.0 から（reference/rendering.md §6.1）
+
+
+def geometry_doc(*models) -> dict:
+    """mcmodel.Model（と NRModel）を 1.16.0 の geometry ファイルの中身にする。"""
+    geos = []
+    for m in models:
+        if not m.tex_w:
+            m.pack()
+        geos.append(m.to_json())
+    return {"format_version": GEOMETRY_FORMAT, "minecraft:geometry": geos}
+
+
+def write_geometry(path: str, *models) -> None:
+    """NR のジオメトリは全部これで書く（mcmodel.Model.write は 1.12.0 固定なので使わない）。"""
+    write_json(path, geometry_doc(*models))

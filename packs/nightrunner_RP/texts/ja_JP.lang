@@ -1,0 +1,5 @@
+## NIGHT RUNNER: 感染都市 — 生成物（tools/nightrunner/gen_nr_packs.py）。直接編集しない
+## 名前は tools/nightrunner/nr_spec*.py、文言は各生成器の lang 断片が正
+pack.description=パルクール × ゾンビ × 部位破壊ゴア。屋上を走り、夜を生き延びろ。ゴアレベル 0〜100（既定 100）
+pack.name=NIGHT RUNNER: 感染都市
+entity.nr:gib.name=ちぎれた部位

@@ -1,0 +1,11 @@
+{
+  "name": "@minecraft/common",
+  "version": "1.2.0",
+  "description": "NIGHT RUNNER 用に固定した公式の型定義（@minecraft/common@1.2.0 の index.d.ts を無改変で同梱）",
+  "types": "index.d.ts",
+  "license": "MIT",
+  "nr_source": {
+    "tarball": "https://registry.npmjs.org/@minecraft/common/-/common-1.2.0.tgz",
+    "shasum": "a00d4130dcd5084dfd30e85e108c6d58eae8358b"
+  }
+}

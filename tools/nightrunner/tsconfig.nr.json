@@ -1,0 +1,26 @@
+{
+  "//": "NIGHT RUNNER: 手書き JS（packs/nightrunner_BP/scripts）を公式 d.ts で型検査する。実行は check_nr_types.py。",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@minecraft/server": ["typings/server/index.d.ts"],
+      "@minecraft/server-ui": ["typings/server-ui/index.d.ts"],
+      "@minecraft/common": ["typings/common/index.d.ts"]
+    },
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "maxNodeModuleJsDepth": 0,
+    "forceConsistentCasingInFileNames": true
+  },
+  "files": ["typings/nr_env.d.ts"],
+  "include": ["../../packs/nightrunner_BP/scripts/**/*.js"]
+}
