@@ -10,7 +10,7 @@
 |---|---|
 | `SURFACES` | 見た目の説明で使う素材（塗りの系統と基準色）。`nr_paint` の塗り分けの手がかり |
 | `MATERIAL_ITEMS` | **共有アイテム 23 種**（素材・戦利品・回復・弾）。ゾンビのルートもここの ID だけを使う |
-| `ITEMS` | 共有以外のアイテム（ブースター・食べ物・道具・修理キット） |
+| `ITEMS` | 共有以外のアイテム（注射薬・食べ物・道具・修理キット） |
 | `WEAPONS` / `PROJECTILES` / `MODS` | 武器 38 種・飛び道具エンティティ・武器の改造 |
 | `TRAPS` / `BLOCKS` / `PROPS` | 罠・カスタムブロック・小道具エンティティ（車など） |
 | `LOOT_TABLES` | 箱・車のトランク・建物のルート |
@@ -19,7 +19,7 @@
 | `PARKOUR_TUNING` / `COMBAT_TUNING` / `GORE_TUNING` | 動き・戦闘・ゴアの数値 |
 | `SETTINGS_DEFAULTS` / `SETTINGS_SCHEMA` / `DIFFICULTY` | 設定（ゴアレベル 0〜100、既定 100）と難易度 |
 | `CRAFTING` | 生存者の端末（独自 UI）で作るレシピ |
-| `ANIM_SETS` / `PLAYER_MOTIONS` | プレイヤーの武器モーションとパルクールのモーション名 |
+| `ANIM_SETS` / `PLAYER_MOTIONS` / `SFX_SETS` | 武器の型ごとのモーション・パルクールのモーション・武器の音（名前の正は `nr_registry`） |
 
 座標の約束（見た目の説明 `model` の部品 `P(...)`）:
 
@@ -47,6 +47,8 @@
 from __future__ import annotations
 
 import re
+
+import nr_registry as _reg   # 演出 ID（音・パーティクル・モーション）の正
 
 # ===========================================================================
 #  部品・レシピの補助
@@ -198,24 +200,26 @@ RARITY = {
 }
 
 # ===========================================================================
-#  プレイヤーのモーション（animation.nr.p.<名前>。gen_nr_player_anim がこの名前で全部作る）
+#  プレイヤーのモーション（animation.nr.p.<名前>）。**名前の正は nr_registry.PLAYER_ANIMS**（説明・長さもそこ）。
+#  ここは武器の型ごとにどのモーションを使うかだけを決める（gen_nr_player_anim は登録簿の全部を作る）。
 #  近接の各振り: (名前, 振りかぶり tick, 当たる tick, 終わり tick, 軌道)
 #  軌道: r2l 右から左 / l2r 左から右 / down 振り下ろし / up 振り上げ / thrust 突き / spin 回転
 # ===========================================================================
 ANIM_SETS = {
-    "slash_1h": dict(ja="片手の刃", swings=[("slash_1h_a", 3, 5, 10, "r2l"), ("slash_1h_b", 3, 5, 10, "l2r"),
-                                          ("slash_1h_c", 4, 6, 12, "down")],
+    "slash_1h": dict(ja="片手の刃", swings=[("slash_1h_1", 3, 5, 10, "r2l"), ("slash_1h_2", 3, 5, 10, "l2r"),
+                                          ("slash_1h_3", 4, 6, 12, "down")],
                      heavy=("slash_1h_heavy", 10, 13, 22, "r2l"), idle="hold_1h", sprint="sprint_1h"),
-    "slash_2h": dict(ja="両手の刃", swings=[("slash_2h_a", 6, 9, 17, "r2l"), ("slash_2h_b", 6, 9, 17, "l2r"),
-                                          ("slash_2h_c", 8, 11, 20, "down")],
+    "slash_2h": dict(ja="両手の刃", swings=[("slash_2h_1", 6, 9, 17, "r2l"), ("slash_2h_2", 6, 9, 17, "l2r"),
+                                          ("slash_2h_3", 8, 11, 20, "down")],
                      heavy=("slash_2h_heavy", 14, 18, 30, "spin"), idle="hold_2h", sprint="sprint_2h"),
-    "blunt_1h": dict(ja="片手の打撃", swings=[("blunt_1h_a", 4, 6, 12, "r2l"), ("blunt_1h_b", 4, 6, 12, "l2r"),
-                                            ("blunt_1h_c", 5, 8, 14, "down")],
+    "blunt_1h": dict(ja="片手の打撃", swings=[("blunt_1h_1", 4, 6, 12, "r2l"), ("blunt_1h_2", 4, 6, 12, "l2r"),
+                                            ("blunt_1h_3", 5, 8, 14, "down")],
                      heavy=("blunt_1h_heavy", 11, 14, 24, "down"), idle="hold_1h", sprint="sprint_1h"),
-    "blunt_2h": dict(ja="両手の打撃", swings=[("blunt_2h_a", 8, 11, 20, "r2l"), ("blunt_2h_b", 9, 12, 22, "down")],
+    "blunt_2h": dict(ja="両手の打撃", swings=[("blunt_2h_1", 8, 11, 20, "r2l"), ("blunt_2h_2", 9, 12, 22, "down"),
+                                            ("blunt_2h_3", 9, 12, 22, "up")],
                      heavy=("blunt_2h_heavy", 16, 20, 34, "down"), idle="hold_2h", sprint="sprint_2h"),
-    "stab":     dict(ja="突き", swings=[("stab_a", 3, 5, 11, "thrust"), ("stab_b", 3, 5, 11, "thrust"),
-                                       ("stab_c", 5, 7, 14, "r2l")],
+    "stab":     dict(ja="突き", swings=[("stab_1", 3, 5, 11, "thrust"), ("stab_2", 3, 5, 11, "thrust"),
+                                       ("stab_3", 5, 7, 14, "r2l")],
                      heavy=("stab_heavy", 10, 13, 24, "thrust"), idle="hold_spear", sprint="sprint_2h"),
     "bow":      dict(ja="弓", draw="bow_draw", hold="bow_hold", release="bow_release", idle="hold_bow"),
     "crossbow": dict(ja="クロスボウ", aim="crossbow_aim", fire="crossbow_fire", reload="crossbow_reload",
@@ -225,40 +229,38 @@ ANIM_SETS = {
                      cycle="rifle_bolt", idle="hold_rifle"),
     "shotgun":  dict(ja="散弾銃", aim="shotgun_aim", fire="shotgun_fire", reload="shotgun_reload",
                      cycle="shotgun_pump", idle="hold_rifle"),
-    "throw":    dict(ja="投擲", wind="throw_wind", release="throw_release", idle="hold_1h"),
+    "smg":      dict(ja="短機関銃", aim="rifle_aim", fire="smg_fire", reload="rifle_reload", idle="hold_rifle"),
+    "throw":    dict(ja="投擲", wind="throw_wind", release="throw_overhand", lob="throw_underhand", idle="hold_1h"),
 }
 
-# パルクール・素手の動き（parkour.js が playAnimation で呼ぶ）
-PLAYER_MOTIONS = {
-    "climb": "壁登り（両手を交互に上へ）", "ledge_hang": "縁にぶら下がる", "ledge_pullup": "縁からよじ登る",
-    "vault_low": "低い障害物を片手で飛び越える", "vault_high": "2 段の障害物を両手で押して越える（スピードヴォルト）",
-    "wallrun_r": "右の壁を走る", "wallrun_l": "左の壁を走る", "walljump": "壁を蹴って跳ぶ",
-    "slide": "スライディング", "slide_tackle": "スライディングで足を払う", "roll": "受け身の前転",
-    "land_hard": "着地の衝撃で膝をつく", "dropkick": "空中のドロップキック", "kick": "前蹴り",
-    "stomp": "倒れた敵を踏み潰す", "grapple_fire": "鉤縄を撃つ", "grapple_pull": "鉤縄で引かれて飛ぶ",
-    "glide": "パラグライダーで滑空", "glide_open": "パラグライダーを開く", "parry": "受け流し",
-    "dodge_l": "左へ回避", "dodge_r": "右へ回避", "use_heal": "包帯・救急キットを使う",
-    "use_inject": "注射（ブースター・免疫・抑制剤）", "uv_raise": "UV ライトを掲げる", "grabbed": "掴まれて振りほどく",
-    "lockpick": "鍵開け", "ground_pound": "空中から叩きつける",
-}
+# パルクール・素手・共通の動き（parkour.js / combat.js が playAnimation で呼ぶ）。名前と説明は登録簿から引く
+PLAYER_MOTIONS = {k: _reg.PLAYER_ANIMS[k][0] for k in (
+    "climb_loop", "ledge_hang", "mantle", "vault", "vault_high", "wallrun_r", "wallrun_l", "wall_jump",
+    "slide", "slide_tackle", "roll", "hard_land", "dropkick", "kick", "stomp", "shove", "grapple_fire",
+    "grapple_pull", "glide", "glide_open", "parry", "dodge_l", "dodge_r", "grabbed_struggle", "ground_pound",
+    "finisher_stomp", "finisher_decap", "heal", "inject", "consume", "uv_flash", "raise_item", "lockpick",
+)}
 
-# 効果音の分類（キーは nr.<分類>.<名前>）と、このカタログが要る名前は required_sounds() で集める
+# 効果音の組（武器の sfx）。ID は全部 nr_registry.SOUNDS にあるもの（required_sounds() で集め、nr_spec が照合）
 SFX_SETS = {
-    "blade_light":  dict(swing="nr.w.swing_light", hit="nr.gore.slice", heavy="nr.w.swing_heavy", wall="nr.w.hit_metal"),
+    "blade_light":  dict(swing="nr.w.swing_light", hit="nr.gore.slash_flesh", heavy="nr.w.swing_heavy",
+                         wall="nr.w.hit_metal"),
     "blade_heavy":  dict(swing="nr.w.swing_heavy", hit="nr.gore.chop", heavy="nr.w.swing_heavy", wall="nr.w.hit_metal"),
-    "blunt_light":  dict(swing="nr.w.swing_light", hit="nr.gore.thud", heavy="nr.w.swing_heavy", wall="nr.w.hit_wood"),
+    "blunt_light":  dict(swing="nr.w.swing_light", hit="nr.gore.blunt_flesh", heavy="nr.w.swing_heavy",
+                         wall="nr.w.hit_wood"),
     "blunt_heavy":  dict(swing="nr.w.swing_heavy", hit="nr.gore.smash", heavy="nr.w.swing_heavy", wall="nr.w.hit_metal"),
-    "pierce":       dict(swing="nr.w.swing_light", hit="nr.gore.stab", heavy="nr.w.swing_heavy", wall="nr.w.hit_wood"),
-    "bow":          dict(draw="nr.w.bow_draw", fire="nr.w.bow_release", hit="nr.gore.stab"),
-    "crossbow":     dict(draw="nr.w.crossbow_reload", fire="nr.w.crossbow_fire", hit="nr.gore.stab"),
-    "pistol":       dict(fire="nr.gun.pistol", reload="nr.gun.reload_mag", empty="nr.gun.empty", hit="nr.gore.bullet"),
-    "revolver":     dict(fire="nr.gun.revolver", reload="nr.gun.reload_revolver", empty="nr.gun.empty",
-                         hit="nr.gore.bullet"),
-    "shotgun":      dict(fire="nr.gun.shotgun", reload="nr.gun.reload_shell", cycle="nr.gun.pump",
-                         empty="nr.gun.empty", hit="nr.gore.bullet"),
-    "rifle":        dict(fire="nr.gun.rifle", reload="nr.gun.reload_mag", cycle="nr.gun.bolt",
-                         empty="nr.gun.empty", hit="nr.gore.bullet"),
-    "smg":          dict(fire="nr.gun.smg", reload="nr.gun.reload_mag", empty="nr.gun.empty", hit="nr.gore.bullet"),
+    "pierce":       dict(swing="nr.w.swing_light", hit="nr.gore.pierce_flesh", heavy="nr.w.swing_heavy",
+                         wall="nr.w.hit_wood"),
+    "bow":          dict(draw="nr.w.bow_draw", fire="nr.w.bow_release", hit="nr.gore.pierce_flesh"),
+    "crossbow":     dict(draw="nr.w.crossbow_reload", fire="nr.w.crossbow_shot", hit="nr.gore.pierce_flesh"),
+    "pistol":       dict(fire="nr.w.pistol", reload="nr.w.reload", empty="nr.w.empty_click", hit="nr.gore.pierce_flesh"),
+    "revolver":     dict(fire="nr.w.revolver", reload="nr.w.reload_revolver", empty="nr.w.empty_click",
+                         hit="nr.gore.pierce_flesh"),
+    "shotgun":      dict(fire="nr.w.shotgun", reload="nr.w.reload_shell", cycle="nr.w.pump",
+                         empty="nr.w.empty_click", hit="nr.gore.pierce_flesh"),
+    "rifle":        dict(fire="nr.w.rifle", reload="nr.w.reload", cycle="nr.w.bolt_cycle",
+                         empty="nr.w.empty_click", hit="nr.gore.pierce_flesh"),
+    "smg":          dict(fire="nr.w.smg", reload="nr.w.reload", empty="nr.w.empty_click", hit="nr.gore.pierce_flesh"),
     "throw":        dict(throw="nr.w.throw", hit="nr.w.hit_metal"),
 }
 
@@ -319,36 +321,36 @@ MATERIAL_ITEMS = [
           desc_en="For ammo and explosives."),
     _item("mutated_tissue", "変異組織", "Mutated Tissue", "material", 32, rarity="uncommon",
           icon="脈打つ黄緑の瘤が付いた肉片。表面に菌糸の白い筋、ぬめる艶",
-          desc_ja="特殊感染者から取れる。ブースターと毒の改造の材料。",
-          desc_en="Harvested from special infected. Used in boosters and toxic mods."),
+          desc_ja="特殊感染者から取れる。注射薬と毒の改造の材料。",
+          desc_en="Harvested from special infected. Used in injectables and toxic mods."),
     _item("infected_trophy", "感染者の戦利品", "Infected Trophy", "trophy", 16, rarity="uncommon",
           icon="歯の並んだ下顎の骨に、名札のプラスチック片を針金で留めたもの",
           desc_ja="手強い感染者の証。強い改造と武器の材料。",
           desc_en="Proof of a tough kill. Needed for strong mods and weapons."),
-    _item("volatile_trophy", "ボラタイルの戦利品", "Volatile Trophy", "trophy", 16, rarity="rare",
+    _item("volatile_trophy", "夜喰らいの牙", "Nightmaw Fang", "trophy", 16, rarity="rare",
           icon="裂けた顎と長い牙、紫に光る神経の束が付いた夜の捕食者の頭骨の欠片",
-          desc_ja="夜の捕食者の牙。UV の装備と上位の改造に使う。",
-          desc_en="A night predator's fang. Used for UV gear and top-tier mods."),
+          desc_ja="夜喰らいたち夜の捕食者から抜いた牙。UV の装備と上位の改造に使う。",
+          desc_en="A fang pulled from a Nightmaw or another night predator. Used for UV gear and top-tier mods."),
     _item("apex_trophy", "頂点の戦利品", "Apex Trophy", "trophy", 16, rarity="legendary",
           icon="巨大な脊椎の一節に赤黒い結晶状の変異が生え、内側から橙に脈打つ",
-          desc_ja="ボスを倒した者だけが持つ。伝説の武器と抑制剤の材料。",
-          desc_en="Only boss-slayers carry one. For legendary weapons and inhibitors."),
-    _item("inhibitor", "抑制剤", "Inhibitor", "consumable", 16, rarity="epic",
+          desc_ja="ボスを倒した者だけが持つ。伝説の武器と抑制血清の材料。",
+          desc_en="Only boss-slayers carry one. For legendary weapons and suppressor serums."),
+    _item("inhibitor", "抑制血清", "Suppressor Serum", "consumable", 16, rarity="epic",
           icon="青く光る液の入ったガラスの注射器。銀の留め具、黒い目盛り、針に保護キャップ",
           desc_ja="打つと感染を押し戻し、最大体力か最大スタミナが永久に上がる（端末で選ぶ）。",
           desc_en="Pushes the infection back. Permanently raises max health or max stamina (choose in the terminal).",
           use=dict(type="inhibitor", use_ticks=30, max_health_add=2, max_health_cap=20,
-                   max_stamina_add=10, max_stamina_cap=100, anim="use_inject", sound="nr.ui.inject")),
+                   max_stamina_add=10, max_stamina_cap=100, anim="inject", sound="nr.ui.inject")),
     _item("uv_shroom", "UV キノコ", "UV Shroom", "consumable", 32, rarity="uncommon",
           icon="傘の裏が紫に光るひょろ長いキノコ 2 本、根元に湿った土",
-          desc_ja="食べると免疫が少し戻る。免疫ブースターと UV 装備の材料。",
-          desc_en="Eat to regain some immunity. Ingredient for immunity boosters and UV gear.",
-          use=dict(type="immunity", use_ticks=16, immunity_s=45, food=1, anim="use_heal", sound="nr.ui.eat")),
+          desc_ja="食べると免疫が少し戻る。免疫アンプルと UV 装備の材料。",
+          desc_en="Eat to regain some immunity. Ingredient for immunity ampoules and UV gear.",
+          use=dict(type="immunity", use_ticks=16, immunity_s=45, food=1, anim="consume", sound="nr.ui.eat")),
     _item("bandage", "包帯", "Bandage", "consumable", 16,
           icon="巻いた白い包帯と、端を留める安全ピン。うっすら血の染み",
           desc_ja="体力を少し回復し、出血を止める。",
           desc_en="Restores a little health and stops bleeding.",
-          use=dict(type="heal", use_ticks=20, heal=6, over_ticks=30, cure=["bleed"], anim="use_heal",
+          use=dict(type="heal", use_ticks=20, heal=6, over_ticks=30, cure=["bleed"], anim="heal",
                    sound="nr.ui.bandage"),
           recipe=shapeless([("nr:rags", 2), ("nr:alcohol", 1)], count=2)),
     _item("medkit", "救急キット", "Medkit", "consumable", 8, rarity="uncommon",
@@ -356,14 +358,14 @@ MATERIAL_ITEMS = [
           desc_ja="体力を大きく回復し、しばらく再生する。",
           desc_en="Restores a lot of health and regenerates for a while.",
           use=dict(type="heal", use_ticks=40, heal=16, over_ticks=20, regen_ticks=200, regen_amp=0,
-                   cure=["bleed", "poison"], anim="use_heal", sound="nr.ui.medkit"),
+                   cure=["bleed", "poison"], anim="heal", sound="nr.ui.medkit"),
           recipe=shaped(["RAR", "CBC"], {"R": "nr:rags", "A": "nr:alcohol", "C": "nr:chemicals",
                                           "B": "nr:bandage"})),
-    _item("immunity_booster", "免疫ブースター", "Immunity Booster", "consumable", 8, rarity="uncommon",
+    _item("immunity_booster", "免疫アンプル", "Immunity Ampoule", "consumable", 8, rarity="uncommon",
           icon="紫の液のアンプル。白いラベルに UV の記号、銀のキャップ",
           desc_ja="打つと免疫の残り時間が大きく戻り、しばらく減らない。",
           desc_en="Restores a large amount of immunity and pauses its drain for a while.",
-          use=dict(type="immunity", use_ticks=24, immunity_s=180, pause_s=30, anim="use_inject",
+          use=dict(type="immunity", use_ticks=24, immunity_s=180, pause_s=30, anim="inject",
                    sound="nr.ui.inject")),
     _item("ammo_pistol", "拳銃弾", "Pistol Ammo", "ammo", 64,
           icon="真鍮の薬莢の拳銃弾 5 発を斜めに並べる。1 発は弾頭が鉛色",
@@ -394,52 +396,52 @@ MATERIAL_ITEMS = [
 ]
 
 # ===========================================================================
-#  共有以外のアイテム（ブースター・食べ物・道具）
+#  共有以外のアイテム（注射薬・食べ物・道具）
 # ===========================================================================
 ITEMS = [
-    # --- 回復・ブースター -----------------------------------------------------------
+    # --- 回復・注射薬 ---------------------------------------------------------------
     _item("energy_drink", "エナジードリンク", "Energy Drink", "consumable", 16,
           icon="凹んだ黒いアルミ缶に黄緑の稲妻のロゴ、プルタブが開いている",
           desc_ja="スタミナを全快し、30 秒間スタミナの回復が速くなる。",
           desc_en="Fully restores stamina and speeds up stamina recovery for 30 seconds.",
-          use=dict(type="stamina", use_ticks=20, stamina=100, regen_mult=1.5, duration_s=30, anim="use_heal",
+          use=dict(type="stamina", use_ticks=20, stamina=100, regen_mult=1.5, duration_s=30, anim="consume",
                    sound="nr.ui.drink")),
     _item("canned_food", "缶詰", "Canned Food", "consumable", 16,
           icon="ラベルが半分剥げた缶詰、ふたが開いて豆が見える。缶切りの跡",
           desc_ja="空腹を満たし、体力を少し戻す。",
           desc_en="Fills hunger and restores a little health.",
-          use=dict(type="food", use_ticks=32, food=6, saturation=0.6, heal=2, anim="use_heal",
+          use=dict(type="food", use_ticks=32, food=6, saturation=0.6, heal=2, anim="consume",
                    sound="nr.ui.eat")),
     _item("chocolate_bar", "チョコバー", "Chocolate Bar", "consumable", 16,
           icon="赤い包み紙が破れて一口かじられたチョコバー",
           desc_ja="空腹を少し満たし、スタミナを 20 戻す。",
           desc_en="Fills a bit of hunger and restores 20 stamina.",
-          use=dict(type="food", use_ticks=16, food=3, saturation=0.3, stamina=20, anim="use_heal",
+          use=dict(type="food", use_ticks=16, food=3, saturation=0.3, stamina=20, anim="consume",
                    sound="nr.ui.eat")),
     _item("painkillers", "鎮痛剤", "Painkillers", "consumable", 16,
           icon="橙色の薬瓶と白い錠剤 2 粒、ラベルに手書きの×",
           desc_ja="30 秒間、受けるダメージを 20% 減らす。",
           desc_en="Reduces damage taken by 20% for 30 seconds.",
-          use=dict(type="buff", use_ticks=16, damage_taken_mult=0.8, duration_s=30, anim="use_heal",
+          use=dict(type="buff", use_ticks=16, damage_taken_mult=0.8, duration_s=30, anim="consume",
                    sound="nr.ui.pills")),
-    _item("fortify_booster", "強化ブースター", "Fortifying Booster", "consumable", 8, rarity="uncommon",
+    _item("fortify_booster", "鋼皮の注射", "Ironhide Shot", "consumable", 8, rarity="uncommon",
           icon="灰色の液の注射器、黒いゴムの栓に白い盾の印",
           desc_ja="45 秒間、受けるダメージを 30% 減らす。",
           desc_en="Reduces damage taken by 30% for 45 seconds.",
-          use=dict(type="buff", use_ticks=24, damage_taken_mult=0.7, duration_s=45, anim="use_inject",
+          use=dict(type="buff", use_ticks=24, damage_taken_mult=0.7, duration_s=45, anim="inject",
                    sound="nr.ui.inject")),
-    _item("champion_booster", "闘士ブースター", "Champion Booster", "consumable", 8, rarity="uncommon",
+    _item("champion_booster", "血潮の注射", "Bloodrush Shot", "consumable", 8, rarity="uncommon",
           icon="赤い液の注射器、黒いゴムの栓に白い拳の印",
           desc_ja="45 秒間、近接ダメージ +30%、部位破壊の確率 +15%。",
           desc_en="+30% melee damage and +15% dismember chance for 45 seconds.",
           use=dict(type="buff", use_ticks=24, melee_damage_mult=1.3, gore_power_add=0.15, duration_s=45,
-                   anim="use_inject", sound="nr.ui.inject")),
-    _item("hunter_booster", "狩人ブースター", "Hunter Booster", "consumable", 8, rarity="rare",
+                   anim="inject", sound="nr.ui.inject")),
+    _item("hunter_booster", "梟の目の注射", "Owl-Eye Shot", "consumable", 8, rarity="rare",
           icon="緑に光る液の注射器、黒いゴムの栓に白い目の印",
           desc_ja="30 秒間、暗視と、24 ブロック内の感染者が壁越しに光って見える。",
           desc_en="Night vision and infected within 24 blocks glow through walls for 30 seconds.",
           use=dict(type="buff", use_ticks=24, night_vision=True, reveal_radius=24, duration_s=30,
-                   anim="use_inject", sound="nr.ui.inject")),
+                   anim="inject", sound="nr.ui.inject")),
     # --- 道具 ---------------------------------------------------------------------
     _item("grappling_hook", "グラップリングフック", "Grappling Hook", "tool", 1, rarity="rare",
           icon="黒い握りのピストル型の発射器に、三本爪の鉤と巻いた細いワイヤー",
@@ -459,7 +461,7 @@ ITEMS = [
           icon="継ぎ当てだらけの布の翼を畳んだ背負い袋、黄色い紐と金具",
           desc_ja="空中で使うと翼を開いてゆっくり滑空する。もう一度使うと畳む。",
           desc_en="Use in mid-air to open the wing and glide. Use again to fold it.",
-          use=dict(type="glide", min_height=3, anim="glide_open", sound="nr.pk.glide_open"),
+          use=dict(type="glide", min_height=3, anim="glide_open", sound="nr.pk.glider_open"),
           wing_model=[P("canopy_center", (14.0, 1.0, 6.0), (0, 30.0, 0), "tarp_blue", "中央のセル。縫い目と継ぎ当て（布切れ）"),
                       P("canopy_side", (10.0, 1.0, 5.4), (11.0, 27.5, 0.2), "cloth_rag", "左右の翼、外側へ下がる",
                         rot=(0, 0, -18), rep=[(-11.0, 27.5, 0.2)]),
@@ -471,7 +473,7 @@ ITEMS = [
           desc_ja="使うと UV の光を前へ照らす。夜の感染者を怯ませ、焼く。電池が減ると点滅する。",
           desc_en="Shine UV light ahead. Stuns and burns night infected. Flickers when the battery runs low.",
           use=dict(type="uv_light", battery_s=12, recharge_per_s=1.0, cone_range=10, cone_deg=25,
-                   stun_ticks=40, uv_dps=3, slow=0.6, anim="uv_raise", sound="nr.ui.uv_on"),
+                   stun_ticks=40, uv_dps=3, slow=0.6, anim="uv_flash", sound="nr.ui.uv_on"),
           model=[P("body", (2.0, 2.0, 7.0), (0, 0, -1.0), "aluminium", "黒いアルマイトの胴、滑り止めの刻み"),
                  P("head", (2.8, 2.8, 2.2), (0, 0, -5.4), "plastic_black", "広がったライトの頭"),
                  P("lens", (2.4, 2.4, 0.3), (0, 0, -6.6), "emissive_uv", "紫に光るレンズ、内側に LED の点 7 個"),
@@ -489,19 +491,19 @@ ITEMS = [
           icon="ダクトテープ・ボルト・針金を詰めた小さな工具袋",
           desc_ja="持っている武器の耐久を 35% 戻す（最大値は少し減る）。",
           desc_en="Restores 35% durability to the held weapon (max durability drops a little).",
-          use=dict(type="repair", use_ticks=30, restore=0.35, max_loss=0.05, anim="use_heal",
+          use=dict(type="repair", use_ticks=30, restore=0.35, max_loss=0.05, anim="heal",
                    sound="nr.ui.repair"),
           recipe=shaped(["SSS", " T "], {"S": "nr:scrap", "T": "nr:duct_tape"})),
     _item("binoculars", "双眼鏡", "Binoculars", "tool", 1, rarity="uncommon",
           icon="塗装の剥げた黒い双眼鏡、首紐が垂れている、片方のレンズにひび",
           desc_ja="覗くと遠くを拡大し、視線の先の感染者に 30 秒の目印を付ける。",
           desc_en="Zoom in and tag the infected you look at for 30 seconds.",
-          use=dict(type="zoom", fov=30, mark_s=30, mark_range=96, anim="uv_raise", sound="nr.ui.zoom")),
+          use=dict(type="zoom", fov=30, mark_s=30, mark_range=96, anim="raise_item", sound="nr.ui.zoom")),
     _item("survivor_terminal", "生存者の端末", "Survivor Terminal", "tool", 1, rarity="rare",
           icon="ひびの入った頑丈なタブレット、緑の画面に地図と心拍の線、角にテープ",
           desc_ja="使うと端末が開く: 設定（ゴアレベル）・図鑑・クラフト・スキル・操作説明。",
           desc_en="Opens the terminal: settings (gore level), bestiary, crafting, skills and controls.",
-          use=dict(type="terminal", anim="uv_raise", sound="nr.ui.open"),
+          use=dict(type="terminal", anim="raise_item", sound="nr.ui.open"),
           recipe=shaped(["SGS", "SRS", "SBS"], {"S": "nr:scrap", "G": "minecraft:glass_pane",
                                                  "R": "minecraft:redstone", "B": "nr:battery"})),
 ]
@@ -526,7 +528,7 @@ WEAPON_CLASSES = {
     "revolver":       ("gun",       1, "pistol",   ()),
     "shotgun":        ("gun",       2, "shotgun",  ()),
     "rifle":          ("gun",       2, "rifle",    ()),
-    "smg":            ("gun",       2, "rifle",    ()),
+    "smg":            ("gun",       2, "smg",      ()),
     "throwable":      ("throwable", 1, "throw",    ()),
 }
 WEAPON_KINDS = ("melee", "bow", "crossbow", "gun", "throwable")
@@ -1107,7 +1109,7 @@ WEAPONS = [
       gore_power=0.4, sever_bias=dict(head="cracked", arm="wounded", leg="wounded", torso="slashed"),
       ammo="nr:ammo_pistol", mag=12, reload_ticks=32, spread=1.5, range=40, noise=32,
       rarity="uncommon", recipe=None, unlock_level=4,
-      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
+      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:bullet_tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
       palette=["#26282c", "#5a5c60", "#2a2a2c", "#b08a3c"],
       desc_ja="警官の拳銃。音で群れを呼ぶので最後の手段に。",
       desc_en="A police sidearm. The noise draws hordes — a last resort.",
@@ -1129,7 +1131,7 @@ WEAPONS = [
       ammo="nr:ammo_pistol", mag=6, reload_ticks=50, spread=1.0, range=48, noise=40,
       rarity="rare", recipe=None, unlock_level=9,
       special=dict(ammo_per_shot=2, overpenetrate=1),
-      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:tracer", impact="nr:impact_dust"),
+      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:bullet_tracer", impact="nr:impact_dust"),
       palette=["#c4c8cc", "#5e3c24", "#2a2a2c", "#b08a3c"],
       desc_ja="大口径の回転式拳銃。1 発で頭が弾ける（拳銃弾を 2 発使う）。",
       desc_en="A big-bore revolver. One shot pops a head (uses 2 pistol rounds).",
@@ -1149,7 +1151,7 @@ WEAPONS = [
       ammo="nr:ammo_shotgun", mag=6, reload_ticks=12, spread=7.0, pellets=8, range=18, noise=48,
       rarity="rare", recipe=None, unlock_level=10,
       special=dict(reload_per_shell=True, close_range_blocks=4, close_gore_bonus=0.3),
-      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
+      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:bullet_tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
       palette=["#26282c", "#2a2a2c", "#5a5c60", "#b01c1c"],
       desc_ja="至近距離で手足を吹き飛ばす。1 発ずつ込める。",
       desc_en="Blows limbs off at close range. Loads one shell at a time.",
@@ -1171,7 +1173,7 @@ WEAPONS = [
       ammo="nr:ammo_shotgun", mag=2, reload_ticks=40, spread=9.0, pellets=10, range=14, noise=52,
       rarity="rare", recipe=None, unlock_level=8,
       special=dict(both_barrels_on_heavy=True, close_range_blocks=3, close_gore_bonus=0.4),
-      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:tracer", impact="nr:impact_dust"),
+      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:bullet_tracer", impact="nr:impact_dust"),
       palette=["#3a3c40", "#7a5a3a", "#b88a3c", "#2a2a2c"],
       desc_ja="中折れの二連銃。重攻撃で 2 発同時に撃ち、群れごと吹き飛ばす。",
       desc_en="A break-action double. Heavy attack fires both barrels and clears a crowd.",
@@ -1193,7 +1195,7 @@ WEAPONS = [
       ammo="nr:ammo_rifle", mag=5, reload_ticks=60, spread=0.2, range=96, noise=64,
       rarity="epic", recipe=None, unlock_level=14,
       special=dict(scope_fov=30, overpenetrate=2),
-      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
+      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:bullet_tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
       palette=["#26282c", "#7a5a3a", "#b88a3c", "#2a2a2c"],
       desc_ja="ボルトアクションの狩猟銃。遠くの頭を確実に吹き飛ばすが、街中に響く。",
       desc_en="A bolt-action hunting rifle. Takes heads at long range — and the whole city hears it.",
@@ -1217,7 +1219,7 @@ WEAPONS = [
       ammo="nr:ammo_pistol", mag=30, reload_ticks=45, spread=4.0, range=32, noise=48,
       rarity="epic", recipe=None, unlock_level=15,
       special=dict(full_auto=True, hold_to_fire=True),
-      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
+      fx=dict(muzzle="nr:muzzle_flash", tracer="nr:bullet_tracer", shell="nr:shell_casing", impact="nr:impact_dust"),
       palette=["#5a5c60", "#2a2a2c", "#9a9c9e", "#c8a040", "#5c623e"],
       desc_ja="水道管と溶接で作った連射銃。長押しで撃ち続ける。弾をばらまき、腕をちぎる。",
       desc_en="A full-auto gun welded from water pipe. Hold to fire. Sprays lead and tears off arms.",
@@ -1419,8 +1421,8 @@ MODS = [
                 dict(level=3, chance=0.50, damage=6, stun_ticks=50, chain=3, chain_radius=4.0,
                      cost=[("nr:battery", 4), ("nr:chemicals", 1), ("nr:volatile_trophy", 1)])],
          vs=dict(common=1.0, viral=1.1, special=1.0, night=1.0, boss=0.6),
-         visual=dict(glow_rgb=(110, 190, 255), particle="nr:spark_shock", particle_rgb=(150, 210, 255),
-                     trail="nr:shock_arc", tint_rgb=(90, 160, 255)),
+         visual=dict(glow_rgb=(110, 190, 255), particle="nr:shock_spark", particle_rgb=(150, 210, 255),
+                     trail="nr:shock_arcs", tint_rgb=(90, 160, 255)),
          sound="nr.w.mod_shock", lore_ja="電撃で痺れさせ、近くの敵へ連鎖する。",
          lore_en="Stuns with electricity and chains to nearby enemies."),
     dict(key="bleed", ja="出血", en="Bleed", dtype="slash", applies_to=("melee",),
@@ -1431,7 +1433,7 @@ MODS = [
                 dict(level=3, chance=0.70, dps=3.0, ticks=120, gore_power_add=0.15,
                      cost=[("nr:blades", 6), ("nr:volatile_trophy", 1)])],
          vs=dict(common=1.0, viral=1.0, special=1.0, night=0.9, boss=0.8),
-         visual=dict(glow_rgb=(200, 20, 20), particle="nr:bleed_drip", particle_rgb=(140, 0, 0),
+         visual=dict(glow_rgb=(200, 20, 20), particle="nr:blood_drip", particle_rgb=(140, 0, 0),
                      trail="nr:blood_trail", tint_rgb=(160, 10, 10)),
          sound="nr.w.mod_bleed", lore_ja="傷口から血が噴き続ける。部位も落ちやすくなる。",
          lore_en="Wounds keep spurting. Limbs come off more easily."),
@@ -1499,8 +1501,8 @@ TRAPS = [
           gore=dict(head=("cracked", 0.15)),
           rearm=dict(mode="recharge", ticks=200, refill=[("nr:battery", 1)]),
           recipe=shaped(["CBC", "SSS"], {"C": "minecraft:copper_ingot", "B": "nr:battery", "S": "nr:scrap"}),
-          light_emission=3, sfx=dict(trigger="nr.trap.zap", idle="nr.trap.hum"),
-          fx=dict(trigger="nr:spark_shock", idle="nr:spark_small"),
+          light_emission=3, sfx=dict(trigger="nr.trap.electric", idle="nr.fx.electric_buzz"),
+          fx=dict(trigger="nr:shock_spark", idle="nr:trap_spark"),
           desc_ja="踏み板とコイル。感染者が近づくと放電し、周りへ連鎖する。電池 1 個で 6 回。",
           desc_en="A plate and coils. Discharges when infected approach, chaining to others. 6 zaps per battery.",
           model=[P("plate", (14, 1, 14), (0, 0.5, 0), "steel_rusty", "錆びた鉄板、縞鋼板の模様"),
@@ -1516,7 +1518,7 @@ TRAPS = [
           gore=dict(leg=("broken", 0.6), torso=("slashed", 0.35)),
           rearm=dict(mode="durable", uses=20, repair=[("nr:scrap", 2)]),
           recipe=shaped(["R R", "RRR", "PPP"], {"R": _IRON, "P": _PLANK}),
-          sfx=dict(trigger="nr.trap.impale"), fx=dict(trigger="nr:blood_spray"),
+          sfx=dict(trigger="nr.trap.spike"), fx=dict(trigger="nr:blood_spray"),
           desc_ja="板に尖らせた鉄筋を並べた罠。踏んだ足を串刺しにし、倒れれば腹が裂ける。",
           desc_en="Sharpened rebar on a board. Impales the foot that steps in; a fall rips the belly.",
           model=[P("board", (16, 1.5, 16), (0, 0.75, 0), "plywood", "黒ずんだ合板"),
@@ -1533,7 +1535,7 @@ TRAPS = [
           sever_on_struggle=dict(leg="cut_lower", chance=0.35),
           rearm=dict(mode="interact", ticks=20),
           recipe=shaped(["S S", "BIB", "SSS"], {"S": "nr:scrap", "B": "nr:blades", "I": _IRON}),
-          sfx=dict(trigger="nr.trap.snap"), fx=dict(trigger="nr:blood_spray"),
+          sfx=dict(trigger="nr.trap.beartrap"), fx=dict(trigger="nr:blood_spray"),
           desc_ja="鋼の顎。挟んだ感染者を 6 秒止め、もがくと脛ごとちぎれる。開いて使い直せる。",
           desc_en="Steel jaws. Holds infected for 6 s; if they struggle, the shin tears off. Re-set by hand.",
           model=[P("base", (6, 1, 6), (0, 0.5, 0), "steel_dark", "中央の踏み板"),
@@ -1551,7 +1553,7 @@ TRAPS = [
           gore=dict(head=("crushed", 0.5), arm=("cut_upper", 0.6), leg=("cut_upper", 0.6), torso=("halved", 0.3)),
           rearm=None,
           recipe=shaped(["S S", "SAS", "SAS"], {"S": "nr:scrap", "A": "nr:alcohol"}),
-          sfx=dict(trigger="nr.trap.explode"), fx=dict(trigger="nr:explosion", after="nr:flame"),
+          sfx=dict(trigger="nr.fx.explosion"), fx=dict(trigger="nr:explosion", after="nr:ground_fire"),
           desc_ja="赤い携行缶。叩くか撃つと爆発し、周りを燃やす。",
           desc_en="A red jerry can. Hit or shoot it and it explodes into flames.",
           model=[P("body", (6, 12, 10), (0, 6, 0), "plastic_red", "角形の携行缶、側面に X のプレス"),
@@ -1566,8 +1568,8 @@ TRAPS = [
                       knockback=3.0, fire_radius=3.5, fire_ticks=80, sets_burn=3),
           gore=dict(head=("crushed", 0.7), arm=("cut_upper", 0.8), leg=("cut_upper", 0.8), torso=("halved", 0.5)),
           rearm=None, recipe=None,
-          sfx=dict(vent="nr.trap.hiss", trigger="nr.trap.explode_big"),
-          fx=dict(vent="nr:gas_jet", trigger="nr:explosion"),
+          sfx=dict(vent="nr.fx.gas_hiss", trigger="nr.fx.explosion_big"),
+          fx=dict(vent="nr:flame_jet", trigger="nr:explosion"),
           desc_ja="撃つと穴から火を噴いて暴れ回り、数秒後に大爆発する。",
           desc_en="Shoot it and it rockets around spitting flame, then blows up big."),
     _trap("gas_pipe", "ガス管", "Gas Pipe", "block",
@@ -1576,7 +1578,7 @@ TRAPS = [
           gore=dict(),
           rearm=dict(mode="interact", ticks=200, refill=[("nr:duct_tape", 1)]),
           recipe=None,
-          sfx=dict(trigger="nr.trap.gas_burst", idle="nr.trap.hiss"), fx=dict(trigger="nr:flame_jet"),
+          sfx=dict(trigger="nr.trap.gas_burst", idle="nr.fx.gas_hiss"), fx=dict(trigger="nr:flame_jet"),
           desc_ja="壁のガス管とバルブ。叩くと裂けて 5 秒間、前へ火を噴く。テープで塞げばまた使える。",
           desc_en="A wall gas pipe and valve. Hit it and it bursts, jetting flame for 5 s. Tape it to reuse.",
           model=[P("pipe_v", (3, 16, 3), (0, 8, 6), "steel_painted", "壁沿いの黄色い縦管"),
@@ -1592,7 +1594,7 @@ TRAPS = [
                        chance=0.35),
           effect=dict(lure_radius=40, lure_ticks=300, lights_blink=True, spawn_viral=(2, 4)),
           gore=dict(), rearm=None, recipe=None,
-          sfx=dict(trigger="nr.trap.car_alarm"), fx=dict(trigger="nr:alarm_flash"),
+          sfx=dict(trigger="nr.trap.alarm"), fx=dict(trigger="nr:alarm_flash"),
           desc_ja="車を叩く・撃つ・飛び乗ると 35% で鳴り出し、15 秒間 40 ブロック内の感染者を呼ぶ。走る感染者も来る。",
           desc_en="Hitting, shooting or landing on a car may set it off: draws infected within 40 blocks for 15 s."),
     _trap("tripwire_mine", "ワイヤー地雷", "Tripwire Mine", "block",
@@ -1602,7 +1604,7 @@ TRAPS = [
           rearm=None,
           recipe=shaped(["T", "G", "S"], {"T": "minecraft:tripwire_hook", "G": "nr:gunpowder_pouch",
                                           "S": "nr:scrap"}),
-          sfx=dict(arm="nr.trap.click", trigger="nr.trap.explode"), fx=dict(trigger="nr:explosion"),
+          sfx=dict(arm="nr.trap.click", trigger="nr.fx.explosion"), fx=dict(trigger="nr:explosion"),
           desc_ja="釘を詰めた缶と張った針金。脚の高さで炸裂し、脚を吹き飛ばす。置いて 2 秒で作動。",
           desc_en="A nail-packed can and a tight wire. Bursts at leg height and blows legs off. Arms 2 s after placing.",
           model=[P("can", (5, 6, 5), (0, 3, 0), "steel_worn", "ラベルの剥げた缶、テープで巻く"),
@@ -1616,7 +1618,7 @@ TRAPS = [
                       slip=True),
           gore=dict(), rearm=None,
           recipe=shapeless([("nr:alcohol", 2), ("nr:chemicals", 1)], count=3),
-          sfx=dict(trigger="nr.trap.ignite", idle="nr.trap.fire_loop"), fx=dict(trigger="nr:flame"),
+          sfx=dict(trigger="nr.fx.fire_ignite", idle="nr.fx.fire_loop"), fx=dict(trigger="nr:ground_fire"),
           desc_ja="床に撒いた油。滑って転ばせ、火が付くと 8 秒燃え広がる。",
           desc_en="Oil spilled on the floor. Trips walkers; ignites into an 8-second spreading blaze.",
           model=[P("puddle", (16, 0.4, 16), (0, 0.2, 0), "fuel", "虹色の油膜（縁は不規則、アルファで抜く）"),
@@ -1643,7 +1645,7 @@ TRAPS = [
           gore=dict(torso=("slashed", 0.7), head=("crushed", 0.5), arm=("broken", 0.5)),
           rearm=dict(mode="interact", ticks=60, refill=[("nr:rags", 3)]),
           recipe=None, sfx=dict(trigger="nr.trap.rope_snap", hit="nr.gore.smash"),
-          fx=dict(trigger="nr:dust_burst"),
+          fx=dict(trigger="nr:dust_land"),
           desc_ja="鎖で吊った杭だらけの丸太。縄を切ると振り子で通りをなぎ払う。",
           desc_en="A spiked log hung on chains. Cut the rope and it sweeps the street like a pendulum."),
     _trap("barbed_wire", "有刺鉄線", "Barbed Wire", "block",
@@ -1652,7 +1654,7 @@ TRAPS = [
           gore=dict(arm=("wounded", 0.4), leg=("wounded", 0.6)),
           rearm=dict(mode="durable", uses=60, repair=[("nr:scrap", 1)]),
           recipe=shaped(["SBS", "BSB", "SBS"], {"S": "nr:scrap", "B": "nr:blades"}, count=4),
-          sfx=dict(trigger="nr.trap.wire"), fx=dict(trigger="nr:bleed_drip"),
+          sfx=dict(trigger="nr.trap.wire"), fx=dict(trigger="nr:blood_drip"),
           desc_ja="巻いた有刺鉄線。通る者を鈍らせ、肉を裂いて出血させる。",
           desc_en="Coiled barbed wire. Slows anything passing through and tears flesh.",
           model=[P("coil", (16, 10, 3), (0, 5, -3), "steel_worn", "螺旋に巻いた鉄線（輪を 5 つ、透過テクスチャ）"),
@@ -2644,7 +2646,8 @@ STRUCTURES = [
                    "3 階: 薬品庫（鍵付き）、屋上へのハッチ", "屋上にヘリポートの H と室外機"],
          markers=[("z_interior", 6, "病室と廊下"), ("z_special", 1, "隔離室"), ("loot_med", 4, "処置室と病室"),
                   ("loot_locked", 1, "3 階の薬品庫"), ("prop:ambulance", 1, "搬入口"),
-                  ("block:blood_pool", 4, "床"), ("climb_route", 5, "庇→ 2 階の窓→屋上"), ("roof_link", 1, "屋上の西")],
+                  ("block:blood_pool", 4, "床"), ("climb_route", 5, "庇→ 2 階の窓→屋上"), ("roof_link", 1, "屋上の西"),
+                  ("z_boss", 1, "救急搬入口の前の駐車場（被験体ゼロ・肉塊の巨人の戦場の中心）")],
          connects=dict(front="-Z", door=(14, 0), roof_height=15, roof_links=("west",),
                        street="正面玄関と、横の救急搬入口（車が入れる幅 6）")),
     dict(key="police_station", ja="警察署", en="Police Station", district="civic",
@@ -2679,7 +2682,8 @@ STRUCTURES = [
                    "頂上は街を見渡す見晴らし（ジップラインの起点、マップの目印）"],
          markers=[("z_interior", 5, "身廊"), ("z_night_nest", 1, "地下の納骨堂（入口は祭壇の裏）"),
                   ("loot_stash", 1, "鐘楼"), ("loot_locked", 1, "納骨堂"), ("zipline", 2, "塔の頂上"),
-                  ("climb_route", 14, "塔の外壁→鐘楼→頂上")],
+                  ("climb_route", 14, "塔の外壁→鐘楼→頂上"),
+                  ("z_boss", 1, "正面の広場と墓地（夜の頂点が塔の上から降りてくる）")],
          connects=dict(front="-Z", door=(8, 0), roof_height=16, roof_links=(),
                        street="正面に石段と小さな広場（墓地の柵）")),
     dict(key="warehouse", ja="倉庫", en="Warehouse", district="industrial",
@@ -3077,7 +3081,7 @@ def _craft(key, category, output, count, inputs, station="terminal", unlock=None
 
 CRAFT_CATEGORIES = {
     "medical": dict(ja="医療", en="Medical"), "ammo": dict(ja="弾", en="Ammo"),
-    "throwable": dict(ja="投擲", en="Throwables"), "booster": dict(ja="ブースター", en="Boosters"),
+    "throwable": dict(ja="投擲", en="Throwables"), "booster": dict(ja="注射薬", en="Injectables"),
     "tool": dict(ja="道具", en="Tools"), "trap": dict(ja="罠", en="Traps"), "weapon": dict(ja="武器", en="Weapons"),
     "gun": dict(ja="銃", en="Firearms"), "special": dict(ja="特別", en="Special"),
 }
@@ -3090,7 +3094,7 @@ CRAFTING = [
     _craft("immunity_booster", "medical", "nr:immunity_booster", 1,
            [("nr:uv_shroom", 2), ("nr:chemicals", 1), ("minecraft:glass_bottle", 1)], ticks=40),
     _craft("painkillers", "medical", "nr:painkillers", 2, [("nr:chemicals", 1), ("minecraft:sugar", 1)]),
-    # ブースター
+    # 注射薬（鍵は *_booster のまま）
     _craft("fortify_booster", "booster", "nr:fortify_booster", 1,
            [("nr:mutated_tissue", 1), ("nr:chemicals", 1), ("nr:alcohol", 1)], unlock={"level": 3}),
     _craft("champion_booster", "booster", "nr:champion_booster", 1,
@@ -3904,17 +3908,28 @@ def self_check():
         if not (t["recipe"] or t["id"] in crafted) and t["key"] != "gas_pipe":
             E(f"trap {t['key']}: cannot be crafted")
 
-    # --- 参照する音・パーティクル・アニメの名前の形 ------------------------------------
+    # --- 参照する音・パーティクル・アニメは演出 ID の登録簿（nr_registry）にあること -------
+    reg_sounds = set(_reg.SOUNDS)
     for s in required_sounds():
         if not _SOUND_RE.match(s):
             E(f"sound key {s}")
+        elif s not in reg_sounds:
+            E(f"sound {s} is not in nr_registry.SOUNDS")
     for p in required_particles():
         if not _PARTICLE_RE.match(p):
             E(f"particle id {p}")
+        elif p[3:] not in _reg.PARTICLES:
+            E(f"particle {p} is not in nr_registry.PARTICLES")
+    for a in required_player_animations():
+        if a[len("animation.nr.p."):] not in _reg.PLAYER_ANIMS:
+            E(f"player animation {a} is not in nr_registry.PLAYER_ANIMS")
     for it in all_items():
         a = it.get("use", {}) and it["use"].get("anim")
         if a and a not in PLAYER_MOTIONS:
             E(f"item {it['key']}: anim {a} not in PLAYER_MOTIONS")
+    for w in WEAPONS:
+        if w["anim_set"] != WEAPON_CLASSES[w["cls"]][2]:
+            E(f"weapon {w['key']}: anim_set {w['anim_set']} differs from its class")
     return err
 
 

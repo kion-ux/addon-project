@@ -266,7 +266,7 @@ dict(
   skin="pale",                    # 肌の系統（nr_paint の SKINS のキー）
   outfit=[...],                   # 服・装備の部品（nr_kit の関数名と引数）
   mutations=[...],                # 変異（腫瘍・骨の棘・菌糸・露出した肋骨…）
-  eyes="clouded",                 # clouded / bloodshot / glowing_yellow / glowing_red / none
+  eyes="clouded",                 # EYES_VOCAB の 10 種（clouded / bloodshot / milky / glowing_* 6 色 / none）
   hp=24, speed=0.22, damage=4, attack="swipe",   # 体力・速さ・攻撃力・攻撃の型
   locomotion="shamble",           # shamble / limp / stagger / run / sprint / crawl / brute / stalk / leap
   resist=dict(slash=1.0, blunt=1.0, pierce=1.0, blast=1.0, fire=1.0, shock=1.0, toxic=1.0, uv=0.0),
@@ -355,8 +355,11 @@ dict(
 
 `tools/nightrunner/nr_registry.py` が、パーティクル・効果音・プレイヤーのモーション・ゾンビの一発アニメの
 ID を固定する。作る側は全部作る、使う側（手書き JS）は載っている ID だけ使う。ゾンビの声
-`nr.z.<voice>.<idle|alert|attack|hurt|death>`、特殊能力の音 `nr.ab.<ability>`、特殊能力のアニメ
-`animation.nr.z.ab_<ability>` は spec の語彙（`VOICE_VOCAB` / `ABILITY_VOCAB`）から機械的に決まる。
+`nr.z.<voice>.<idle|alert|attack|hurt|death>`、特殊能力の音 `nr.ab.<ability>` は spec の語彙（`VOICE_VOCAB` /
+`ABILITY_VOCAB`）から、ゾンビの種類ごとのアニメ（`animation.nr.z.ab_<ability>_<phase>` と `ab_<ability>`、
+`atk_<attack>`、`walk_/run_<locomotion>`）は spec の `zombie_animations(z)` から機械的に決まる
+（登録簿の `all_sound_ids(spec)` / `all_zombie_anim_names(spec)` / `all_zombie_oneshots(spec)` が並べる）。
+spec（武器の音・改造・罠・アイテムのモーション）が参照する演出 ID は全部この登録簿にある（`nr_spec.py` が検査）。
 
 ### `scripts/data/*.js`（生成物。手書き JS はここから import する）
 

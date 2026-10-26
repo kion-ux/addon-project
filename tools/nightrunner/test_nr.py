@@ -5,35 +5,56 @@
 （地面・ブロック・時間・光）・偽のプレイヤー・偽のゾンビ・tick の進行を用意して、アドオンの
 `packs/nightrunner_BP/scripts/main.js` を読み込み、テストを走らせる。
 
-偽物は **公式の d.ts（tools/nightrunner/typings/）から作る部分**と手書きの部分からなる:
+偽物は **公式の d.ts（tools/nightrunner/typings/）から作る部分**と手書きの部分（tools/nightrunner/test_fakes/）からなる:
 
-* d.ts の全 enum・全クラス名・定数を export する（実機に無い名前を import したら Node が失敗する）
+* d.ts の全 enum・全クラス名・定数を export する（実機に無い名前を import したら Node が失敗する）。
+  手書きしていないクラスは「身代わり」（new すると例外、static は d.ts の値か「偽物の限界」）
 * d.ts で「read-only mode では呼べない」とされた関数・プロパティを before イベントの中で呼ぶと例外
   （実機の "does not have required privileges"）。「early-execution で呼べる」と書かれていない
-  World / Dimension の関数を worldLoad 前に呼ぶと例外
+  World / Dimension などの関数と `new ItemStack`・`BlockPermutation.resolve` を worldLoad 前に呼ぶと例外
 * 偽物がまだ持っていない実機の関数を呼ぶと「偽物の限界」と分かる例外（アドオンの不具合と区別する）
-* 実機に無いメソッド（例 MolangVariableMap.setVector3 は 2.3.0 に無い）は偽物にも無い
+* 実機に無いメソッド（例 MolangVariableMap.setVector3 は 2.3.0 に無い）は偽物にも無い（自己テストで確かめる）
 
 **契約違反（violation）**は、スクリプトが try/catch で握りつぶしてもテストを失敗にする:
-存在しないエンティティ・パーティクル・効果音・アニメ・アイテム・ブロック・構造物・BP イベント・
-プロパティの ID、enum に無い値・範囲外の int、有限でない座標や Molang 値、`variable.` の無い Molang 変数名、
-プレイヤーへの `applyImpulse`・`remove`、1.x の形の `applyKnockback(x, z, h, v)`、before イベント内の書き換え、
-重ねられるアイテムへの動的プロパティ、server-ui 1.x の形の `toggle(label, true)` / `slider(..., step, default)`、
-1 tick のパーティクル 300 個超（DESIGN.md §11）、BP が使うのにスクリプトが登録していないカスタムコンポーネント。
+存在しないエンティティ・パーティクル・効果音・アニメ・アイテム・ブロック・構造物（のパレットのブロック）・
+BP イベント・プロパティの ID、enum に無い値・範囲外の int、有限でない座標や Molang 値、`variable.` の無い
+Molang 変数名、プレイヤーへの `applyImpulse`・`remove`、1.x の形の `applyKnockback(x, z, h, v)`、
+before イベント内の書き換え・subscribe・フォームの show、worldLoad 前の world、重ねられるアイテムへの動的プロパティ、
+server-ui 1.x の形の `toggle(label, true)` / `slider(..., step, default)`、入力の間に挟んだ label / header /
+divider、`animation.nr.*` の playAnimation に controller（`nr.` で始まる）・stopExpression・nextState が無い
+（rendering.md P1 / P2）、location の無い `getEntities({maxDistance})`、ゲームに無い `setTimeout` などのグローバル、
+1 tick のパーティクル 300 個超（DESIGN.md §11）、startup の外・無いフック名のカスタムコンポーネント登録、
+BP が使うのにスクリプトが登録していないカスタムコンポーネント。
 
 使い方:
 
-    python3 tools/nightrunner/test_nr.py                 # 組み込みテスト + tools/nightrunner/tests/*.mjs
-    python3 tools/nightrunner/test_nr.py -k gore          # 名前に gore を含むテストだけ
+    python3 tools/nightrunner/test_nr.py                 # 自己テスト + 組み込み smoke + tools/nightrunner/tests/*.mjs
+    python3 tools/nightrunner/test_nr.py -k gore          # 名前（かファイル名）に gore を含むテストだけ（自己テストは飛ばす）
     python3 tools/nightrunner/test_nr.py --file tests/gore.mjs   # このファイルだけ（組み込みは走らせない）
-    python3 tools/nightrunner/test_nr.py --keep -v        # 作業フォルダを残す・アドオンの console.log も出す
+    python3 tools/nightrunner/test_nr.py --keep -v        # 作業フォルダを残す・テストごとの結果とアドオンの console.* も出す
     python3 tools/nightrunner/test_nr.py --strict         # main.js が無ければ失敗（最終・CI 用）
     python3 tools/nightrunner/test_nr.py --json build_preview/nightrunner/test_nr.json
+    python3 tools/nightrunner/test_nr.py --selftest       # 偽物の自己テストだけ
 
 `main.js` がまだ無ければ、偽物そのものの自己テスト（小さな偽アドオンを作って走らせる）だけをして 0 で終わる。
+自己テストは「正しい偽アドオンが全部通る」ことと「わざと壊した偽アドオン（test_fakes/selftest/addon_bad・
+boot_*.js）が期待どおりの違反で落ちる」ことの両方を確かめる。
+終了コード: 0 = 全部通った、1 = 失敗あり、2 = 道具が動かない（node が無いなど）。
+
+ファイルの置き場所:
+
+| ファイル | 中身 |
+|---|---|
+| `test_nr.py` | d.ts の読み取り、RP/BP から契約の表（DEFS）を作る、作業フォルダ、node の起動、結果のまとめ、自己テスト |
+| `test_fakes/server.js` | 偽の `@minecraft/server`（手書き。末尾に d.ts から作る部分を足して置く） |
+| `test_fakes/server_ui.js` / `common.js` | 偽の `@minecraft/server-ui` 2.0.0 / `@minecraft/common` |
+| `test_fakes/harness.js` | テストの道具 `nr-test`（下の表。詳しくは中のコメント） |
+| `test_fakes/runner.mjs` | 1 ファイル分を走らせる（起動の順・console の捕捉・結果の JSON） |
+| `test_fakes/builtin_smoke.mjs` | 組み込みの通しテスト（全エンティティ・全ゾンビの全部位・全イベント・全ブロック・全構造物） |
+| `test_fakes/selftest/` | 自己テストの偽アドオン（正しいもの・壊れたもの）とテスト |
 
 ----------------------------------------------------------------------------
-テストの書き方（tools/nightrunner/tests/<名前>.mjs。.mjs が全部テスト、.js は補助として一緒に写す）
+テストの書き方（tools/nightrunner/tests/<名前>.mjs。.mjs が全部テスト、.js は補助として一緒に写す。tests/README.md も）
 ----------------------------------------------------------------------------
 
 作業フォルダでは `tests/` と `scripts/`（BP の scripts の写し）が並ぶので、アドオンの関数は
@@ -54,34 +75,36 @@
 ファイルごとに Node のプロセスが一つ（アドオンは一度だけ起動）。テストの間でワールド（エンティティ・
 ブロック・時刻・フォームの答え）は片付けるが、アドオンの中の状態と runInterval は残る。
 
-道具（`nr-test` の export。詳しくは HARNESS_JS の中のコメント）:
+道具（`nr-test` の export。詳しくは test_fakes/harness.js の中のコメント）:
 
 | 道具 | 中身 |
 |---|---|
 | `test(name, fn)` | テストを登録（fn は async 可）。`test.only` は無い。`-k` で絞る |
 | `tick(n=1)` | n tick 進める（物理・効果・タイマー・runJob・after イベント・Promise） |
 | `spawnZombie(type, pos, {yaw, face})` | ゾンビ（`dimension.spawnEntity` 経由。entitySpawn も来る）。既定でプレイヤーの方を向く |
-| `spawnPlayer(pos, item, {name, mode})` | プレイヤー（playerJoin / playerSpawn が来る）。item は ID か ItemStack |
+| `spawn(id, pos, {yaw, face, event})` / `despawn(e)` | 何でも出す（gib・弾・小道具）/ イベントなしで消す |
+| `spawnPlayer(pos, item, {name, mode, yaw})` | プレイヤー（playerJoin / playerSpawn が来る）。item は ID か ItemStack |
 | `give(player, item, slot)` / `held(player)` | 持ち物 |
-| `hit(player, target, {part, damage, cause})` | 近接で殴る。part は head/torso/arm_r/arm_l/leg_r/leg_l |
-| `shoot(player, target, {part, projectile, damage})` | 飛び道具が当たる（projectileHitEntity + entityHurt） |
+| `hit(player, target, {part, point, damage, cause})` | 近接で殴る。part は head/torso/arm_r/arm_l/leg_r/leg_l（`PARTS`） |
+| `shoot(player, target, {part, point, projectile, damage})` | 飛び道具が当たる（projectileHitEntity + entityHurt） |
 | `use / startUse / stopUse / releaseUse / completeUse(player, item?, ticks?)` | アイテムを使う（before/after + カスタムコンポーネントの onUse 等） |
-| `press(player, "Jump"|"Sneak", down=true)` / `setInput(player, {x, y, sprint, sneak, jump})` | 入力（playerButtonInput・inputInfo） |
+| `press(player, "Jump"|"Sneak", down=true)` / `setInput(player, {x, y, sprint, sneak, jump})` | 入力（playerButtonInput・inputInfo・移動） |
 | `interact(player, entityOrPos)` / `breakBlock(player, pos)` / `placeBlock(player, pos, id)` | 触る・壊す・置く |
-| `scriptEvent(id, message, source)` | `/scriptevent` |
+| `scriptEvent(id, message, source)` / `command(name, args, source)` | `/scriptevent` / startup で登録したカスタムコマンド |
 | `setBlock(pos, id)` / `fill(from, to, id)` / `blockAt(pos)` / `setGround(y)` | 偽のワールドの地形（既定は y<64 が石） |
 | `setTime(t)` / `setLight(n | fn)` | 時刻（0〜23999）と光（既定は時刻と空・光るブロックから） |
-| `answerForm(resp)` / `lastForm()` | フォームの答え（番号・formValues の配列・{canceled:true}・関数）と最後に出たフォーム |
+| `answerForm(resp)` / `lastForm()` | フォームの答え（番号・formValues の配列・"defaults"・{canceled:true}・関数）と最後に出たフォーム |
 | `partPoint(zombie, part)` / `aim(player, point)` | 部位の世界座標（scripts/data/zombie_shapes.js の当たり箱）・視線を向ける |
 | `prop(e, name)` / `entities(type)` / `zombieTypes()` | 読み出し |
-| `used()` / `mark()` / `since(mark)` | 使った演出の回数（particles / sounds / anims / events / props / spawned …） |
+| `used()` / `mark()` / `since(mark)` | 使った演出の回数（particles / sounds / anims / events / props / spawned …。used() はそのテストの分） |
 | `expect(v)` | toBe / toEqual / toBeTruthy / toBeGreaterThan / toBeCloseTo / toContain / toThrow / toBeOneOf / not … |
-| `expectViolation(fn, kind)` | わざと契約違反を起こすテスト用（違反を確かめて記録から消す） |
+| `expectViolation(fn, kind)` | わざと契約違反を起こすテスト用（違反を確かめて記録から消す。必ず await） |
 | `DATA` | scripts/data/*.js の中身（zombies / shapes / weapons / items / fx …。無ければ空） |
-| `mc` / `ui` / `S` | 偽の @minecraft/server・server-ui・偽物の内部状態（S.log など） |
+| `mc` / `ui` / `S` | 偽の @minecraft/server・server-ui・偽物の内部状態（S.log・S.DEFS など） |
 
 テストが失敗になるのは: 例外・expect の失敗・契約違反・購読者や system.run の中の捕まらない例外・
-console.error。console.warn（[nr] の警告）は数えて出すだけ。
+捕まらない Promise の reject・console.error・tick を進めずに止まった await。
+console.warn（[nr] の警告）と「偽物の限界」は数えて出すだけ。
 """
 from __future__ import annotations
 
@@ -91,6 +114,7 @@ import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -101,2078 +125,1017 @@ from nr_common import BP, HERE, ROOT, RP, SCRATCH, SCRIPTS  # noqa: E402
 
 TYPINGS = os.path.join(HERE, "typings")
 TESTS_DIR = os.path.join(HERE, "tests")
+FAKES = os.path.join(HERE, "test_fakes")
+SELF = os.path.join(FAKES, "selftest")
 RESEARCH = os.path.join(ROOT, "build_preview", "nr_research")
 PARTICLE_BUDGET = 300           # DESIGN.md §11
+SEED = 20260101                 # 偽物の Math.random の種（同じテストは同じ結果）
+FILE_TIMEOUT = 900              # 1 ファイルの上限（秒）
+SELF_TIMEOUT = 180
+SMOKE_NAME = "__builtin_smoke.mjs"
+WORLD_EVENT_CLASSES = ("WorldAfterEvents", "WorldBeforeEvents", "SystemAfterEvents", "SystemBeforeEvents")
+
+
+def rel(p: str) -> str:
+    try:
+        r = os.path.relpath(p, ROOT)
+        return p if r.startswith("..") else r.replace(os.sep, "/")
+    except ValueError:
+        return p
+
+
+def write_json(path: str, doc) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, ensure_ascii=False, separators=(",", ":"))
+
+
+def read_text(path: str) -> str:
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
 
 
 # ===========================================================================
-#  偽の @minecraft/server（手書きの部分。末尾に d.ts から作る部分を足す）
+#  d.ts を読む（クラス・メンバーの印・enum・定数・イベント名）
 # ===========================================================================
-SERVER_JS = r'''// 偽の @minecraft/server 2.3.0（tools/nightrunner/test_nr.py が作る。直接編集しない）
-import fs from "node:fs";
-import { ArgumentOutOfBoundsError, InvalidArgumentError, EngineError } from "@minecraft/common";
+_ENUM_HEAD = re.compile(r"^export enum (\w+)\s*\{")
+_ENUM_ITEM = re.compile(r"""^\s+['"]?(\w+)['"]?\s*=\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|(-?\d+(?:\.\d+)?))\s*,?\s*$""")
+_CLASS_HEAD = re.compile(r"^export class (\w+)(?:<[^>]*>)?(?:\s+extends\s+([\w.]+)(?:<.*?>)?)?"
+                         r"(?:\s+implements\s+[^{]+)?\s*\{\s*$")
+_CONST = re.compile(r"^export const (\w+)\s*(?::\s*([^=;]+?))?\s*(?:=\s*(.+?))?\s*;\s*$")
+_CTOR = re.compile(r"^    (?:(private|protected)\s+)?constructor\s*\(")
+_METHOD = re.compile(r"^    (static\s+)?([A-Za-z_$][\w$]*)\s*(?:<.*>)?\s*\(")
+_PROP = re.compile(r"^    (static\s+)?(readonly\s+)?['\"]?([A-Za-z_$][\w$]*)['\"]?(\?)?\s*(:|=)\s*(.*)$")
 
-const G = globalThis;
-const ENV = JSON.parse(fs.readFileSync(new URL("../../../__nr_env.json", import.meta.url), "utf8"));
-const API = ENV.api || { classes: {}, enums: {}, events: {} };
-const DEFS = ENV.defs;
-const ENUMS = API.enums || {};
-const enumSet = (name) => new Set(Object.values(ENUMS[name] || {}));
-const HAS_API = !!(API.classes && Object.keys(API.classes).length);
 
-// ---- 決まった乱数（Math.random も差し替えてテストを再現できるように） -------------
-let seed = (ENV.seed >>> 0) || 1234;
-function rand() {
-  seed = (seed + 0x6D2B79F5) >>> 0;
-  let t = seed;
-  t = Math.imul(t ^ (t >>> 15), t | 1);
-  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-}
-Math.random = rand;
+def _literal(src: str):
+    s = src.strip().rstrip(";").strip()
+    m = re.fullmatch(r"'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\"", s)
+    if m:
+        return m.group(1) if m.group(1) is not None else m.group(2)
+    if re.fullmatch(r"-?\d+", s):
+        return int(s)
+    if re.fullmatch(r"-?\d+\.\d*", s):
+        return float(s)
+    if s in ("true", "false"):
+        return s == "true"
+    return None
 
-// ---- 状態 ----------------------------------------------------------------------
-function newLog() {
-  return { particles: new Map(), sounds: new Map(), anims: new Map(), events: new Map(), props: new Map(),
-    spawned: new Map(), structures: new Map(), commands: [], messages: [], molangVars: new Map(),
-    effects: new Map(), hurts: 0, deaths: 0, camera: 0, titles: 0, actionbars: 0, removed: 0 };
-}
-const S = G.__nr = {
-  tick: 0, phase: "load", early: true, readOnly: 0,
-  entities: new Map(), players: [], nextId: 1,
-  queue: [], timers: [], jobs: [], nextRun: 1,
-  blocks: new Map(), palette: [], paletteIdx: new Map(), lights: new Map(), groundY: 64, flat: true,
-  time: 1000, absTime: 1000, day: 0, daylightCycle: true,
-  worldDP: new Map(), worldStructures: new Map(),
-  formQueue: [], forms: [],
-  reg: { block: new Map(), item: new Map(), commands: new Map(), enums: new Map() },
-  log: newLog(),
-  perTick: 0, maxPerTick: 0, maxPerTickAt: 0, budget: ENV.particleBudget ?? 300, budgetHit: new Set(),
-  violations: [], errors: [], limitations: new Map(), notices: new Map(),
-  warns: [], consoleErrors: [], logs: [],
-  light: null, pendingRemove: new Set(), stepState: new Map(), harness: 0,
-  ENV, DEFS, API, rand,
-};
 
-const bump = (m, k, n = 1) => m.set(k, (m.get(k) ?? 0) + n);
-const finite = (v) => typeof v === "number" && Number.isFinite(v);
-function fmt(v) {
-  try { return JSON.stringify(v, (k, x) => (x instanceof Entity ? `<${x._typeId}#${x._id}>` : x)); }
-  catch { return String(v); }
-}
-function where() {
-  const st = (new Error().stack || "").split("\n").slice(2);
-  for (const ln of st) {
-    const m = ln.match(/\/((?:scripts|tests)\/[^:)]+):(\d+):\d+\)?\s*$/);
-    if (m) return `${m[1]}:${m[2]}`;
-  }
-  return "";
-}
-function shortStack(e) {
-  const out = [];
-  for (const ln of String(e?.stack || "").split("\n").slice(1)) {
-    const m = ln.match(/\/((?:scripts|tests|node_modules\/@minecraft\/[\w-]+)\/[^:)]+):(\d+):\d+\)?\s*$/);
-    if (m) out.push(`${m[1]}:${m[2]}`);
-    if (out.length >= 5) break;
-  }
-  return out;
-}
-// 契約違反: 記録して（握りつぶされても残る）、投げる例外を返す
-function violation(kind, msg, Err = Error) {
-  S.violations.push({ kind, msg, where: where(), tick: S.tick });
-  return new Err(`[fake:${kind}] ${msg}`);
-}
-function check(cond, kind, msg, Err) { if (!cond) throw violation(kind, msg, Err); }
-function limitation(what) {
-  bump(S.limitations, what);
-  return new Error(`[偽物の限界] ${what} は偽の @minecraft/server に無い（実機にはある。アドオンの不具合ではない — test_nr.py に足すこと）`);
-}
-function notice(kind) { bump(S.notices, kind); }
-function recordError(whereName, e) {
-  S.errors.push({ where: whereName, msg: String(e?.message ?? e), stack: shortStack(e), tick: S.tick });
-}
-function checkVec3(v, what) {
-  check(v && typeof v === "object" && finite(v.x) && finite(v.y) && finite(v.z), "vector",
-    `${what} が有限の {x, y, z} でない: ${fmt(v)}`, InvalidArgumentError);
-}
-const nsId = (id) => (typeof id === "string" && id && !id.includes(":")) ? "minecraft:" + id : id;
-const VAN = {
-  items: new Set(DEFS.vanilla?.items || []), blocks: new Set(DEFS.vanilla?.blocks || []),
-  entities: new Set(DEFS.vanilla?.entities || []),
-};
-function vanillaCheck(kind, id) {
-  const set = VAN[kind];
-  if (set.size && !set.has(id)) notice(`バニラの一覧に無い ${kind} ID: ${id}`);
-}
-const PARTICLES = new Set(DEFS.particles || []);
-const SOUNDS = new Set(DEFS.sounds || []);
-const ANIMS = new Set(DEFS.animations || []);
-const EFFECTS = new Set(["speed", "slowness", "haste", "mining_fatigue", "strength", "instant_health",
-  "instant_damage", "jump_boost", "nausea", "regeneration", "resistance", "fire_resistance", "water_breathing",
-  "invisibility", "blindness", "night_vision", "hunger", "weakness", "poison", "wither", "health_boost",
-  "absorption", "saturation", "levitation", "fatal_poison", "conduit_power", "slow_falling", "bad_omen",
-  "village_hero", "darkness", "trial_omen", "wind_charged", "weaving", "oozing", "infested", "raid_omen"]);
+def parse_dts(path: str) -> dict:
+    """d.ts → {classes: {名前: {extends, ctor, error, members: {名前: {kind, static, ro, early, value?}}}},
+    enums: {名前: {キー: 値}}, events: {WorldAfterEvents: [...], ...}, consts: {名前: 値 / None}}。
 
-// ---- エラーの型（d.ts の名前） ---------------------------------------------------------
-function errClass(name) { return class extends Error { constructor(m) { super(m); this.name = name; } }; }
-export const InvalidEntityError = errClass("InvalidEntityError");
-export const InvalidItemStackError = errClass("InvalidItemStackError");
-export const EntitySpawnError = errClass("EntitySpawnError");
-export const InvalidContainerSlotError = errClass("InvalidContainerSlotError");
-export const InvalidStructureError = errClass("InvalidStructureError");
-export const CustomComponentNameError = errClass("CustomComponentNameError");
-export const BlockCustomComponentAlreadyRegisteredError = errClass("BlockCustomComponentAlreadyRegisteredError");
-export const ItemCustomComponentAlreadyRegisteredError = errClass("ItemCustomComponentAlreadyRegisteredError");
-export const CustomComponentInvalidRegistryError = errClass("CustomComponentInvalidRegistryError");
-export const NamespaceNameError = errClass("NamespaceNameError");
-export const CommandError = errClass("CommandError");
-export const LocationOutOfWorldBoundariesError = errClass("LocationOutOfWorldBoundariesError");
+    ro / early は @remarks の定型文（"can't be called in read-only mode" / "can't be edited in read-only mode" /
+    "can be called in early-execution mode" / "can be read in early-execution mode"）から拾う。
+    """
+    lines = read_text(path).splitlines()
+    api = {"classes": {}, "enums": {}, "events": {}, "consts": {}}
+    i, n = 0, len(lines)
+    while i < n:
+        ln = lines[i]
+        m = _ENUM_HEAD.match(ln)
+        if m:
+            vals = {}
+            i += 1
+            while i < n and lines[i].rstrip() != "}":
+                mm = _ENUM_ITEM.match(lines[i])
+                if mm:
+                    if mm.group(4) is not None:
+                        v = mm.group(4)
+                        vals[mm.group(1)] = float(v) if "." in v else int(v)
+                    else:
+                        vals[mm.group(1)] = mm.group(2) if mm.group(2) is not None else mm.group(3)
+                i += 1
+            api["enums"][m.group(1)] = vals
+            i += 1
+            continue
+        m = _CLASS_HEAD.match(ln)
+        if m:
+            name, base = m.group(1), m.group(2)
+            info = {"extends": base, "ctor": None, "error": base == "Error", "members": {}}
+            doc, in_doc = [], False
+            i += 1
+            while i < n and lines[i].rstrip() != "}":
+                s = lines[i]
+                st = s.strip()
+                if in_doc:
+                    doc.append(st)
+                    if "*/" in st:
+                        in_doc = False
+                elif st.startswith("/**"):
+                    doc, in_doc = [st], "*/" not in st
+                elif not st or st.startswith("//"):
+                    pass
+                else:
+                    mc = _CTOR.match(s)
+                    mp = None if mc else _PROP.match(s)
+                    mm = None if (mc or mp) else _METHOD.match(s)
+                    if mc:
+                        info["ctor"] = "private" if mc.group(1) else "public"
+                    elif mp or mm:
+                        txt = " ".join(doc)
+                        ro = "can't be called in read-only mode" in txt or "can't be edited in read-only mode" in txt
+                        early = "can be called in early-execution mode" in txt or "can be read in early-execution mode" in txt
+                        if mp:
+                            mname = mp.group(3)
+                            rec = {"kind": "property", "static": bool(mp.group(1)), "ro": ro, "early": early,
+                                   "readonly": bool(mp.group(2))}
+                            if mp.group(5) == "=":
+                                v = _literal(mp.group(6))
+                                if v is not None:
+                                    rec["value"] = v
+                        else:
+                            mname = mm.group(2)
+                            rec = {"kind": "method", "static": bool(mm.group(1)), "ro": ro, "early": early}
+                        old = info["members"].get(mname)
+                        if old:                       # 多重定義はまとめる
+                            old["ro"] = old["ro"] or rec["ro"]
+                            old["early"] = old["early"] or rec["early"]
+                        else:
+                            info["members"][mname] = rec
+                    doc = []
+                i += 1
+            api["classes"][name] = info
+            i += 1
+            continue
+        m = _CONST.match(ln)
+        if m:
+            api["consts"][m.group(1)] = _literal(m.group(3)) if m.group(3) else None
+        i += 1
+    for cls in WORLD_EVENT_CLASSES:
+        info = api["classes"].get(cls)
+        if info:
+            api["events"][cls] = sorted(k for k, v in info["members"].items() if v["kind"] == "property")
+    return api
 
-// ---- 小さな Molang の評価器（BP イベントの set_property・プロパティの既定値用） ----------------
-function molangEval(src, ent) {
-  const s = String(src); const toks = []; let i = 0;
-  while (i < s.length) {
-    const c = s[i];
-    if (/\s/.test(c)) { i++; continue; }
-    if (c === "'") { const j = s.indexOf("'", i + 1); if (j < 0) throw new Error("' が閉じていない"); toks.push({ t: "s", v: s.slice(i + 1, j) }); i = j + 1; continue; }
-    let m = /^\d+(\.\d+)?/.exec(s.slice(i));
-    if (m) { toks.push({ t: "n", v: parseFloat(m[0]) }); i += m[0].length; continue; }
-    m = /^[A-Za-z_][\w.]*/.exec(s.slice(i));
-    if (m) { toks.push({ t: "i", v: m[0].toLowerCase() }); i += m[0].length; continue; }
-    m = /^(==|!=|<=|>=|&&|\|\||\?\?|[-+*/()<>!?:,;])/.exec(s.slice(i));
-    if (m) { toks.push({ t: "o", v: m[0] }); i += m[0].length; continue; }
-    throw new Error(`Molang の字 ${c}`);
-  }
-  let p = 0;
-  const eat = (v) => (toks[p] && toks[p].t === "o" && toks[p].v === v ? (p++, true) : false);
-  const num = (x) => (typeof x === "boolean" ? (x ? 1 : 0) : x);
-  function prim() {
-    const t = toks[p++];
-    if (!t) throw new Error("式が途中で終わる");
-    if (t.t === "n" || t.t === "s") return t.v;
-    if (t.t === "o" && t.v === "(") { const v = tern(); if (!eat(")")) throw new Error(") が無い"); return v; }
-    if (t.t === "o" && t.v === "-") return -num(prim());
-    if (t.t === "o" && t.v === "!") return num(prim()) ? 0 : 1;
-    if (t.t === "i") {
-      const args = [];
-      if (eat("(")) { if (!eat(")")) { do { args.push(tern()); } while (eat(",")); if (!eat(")")) throw new Error(") が無い"); } }
-      return molangCall(t.v, args, ent);
-    }
-    throw new Error(`予期しない ${t.v}`);
-  }
-  function mul() { let v = prim(); for (;;) { if (eat("*")) v = num(v) * num(prim()); else if (eat("/")) v = num(v) / num(prim()); else return v; } }
-  function add() { let v = mul(); for (;;) { if (eat("+")) v = num(v) + num(mul()); else if (eat("-")) v = num(v) - num(mul()); else return v; } }
-  function cmp() { let v = add(); for (;;) { if (eat("<=")) v = +(v <= add()); else if (eat(">=")) v = +(v >= add()); else if (eat("<")) v = +(v < add()); else if (eat(">")) v = +(v > add()); else return v; } }
-  function eq() { let v = cmp(); for (;;) { if (eat("==")) v = +(v === cmp()); else if (eat("!=")) v = +(v !== cmp()); else return v; } }
-  function and() { let v = eq(); while (eat("&&")) { const r = eq(); v = +(!!num(v) && !!num(r)); } return v; }
-  function or() { let v = and(); while (eat("||")) { const r = and(); v = +(!!num(v) || !!num(r)); } return v; }
-  function coal() { let v = or(); while (eat("??")) { const r = or(); v = v ?? r; } return v; }
-  function tern() { const c = coal(); if (eat("?")) { const a = tern(); if (!eat(":")) return num(c) ? a : 0; const b = tern(); return num(c) ? a : b; } return c; }
-  const v = tern(); eat(";");
-  if (p < toks.length) throw new Error("式の後ろに余り");
-  return v;
-}
-function molangCall(name, a, ent) {
-  const n = name.replace(/^query\./, "q.");
-  const deg = Math.PI / 180;
-  switch (n) {
-    case "true": return 1;
-    case "false": return 0;
-    case "q.property": return ent?._props?.get(a[0]);
-    case "q.has_property": return ent?._props?.has(a[0]) ? 1 : 0;
-    case "q.had_component_group": return ent?._groups?.has(a[0]) ? 1 : 0;
-    case "math.random": return a[0] + rand() * (a[1] - a[0]);
-    case "math.random_integer": return Math.floor(a[0] + rand() * (a[1] - a[0] + 1));
-    case "math.abs": return Math.abs(a[0]);
-    case "math.min": return Math.min(a[0], a[1]);
-    case "math.max": return Math.max(a[0], a[1]);
-    case "math.clamp": return Math.min(Math.max(a[0], a[1]), a[2]);
-    case "math.floor": return Math.floor(a[0]);
-    case "math.ceil": return Math.ceil(a[0]);
-    case "math.round": return Math.round(a[0]);
-    case "math.trunc": return Math.trunc(a[0]);
-    case "math.sqrt": return Math.sqrt(a[0]);
-    case "math.pow": return Math.pow(a[0], a[1]);
-    case "math.mod": return a[0] % a[1];
-    case "math.sin": return Math.sin(a[0] * deg);
-    case "math.cos": return Math.cos(a[0] * deg);
-    case "math.lerp": return a[0] + (a[1] - a[0]) * a[2];
-    case "math.pi": return Math.PI;
-  }
-  throw new Error(`偽物の Molang が知らない ${name}`);
-}
-S.molangEval = molangEval;
 
-// ---- イベントの信号 -------------------------------------------------------------------
-class Signal {
-  constructor(group, name) { this._group = group; this._name = name; this._subs = []; }
-  subscribe(cb, options) {
-    check(typeof cb === "function", "event", `${this._group}.${this._name}.subscribe に関数でないもの`);
-    this._subs.push([cb, options]);
-    return cb;
-  }
-  unsubscribe(cb) { const i = this._subs.findIndex((s) => s[0] === cb); if (i >= 0) this._subs.splice(i, 1); }
-}
-function makeEvents(group, clsName) {
-  const names = API.events?.[clsName];
-  if (names && names.length) {
-    const o = {};
-    for (const n of names) o[n] = new Signal(group, n);
-    return Object.freeze(o);
-  }
-  return new Proxy({}, { get(t, n) { if (typeof n !== "string") return undefined; return (t[n] ??= new Signal(group, n)); } });
-}
-const SIG = {
-  wa: makeEvents("world.afterEvents", "WorldAfterEvents"),
-  wb: makeEvents("world.beforeEvents", "WorldBeforeEvents"),
-  sa: makeEvents("system.afterEvents", "SystemAfterEvents"),
-  sb: makeEvents("system.beforeEvents", "SystemBeforeEvents"),
-};
-function primaryEntity(d) {
-  return d.hurtEntity ?? d.deadEntity ?? d.entity ?? d.damagingEntity ?? d.projectile ?? d.player ?? d.source;
-}
-function passes(name, d, o) {
-  if (!o) return true;
-  const e = name === "entityHitEntity" || name === "entityHitBlock" ? d.damagingEntity : primaryEntity(d);
-  if (o.entityTypes && e && !o.entityTypes.includes(e._typeId)) return false;
-  if (o.entities && e && !o.entities.includes(e)) return false;
-  if (o.namespaces && name === "scriptEventReceive" && !o.namespaces.includes(String(d.id).split(":")[0])) return false;
-  return true;
-}
-function dispatch(sig, name, d) {
-  if (!sig) return;
-  for (const [cb, o] of [...sig._subs]) {
-    if (!passes(name, d, o)) continue;
-    const before = sig._group.includes("before");
-    if (before) S.readOnly++;
-    try { cb(d); } catch (e) { recordError(`${sig._group}.${name}`, e); }
-    finally { if (before) S.readOnly--; }
-  }
-}
-function queueAfter(name, d) { S.queue.push([name, d]); }
-function flush() {
-  let guard = 0;
-  while (S.queue.length) {
-    if (++guard > 200000) { recordError("flush", new Error("after イベントが止まらない（無限ループ？）")); S.queue.length = 0; break; }
-    const [name, d] = S.queue.shift();
-    const sig = name === "scriptEventReceive" ? SIG.sa.scriptEventReceive : SIG.wa[name];
-    dispatch(sig, name, d);
-  }
-}
-function fireBefore(name, d) { dispatch(SIG.wb[name], name, d); return d; }
-S.queueAfter = queueAfter; S.flush = flush; S.fireBefore = fireBefore; S.SIG = SIG;
-'''
-SERVER_JS += r'''
-// ===========================================================================
-//  エンティティ
-// ===========================================================================
-const DAMAGE_CAUSES = enumSet("EntityDamageCause");
-function propDefaults(def, ent) {
-  const m = new Map();
-  for (const [k, pd] of Object.entries(def?.props ?? {})) {
-    let d = pd.default;
-    if (typeof d === "string" && pd.type !== "enum") {
-      try { d = molangEval(d, ent); } catch { d = undefined; }
-    }
-    if (d === undefined) d = pd.type === "enum" ? pd.values[0] : pd.type === "bool" ? false : (pd.range?.[0] ?? 0);
-    if (pd.type === "bool") d = !!d;
-    m.set(k, d);
-  }
-  return m;
-}
-function hpOf(comps) {
-  const h = comps["minecraft:health"];
-  if (!h) return null;
-  const v = typeof h.value === "number" ? h.value : (h.value?.range_max ?? h.max ?? 20);
-  const mx = typeof h.max === "number" ? h.max : v;
-  return [v, mx];
-}
-function dirFromRot(r) {
-  const yaw = r.y * Math.PI / 180, pit = r.x * Math.PI / 180;
-  return { x: -Math.sin(yaw) * Math.cos(pit), y: -Math.sin(pit), z: Math.cos(yaw) * Math.cos(pit) };
-}
-function rotToward(from, to) {
-  const dx = to.x - from.x, dy = to.y - from.y, dz = to.z - from.z;
-  const h = Math.hypot(dx, dz);
-  return { x: -Math.atan2(dy, h) * 180 / Math.PI, y: Math.atan2(-dx, dz) * 180 / Math.PI };
-}
-S.dirFromRot = dirFromRot; S.rotToward = rotToward;
+def api_problems(api: dict, ui: dict) -> list:
+    """d.ts の読み取りが壊れていないか（版の違う d.ts を置いた時など）。"""
+    bad = []
+    if len(api["classes"]) < 250 or len(api["enums"]) < 40:
+        bad.append(f"server の d.ts からクラス {len(api['classes'])} / enum {len(api['enums'])} しか読めない")
+    for cls, at_least in (("WorldAfterEvents", 40), ("WorldBeforeEvents", 8), ("SystemBeforeEvents", 1)):
+        if len(api["events"].get(cls, [])) < at_least:
+            bad.append(f"{cls} のイベントが {len(api['events'].get(cls, []))} 個しか読めない")
+    ent = api["classes"].get("Entity", {}).get("members", {})
+    if not ent.get("applyDamage", {}).get("ro") or not api["classes"].get("World", {}).get("members", {}).get(
+            "afterEvents", {}).get("early"):
+        bad.append("@remarks の read-only / early-execution の印が読めていない")
+    if api["consts"].get("TicksPerSecond") != 20:
+        bad.append("定数 TicksPerSecond が読めない")
+    for c in ("ActionFormData", "ModalFormData", "MessageFormData", "UIManager", "FormRejectError"):
+        if c not in ui["classes"]:
+            bad.append(f"server-ui の d.ts に {c} が無い")
+    return bad
 
-export class Entity {
-  constructor(dim, typeId, loc, opts = {}) {
-    this._id = String(-4294967296 + S.nextId++);
-    this._typeId = typeId;
-    this._dim = dim;
-    this._loc = { x: loc.x, y: loc.y, z: loc.z };
-    this._vel = { x: 0, y: 0, z: 0 };
-    this._rot = { x: 0, y: opts.yaw ?? 0 };
-    this._valid = true; this._dead = false; this._deathTick = 0;
-    this._def = DEFS.entities[typeId];
-    this._groups = new Set();
-    this._tags = new Set(); this._dp = new Map(); this._effects = new Map();
-    this._props = new Map();
-    this._props = propDefaults(this._def, this);
-    this._isPlayer = false;
-    this._onGround = true; this._fall = 0; this._fireTicks = 0;
-    this._sneaking = false; this._sprinting = false;
-    this._lastHurtTick = -100; this._lastHurtAmount = 0;
-    this._nameTag = "";
-    this._item = opts.item;
-    this._owner = undefined;
-    const hp = hpOf(this._comps()) ?? (typeId === "minecraft:item" ? [5, 5] : [20, 20]);
-    this._hp = hp[0]; this._maxHp = hp[1];
-    S.entities.set(this._id, this);
-  }
-  _comps() {
-    if (!this.__cc) {
-      const c = Object.assign({}, this._def?.components ?? {});
-      for (const g of this._groups) Object.assign(c, this._def?.groups?.[g] ?? {});
-      this.__cc = c;
-    }
-    return this.__cc;
-  }
-  _size() {
-    if (this._isPlayer) return { w: 0.6, h: this._sneaking ? 1.5 : 1.8 };
-    if (this._typeId === "minecraft:item") return { w: 0.25, h: 0.25 };
-    const cb = this._comps()["minecraft:collision_box"];
-    if (cb && typeof cb === "object" && !Array.isArray(cb)) return { w: cb.width ?? 0.6, h: cb.height ?? 1.8 };
-    return { w: 0.6, h: 1.8 };
-  }
-  _aabb() {
-    const { w, h } = this._size(); const l = this._loc;
-    return { min: { x: l.x - w / 2, y: l.y, z: l.z - w / 2 }, max: { x: l.x + w / 2, y: l.y + h, z: l.z + w / 2 } };
-  }
-  _families() {
-    if (this._isPlayer) return ["player", "mob"];
-    return this._comps()["minecraft:type_family"]?.family ?? (this._typeId.startsWith("minecraft:") ? [this._typeId.slice(10), "mob"] : []);
-  }
-  _hasPhysics() {
-    const c = this._comps();
-    return this._isPlayer || this._typeId === "minecraft:item" || !!c["minecraft:physics"] || !!c["minecraft:projectile"] || !this._def;
-  }
-  _invalidate() { this.__cc = null; }
 
-  // ---- 読み出し ----
-  get id() { return this._id; }
-  get typeId() { return this._typeId; }
-  get isValid() { return this._valid; }
-  get dimension() { return this._dim; }
-  get location() { return { ...this._loc }; }
-  get isOnGround() { return this._onGround; }
-  get isFalling() { return !this._onGround && this._vel.y < 0; }
-  get isInWater() { return false; }
-  get isClimbing() { return false; }
-  get isSleeping() { return false; }
-  get isSwimming() { return false; }
-  get isSprinting() { return this._sprinting; }
-  get isSneaking() { return this._sneaking; }
-  set isSneaking(v) { this._sneaking = !!v; }
-  get nameTag() { return this._nameTag; }
-  set nameTag(v) { check(typeof v === "string", "type", "nameTag は文字列"); this._nameTag = v; }
-  get localizationKey() { return `entity.${this._typeId}.name`; }
-  get scoreboardIdentity() { return undefined; }
+def server_tail_js(api: dict, hand_src: str) -> str:
+    """偽の @minecraft/server の末尾に足す部分: enum・定数・手書きしていないクラスの身代わり・ガードの取り付け。"""
+    exported = set(re.findall(r"^export\s+(?:const|let|var|class|function)\s+([A-Za-z_$][\w$]*)", hand_src, re.M))
+    out = ["", "// " + "=" * 75,
+           "//  ここから下は test_nr.py が d.ts（typings/server/index.d.ts）から作った部分",
+           "// " + "=" * 75]
+    for name in sorted(api["enums"]):
+        if name not in exported:
+            out.append(f"export const {name} = Object.freeze({json.dumps(api['enums'][name], ensure_ascii=False)});")
+    for name in sorted(api["consts"]):
+        if name not in exported:
+            out.append(f"export const {name} = {json.dumps(api['consts'][name])};")
+    classes = api["classes"]
+    stubs = {c for c in classes if c not in exported}
+    order, done = [], set()
 
-  // ---- 体力・ダメージ ----
-  applyDamage(amount, options) {
-    check(finite(amount) && amount >= 0, "damage", `applyDamage の量 ${amount}`, ArgumentOutOfBoundsError);
-    let cause = "override", damager, proj;
-    if (options) {
-      check(typeof options === "object", "damage", "applyDamage の options は辞書");
-      if (options.damagingProjectile) { cause = "projectile"; proj = options.damagingProjectile; damager = options.damagingEntity; }
-      else {
-        cause = options.cause;
-        check(DAMAGE_CAUSES.size === 0 || DAMAGE_CAUSES.has(cause), "damage", `EntityDamageCause に無い cause ${fmt(cause)}`);
-        damager = options.damagingEntity;
-      }
-    }
-    return this._hurt(amount, { cause, damagingEntity: damager, damagingProjectile: proj });
-  }
-  _hurt(amount, src) {
-    if (this._dead || !this._valid) return false;
-    if (this._isPlayer && (this._mode === "Creative" || this._mode === "Spectator")) return false;
-    const sensor = this._comps()["minecraft:damage_sensor"];
-    for (const t of [].concat(sensor?.triggers ?? [])) {
-      if (!t || t.on_damage?.filters) continue;
-      const c = t.cause ?? "all";
-      if ((c === "all" || c === src.cause) && (t.deals_damage === false || t.deals_damage === "no")) return false;
-    }
-    if (src.cause === "fire" || src.cause === "fireTick" || src.cause === "lava") {
-      if (this._comps()["minecraft:fire_immune"]) return false;
-    }
-    let applied = amount;
-    if (S.tick - this._lastHurtTick < 10) {
-      if (amount <= this._lastHurtAmount) return false;
-      applied = amount - this._lastHurtAmount;
-    }
-    this._lastHurtTick = S.tick; this._lastHurtAmount = amount;
-    const old = this._hp;
-    this._hp = Math.max(0, this._hp - applied);
-    S.log.hurts++;
-    queueAfter("entityHurt", { hurtEntity: this, damage: applied, damageSource: { ...src } });
-    queueAfter("entityHealthChanged", { entity: this, oldValue: old, newValue: this._hp });
-    if (this._hp <= 0) this._die(src);
-    return true;
-  }
-  _die(src) {
-    if (this._dead) return;
-    this._dead = true; this._deathTick = S.tick; this._hp = 0;
-    S.log.deaths++;
-    queueAfter("entityDie", { deadEntity: this, damageSource: { ...src } });
-  }
-  kill() { if (!this._valid || this._dead) return false; this._lastHurtTick = -100; this._hp = 0; this._die({ cause: "selfDestruct" }); return true; }
-  remove() {
-    if (this._isPlayer) throw violation("player", "player.remove() は実機で例外（プレイヤーは消せない）");
-    this._removeNow(false);
-  }
-  _removeNow(silent) {
-    if (!this._valid) return;
-    if (!silent) fireBefore("entityRemove", { removedEntity: this });
-    this._valid = false;
-    S.entities.delete(this._id);
-    S.log.removed++;
-    if (!silent) queueAfter("entityRemove", { removedEntityId: this._id, typeId: this._typeId });
-  }
+    def visit(c):
+        if c in done or c not in stubs:
+            return
+        done.add(c)
+        base = classes[c]["extends"]
+        if base in stubs:
+            visit(base)
+        order.append(c)
 
-  // ---- 動き ----
-  applyImpulse(v) {
-    if (this._isPlayer) throw violation("player", "applyImpulse はプレイヤーに効かない（実機で例外）。applyKnockback を使う", ArgumentOutOfBoundsError);
-    checkVec3(v, "applyImpulse");
-    this._vel.x += v.x; this._vel.y += v.y; this._vel.z += v.z;
-    if (v.y > 0) this._onGround = false;
-  }
-  applyKnockback(h, vertical) {
-    if (arguments.length !== 2 || typeof h !== "object") {
-      throw violation("api", "applyKnockback は 2.x では ({x, z}, vertical)。1.x の (dirX, dirZ, h, v) ではない", TypeError);
-    }
-    check(h && finite(h.x) && finite(h.z) && finite(vertical), "vector", `applyKnockback(${fmt(h)}, ${vertical})`, InvalidArgumentError);
-    this._vel.x = h.x; this._vel.z = h.z; this._vel.y = vertical;
-    if (vertical > 0) this._onGround = false;
-  }
-  getVelocity() { return { ...this._vel }; }
-  clearVelocity() { this._vel = { x: 0, y: 0, z: 0 }; }
-  getRotation() { return { ...this._rot }; }
-  setRotation(r) {
-    check(r && finite(r.x) && finite(r.y), "vector", `setRotation(${fmt(r)})`, InvalidArgumentError);
-    this._rot = { x: Math.max(-90, Math.min(90, r.x)), y: r.y };
-  }
-  getViewDirection() { return dirFromRot(this._rot); }
-  getHeadLocation() {
-    const h = this._isPlayer ? (this._sneaking ? 1.27 : 1.62) : this._size().h * 0.88;
-    return { x: this._loc.x, y: this._loc.y + h, z: this._loc.z };
-  }
-  lookAt(t) { checkVec3(t, "lookAt"); this._rot = rotToward(this.getHeadLocation(), t); }
-  teleport(loc, o = {}) {
-    checkVec3(loc, "teleport");
-    if (o.rotation) check(finite(o.rotation.x) && finite(o.rotation.y), "vector", "teleport の rotation", InvalidArgumentError);
-    if (o.facingLocation) checkVec3(o.facingLocation, "teleport の facingLocation");
-    if (o.dimension) this._dim = o.dimension;
-    this._loc = { x: loc.x, y: loc.y, z: loc.z };
-    if (o.rotation) this.setRotation(o.rotation);
-    if (o.facingLocation) this.lookAt(o.facingLocation);
-    if (!o.keepVelocity) this._vel = { x: 0, y: 0, z: 0 };
-    this._fall = 0;
-  }
-  tryTeleport(loc, o) { this.teleport(loc, o); return true; }
-  _physicsStep() {
-    if (!this._hasPhysics() || this._dead && !this._def) return;
-    const c = this._comps();
-    const proj = c["minecraft:projectile"];
-    const g = c["minecraft:physics"]?.has_gravity === false ? 0 : proj ? (proj.gravity ?? 0.05) : 0.08;
-    if (this._isPlayer && this._mode === "Creative" && this._flying) return;
-    const was = this._onGround;
-    if (!this._onGround || this._vel.y > 0) this._vel.y -= g;
-    const L = this._loc, V = this._vel;
-    if (proj && !this._stuck) { this._projectileStep(proj); return; }
-    const nx = L.x + V.x, nz = L.z + V.z;
-    if (solidAt(nx, L.y + 0.4, L.z)) V.x = 0; else L.x = nx;
-    if (solidAt(L.x, L.y + 0.4, nz)) V.z = 0; else L.z = nz;
-    let ny = L.y + V.y;
-    if (V.y <= 0 && solidAt(L.x, ny - 1e-4, L.z)) {
-      ny = Math.floor(ny - 1e-4) + 1;
-      const fell = this._fall;
-      V.y = 0; this._onGround = true; this._fall = 0;
-      if (!was) this._land(fell);
-    } else if (V.y > 0 && solidAt(L.x, ny + this._size().h, L.z)) {
-      V.y = 0; this._onGround = false; ny = L.y;
-    } else {
-      if (V.y < 0) this._fall += -V.y;
-      this._onGround = false;
-    }
-    L.y = ny;
-    const f = this._onGround ? 0.546 : 0.91;
-    V.x *= f; V.z *= f; V.y *= 0.98;
-    if (Math.abs(V.x) < 1e-4) V.x = 0;
-    if (Math.abs(V.z) < 1e-4) V.z = 0;
-    if (L.y < -128) this._removeNow(false);
-  }
-  _land(fell) {
-    if (fell > 3.0 && !this._dead && this._typeId !== "minecraft:item") {
-      const sensor = this._comps()["minecraft:damage_sensor"];
-      this._hurt(Math.floor(fell - 3.0), { cause: "fall" });
-      void sensor;
-    }
-    const b = blockKey(this._loc.x, this._loc.y - 0.5, this._loc.z);
-    blockHook(b, "onEntityFallOn", { entity: this, fallDistance: fell });
-  }
-  _projectileStep(proj) {
-    const L = this._loc, V = this._vel;
-    const len = Math.hypot(V.x, V.y, V.z);
-    if (len < 1e-6) return;
-    const d = { x: V.x / len, y: V.y / len, z: V.z / len };
-    const owner = this._owner;
-    let best = null;
-    for (const e of S.entities.values()) {
-      if (e === this || e === owner || !e._valid || e._dead || e._comps()["minecraft:projectile"]) continue;
-      const t = rayAabb(L, d, e._aabb());
-      if (t !== null && t <= len && (!best || t < best.t)) best = { t, e };
-    }
-    const bh = raycastBlocks(L, d, len, {});
-    if (best && (!bh || best.t <= bh.t)) {
-      const at = { x: L.x + d.x * best.t, y: L.y + d.y * best.t, z: L.z + d.z * best.t };
-      const target = best.e;
-      queueAfter("projectileHitEntity", { dimension: this._dim, hitVector: d, location: at, projectile: this,
-        source: owner, getEntityHit: () => ({ entity: target }) });
-      const dmg = proj.on_hit?.impact_damage?.damage;
-      if (dmg) target._hurt(Array.isArray(dmg) ? dmg[0] : dmg, { cause: "projectile", damagingEntity: owner, damagingProjectile: this });
-      this._loc = at;
-      if (proj.on_hit?.remove_on_hit || proj.on_hit?.impact_damage?.destroy_on_hit) S.pendingRemove.add(this);
-      else { this._vel = { x: 0, y: 0, z: 0 }; this._stuck = true; }
-      return;
-    }
-    if (bh) {
-      const at = { x: L.x + d.x * bh.t, y: L.y + d.y * bh.t, z: L.z + d.z * bh.t };
-      const blk = new Block(this._dim, bh.x, bh.y, bh.z);
-      queueAfter("projectileHitBlock", { dimension: this._dim, hitVector: d, location: at, projectile: this,
-        source: owner, getBlockHit: () => ({ block: blk, face: bh.face, faceLocation: { x: at.x - bh.x, y: at.y - bh.y, z: at.z - bh.z } }) });
-      this._loc = at; this._vel = { x: 0, y: 0, z: 0 }; this._stuck = true; this._onGround = true;
-      if (proj.on_hit?.remove_on_hit) S.pendingRemove.add(this);
-      return;
-    }
-    L.x += V.x; L.y += V.y; L.z += V.z;
-    V.x *= 0.99; V.y *= 0.99; V.z *= 0.99;
-    if (L.y < -128) this._removeNow(false);
-  }
-  _statusStep() {
-    for (const [k, ef] of this._effects) if (S.tick >= ef.end) this._effects.delete(k);
-    if (this._fireTicks > 0) {
-      this._fireTicks--;
-      if (this._fireTicks % 20 === 0) this._hurt(1, { cause: "fireTick" });
-    }
-    if (this._dead && !this._isPlayer && S.tick - this._deathTick >= 20) this._removeNow(false);
-    if (this._dead && this._isPlayer && S.tick - this._deathTick >= 20) {
-      this._dead = false; this._hp = this._maxHp; this._loc = { x: 0, y: S.groundY, z: 0 };
-      queueAfter("playerSpawn", { player: this, initialSpawn: false });
-    }
-  }
+    for c in sorted(stubs):
+        visit(c)
+    for c in order:
+        info = classes[c]
+        base = info["extends"]
+        if info["error"]:
+            out.append(f'export class {c} extends Error {{ constructor(m) {{ super(m); this.name = "{c}"; }} }}')
+            continue
+        ext = f" extends {base}" if base and (base in exported or base in stubs) else ""
+        if info["ctor"] == "public":
+            body = f'throw limitation("new {c}");'
+        else:
+            body = f'throw new TypeError("[fake] {c} は new できない（実機でもコンストラクタが公開されていない）");'
+        out.append(f"export class {c}{ext} {{ constructor() {{ {body} }} }}")
+    plain = [c for c in order if not classes[c]["error"]]
+    out.append("installGuards({ ...IMPLEMENTED, " + ", ".join(plain) + " });")
+    out.append("S.STUBS = " + json.dumps(plain) + ";")
+    return "\n".join(out) + "\n"
 
-  // ---- 部品 ----
-  getComponent(id) {
-    const n = nsId(String(id));
-    const c = this._comps();
-    const e = this;
-    switch (n) {
-      case "minecraft:health": return new EntityHealthComponent(e, n);
-      case "minecraft:movement": return (this._isPlayer || c[n]) ? new EntityMovementComponent(e, n) : undefined;
-      case "minecraft:equippable": return (this._isPlayer || c[n] || c["minecraft:equipment"]) ? new EntityEquippableComponent(e, n) : undefined;
-      case "minecraft:inventory": return (this._isPlayer || c[n]) ? new EntityInventoryComponent(e, n) : undefined;
-      case "minecraft:projectile": return c[n] ? new EntityProjectileComponent(e, n) : undefined;
-      case "minecraft:type_family": return new EntityTypeFamilyComponent(e, n);
-      case "minecraft:onfire": return this._fireTicks > 0 ? new EntityOnFireComponent(e, n) : undefined;
-      case "minecraft:item": return this._typeId === "minecraft:item" ? new EntityItemComponent(e, n) : undefined;
-    }
-    if (c[n]) return new EntityComponent(e, n);
-    return undefined;
-  }
-  hasComponent(id) { return this.getComponent(id) !== undefined; }
-  getComponents() {
-    const out = [];
-    for (const k of ["minecraft:health", "minecraft:type_family", "minecraft:movement", "minecraft:inventory",
-      "minecraft:equippable", "minecraft:projectile", ...Object.keys(this._comps())]) {
-      const comp = this.getComponent(k);
-      if (comp && !out.some((x) => x.typeId === comp.typeId)) out.push(comp);
-    }
-    return out;
-  }
 
-  // ---- プロパティ・イベント ----
-  getProperty(name) {
-    if (this._props.has(name)) return this._props.get(name);
-    if (this._def && String(name).startsWith("nr:")) throw violation("property", `${this._typeId} に無いプロパティ ${name} を読んだ`);
-    return undefined;
-  }
-  setProperty(name, value) {
-    const pd = this._def?.props?.[name];
-    check(pd, "property", `${this._typeId} に無いプロパティ ${name} を書こうとした`, InvalidArgumentError);
-    this._checkProp(name, pd, value);
-    this._props.set(name, value);
-    bump(S.log.props, `${name}=${value}`);
-  }
-  _checkProp(name, pd, value) {
-    if (pd.type === "enum") check(typeof value === "string" && pd.values.includes(value), "property", `${this._typeId} の ${name} に enum に無い値 ${fmt(value)}（${pd.values.join(" / ")}）`, InvalidArgumentError);
-    else if (pd.type === "int") check(Number.isInteger(value) && value >= pd.range[0] && value <= pd.range[1], "property", `${this._typeId} の ${name} に ${fmt(value)}（整数 ${pd.range[0]}〜${pd.range[1]}）`, ArgumentOutOfBoundsError);
-    else if (pd.type === "float") check(finite(value) && value >= pd.range[0] && value <= pd.range[1], "property", `${this._typeId} の ${name} に ${fmt(value)}（${pd.range[0]}〜${pd.range[1]}）`, ArgumentOutOfBoundsError);
-    else if (pd.type === "bool") check(typeof value === "boolean", "property", `${this._typeId} の ${name} に ${fmt(value)}（bool）`, InvalidArgumentError);
-  }
-  resetProperty(name) {
-    const pd = this._def?.props?.[name];
-    check(pd, "property", `${this._typeId} に無いプロパティ ${name}`, InvalidArgumentError);
-    const d = propDefaults({ props: { [name]: pd } }, this).get(name);
-    this._props.set(name, d);
-    return d;
-  }
-  triggerEvent(name) {
-    if (!this._def) { notice(`バニラのエンティティへの triggerEvent（${this._typeId} ${name}）は確かめない`); return; }
-    const ev = this._def.events?.[name];
-    check(ev, "event", `${this._typeId} に BP イベント ${name} が無い`, InvalidArgumentError);
-    bump(S.log.events, name);
-    this._applyEvent(ev, name, 0);
-    queueAfter("dataDrivenEntityTrigger", { entity: this, eventId: name, getModifiers: () => [] });
-  }
-  _applyEvent(ev, name, depth) {
-    if (!ev || depth > 16) return;
-    if (ev.filters && !this._filter(ev.filters)) return;
-    for (const g of ev.remove?.component_groups ?? []) { this._groups.delete(g); this._invalidate(); }
-    for (const g of ev.add?.component_groups ?? []) {
-      check(this._def.groups?.[g], "event", `${this._typeId} のイベント ${name} が無い component_group ${g} を足す`);
-      this._groups.delete(g); this._groups.add(g); this._invalidate();
-      const grp = this._def.groups[g];
-      if (grp["minecraft:instant_despawn"]) S.pendingRemove.add(this);
-      const hp = hpOf(grp);
-      if (hp) { this._maxHp = hp[1]; this._hp = Math.min(this._hp, this._maxHp); }
-    }
-    for (const [k, v] of Object.entries(ev.set_property ?? {})) {
-      const pd = this._def.props?.[k];
-      check(pd, "event", `${this._typeId} のイベント ${name} が無いプロパティ ${k} を set_property`);
-      let val = v;
-      if (typeof v === "string" && pd.type !== "enum") {
-        try { val = molangEval(v, this); } catch (e) { notice(`set_property の Molang を評価できない: ${v}`); continue; }
-        if (pd.type === "int") val = Math.trunc(val);
-        if (pd.type === "bool") val = !!val;
-      } else if (typeof v === "string" && pd.type === "enum" && !pd.values.includes(v)) {
-        try { val = molangEval(v, this); } catch { /* 下で違反になる */ }
-      }
-      this._checkProp(k, pd, val);
-      this._props.set(k, val);
-    }
-    for (const sub of ev.sequence ?? []) this._applyEvent(sub, name, depth + 1);
-    if (ev.randomize?.length) {
-      const total = ev.randomize.reduce((a, r) => a + (r.weight ?? 1), 0);
-      let x = rand() * total;
-      for (const r of ev.randomize) { x -= r.weight ?? 1; if (x <= 0) { this._applyEvent(r, name, depth + 1); break; } }
-    }
-    if (ev.first_valid?.length) {
-      for (const r of ev.first_valid) if (!r.filters || this._filter(r.filters)) { this._applyEvent(r, name, depth + 1); break; }
-    }
-    const trig = ev.trigger;
-    if (trig) {
-      const tn = typeof trig === "string" ? trig : trig.event;
-      const target = typeof trig === "string" ? "self" : (trig.target ?? "self");
-      if (target === "self") {
-        check(this._def.events?.[tn], "event", `${this._typeId} のイベント ${name} が無いイベント ${tn} を trigger`);
-        this._applyEvent(this._def.events[tn], tn, depth + 1);
-      }
-    }
-    if (ev.queue_command) S.log.commands.push(...[].concat(ev.queue_command.command ?? []));
-  }
-  _filter(f) {
-    if (Array.isArray(f)) return f.every((x) => this._filter(x));
-    if (!f || typeof f !== "object") return true;
-    if (f.all_of) return [].concat(f.all_of).every((x) => this._filter(x));
-    if (f.any_of) return [].concat(f.any_of).some((x) => this._filter(x));
-    if (f.none_of) return ![].concat(f.none_of).some((x) => this._filter(x));
-    const op = f.operator ?? "equals";
-    const cmp = (a, b) => (op === "equals" || op === "==" || op === "=") ? a === b : (op === "not" || op === "!=" || op === "<>") ? a !== b
-      : op === "<" ? a < b : op === "<=" ? a <= b : op === ">" ? a > b : op === ">=" ? a >= b : a === b;
-    switch (f.test) {
-      case "has_component": return cmp(!!this._comps()[f.value], true);
-      case "is_family": return cmp(this._families().includes(f.value), true);
-      case "has_tag": return cmp(this._tags.has(f.value), true);
-      case "enum_property": case "int_property": case "float_property": case "bool_property":
-        return cmp(this._props.get(f.domain), f.value);
-      case "is_daytime": return cmp(S.time < 13000 || S.time >= 23000, f.value ?? true);
-    }
-    notice(`偽物が評価しないフィルタ ${f.test}（真として扱う）`);
-    return true;
-  }
+# ===========================================================================
+#  RP / BP → 契約の表（DEFS）
+# ===========================================================================
+def _walk(root: str, exts=(".json",)) -> list:
+    out = []
+    if not os.path.isdir(root):
+        return out
+    for base, dirs, files in os.walk(root):
+        dirs.sort()
+        for f in sorted(files):
+            if f.endswith(exts):
+                out.append(os.path.join(base, f))
+    return out
 
-  // ---- 効果・タグ・火 ----
-  addEffect(type, duration, o = {}) {
-    const id = String(typeof type === "string" ? type : type?.getName?.() ?? type).replace(/^minecraft:/, "");
-    check(EFFECTS.has(id), "effect", `知らない効果 ${fmt(type)}`, InvalidArgumentError);
-    check(Number.isInteger(duration) && duration >= 1 && duration <= 20000000, "effect", `addEffect の duration ${duration}（整数 1〜20000000 tick）`, ArgumentOutOfBoundsError);
-    const amp = o.amplifier ?? 0;
-    check(Number.isInteger(amp) && amp >= 0 && amp <= 255, "effect", `amplifier ${amp}（0〜255）`, ArgumentOutOfBoundsError);
-    const ef = { typeId: id, amplifier: amp, end: S.tick + duration, duration };
-    this._effects.set(id, ef);
-    bump(S.log.effects, id);
-    queueAfter("effectAdd", { entity: this, effect: makeEffect(this, ef) });
-    return makeEffect(this, ef);
-  }
-  getEffect(type) {
-    const id = String(typeof type === "string" ? type : type?.getName?.()).replace(/^minecraft:/, "");
-    const ef = this._effects.get(id);
-    return ef ? makeEffect(this, ef) : undefined;
-  }
-  getEffects() { return [...this._effects.values()].map((ef) => makeEffect(this, ef)); }
-  removeEffect(type) {
-    const id = String(typeof type === "string" ? type : type?.getName?.()).replace(/^minecraft:/, "");
-    return this._effects.delete(id);
-  }
-  addTag(t) { check(typeof t === "string" && t.length > 0, "tag", "addTag の値"); const had = this._tags.has(t); this._tags.add(t); return !had; }
-  removeTag(t) { return this._tags.delete(t); }
-  hasTag(t) { return this._tags.has(t); }
-  getTags() { return [...this._tags]; }
-  setOnFire(sec, useEffects = true) {
-    check(finite(sec) && sec >= 0, "fire", `setOnFire(${sec})`);
-    if (this._comps()["minecraft:fire_immune"]) return false;
-    this._fireTicks = Math.max(this._fireTicks, Math.round(sec * 20));
-    return true;
-  }
-  extinguishFire() { const was = this._fireTicks > 0; this._fireTicks = 0; return was; }
 
-  // ---- 動的プロパティ ----
-  getDynamicProperty(k) { return this._dp.get(k); }
-  setDynamicProperty(k, v) { dpSet(this._dp, k, v, this._typeId); }
-  setDynamicProperties(o) { for (const [k, v] of Object.entries(o)) dpSet(this._dp, k, v, this._typeId); }
-  getDynamicPropertyIds() { return [...this._dp.keys()]; }
-  clearDynamicProperties() { this._dp.clear(); }
-  getDynamicPropertyTotalByteCount() { return dpBytes(this._dp); }
+def _load(path: str, notes: list):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception as exc:  # noqa: BLE001
+        notes.append(f"{rel(path)}: 読めない JSON（{type(exc).__name__}）— validate_nr.py で直す")
+        return None
 
-  // ---- 演出・その他 ----
-  playAnimation(name, o = {}) {
-    check(typeof name === "string", "anim", "playAnimation の名前");
-    if (name.startsWith("animation.nr.")) check(ANIMS.has(name), "anim", `RP に無いアニメーション ${name}`, InvalidArgumentError);
-    if (o.blendOutTime !== undefined) check(finite(o.blendOutTime) && o.blendOutTime >= 0, "anim", `blendOutTime ${o.blendOutTime}`);
-    if (o.controller !== undefined) check(typeof o.controller === "string" && o.controller.length > 0, "anim", "controller は文字列");
-    if (o.stopExpression !== undefined) check(typeof o.stopExpression === "string", "anim", "stopExpression は Molang の文字列");
-    bump(S.log.anims, name);
-  }
-  runCommand(cmd) { check(typeof cmd === "string", "command", "runCommand の値"); S.log.commands.push(cmd); return { successCount: 1 }; }
-  matches(q) { return matchQuery(this, q ?? {}, null); }
-  getEntitiesFromViewDirection(o = {}) {
-    const head = this.getHeadLocation();
-    return entitiesFromRay(this._dim, head, this.getViewDirection(), o, this);
-  }
-  getBlockFromViewDirection(o = {}) {
-    return blockFromRay(this._dim, this.getHeadLocation(), this.getViewDirection(), o);
-  }
-}
-S.Entity = Entity;
 
-function makeEffect(ent, ef) {
-  return { typeId: ef.typeId, amplifier: ef.amplifier, get duration() { return Math.max(0, ef.end - S.tick); },
-    displayName: ef.typeId, get isValid() { return ent._valid && ent._effects.get(ef.typeId) === ef; } };
-}
-function dpSet(map, k, v, owner) {
-  check(typeof k === "string" && k.length > 0, "dynprop", `動的プロパティの名前 ${fmt(k)}`);
-  if (v === undefined) { map.delete(k); return; }
-  const ok = typeof v === "boolean" || (typeof v === "number" && Number.isFinite(v)) || (typeof v === "string" && v.length <= 32767)
-    || (v && typeof v === "object" && !Array.isArray(v) && finite(v.x) && finite(v.y) && finite(v.z) && Object.keys(v).length === 3);
-  check(ok, "dynprop", `${owner} の動的プロパティ ${k} に入れられない値 ${fmt(v)?.slice(0, 80)}（bool / 有限の数 / 32767 字以内の文字列 / {x,y,z} だけ）`, TypeError);
-  map.set(k, typeof v === "object" ? { x: v.x, y: v.y, z: v.z } : v);
-}
-function dpBytes(map) { let n = 0; for (const [k, v] of map) n += k.length + (typeof v === "string" ? v.length : 8); return n; }
-'''
-SERVER_JS += r'''
-// ===========================================================================
-//  プレイヤーと部品
-// ===========================================================================
-const GAME_MODES = enumSet("GameMode");
-const INPUT_BUTTONS = enumSet("InputButton");
-export class Player extends Entity {
-  constructor(dim, loc, name) {
-    super(dim, "minecraft:player", loc, {});
-    this._isPlayer = true;
-    this._name = name;
-    this._mode = "Survival";
-    this._inv = new Container(36, this);
-    this._equip = { Head: undefined, Chest: undefined, Legs: undefined, Feet: undefined, Offhand: undefined };
-    this._slot = 0;
-    this._buttons = { Jump: "Released", Sneak: "Released" };
-    this._move = { x: 0, y: 0 };
-    this._jumping = false;
-    this._camera = new Camera(this);
-    this._screen = new ScreenDisplay(this);
-    this._input = new InputInfo(this);
-    this._perms = new PlayerInputPermissions(this);
-    this._level = 0; this._xp = 0; this._cooldowns = new Map(); this._overrides = new Map();
-    this._hp = 20; this._maxHp = 20;
-    S.players.push(this);
-  }
-  get name() { return this._name; }
-  get camera() { return this._camera; }
-  get onScreenDisplay() { return this._screen; }
-  get inputInfo() { return this._input; }
-  get inputPermissions() { return this._perms; }
-  get clientSystemInfo() { return { maxRenderDistance: 12, platformType: "Desktop", memoryTier: "High" }; }
-  get graphicsMode() { return "Fancy"; }
-  get commandPermissionLevel() { return "Admin"; }
-  set commandPermissionLevel(v) { }
-  get playerPermissionLevel() { return "Operator"; }
-  get isEmoting() { return false; }
-  get isFlying() { return !!this._flying; }
-  get isGliding() { return !!this._gliding; }
-  get isJumping() { return this._jumping; }
-  get level() { return this._level; }
-  get totalXpNeededForNextLevel() { return 7 + this._level * 2; }
-  get xpEarnedAtCurrentLevel() { return this._xp; }
-  get selectedSlotIndex() { return this._slot; }
-  set selectedSlotIndex(v) {
-    check(Number.isInteger(v) && v >= 0 && v <= 8, "player", `selectedSlotIndex ${v}（0〜8）`, ArgumentOutOfBoundsError);
-    const prev = this._slot; this._slot = v;
-    if (prev !== v) queueAfter("playerHotbarSelectedSlotChange", { player: this, previousSlotSelected: prev, newSlotSelected: v, itemStack: this._inv.getItem(v) });
-  }
-  getGameMode() { return this._mode; }
-  setGameMode(m) { check(m === undefined || GAME_MODES.size === 0 || GAME_MODES.has(m), "player", `GameMode に無い ${fmt(m)}`); this._mode = m ?? "Survival"; }
-  playSound(id, o = {}) {
-    checkSound(id);
-    if (o.location) checkVec3(o.location, "playSound の location");
-    checkVolPitch(o);
-    bump(S.log.sounds, id);
-  }
-  spawnParticle(id, loc, vars) { spawnParticleImpl(id, loc, vars); }
-  sendMessage(m) { S.log.messages.push(textOf(m)); }
-  addExperience(n) { check(Number.isInteger(n), "player", "addExperience は整数"); this._xp += n; return this._xp; }
-  addLevels(n) { check(Number.isInteger(n), "player", "addLevels は整数"); this._level = Math.max(0, this._level + n); return this._level; }
-  getTotalXp() { return this._xp; }
-  resetLevel() { this._level = 0; this._xp = 0; }
-  startItemCooldown(cat, ticks) { check(typeof cat === "string" && Number.isInteger(ticks) && ticks >= 0, "player", "startItemCooldown"); this._cooldowns.set(cat, S.tick + ticks); }
-  getItemCooldown(cat) { return Math.max(0, (this._cooldowns.get(cat) ?? 0) - S.tick); }
-  setPropertyOverrideForEntity(target, id, value) {
-    check(target instanceof Entity, "property", "setPropertyOverrideForEntity の相手");
-    const pd = target._def?.props?.[id];
-    check(pd, "property", `${target._typeId} に無いプロパティ ${id}`);
-    target._checkProp(id, pd, value);
-    this._overrides.set(`${target._id}|${id}`, value);
-  }
-  removePropertyOverrideForEntity(target, id) { this._overrides.delete(`${target._id}|${id}`); }
-  clearPropertyOverridesForEntity(target) { for (const k of [...this._overrides.keys()]) if (k.startsWith(target._id + "|")) this._overrides.delete(k); }
-  getSpawnPoint() { return this._spawn; }
-  setSpawnPoint(p) { this._spawn = p; }
-  playMusic() { } queueMusic() { } stopMusic() { }
-}
-S.Player = Player;
+def _custom_of(comps: dict) -> dict:
+    """Custom Components V2: 名前空間付き（minecraft: 以外）のキーがカスタムコンポーネント。値が params。"""
+    out = {k: v for k, v in comps.items() if ":" in k and not k.startswith(("minecraft:", "tag:"))}
+    for name in comps.get("minecraft:custom_components") or []:     # 古い書き方（validate_nr が咎める）
+        out.setdefault(name, {})
+    return out
 
-function textOf(m) {
-  if (typeof m === "string") return m;
-  if (Array.isArray(m)) return m.map(textOf).join("");
-  if (m && typeof m === "object") return m.text ?? m.translate ?? (m.rawtext ? textOf(m.rawtext) : fmt(m));
-  return String(m);
-}
-function checkVolPitch(o) {
-  if (o.volume !== undefined) check(finite(o.volume) && o.volume >= 0, "sound", `volume ${o.volume}`);
-  if (o.pitch !== undefined) check(finite(o.pitch) && o.pitch >= 0, "sound", `pitch ${o.pitch}`);
-}
-function checkSound(id) {
-  check(typeof id === "string" && id.length > 0, "sound", `効果音 ID ${fmt(id)}`);
-  if (id.startsWith("nr.")) check(SOUNDS.has(id), "sound", `sound_definitions に無い効果音 ${id}`, InvalidArgumentError);
+
+_TRAIT_STATES = {
+    "minecraft:cardinal_direction": ["south", "west", "north", "east"],
+    "minecraft:facing_direction": ["down", "up", "north", "south", "west", "east"],
+    "minecraft:block_face": ["down", "up", "north", "south", "west", "east"],
+    "minecraft:vertical_half": ["bottom", "top"],
+    "minecraft:corner_and_cardinal_direction": ["south", "west", "north", "east"],
 }
 
-export class Component {
-  constructor(owner, typeId) { this._owner = owner; this._typeId = typeId; }
-  get typeId() { return this._typeId; }
-  get isValid() { return this._owner instanceof Entity ? this._owner._valid : true; }
-}
-export class EntityComponent extends Component { get entity() { return this._owner; } }
-export class EntityAttributeComponent extends EntityComponent {
-  get currentValue() { return this._get(); }
-  get defaultValue() { return this._max(); }
-  get effectiveMax() { return this._max(); }
-  get effectiveMin() { return 0; }
-  _get() { return 0; } _max() { return 0; } _set() { }
-  setCurrentValue(v) {
-    check(finite(v), "component", `${this._typeId}.setCurrentValue(${v})`, ArgumentOutOfBoundsError);
-    if (v < 0 || v > this._max()) return false;
-    this._set(v); return true;
-  }
-  resetToDefaultValue() { this._set(this._max()); }
-  resetToMaxValue() { this._set(this._max()); }
-  resetToMinValue() { this._set(0); }
-}
-export class EntityHealthComponent extends EntityAttributeComponent {
-  _get() { return this._owner._hp; }
-  _max() { return this._owner._maxHp; }
-  _set(v) {
-    const e = this._owner; const old = e._hp; e._hp = v;
-    if (old !== v) queueAfter("entityHealthChanged", { entity: e, oldValue: old, newValue: v });
-    if (v <= 0) e._die({ cause: "override" });
-  }
-}
-export class EntityMovementComponent extends EntityAttributeComponent {
-  _get() { return this._owner._speed ?? this._owner._comps()["minecraft:movement"]?.value ?? 0.1; }
-  _max() { return 10; }
-  _set(v) { this._owner._speed = v; }
-}
-export class EntityTypeFamilyComponent extends EntityComponent {
-  getTypeFamilies() { return [...this._owner._families()]; }
-  hasTypeFamily(f) { return this._owner._families().includes(f); }
-}
-export class EntityOnFireComponent extends EntityComponent { get onFireTicksRemaining() { return this._owner._fireTicks; } }
-export class EntityItemComponent extends EntityComponent { get itemStack() { return this._owner._item?.clone(); } }
-export class EntityInventoryComponent extends EntityComponent {
-  get container() { return this._owner._isPlayer ? this._owner._inv : (this._owner._inv ??= new Container(this._owner._comps()["minecraft:inventory"]?.inventory_size ?? 27, this._owner)); }
-  get inventorySize() { return this.container.size; }
-  get additionalSlotsPerStrength() { return 0; }
-  get canBeSiphonedFrom() { return false; }
-  get containerType() { return "inventory"; }
-  get restrictToOwner() { return false; }
-}
-const EQUIP_SLOTS = enumSet("EquipmentSlot");
-export class EntityEquippableComponent extends EntityComponent {
-  get totalArmor() { return 0; }
-  get totalToughness() { return 0; }
-  _chk(slot) { check(EQUIP_SLOTS.size === 0 || EQUIP_SLOTS.has(slot), "equip", `EquipmentSlot に無い ${fmt(slot)}`, InvalidArgumentError); }
-  getEquipment(slot) {
-    this._chk(slot); const e = this._owner;
-    if (slot === "Mainhand") return e._isPlayer ? e._inv.getItem(e._slot) : e._mainhand?.clone();
-    return (e._equip ??= {})[slot]?.clone();
-  }
-  setEquipment(slot, item) {
-    this._chk(slot); const e = this._owner;
-    if (item !== undefined) check(item instanceof ItemStack, "equip", "setEquipment に ItemStack でないもの");
-    if (slot === "Mainhand") { if (e._isPlayer) e._inv.setItem(e._slot, item); else e._mainhand = item?.clone(); }
-    else (e._equip ??= {})[slot] = item?.clone();
-    return true;
-  }
-  getEquipmentSlot(slot) {
-    this._chk(slot); const e = this._owner;
-    if (slot === "Mainhand" && e._isPlayer) return e._inv.getSlot(e._slot);
-    const store = e._equip ??= {};
-    return new ContainerSlot({ get: () => store[slot], set: (v) => { store[slot] = v; } }, this._owner);
-  }
-}
-export class EntityProjectileComponent extends EntityComponent {
-  constructor(o, t) { super(o, t); const c = o._comps()["minecraft:projectile"] ?? {};
-    this.airInertia = 0.99; this.catchFireOnHurt = !!c.catch_fire; this.critParticlesOnProjectileHurt = false;
-    this.destroyOnProjectileHurt = false; this.gravity = c.gravity ?? 0.05; this.liquidInertia = 0.6; this.lightningStrikeOnHit = false;
-    this.onFireTime = 0; this.shouldBounceOnHit = false; this.stopOnHit = false; }
-  get owner() { return this._owner._owner; }
-  set owner(v) { this._owner._owner = v; }
-  shoot(v, o = {}) {
-    checkVec3(v, "projectile.shoot");
-    if (o.uncertainty !== undefined) check(finite(o.uncertainty) && o.uncertainty >= 0, "projectile", "uncertainty");
-    this._owner._vel = { x: v.x, y: v.y, z: v.z }; this._owner._onGround = false; this._owner._stuck = false;
-  }
-}
 
-export class Camera {
-  constructor(p) { this._p = p; }
-  get isValid() { return this._p._valid; }
-  fade(o = {}) {
-    const t = o.fadeTime;
-    if (t) for (const k of ["fadeInTime", "holdTime", "fadeOutTime"]) check(finite(t[k]) && t[k] >= 0 && t[k] <= 10, "camera", `fade の ${k} ${t[k]}（0〜10 秒）`, ArgumentOutOfBoundsError);
-    const c = o.fadeColor;
-    if (c) for (const k of ["red", "green", "blue"]) check(finite(c[k]) && c[k] >= 0 && c[k] <= 1, "camera", `fade の色 ${k} ${c[k]}（0〜1）`, ArgumentOutOfBoundsError);
-    S.log.camera++;
-  }
-  clear() { S.log.camera++; }
-  setCamera(preset, o) { check(typeof preset === "string" && preset.includes(":"), "camera", `カメラのプリセット ${fmt(preset)}`); S.log.camera++; }
-  setDefaultCamera(preset) { check(typeof preset === "string", "camera", "setDefaultCamera"); S.log.camera++; }
-  setFov(o = {}) { if (o.fov !== undefined) check(finite(o.fov) && o.fov >= 30 && o.fov <= 110, "camera", `fov ${o.fov}（30〜110）`); S.log.camera++; }
-}
-export class ScreenDisplay {
-  constructor(p) { this._p = p; this._hidden = new Set(); this.actionBar = ""; this.title = ""; this.subtitle = ""; }
-  get isValid() { return this._p._valid; }
-  setActionBar(t) { this.actionBar = textOf(t); S.log.actionbars++; }
-  setTitle(t, o) {
-    if (o) for (const k of ["fadeInDuration", "stayDuration", "fadeOutDuration"]) check(Number.isInteger(o[k]) && o[k] >= 0, "title", `setTitle の ${k} ${o[k]}（0 以上の整数 tick。三つとも要る）`, ArgumentOutOfBoundsError);
-    this.title = textOf(t); this.subtitle = o?.subtitle !== undefined ? textOf(o.subtitle) : ""; S.log.titles++;
-  }
-  updateSubtitle(t) { this.subtitle = textOf(t); }
-  hideAllExcept(els = []) { this._hidden = new Set(Object.values(ENUMS.HudElement ?? {}).filter((x) => !els.includes(x))); }
-  setHudVisibility(vis, els) { const all = els ?? Object.values(ENUMS.HudElement ?? {}); for (const e of all) { if (vis === "Hide" || vis === 0) this._hidden.add(e); else this._hidden.delete(e); } }
-  resetHudElementsVisibility() { this._hidden.clear(); }
-  getHiddenHudElements() { return [...this._hidden]; }
-  isForcedHidden(e) { return this._hidden.has(e); }
-}
-export class InputInfo {
-  constructor(p) { this._p = p; }
-  get lastInputModeUsed() { return "KeyboardAndMouse"; }
-  get touchOnlyAffectsHotbar() { return false; }
-  getButtonState(b) {
-    check(INPUT_BUTTONS.size === 0 || INPUT_BUTTONS.has(b), "input", `InputButton に無い ${fmt(b)}`, InvalidArgumentError);
-    return this._p._buttons[b] ?? "Released";
-  }
-  getMovementVector() { return { ...this._p._move }; }
-}
-export class PlayerInputPermissions {
-  constructor(p) { this._p = p; this._off = new Set(); }
-  isPermissionCategoryEnabled(c) { return !this._off.has(c); }
-  setPermissionCategory(c, on) { if (on) this._off.delete(c); else this._off.add(c); }
-}
-'''
-SERVER_JS += r'''
-// ===========================================================================
-//  アイテム・入れ物
-// ===========================================================================
-function itemDef(id) { return DEFS.items[id] ?? (DEFS.blocks[id] ? { components: {}, block: true } : undefined); }
-function maxStackOf(id) {
-  const c = itemDef(id)?.components ?? {};
-  const m = c["minecraft:max_stack_size"];
-  if (typeof m === "number") return m;
-  if (m && typeof m === "object") return m.value ?? 64;
-  if (c["minecraft:durability"]) return 1;
-  return 64;
-}
-export class ItemStack {
-  constructor(type, amount = 1) {
-    const id = nsId(typeof type === "string" ? type : type?.id);
-    check(typeof id === "string" && id.length > 0, "item", `ItemStack の種類 ${fmt(type)}`, InvalidArgumentError);
-    if (id.startsWith("nr:")) check(itemDef(id), "item", `BP に無いアイテム ${id}`, InvalidArgumentError);
-    else if (id.startsWith("minecraft:")) vanillaCheck("items", id);
-    check(Number.isInteger(amount) && amount >= 1 && amount <= 255, "item", `ItemStack の数 ${amount}（1〜255）`, ArgumentOutOfBoundsError);
-    this._typeId = id; this._amount = amount;
-    this._lore = []; this._dp = new Map(); this._nameTag = undefined;
-    this._dmg = 0; this._canDestroy = []; this._canPlaceOn = [];
-    this.lockMode = "none"; this.keepOnDeath = false;
-  }
-  get typeId() { return this._typeId; }
-  get type() { return { id: this._typeId }; }
-  get amount() { return this._amount; }
-  set amount(v) { check(Number.isInteger(v) && v >= 1 && v <= 255, "item", `amount ${v}（1〜255）`, ArgumentOutOfBoundsError); this._amount = v; }
-  get maxAmount() { return maxStackOf(this._typeId); }
-  get isStackable() { return this.maxAmount > 1; }
-  get nameTag() { return this._nameTag; }
-  set nameTag(v) { check(v === undefined || (typeof v === "string" && v.length <= 255), "item", "nameTag は 255 字以内の文字列"); this._nameTag = v; }
-  get localizationKey() { return `item.${this._typeId}.name`; }
-  get weight() { return 1; }
-  clone() {
-    const c = new ItemStack(this._typeId, this._amount);
-    c._lore = [...this._lore]; c._dp = new Map(this._dp); c._nameTag = this._nameTag; c._dmg = this._dmg;
-    c._canDestroy = [...this._canDestroy]; c._canPlaceOn = [...this._canPlaceOn]; c.lockMode = this.lockMode; c.keepOnDeath = this.keepOnDeath;
-    return c;
-  }
-  getLore() { return this._lore.map(textOf); }
-  getRawLore() { return this._lore.map((x) => (typeof x === "string" ? { text: x } : x)); }
-  setLore(list) {
-    if (list === undefined) { this._lore = []; return; }
-    check(Array.isArray(list), "item", "setLore は配列", InvalidArgumentError);
-    check(list.length <= 100, "item", `lore が ${list.length} 行（100 行まで）`, ArgumentOutOfBoundsError);
-    for (const x of list) check((typeof x === "string" && x.length <= 1000) || (x && typeof x === "object"), "item", `lore の行 ${fmt(x)?.slice(0, 60)}`, ArgumentOutOfBoundsError);
-    this._lore = [...list];
-  }
-  _dpOk() { check(!this.isStackable, "dynprop", `重ねられるアイテム ${this._typeId}（最大 ${this.maxAmount}）に動的プロパティは付けられない（実機で例外）`, ArgumentOutOfBoundsError); }
-  getDynamicProperty(k) { return this._dp.get(k); }
-  setDynamicProperty(k, v) { this._dpOk(); dpSet(this._dp, k, v, this._typeId); }
-  setDynamicProperties(o) { this._dpOk(); for (const [k, v] of Object.entries(o)) dpSet(this._dp, k, v, this._typeId); }
-  getDynamicPropertyIds() { return [...this._dp.keys()]; }
-  clearDynamicProperties() { this._dp.clear(); }
-  getDynamicPropertyTotalByteCount() { return dpBytes(this._dp); }
-  getComponent(id) {
-    const n = nsId(String(id)); const c = itemDef(this._typeId)?.components ?? {};
-    if (!c[n]) return undefined;
-    switch (n) {
-      case "minecraft:durability": return new ItemDurabilityComponent(this, n);
-      case "minecraft:cooldown": return new ItemCooldownComponent(this, n);
-      case "minecraft:food": return new ItemFoodComponent(this, n);
-      case "minecraft:enchantable": return new ItemEnchantableComponent(this, n);
-    }
-    return new ItemComponent(this, n);
-  }
-  hasComponent(id) { return this.getComponent(id) !== undefined; }
-  getComponents() { return Object.keys(itemDef(this._typeId)?.components ?? {}).filter((k) => k.startsWith("minecraft:")).map((k) => this.getComponent(k)).filter(Boolean); }
-  getTags() { return [...(itemDef(this._typeId)?.components?.["minecraft:tags"]?.tags ?? [])]; }
-  hasTag(t) { return this.getTags().includes(t); }
-  isStackableWith(o) { return o instanceof ItemStack && o._typeId === this._typeId && this.isStackable && fmt(o._lore) === fmt(this._lore) && o._nameTag === this._nameTag; }
-  matches(name, states) { return nsId(name) === this._typeId; }
-  getCanDestroy() { return [...this._canDestroy]; }
-  getCanPlaceOn() { return [...this._canPlaceOn]; }
-  setCanDestroy(l) { this._canDestroy = [...(l ?? [])]; }
-  setCanPlaceOn(l) { this._canPlaceOn = [...(l ?? [])]; }
-}
-S.ItemStack = ItemStack;
-export class ItemComponent extends Component { }
-export class ItemDurabilityComponent extends ItemComponent {
-  get maxDurability() { const d = itemDef(this._owner._typeId).components["minecraft:durability"]; return d.max_durability ?? d.value ?? 0; }
-  get damage() { return this._owner._dmg; }
-  set damage(v) {
-    check(Number.isInteger(v) && v >= 0 && v <= this.maxDurability, "durability", `${this._owner._typeId} の damage ${v}（整数 0〜${this.maxDurability}。壊すときは自分で消す）`, ArgumentOutOfBoundsError);
-    this._owner._dmg = v;
-  }
-  getDamageChance(level = 0) { check(Number.isInteger(level) && level >= 0, "durability", "unbreaking の段階"); return 100 / (level + 1); }
-  getDamageChanceRange() { return { min: 0, max: 100 }; }
-}
-export class ItemCooldownComponent extends ItemComponent {
-  _c() { return itemDef(this._owner._typeId).components["minecraft:cooldown"]; }
-  get cooldownCategory() { return this._c().category ?? ""; }
-  get cooldownTicks() { return Math.round((this._c().duration ?? 0) * 20); }
-  getCooldownTicksRemaining(p) { return p.getItemCooldown(this.cooldownCategory); }
-  isCooldownCategory(c) { return c === this.cooldownCategory; }
-  startCooldown(p) { p.startItemCooldown(this.cooldownCategory, this.cooldownTicks); }
-}
-export class ItemFoodComponent extends ItemComponent {
-  _c() { return itemDef(this._owner._typeId).components["minecraft:food"]; }
-  get canAlwaysEat() { return !!this._c().can_always_eat; }
-  get nutrition() { return this._c().nutrition ?? 0; }
-  get saturationModifier() { return this._c().saturation_modifier ?? 0; }
-  get usingConvertsTo() { return this._c().using_converts_to ?? ""; }
-}
-export class ItemEnchantableComponent extends ItemComponent {
-  get slots() { return []; }
-  getEnchantments() { return []; }
-  hasEnchantment() { return false; }
-  getEnchantment() { return undefined; }
-  canAddEnchantment() { return false; }
-  addEnchantment() { throw limitation("ItemEnchantableComponent.addEnchantment"); }
-  addEnchantments() { throw limitation("ItemEnchantableComponent.addEnchantments"); }
-  removeEnchantment() { } removeAllEnchantments() { }
-}
+def load_vanilla() -> dict:
+    """build_preview/nr_research にバニラの ID の一覧があれば（無ければ空 = バニラは確かめない）。"""
+    out = {"items": set(), "blocks": set(), "entities": set()}
+    for name, key in (("vanilla_items.txt", "items"), ("vanilla_blocks.txt", "blocks")):
+        p = os.path.join(RESEARCH, "catalog", name)
+        if os.path.exists(p):
+            for ln in read_text(p).splitlines():
+                ln = ln.strip()
+                if ln:
+                    out[key].add(ln if ":" in ln else "minecraft:" + ln)
+    p = os.path.join(RESEARCH, "bedrock-samples", "metadata", "vanilladata_modules", "mojang-entities.json")
+    if os.path.exists(p):
+        try:
+            for d in json.loads(read_text(p)).get("data_items", []):
+                out["entities"].add(d["name"])
+        except (ValueError, KeyError):
+            pass
+    if out["items"]:
+        out["items"] |= out["blocks"]          # ブロックはアイテムとしても持てる
+    return {k: sorted(v) for k, v in out.items()}
 
-export class Container {
-  constructor(size, owner) { this._slots = new Array(size).fill(undefined); this._owner = owner; }
-  get size() { return this._slots.length; }
-  get isValid() { return !this._owner || this._owner._valid !== false; }
-  get emptySlotsCount() { return this._slots.filter((x) => !x).length; }
-  get weight() { return 0; }
-  get containerRules() { return undefined; }
-  _idx(i) { check(Number.isInteger(i) && i >= 0 && i < this._slots.length, "container", `スロット ${i}（0〜${this._slots.length - 1}）`, ArgumentOutOfBoundsError); }
-  getItem(i) { this._idx(i); return this._slots[i]?.clone(); }
-  setItem(i, item) {
-    this._idx(i);
-    if (item !== undefined) check(item instanceof ItemStack, "container", "setItem に ItemStack でないもの", InvalidArgumentError);
-    this._slots[i] = item?.clone();
-  }
-  getSlot(i) { this._idx(i); const c = this; return new ContainerSlot({ get: () => c._slots[i], set: (v) => { c._slots[i] = v; } }, this._owner); }
-  addItem(item) {
-    check(item instanceof ItemStack, "container", "addItem に ItemStack でないもの", InvalidArgumentError);
-    let left = item.amount;
-    for (let i = 0; i < this._slots.length && left > 0; i++) {
-      const s = this._slots[i];
-      if (s && s.isStackableWith(item) && s.amount < s.maxAmount) { const n = Math.min(left, s.maxAmount - s.amount); s._amount += n; left -= n; }
-    }
-    for (let i = 0; i < this._slots.length && left > 0; i++) {
-      if (!this._slots[i]) { const c = item.clone(); const n = Math.min(left, item.maxAmount); c._amount = n; this._slots[i] = c; left -= n; }
-    }
-    if (left <= 0) return undefined;
-    const r = item.clone(); r._amount = left; return r;
-  }
-  clearAll() { this._slots.fill(undefined); }
-  contains(item) { return this._slots.some((s) => s && s._typeId === item._typeId && s.amount >= item.amount); }
-  find(item) { const i = this._slots.findIndex((s) => s && s._typeId === item._typeId); return i < 0 ? undefined : i; }
-  findLast(item) { for (let i = this._slots.length - 1; i >= 0; i--) if (this._slots[i]?._typeId === item._typeId) return i; return undefined; }
-  firstEmptySlot() { const i = this._slots.findIndex((s) => !s); return i < 0 ? undefined : i; }
-  firstItem() { const i = this._slots.findIndex((s) => s); return i < 0 ? undefined : i; }
-  moveItem(from, to, other) { this._idx(from); other._idx(to); other._slots[to] = this._slots[from]; this._slots[from] = undefined; }
-  swapItems(a, b, other) { this._idx(a); other._idx(b); const t = this._slots[a]; this._slots[a] = other._slots[b]; other._slots[b] = t; }
-  transferItem(from, other) { this._idx(from); const it = this._slots[from]; this._slots[from] = undefined; return it ? other.addItem(it) : undefined; }
-}
-export class ContainerSlot {
-  constructor(ref, owner) { this._ref = ref; this._owner = owner; }
-  _it() { const it = this._ref.get(); check(it, "container", "空のスロットの中身を触った", InvalidContainerSlotError); return it; }
-  get isValid() { return !this._owner || this._owner._valid !== false; }
-  get typeId() { return this._ref.get()?._typeId; }
-  get amount() { return this._it().amount; }
-  set amount(v) { this._it().amount = v; }
-  get maxAmount() { return this._it().maxAmount; }
-  get isStackable() { return this._it().isStackable; }
-  get nameTag() { return this._it().nameTag; }
-  set nameTag(v) { this._it().nameTag = v; }
-  get lockMode() { return this._it().lockMode; }
-  set lockMode(v) { this._it().lockMode = v; }
-  get keepOnDeath() { return this._it().keepOnDeath; }
-  set keepOnDeath(v) { this._it().keepOnDeath = v; }
-  hasItem() { return !!this._ref.get(); }
-  getItem() { return this._ref.get()?.clone(); }
-  setItem(it) { if (it !== undefined) check(it instanceof ItemStack, "container", "setItem に ItemStack でないもの"); this._ref.set(it?.clone()); }
-  getLore() { return this._it().getLore(); }
-  getRawLore() { return this._it().getRawLore(); }
-  setLore(l) { this._it().setLore(l); }
-  getTags() { return this._it().getTags(); }
-  hasTag(t) { return this._it().hasTag(t); }
-  isStackableWith(o) { return this._it().isStackableWith(o); }
-  getDynamicProperty(k) { return this._it().getDynamicProperty(k); }
-  setDynamicProperty(k, v) { this._it().setDynamicProperty(k, v); }
-  setDynamicProperties(o) { this._it().setDynamicProperties(o); }
-  getDynamicPropertyIds() { return this._it().getDynamicPropertyIds(); }
-  clearDynamicProperties() { this._it().clearDynamicProperties(); }
-  getDynamicPropertyTotalByteCount() { return this._it().getDynamicPropertyTotalByteCount(); }
-  getCanDestroy() { return this._it().getCanDestroy(); }
-  getCanPlaceOn() { return this._it().getCanPlaceOn(); }
-  setCanDestroy(l) { this._it().setCanDestroy(l); }
-  setCanPlaceOn(l) { this._it().setCanPlaceOn(l); }
-}
 
-// ---- Molang の変数（パーティクルへ渡す） ----
-const VAR_RE = /^variable\.[a-z_][a-z0-9_]*$/i;
-export class MolangVariableMap {
-  constructor() { this._vars = new Map(); }
-  _name(n) { check(typeof n === "string" && VAR_RE.test(n), "molang", `Molang 変数名 ${fmt(n)} は "variable.<名前>" の形で`, InvalidArgumentError); }
-  setFloat(n, v) { this._name(n); check(finite(v), "molang", `${n} = ${v}（有限の数でない）`, InvalidArgumentError); this._vars.set(n, v); }
-  setColorRGB(n, c) {
-    this._name(n);
-    for (const k of ["red", "green", "blue"]) check(c && finite(c[k]) && c[k] >= 0 && c[k] <= 1, "molang", `${n}.${k} = ${c?.[k]}（0〜1）`, ArgumentOutOfBoundsError);
-    this._vars.set(n, { ...c });
-  }
-  setColorRGBA(n, c) {
-    this._name(n);
-    for (const k of ["red", "green", "blue", "alpha"]) check(c && finite(c[k]) && c[k] >= 0 && c[k] <= 1, "molang", `${n}.${k} = ${c?.[k]}（0〜1）`, ArgumentOutOfBoundsError);
-    this._vars.set(n, { ...c });
-  }
-  setSpeedAndDirection(n, speed, dir) {
-    this._name(n);
-    check(finite(speed), "molang", `${n} の speed ${speed}`, InvalidArgumentError);
-    checkVec3(dir, `${n} の direction`);
-    this._vars.set(n, { speed, dir: { ...dir } });
-  }
-}
+def build_defs(bp: str, rp: str, work: str, notes: list) -> dict:
+    """BP / RP を読んで偽物が確かめる表を作る。構造物は work/__nr_structs/ に JSON で書き出す。"""
+    defs = {"entities": {}, "items": {}, "blocks": {}, "particles": [], "sounds": [], "animations": [],
+            "structures": {}, "vanilla": load_vanilla()}
+    for p in _walk(os.path.join(bp, "entities")):
+        doc = _load(p, notes)
+        ent = (doc or {}).get("minecraft:entity") if isinstance(doc, dict) else None
+        ident = ((ent or {}).get("description") or {}).get("identifier")
+        if not ident:
+            continue
+        props = {}
+        for name, pd in (ent["description"].get("properties") or {}).items():
+            t = pd.get("type")
+            d = {"type": t, "default": pd.get("default")}
+            if t == "enum":
+                d["values"] = list(pd.get("values") or [])
+            if t in ("int", "float"):
+                d["range"] = list(pd.get("range") or [0, 0])
+            props[name] = d
+        defs["entities"][ident] = {"props": props, "components": ent.get("components") or {},
+                                   "groups": ent.get("component_groups") or {}, "events": ent.get("events") or {}}
+    for p in _walk(os.path.join(bp, "items")):
+        doc = _load(p, notes)
+        it = (doc or {}).get("minecraft:item") if isinstance(doc, dict) else None
+        ident = ((it or {}).get("description") or {}).get("identifier")
+        if ident:
+            comps = it.get("components") or {}
+            defs["items"][ident] = {"components": comps, "custom": _custom_of(comps)}
+    for p in _walk(os.path.join(bp, "blocks")):
+        doc = _load(p, notes)
+        b = (doc or {}).get("minecraft:block") if isinstance(doc, dict) else None
+        desc = (b or {}).get("description") or {}
+        ident = desc.get("identifier")
+        if not ident:
+            continue
+        comps = b.get("components") or {}
+        states = dict(desc.get("states") or {})
+        for trait in (desc.get("traits") or {}).values():
+            for st in (trait or {}).get("enabled_states") or []:
+                if st in _TRAIT_STATES:
+                    states[st] = list(_TRAIT_STATES[st])
+                elif st.startswith("minecraft:connection_"):
+                    states[st] = [False, True]
+        custom = _custom_of(comps)
+        for perm in b.get("permutations") or []:
+            for k, v in _custom_of(perm.get("components") or {}).items():
+                custom.setdefault(k, v)
+        tick = comps.get("minecraft:tick")
+        light = comps.get("minecraft:light_emission", 0)
+        defs["blocks"][ident] = {
+            "components": comps, "states": states, "custom": custom,
+            "light": light if isinstance(light, int) else 0,
+            "solid": comps.get("minecraft:collision_box", True) is not False,
+            "tick": list(tick.get("interval_range", [20, 20])) if isinstance(tick, dict) else None,
+        }
+    sdir = os.path.join(bp, "structures")
+    files = _walk(sdir, (".mcstructure",))
+    if files:
+        from validate_nr import read_mcstructure, structure_ids   # NBT の読み手は validate_nr と同じもの
+        for k, p in enumerate(files):
+            try:
+                data = read_mcstructure(p)
+            except Exception as exc:  # noqa: BLE001
+                notes.append(f"{rel(p)}: 読めない .mcstructure（{exc}）")
+                continue
+            out = f"__nr_structs/{k:04d}.json"
+            write_json(os.path.join(work, out), {
+                "indices": data["indices"],
+                "palette": [{"name": nm, "states": st} for nm, st in zip(data["palette"], data["states"])]})
+            for sid in structure_ids(os.path.relpath(p, sdir)):
+                defs["structures"][sid] = {"size": list(data["size"]), "file": out}
+    for p in _walk(os.path.join(rp, "particles")):
+        doc = _load(p, notes)
+        try:
+            defs["particles"].append(doc["particle_effect"]["description"]["identifier"])
+        except (TypeError, KeyError):
+            pass
+    sd = os.path.join(rp, "sounds", "sound_definitions.json")
+    if os.path.exists(sd):
+        doc = _load(sd, notes) or {}
+        table = doc.get("sound_definitions", doc) if isinstance(doc, dict) else {}
+        defs["sounds"] = sorted(k for k in table if k != "format_version")
+    for p in _walk(os.path.join(rp, "animations")):
+        doc = _load(p, notes)
+        if isinstance(doc, dict):
+            defs["animations"] += list((doc.get("animations") or {}).keys())
+    for k in ("particles", "animations"):
+        defs[k] = sorted(set(defs[k]))
+    return defs
 
-// ---- 種類の登録簿 ----
-export class ItemType { constructor(id) { this._id = id; } get id() { return this._id; } }
-export class BlockType { constructor(id) { this._id = id; } get id() { return this._id; } }
-export class EntityType { constructor(id) { this._id = id; } get id() { return this._id; } }
-export class EffectType { constructor(id) { this._id = id; } getName() { return this._id; } }
-export class ItemTypes {
-  static get(id) { const n = nsId(id); return (n.startsWith("nr:") ? itemDef(n) : true) ? new ItemType(n) : undefined; }
-  static getAll() { return [...Object.keys(DEFS.items), ...Object.keys(DEFS.blocks)].map((x) => new ItemType(x)); }
-}
-export class BlockTypes {
-  static get(id) { const n = nsId(id); return (n.startsWith("nr:") ? DEFS.blocks[n] : true) ? new BlockType(n) : undefined; }
-  static getAll() { return Object.keys(DEFS.blocks).map((x) => new BlockType(x)); }
-}
-export class EntityTypes {
-  static get(id) { const n = nsId(id); return (n.startsWith("nr:") ? DEFS.entities[n] : true) ? new EntityType(n) : undefined; }
-  static getAll() { return Object.keys(DEFS.entities).map((x) => new EntityType(x)); }
-}
-export class EffectTypes {
-  static get(id) { const n = String(id).replace(/^minecraft:/, ""); return EFFECTS.has(n) ? new EffectType(n) : undefined; }
-  static getAll() { return [...EFFECTS].map((x) => new EffectType(x)); }
-}
-'''
-SERVER_JS += r'''
-// ===========================================================================
-//  ブロックと偽の地形
-// ===========================================================================
-const AIR = "minecraft:air";
-function packKey(x, y, z) { return ((x + 1048576) * 1024 + (y + 512)) * 2097152 + (z + 1048576); }
-function unpackKey(k) {
-  const z = (k % 2097152) - 1048576; const r = Math.floor(k / 2097152);
-  return { x: Math.floor(r / 1024) - 1048576, y: (r % 1024) - 512, z };
-}
-function blockKey(x, y, z) { return packKey(Math.floor(x), Math.floor(y), Math.floor(z)); }
-function paletteIndex(typeId, states) {
-  const key = typeId + (states && Object.keys(states).length ? JSON.stringify(states) : "");
-  let i = S.paletteIdx.get(key);
-  if (i === undefined) { i = S.palette.length; S.palette.push({ typeId, states: states ?? {} }); S.paletteIdx.set(key, i); }
-  return i;
-}
-function terrainAt(y) { return S.flat && y < S.groundY ? (y === S.groundY - 1 ? "minecraft:grass_block" : "minecraft:stone") : AIR; }
-function blockAt(x, y, z) {
-  const i = S.blocks.get(packKey(x, y, z));
-  return i === undefined ? { typeId: terrainAt(y), states: {} } : S.palette[i];
-}
-const LIQUIDS = new Set(["minecraft:water", "minecraft:lava", "minecraft:flowing_water", "minecraft:flowing_lava"]);
-const PASSABLE = new Set([AIR, "minecraft:short_grass", "minecraft:tall_grass", "minecraft:light_block", "minecraft:structure_void",
-  "minecraft:torch", "minecraft:ladder", "minecraft:vine", "minecraft:rail", ...LIQUIDS]);
-function isSolidType(t) {
-  if (PASSABLE.has(t)) return false;
-  const d = DEFS.blocks[t];
-  if (d) return d.solid !== false;
-  return true;
-}
-function solidAt(x, y, z) { return isSolidType(blockAt(Math.floor(x), Math.floor(y), Math.floor(z)).typeId); }
-const VANILLA_LIGHT = { "minecraft:torch": 14, "minecraft:lantern": 15, "minecraft:glowstone": 15, "minecraft:sea_lantern": 15, "minecraft:redstone_lamp": 0, "minecraft:lava": 15, "minecraft:fire": 15, "minecraft:campfire": 15, "minecraft:soul_lantern": 10, "minecraft:shroomlight": 15 };
-function setBlockAt(x, y, z, typeId, states) {
-  x = Math.floor(x); y = Math.floor(y); z = Math.floor(z);
-  const k = packKey(x, y, z);
-  S.blocks.set(k, paletteIndex(typeId, states));
-  const le = DEFS.blocks[typeId]?.light ?? VANILLA_LIGHT[typeId] ?? 0;
-  if (le > 0) S.lights.set(k, le); else S.lights.delete(k);
-}
-function checkBlockId(id, what) {
-  const n = nsId(typeof id === "string" ? id : id?.id ?? id?.typeId);
-  check(typeof n === "string", "block", `${what} の種類 ${fmt(id)}`, InvalidArgumentError);
-  if (n.startsWith("nr:")) check(DEFS.blocks[n], "block", `BP に無いブロック ${n}`, InvalidArgumentError);
-  else if (n.startsWith("minecraft:") && n !== AIR) vanillaCheck("blocks", n);
-  return n;
-}
-function skyOpen(x, y, z) {
-  for (let yy = Math.floor(y) + 1; yy < Math.floor(y) + 48; yy++) if (isSolidType(blockAt(Math.floor(x), yy, Math.floor(z)).typeId)) return false;
-  return true;
-}
-function lightAt(loc) {
-  if (typeof S.light === "function") return S.light(loc);
-  if (typeof S.light === "number") return S.light;
-  const night = S.time >= 13000 && S.time < 23000;
-  let lv = skyOpen(loc.x, loc.y, loc.z) ? (night ? 4 : 15) : 0;
-  const bx = Math.floor(loc.x), by = Math.floor(loc.y), bz = Math.floor(loc.z);
-  for (const [k, le] of S.lights) {
-    const p = unpackKey(k);
-    const d = Math.abs(p.x - bx) + Math.abs(p.y - by) + Math.abs(p.z - bz);
-    if (le - d > lv) lv = le - d;
-  }
-  return Math.max(0, Math.min(15, lv));
-}
 
-export class BlockPermutation {
-  constructor(typeId, states = {}) { this._typeId = typeId; this._states = { ...states }; }
-  static resolve(name, states) { const n = checkBlockId(name, "BlockPermutation.resolve"); if (states) blockStatesOk(n, states); return new BlockPermutation(n, states ?? defaultStates(n)); }
-  get type() { return new BlockType(this._typeId); }
-  getState(k) { return this._states[k]; }
-  getAllStates() { return { ...this._states }; }
-  withState(k, v) { blockStatesOk(this._typeId, { [k]: v }); return new BlockPermutation(this._typeId, { ...this._states, [k]: v }); }
-  matches(name, states) { if (nsId(name) !== this._typeId) return false; for (const [k, v] of Object.entries(states ?? {})) if (this._states[k] !== v) return false; return true; }
-  getTags() { return blockTags(this._typeId); }
-  hasTag(t) { return blockTags(this._typeId).includes(t); }
-  getItemStack(n = 1) { return new ItemStack(this._typeId, n); }
-  canBeDestroyedByLiquidSpread() { return false; } canContainLiquid() { return false; } isLiquidBlocking() { return true; } liquidSpreadCausesSpawn() { return false; }
-}
-function defaultStates(id) {
-  const st = DEFS.blocks[id]?.states ?? {};
-  const out = {};
-  for (const [k, v] of Object.entries(st)) out[k] = Array.isArray(v) ? v[0] : (v?.values?.min ?? v?.values?.[0] ?? 0);
-  return out;
-}
-function blockStatesOk(id, states) {
-  const def = DEFS.blocks[id];
-  if (!def) return;
-  for (const [k, v] of Object.entries(states)) {
-    const allowed = def.states?.[k];
-    check(allowed !== undefined, "block", `${id} に状態 ${k} が無い`, InvalidArgumentError);
-    if (Array.isArray(allowed)) check(allowed.includes(v), "block", `${id} の状態 ${k} に無い値 ${fmt(v)}`, InvalidArgumentError);
-  }
-}
-function blockTags(id) { return Object.keys(DEFS.blocks[id]?.components ?? {}).filter((k) => k.startsWith("tag:")).map((k) => k.slice(4)); }
+# ===========================================================================
+#  作業フォルダ
+# ===========================================================================
+def fake_modules(api: dict) -> dict:
+    """{パッケージ名: index.js の中身}。"""
+    server = read_text(os.path.join(FAKES, "server.js"))
+    return {
+        "@minecraft/server": server + server_tail_js(api, server),
+        "@minecraft/server-ui": read_text(os.path.join(FAKES, "server_ui.js")),
+        "@minecraft/common": read_text(os.path.join(FAKES, "common.js")),
+        "nr-test": read_text(os.path.join(FAKES, "harness.js")),
+    }
 
-export class Block {
-  constructor(dim, x, y, z) { this._dim = dim; this._x = Math.floor(x); this._y = Math.floor(y); this._z = Math.floor(z); }
-  _b() { return blockAt(this._x, this._y, this._z); }
-  get dimension() { return this._dim; }
-  get x() { return this._x; } get y() { return this._y; } get z() { return this._z; }
-  get location() { return { x: this._x, y: this._y, z: this._z }; }
-  get typeId() { return this._b().typeId; }
-  get type() { return new BlockType(this.typeId); }
-  get permutation() { const b = this._b(); return new BlockPermutation(b.typeId, b.states); }
-  get isAir() { return this.typeId === AIR; }
-  get isLiquid() { return LIQUIDS.has(this.typeId); }
-  get isSolid() { return isSolidType(this.typeId); }
-  get isValid() { return true; }
-  get isWaterlogged() { return false; }
-  get localizationKey() { return `tile.${this.typeId}.name`; }
-  _rel(dx, dy, dz) { const y = this._y + dy; if (y < -64 || y > 319) return undefined; return new Block(this._dim, this._x + dx, y, this._z + dz); }
-  above(n = 1) { return this._rel(0, n, 0); }
-  below(n = 1) { return this._rel(0, -n, 0); }
-  north(n = 1) { return this._rel(0, 0, -n); }
-  south(n = 1) { return this._rel(0, 0, n); }
-  east(n = 1) { return this._rel(n, 0, 0); }
-  west(n = 1) { return this._rel(-n, 0, 0); }
-  offset(o) { checkVec3(o, "Block.offset"); return this._rel(Math.floor(o.x), Math.floor(o.y), Math.floor(o.z)); }
-  center() { return { x: this._x + 0.5, y: this._y + 0.5, z: this._z + 0.5 }; }
-  bottomCenter() { return { x: this._x + 0.5, y: this._y, z: this._z + 0.5 }; }
-  setType(t) { this._dim.setBlockType(this.location, t); }
-  setPermutation(p) { this._dim.setBlockPermutation(this.location, p); }
-  setWaterlogged() { }
-  getTags() { return blockTags(this.typeId); }
-  hasTag(t) { return this.getTags().includes(t); }
-  matches(name, states) { return this.permutation.matches(name, states); }
-  getLightLevel() { return lightAt(this.location); }
-  getSkyLightLevel() { return skyOpen(this._x, this._y, this._z) ? 15 : 0; }
-  getComponent() { return undefined; }
-  getItemStack(n = 1) { return this.isAir ? undefined : new ItemStack(this.typeId, n); }
-  getRedstonePower() { return 0; }
-  canBeDestroyedByLiquidSpread() { return false; } canContainLiquid() { return false; } isLiquidBlocking() { return true; }
-  liquidCanFlowFromDirection() { return false; } liquidSpreadCausesSpawn() { return false; }
-}
 
-export class BlockVolumeBase {
-  _box() { const a = this.from ?? this._from, b = this.to ?? this._to; return { min: { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), z: Math.min(a.z, b.z) }, max: { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y), z: Math.max(a.z, b.z) } }; }
-  getMin() { return this._box().min; }
-  getMax() { return this._box().max; }
-  getSpan() { const { min, max } = this._box(); return { x: max.x - min.x + 1, y: max.y - min.y + 1, z: max.z - min.z + 1 }; }
-  getCapacity() { const s = this.getSpan(); return s.x * s.y * s.z; }
-  isInside(p) { const { min, max } = this._box(); return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y && p.z >= min.z && p.z <= max.z; }
-  translate(d) { for (const k of ["x", "y", "z"]) { this.from[k] += d[k]; this.to[k] += d[k]; } }
-  *_locs() { const { min, max } = this._box(); for (let x = min.x; x <= max.x; x++) for (let y = min.y; y <= max.y; y++) for (let z = min.z; z <= max.z; z++) yield { x, y, z }; }
-  getBlockLocationIterator() { return this._locs(); }
-}
-export class BlockVolume extends BlockVolumeBase {
-  constructor(from, to) { super(); checkVec3(from, "BlockVolume from"); checkVec3(to, "BlockVolume to"); this.from = { ...from }; this.to = { ...to }; }
-  doesLocationTouchFaces(p) { const { min, max } = this._box(); return this.isInside(p) && (p.x === min.x || p.x === max.x || p.y === min.y || p.y === max.y || p.z === min.z || p.z === max.z); }
-  doesVolumeTouchFaces() { throw limitation("BlockVolume.doesVolumeTouchFaces"); }
-  intersects() { throw limitation("BlockVolume.intersects"); }
-}
-export class ListBlockVolume extends BlockVolumeBase {
-  constructor(locs = []) { super(); this._list = locs.map((p) => ({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z) })); }
-  add(l) { this._list.push(...l.map((p) => ({ ...p }))); }
-  remove(l) { const s = new Set(l.map((p) => `${p.x},${p.y},${p.z}`)); this._list = this._list.filter((p) => !s.has(`${p.x},${p.y},${p.z}`)); }
-  _box() { const xs = this._list; if (!xs.length) return { min: { x: 0, y: 0, z: 0 }, max: { x: -1, y: -1, z: -1 } }; const m = (k, f) => f(...xs.map((p) => p[k])); return { min: { x: m("x", Math.min), y: m("y", Math.min), z: m("z", Math.min) }, max: { x: m("x", Math.max), y: m("y", Math.max), z: m("z", Math.max) } }; }
-  getCapacity() { return this._list.length; }
-  *_locs() { yield* this._list; }
-  translate(d) { for (const p of this._list) { p.x += d.x; p.y += d.y; p.z += d.z; } }
-}
+def prepare_work(work: str, *, scripts_src, entry_file=None, tests, defs, api, ui_api, modules, seed=SEED):
+    """作業フォルダを作る。tests = [(元のファイル, tests/ の中の名前)]。戻り値はテストの相対パスの一覧。"""
+    os.makedirs(work, exist_ok=True)
+    write_json(os.path.join(work, "package.json"), {"name": "nr-test-work", "private": True, "type": "module"})
+    dst = os.path.join(work, "scripts")
+    if scripts_src and os.path.isdir(scripts_src):
+        shutil.copytree(scripts_src, dst, dirs_exist_ok=True)
+    os.makedirs(dst, exist_ok=True)
+    if entry_file:
+        shutil.copyfile(entry_file, os.path.join(dst, "main.js"))
+    tdir = os.path.join(work, "tests")
+    os.makedirs(tdir, exist_ok=True)
+    rels = []
+    for src, name in tests:
+        target = os.path.join(tdir, name)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        if src is None:
+            continue
+        shutil.copyfile(src, target)
+        if name.endswith(".mjs"):
+            rels.append("tests/" + name.replace(os.sep, "/"))
+    for pkg, src in modules.items():
+        d = os.path.join(work, "node_modules", *pkg.split("/"))
+        os.makedirs(d, exist_ok=True)
+        write_json(os.path.join(d, "package.json"), {"name": pkg, "private": True, "type": "module",
+                                                     "main": "index.js", "exports": "./index.js"})
+        with open(os.path.join(d, "index.js"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(src)
+    shutil.copyfile(os.path.join(FAKES, "runner.mjs"), os.path.join(work, "__nr_runner.mjs"))
+    write_json(os.path.join(work, "__nr_env.json"), {"seed": seed, "particleBudget": PARTICLE_BUDGET,
+                                                     "api": api, "apiUi": ui_api, "defs": defs})
+    return rels
 
-// ---- 光線 --------------------------------------------------------------------------------
-function rayAabb(o, d, b) {
-  let t0 = 0, t1 = Infinity;
-  for (const k of ["x", "y", "z"]) {
-    if (Math.abs(d[k]) < 1e-12) { if (o[k] < b.min[k] || o[k] > b.max[k]) return null; continue; }
-    let a = (b.min[k] - o[k]) / d[k], c = (b.max[k] - o[k]) / d[k];
-    if (a > c) [a, c] = [c, a];
-    t0 = Math.max(t0, a); t1 = Math.min(t1, c);
-    if (t0 > t1) return null;
-  }
-  return t0;
-}
-S.rayAabb = rayAabb;
-function norm(d) { const l = Math.hypot(d.x, d.y, d.z); return l > 1e-12 ? { x: d.x / l, y: d.y / l, z: d.z / l } : null; }
-function raycastBlocks(o, dIn, maxDist, opts) {
-  const d = norm(dIn); if (!d) return null;
-  let x = Math.floor(o.x), y = Math.floor(o.y), z = Math.floor(o.z);
-  const sx = Math.sign(d.x), sy = Math.sign(d.y), sz = Math.sign(d.z);
-  const nx = (v, s, p) => (s > 0 ? (Math.floor(p) + 1 - p) : (p - Math.floor(p))) / Math.abs(v || 1e-12);
-  let tx = d.x ? nx(d.x, sx, o.x) : Infinity, ty = d.y ? nx(d.y, sy, o.y) : Infinity, tz = d.z ? nx(d.z, sz, o.z) : Infinity;
-  const dx = d.x ? 1 / Math.abs(d.x) : Infinity, dy = d.y ? 1 / Math.abs(d.y) : Infinity, dz = d.z ? 1 / Math.abs(d.z) : Infinity;
-  let t = 0, face = "Up";
-  const hits = (t2) => {
-    if (opts.includeLiquidBlocks && LIQUIDS.has(t2)) return true;
-    if (opts.includePassableBlocks && t2 !== AIR && !LIQUIDS.has(t2)) return true;
-    return isSolidType(t2);
-  };
-  for (let i = 0; i < 4096; i++) {
-    if (t > maxDist) return null;
-    const b = blockAt(x, y, z);
-    if (hits(b.typeId)) {
-      if (opts.blockFilter?.includeTypes && !opts.blockFilter.includeTypes.includes(b.typeId)) { /* 素通り */ }
-      else if (opts.blockFilter?.excludeTypes?.includes(b.typeId)) { /* 素通り */ }
-      else return { x, y, z, t, face, typeId: b.typeId, d };
-    }
-    if (tx < ty && tx < tz) { x += sx; t = tx; tx += dx; face = sx > 0 ? "West" : "East"; }
-    else if (ty < tz) { y += sy; t = ty; ty += dy; face = sy > 0 ? "Down" : "Up"; }
-    else { z += sz; t = tz; tz += dz; face = sz > 0 ? "North" : "South"; }
-    if (y < -64 || y > 319) return null;
-  }
-  return null;
-}
-S.raycastBlocks = raycastBlocks;
-function blockFromRay(dim, o, d, opts = {}) {
-  checkVec3(o, "ray の始点"); checkVec3(d, "ray の向き");
-  const md = opts.maxDistance ?? 64;
-  check(finite(md) && md >= 0, "query", `maxDistance ${md}`, InvalidArgumentError);
-  const h = raycastBlocks(o, d, md, opts);
-  if (!h) return undefined;
-  const at = { x: o.x + h.d.x * h.t, y: o.y + h.d.y * h.t, z: o.z + h.d.z * h.t };
-  return { block: new Block(dim, h.x, h.y, h.z), face: h.face, faceLocation: { x: at.x - h.x, y: at.y - h.y, z: at.z - h.z } };
-}
-function entitiesFromRay(dim, o, dIn, opts = {}, self) {
-  checkVec3(o, "ray の始点"); checkVec3(dIn, "ray の向き");
-  const d = norm(dIn); if (!d) return [];
-  const md = opts.maxDistance ?? 64;
-  check(finite(md) && md >= 0, "query", `maxDistance ${md}`, InvalidArgumentError);
-  let limit = md;
-  if (!opts.ignoreBlockCollision) { const h = raycastBlocks(o, d, md, opts); if (h) limit = h.t; }
-  const out = [];
-  for (const e of S.entities.values()) {
-    if (!e._valid || e === self || e._dim !== dim) continue;
-    if (!matchQuery(e, opts, null)) continue;
-    const t = rayAabb(o, d, e._aabb());
-    if (t !== null && t <= limit) out.push({ entity: e, distance: t });
-  }
-  return out.sort((a, b) => a.distance - b.distance);
-}
 
-// ---- 問い合わせ -----------------------------------------------------------------------------
-function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z); }
-function matchQuery(e, q, loc) {
-  const t = e._typeId;
-  if (q.type !== undefined && nsId(q.type) !== t) return false;
-  if (q.excludeTypes?.map(nsId).includes(t)) return false;
-  const fam = e._families();
-  if (q.families && !q.families.every((f) => fam.includes(f))) return false;
-  if (q.excludeFamilies?.some((f) => fam.includes(f))) return false;
-  if (q.tags && !q.tags.every((x) => e._tags.has(x))) return false;
-  if (q.excludeTags?.some((x) => e._tags.has(x))) return false;
-  const nm = e._isPlayer ? e._name : e._nameTag;
-  if (q.name !== undefined && nm !== q.name) return false;
-  if (q.excludeNames?.includes(nm)) return false;
-  if (q.gameMode !== undefined && (!e._isPlayer || e._mode !== q.gameMode)) return false;
-  if (q.excludeGameModes && e._isPlayer && q.excludeGameModes.includes(e._mode)) return false;
-  if (q.minLevel !== undefined && (!e._isPlayer || e._level < q.minLevel)) return false;
-  if (q.maxLevel !== undefined && (!e._isPlayer || e._level > q.maxLevel)) return false;
-  for (const po of q.propertyOptions ?? []) {
-    const has = e._props.has(po.propertyId);
-    let ok = has;
-    if (has && po.value) {
-      const v = e._props.get(po.propertyId), f = po.value;
-      if ("equals" in f) ok = v === f.equals;
-      if ("notEquals" in f) ok = v !== f.notEquals;
-      if ("lowerBound" in f) ok = ok && v >= f.lowerBound;
-      if ("upperBound" in f) ok = ok && v <= f.upperBound;
-    }
-    if (po.exclude ? ok : !ok) return false;
-  }
-  if (loc) {
-    const dd = dist(e._loc, loc);
-    if (q.maxDistance !== undefined && dd > q.maxDistance) return false;
-    if (q.minDistance !== undefined && dd < q.minDistance) return false;
-    if (q.volume) {
-      const v = q.volume;
-      if (e._loc.x < loc.x || e._loc.x > loc.x + v.x || e._loc.y < loc.y || e._loc.y > loc.y + v.y || e._loc.z < loc.z || e._loc.z > loc.z + v.z) return false;
-    }
-  }
-  return true;
-}
-function queryEntities(dim, q = {}, playersOnly = false) {
-  check(q && typeof q === "object", "query", "getEntities の options は辞書");
-  if (q.location !== undefined) checkVec3(q.location, "getEntities の location");
-  for (const k of ["maxDistance", "minDistance", "closest", "farthest"]) if (q[k] !== undefined) check(finite(q[k]) && q[k] >= 0, "query", `getEntities の ${k} = ${q[k]}`, InvalidArgumentError);
-  if ((q.maxDistance !== undefined || q.closest !== undefined || q.farthest !== undefined) && !q.location) throw violation("query", "maxDistance / closest / farthest には location が要る", InvalidArgumentError);
-  if (q.volume !== undefined) checkVec3(q.volume, "getEntities の volume");
-  let out = [...S.entities.values()].filter((e) => e._valid && e._dim === dim && (!playersOnly || e._isPlayer) && matchQuery(e, q, q.location));
-  if (q.location && (q.closest !== undefined || q.farthest !== undefined)) {
-    out.sort((a, b) => dist(a._loc, q.location) - dist(b._loc, q.location));
-    if (q.farthest !== undefined) out = out.reverse().slice(0, q.farthest);
-    else out = out.slice(0, q.closest);
-  }
-  return out;
-}
+def user_tests() -> list:
+    """tools/nightrunner/tests/ の .mjs（テスト）と .js / .json（補助）。[(元, 相対名)]。"""
+    out = []
+    for p in _walk(TESTS_DIR, (".mjs", ".js", ".json")):
+        r = os.path.relpath(p, TESTS_DIR)
+        if r.startswith("node_modules"):
+            continue
+        out.append((p, r))
+    return out
 
-// ---- パーティクル --------------------------------------------------------------------------------
-function spawnParticleImpl(id, loc, vars) {
-  check(typeof id === "string" && id.length > 0, "particle", `パーティクル ID ${fmt(id)}`);
-  if (id.startsWith("nr:")) check(PARTICLES.has(id), "particle", `RP に無いパーティクル ${id}`, InvalidArgumentError);
-  checkVec3(loc, `spawnParticle(${id}) の位置`);
-  if (vars !== undefined) {
-    check(vars instanceof MolangVariableMap, "particle", `spawnParticle(${id}) の 3 つめは MolangVariableMap`, InvalidArgumentError);
-    for (const k of vars._vars.keys()) bump(S.log.molangVars, `${id} ${k}`);
-  }
-  bump(S.log.particles, id);
-  S.perTick++;
-  if (S.perTick > S.budget && !S.budgetHit.has(S.tick)) {
-    S.budgetHit.add(S.tick);
-    S.violations.push({ kind: "budget", msg: `1 tick のパーティクルが ${S.budget} 個を超えた（tick ${S.tick}。DESIGN.md §11。スクリプトの予算で抑える）`, where: where(), tick: S.tick });
-  }
-}
-'''
-SERVER_JS += r'''
-// ===========================================================================
-//  ディメンション
-// ===========================================================================
-export class Dimension {
-  constructor(id) { this._id = id; }
-  get id() { return this._id; }
-  get localizationKey() { return `dimension.${this._id.replace("minecraft:", "")}`; }
-  get heightRange() { return { min: -64, max: 320 }; }
-  getBlock(loc) {
-    checkVec3(loc, "getBlock");
-    if (loc.y < -64 || loc.y >= 320) return undefined;
-    return new Block(this, loc.x, loc.y, loc.z);
-  }
-  getBlockAbove(loc, o = {}) { checkVec3(loc, "getBlockAbove"); for (let y = Math.floor(loc.y) + 1; y < 320; y++) { const b = blockAt(Math.floor(loc.x), y, Math.floor(loc.z)); if (b.typeId !== AIR) return new Block(this, loc.x, y, loc.z); } return undefined; }
-  getBlockBelow(loc, o = {}) { checkVec3(loc, "getBlockBelow"); for (let y = Math.floor(loc.y) - 1; y >= -64; y--) { const b = blockAt(Math.floor(loc.x), y, Math.floor(loc.z)); if (b.typeId !== AIR) return new Block(this, loc.x, y, loc.z); } return undefined; }
-  getTopmostBlock(xz, minH = -64) {
-    check(xz && finite(xz.x) && finite(xz.z), "vector", "getTopmostBlock の {x, z}");
-    for (let y = 319; y >= minH; y--) if (blockAt(Math.floor(xz.x), y, Math.floor(xz.z)).typeId !== AIR) return new Block(this, xz.x, y, xz.z);
-    return undefined;
-  }
-  getBlockFromRay(loc, dir, o) { return blockFromRay(this, loc, dir, o); }
-  getEntitiesFromRay(loc, dir, o) { return entitiesFromRay(this, loc, dir, o, null); }
-  getEntities(q) { return queryEntities(this, q ?? {}); }
-  getPlayers(q) { return queryEntities(this, q ?? {}, true); }
-  getEntitiesAtBlockLocation(loc) {
-    checkVec3(loc, "getEntitiesAtBlockLocation");
-    const bx = Math.floor(loc.x), by = Math.floor(loc.y), bz = Math.floor(loc.z);
-    return [...S.entities.values()].filter((e) => e._valid && Math.floor(e._loc.x) === bx && Math.floor(e._loc.y) === by && Math.floor(e._loc.z) === bz);
-  }
-  getLightLevel(loc) { checkVec3(loc, "getLightLevel"); return lightAt(loc); }
-  getSkyLightLevel(loc) { checkVec3(loc, "getSkyLightLevel"); return skyOpen(loc.x, loc.y, loc.z) ? 15 : 0; }
-  getBiome(loc) { return { id: "minecraft:plains", getTags: () => ["overworld"], hasTags: () => false }; }
-  isChunkLoaded() { return true; }
-  setBlockType(loc, type) {
-    checkVec3(loc, "setBlockType");
-    check(loc.y >= -64 && loc.y < 320, "block", `setBlockType の高さ ${loc.y}`, LocationOutOfWorldBoundariesError);
-    const id = checkBlockId(type, "setBlockType");
-    setBlockAt(loc.x, loc.y, loc.z, id, defaultStates(id));
-  }
-  setBlockPermutation(loc, perm) {
-    checkVec3(loc, "setBlockPermutation");
-    check(perm instanceof BlockPermutation, "block", "setBlockPermutation に BlockPermutation でないもの", InvalidArgumentError);
-    setBlockAt(loc.x, loc.y, loc.z, perm._typeId, perm._states);
-  }
-  fillBlocks(vol, block, o = {}) {
-    check(vol instanceof BlockVolumeBase, "block", "fillBlocks の範囲は BlockVolume", InvalidArgumentError);
-    const perm = block instanceof BlockPermutation ? block : BlockPermutation.resolve(typeof block === "string" ? block : block.id);
-    const cap = vol.getCapacity();
-    check(cap <= 4000000, "block", `fillBlocks が ${cap} ブロック（偽物の暴走よけ 400 万まで）`);
-    const done = [];
-    for (const p of vol.getBlockLocationIterator()) {
-      const cur = blockAt(p.x, p.y, p.z).typeId;
-      if (o.blockFilter?.includeTypes && !o.blockFilter.includeTypes.map(nsId).includes(cur)) continue;
-      if (o.blockFilter?.excludeTypes?.map(nsId).includes(cur)) continue;
-      setBlockAt(p.x, p.y, p.z, perm._typeId, perm._states);
-      done.push(p);
-    }
-    return new ListBlockVolume(done);
-  }
-  containsBlock(vol, filter) { for (const p of vol.getBlockLocationIterator()) { const t = blockAt(p.x, p.y, p.z).typeId; if (!filter?.includeTypes || filter.includeTypes.map(nsId).includes(t)) if (!filter?.excludeTypes?.map(nsId).includes(t)) return true; } return false; }
-  getBlocks(vol, filter) { const out = []; for (const p of vol.getBlockLocationIterator()) { const t = blockAt(p.x, p.y, p.z).typeId; if (filter?.includeTypes && !filter.includeTypes.map(nsId).includes(t)) continue; if (filter?.excludeTypes?.map(nsId).includes(t)) continue; out.push(p); } return new ListBlockVolume(out); }
-  spawnEntity(type, loc, o = {}) {
-    const id = nsId(typeof type === "string" ? type : type?.id);
-    check(typeof id === "string" && id.length > 0, "entity", `spawnEntity の種類 ${fmt(type)}`, InvalidArgumentError);
-    if (id.startsWith("nr:")) check(DEFS.entities[id], "entity", `BP に無いエンティティ ${id}`, EntitySpawnError);
-    else if (id === "minecraft:player") throw violation("entity", "プレイヤーは spawnEntity できない", EntitySpawnError);
-    else vanillaCheck("entities", id);
-    checkVec3(loc, `spawnEntity(${id}) の位置`);
-    if (o.initialRotation !== undefined) check(finite(o.initialRotation), "entity", `initialRotation ${o.initialRotation}`, InvalidArgumentError);
-    if (o.spawnEvent !== undefined && id.startsWith("nr:")) check(DEFS.entities[id].events?.[o.spawnEvent], "event", `${id} に spawnEvent ${o.spawnEvent} が無い`, InvalidArgumentError);
-    check(S.entities.size < 6000, "entity", `エンティティが ${S.entities.size} 体（生成が止まらない？ gib・死体の上限を確かめる）`);
-    const e = new Entity(this, id, loc, { yaw: o.initialRotation ?? 0 });
-    const ev = o.spawnEvent ?? (e._def?.events?.["minecraft:entity_spawned"] ? "minecraft:entity_spawned" : undefined);
-    if (ev && e._def) { e._applyEvent(e._def.events[ev], ev, 0); bump(S.log.events, ev); }
-    bump(S.log.spawned, id);
-    queueAfter("entitySpawn", { entity: e, cause: "Spawned" });
-    return e;
-  }
-  spawnItem(item, loc) {
-    check(item instanceof ItemStack, "item", "spawnItem に ItemStack でないもの", InvalidArgumentError);
-    checkVec3(loc, "spawnItem の位置");
-    const e = new Entity(this, "minecraft:item", loc, { item: item.clone() });
-    bump(S.log.spawned, `minecraft:item(${item.typeId})`);
-    queueAfter("entitySpawn", { entity: e, cause: "Spawned" });
-    return e;
-  }
-  spawnParticle(id, loc, vars) { spawnParticleImpl(id, loc, vars); }
-  playSound(id, loc, o = {}) { checkSound(id); checkVec3(loc, `playSound(${id}) の位置`); checkVolPitch(o); bump(S.log.sounds, id); }
-  createExplosion(loc, radius, o = {}) {
-    checkVec3(loc, "createExplosion の位置");
-    check(finite(radius) && radius > 0 && radius <= 1000, "explosion", `爆発の半径 ${radius}`, ArgumentOutOfBoundsError);
-    const ev = fireBefore("explosion", { cancel: false, dimension: this, source: o.source, getImpactedBlocks: () => [], setImpactedBlocks: () => { } });
-    if (ev.cancel) return false;
-    for (const e of [...S.entities.values()]) {
-      if (!e._valid || e._dead) continue;
-      const d = dist(e._loc, loc);
-      if (d > radius * 2) continue;
-      const dmg = Math.max(0, Math.floor((1 - d / (radius * 2)) * (radius * 7 + 1)));
-      if (dmg > 0) e._hurt(dmg, { cause: o.source ? "entityExplosion" : "blockExplosion", damagingEntity: o.source });
-      const k = norm({ x: e._loc.x - loc.x, y: 0.4, z: e._loc.z - loc.z }) ?? { x: 0, y: 1, z: 0 };
-      e._vel.x += k.x * 0.6; e._vel.y += 0.4; e._vel.z += k.z * 0.6; e._onGround = false;
-    }
-    const impacted = [];
-    if (o.breaksBlocks) {
-      const r = Math.ceil(radius);
-      for (let x = -r; x <= r; x++) for (let y = -r; y <= r; y++) for (let z = -r; z <= r; z++) {
-        if (x * x + y * y + z * z > radius * radius) continue;
-        const bx = Math.floor(loc.x) + x, by = Math.floor(loc.y) + y, bz = Math.floor(loc.z) + z;
-        if (blockAt(bx, by, bz).typeId !== AIR && blockAt(bx, by, bz).typeId !== "minecraft:bedrock") { setBlockAt(bx, by, bz, AIR); impacted.push(new Block(this, bx, by, bz)); }
-      }
-    }
-    queueAfter("explosion", { dimension: this, source: o.source, getImpactedBlocks: () => impacted });
-    return true;
-  }
-  runCommand(cmd) { check(typeof cmd === "string", "command", "runCommand の値"); S.log.commands.push(cmd); return { successCount: 1 }; }
-  setWeather(t, d) { S.weather = t; }
-  placeFeature() { throw limitation("Dimension.placeFeature"); }
-  placeFeatureRule() { throw limitation("Dimension.placeFeatureRule"); }
-}
-const DIMS = { "minecraft:overworld": new Dimension("minecraft:overworld"), "minecraft:nether": new Dimension("minecraft:nether"), "minecraft:the_end": new Dimension("minecraft:the_end") };
-S.overworld = DIMS["minecraft:overworld"];
 
-// ===========================================================================
-//  構造物・スコアボード・ゲームルール
-// ===========================================================================
-const ROTS = enumSet("StructureRotation"), MIRRORS = enumSet("StructureMirrorAxis"), ANIM_MODES = enumSet("StructureAnimationMode");
-export class Structure {
-  constructor(id, data) { this._id = id; this._data = data; this._valid = true; }
-  get id() { return this._id; }
-  get size() { return { ...this._data.size }; }
-  get isValid() { return this._valid; }
-  _idx(p) { const s = this._data.size; check(p.x >= 0 && p.y >= 0 && p.z >= 0 && p.x < s.x && p.y < s.y && p.z < s.z, "structure", `構造物の外 ${fmt(p)}`, ArgumentOutOfBoundsError); return (p.x * s.y + p.y) * s.z + p.z; }
-  getBlockPermutation(p) { const d = this._load(); const i = d.indices[this._idx(p)]; if (i < 0) return undefined; const b = d.palette[i]; return new BlockPermutation(b.name, b.states); }
-  setBlockPermutation(p, perm) { const d = this._load(); const i = this._idx(p); if (!perm) { d.indices[i] = -1; return; } d.palette.push({ name: perm._typeId, states: perm._states }); d.indices[i] = d.palette.length - 1; }
-  getIsWaterlogged() { return false; }
-  saveAs(id) { const s = new Structure(id, JSON.parse(JSON.stringify(this._load()))); S.worldStructures.set(id, s); return s; }
-  saveToWorld() { }
-  _load() {
-    if (!this._data.indices) {
-      const raw = JSON.parse(fs.readFileSync(new URL("../../../" + this._data.file, import.meta.url), "utf8"));
-      this._data.indices = raw.indices; this._data.palette = raw.palette;
-    }
-    return this._data;
-  }
-}
-function getStructure(id) {
-  if (S.worldStructures.has(id)) return S.worldStructures.get(id);
-  const d = DEFS.structures?.[id];
-  if (!d) return undefined;
-  return new Structure(id, { size: { x: d.size[0], y: d.size[1], z: d.size[2] }, file: d.file });
-}
-export class StructureManager {
-  get(id) { return getStructure(id); }
-  getWorldStructureIds() { return [...S.worldStructures.keys()]; }
-  delete(s) { const id = typeof s === "string" ? s : s.id; return S.worldStructures.delete(id); }
-  createEmpty(id, size) {
-    check(typeof id === "string" && id.includes(":"), "structure", `構造物 ID ${fmt(id)}（"ns:name"）`, InvalidArgumentError);
-    checkVec3(size, "createEmpty の大きさ");
-    const n = size.x * size.y * size.z;
-    const s = new Structure(id, { size: { ...size }, indices: new Array(n).fill(-1), palette: [] });
-    S.worldStructures.set(id, s); return s;
-  }
-  createFromWorld(id, dim, from, to) {
-    checkVec3(from, "createFromWorld from"); checkVec3(to, "createFromWorld to");
-    const mn = { x: Math.min(from.x, to.x), y: Math.min(from.y, to.y), z: Math.min(from.z, to.z) };
-    const size = { x: Math.abs(to.x - from.x) + 1, y: Math.abs(to.y - from.y) + 1, z: Math.abs(to.z - from.z) + 1 };
-    const s = this.createEmpty(id, size); const d = s._data;
-    for (let x = 0; x < size.x; x++) for (let y = 0; y < size.y; y++) for (let z = 0; z < size.z; z++) {
-      const b = blockAt(mn.x + x, mn.y + y, mn.z + z); d.palette.push({ name: b.typeId, states: b.states }); d.indices[(x * size.y + y) * size.z + z] = d.palette.length - 1;
-    }
-    return s;
-  }
-  place(structure, dim, loc, o = {}) {
-    const id = typeof structure === "string" ? structure : structure?.id;
-    const st = structure instanceof Structure ? structure : getStructure(id);
-    check(st, "structure", `BP にもワールドにも無い構造物 ${fmt(id)}`, InvalidStructureError);
-    check(dim instanceof Dimension, "structure", "place の dimension", InvalidArgumentError);
-    checkVec3(loc, `place(${id}) の位置`);
-    if (o.rotation !== undefined) check(ROTS.size === 0 || ROTS.has(o.rotation), "structure", `StructureRotation に無い ${fmt(o.rotation)}`, InvalidArgumentError);
-    if (o.mirror !== undefined) check(MIRRORS.size === 0 || MIRRORS.has(o.mirror), "structure", `StructureMirrorAxis に無い ${fmt(o.mirror)}`, InvalidArgumentError);
-    if (o.animationMode !== undefined) check(ANIM_MODES.size === 0 || ANIM_MODES.has(o.animationMode), "structure", `StructureAnimationMode に無い ${fmt(o.animationMode)}`, InvalidArgumentError);
-    if (o.integrity !== undefined) check(finite(o.integrity) && o.integrity >= 0 && o.integrity <= 1, "structure", `integrity ${o.integrity}`, ArgumentOutOfBoundsError);
-    const d = st._load(); const s = d.size;
-    const rot = o.rotation ?? "None", mir = o.mirror ?? "None";
-    const ox = Math.floor(loc.x), oy = Math.floor(loc.y), oz = Math.floor(loc.z);
-    const rx = rot === "Rotate90" || rot === "Rotate270" ? s.z : s.x;
-    for (let x = 0; x < s.x; x++) for (let y = 0; y < s.y; y++) for (let z = 0; z < s.z; z++) {
-      const i = d.indices[(x * s.y + y) * s.z + z];
-      if (i === undefined || i < 0) continue;
-      let px = (mir === "X" || mir === "XZ") ? s.x - 1 - x : x;
-      let pz = (mir === "Z" || mir === "XZ") ? s.z - 1 - z : z;
-      let qx = px, qz = pz;
-      if (rot === "Rotate90") { qx = s.z - 1 - pz; qz = px; }
-      else if (rot === "Rotate180") { qx = s.x - 1 - px; qz = s.z - 1 - pz; }
-      else if (rot === "Rotate270") { qx = pz; qz = s.x - 1 - px; }
-      const b = d.palette[i];
-      if (b.name === "minecraft:structure_void") continue;
-      if (o.integrity !== undefined && o.integrity < 1 && rand() > o.integrity) continue;
-      if (o.includeBlocks === false) continue;
-      setBlockAt(ox + qx, oy + y, oz + qz, b.name, b.states);
-    }
-    void rx;
-    bump(S.log.structures, id);
-  }
-  placeJigsaw() { throw limitation("StructureManager.placeJigsaw"); }
-  placeJigsawStructure() { throw limitation("StructureManager.placeJigsawStructure"); }
-}
-export class ScoreboardObjective {
-  constructor(id, name) { this._id = id; this._name = name ?? id; this._scores = new Map(); this._valid = true; }
-  get id() { return this._id; } get displayName() { return this._name; } get isValid() { return this._valid; }
-  _k(p) { return typeof p === "string" ? p : p?._id ?? p?.id; }
-  setScore(p, v) { check(Number.isInteger(v), "scoreboard", `スコア ${v}`); this._scores.set(this._k(p), v); }
-  addScore(p, v) { const n = (this._scores.get(this._k(p)) ?? 0) + v; this._scores.set(this._k(p), n); return n; }
-  getScore(p) { return this._scores.get(this._k(p)); }
-  hasParticipant(p) { return this._scores.has(this._k(p)); }
-  removeParticipant(p) { return this._scores.delete(this._k(p)); }
-  getScores() { return [...this._scores].map(([k, v]) => ({ participant: { id: k, displayName: k }, score: v })); }
-  getParticipants() { return [...this._scores.keys()].map((k) => ({ id: k, displayName: k })); }
-}
-export class Scoreboard {
-  constructor() { this._obj = new Map(); }
-  addObjective(id, name) { check(!this._obj.has(id), "scoreboard", `スコアボード ${id} は既にある`); const o = new ScoreboardObjective(id, name); this._obj.set(id, o); return o; }
-  getObjective(id) { return this._obj.get(id); }
-  getObjectives() { return [...this._obj.values()]; }
-  removeObjective(o) { return this._obj.delete(typeof o === "string" ? o : o.id); }
-  getParticipants() { return []; }
-  setObjectiveAtDisplaySlot() { return undefined; }
-  getObjectiveAtDisplaySlot() { return undefined; }
-  clearObjectiveAtDisplaySlot() { return undefined; }
-}
-export class GameRules {
-  constructor() {
-    Object.assign(this, { commandBlockOutput: true, commandBlocksEnabled: true, doDayLightCycle: true, doEntityDrops: true,
-      doFireTick: true, doImmediateRespawn: false, doInsomnia: true, doLimitedCrafting: false, doMobLoot: true, doMobSpawning: true,
-      doTileDrops: true, doWeatherCycle: true, drowningDamage: true, fallDamage: true, fireDamage: true, freezeDamage: true,
-      functionCommandLimit: 10000, keepInventory: false, maxCommandChainLength: 65536, mobGriefing: true, naturalRegeneration: true,
-      playersSleepingPercentage: 100, projectilesCanBreakBlocks: true, pvp: true, randomTickSpeed: 1, recipesUnlock: true,
-      respawnBlocksExplode: true, sendCommandFeedback: true, showBorderEffect: true, showCoordinates: false, showDaysPlayed: false,
-      showDeathMessages: true, showRecipeMessages: true, showTags: true, spawnRadius: 5, tntExplodes: true, tntExplosionDropDecay: false });
-  }
-}
-'''
-SERVER_JS += r'''
-// ===========================================================================
-//  ワールドとシステム
-// ===========================================================================
-const TIME_OF_DAY = ENUMS.TimeOfDay ?? {};
-export class World {
-  constructor() { this._rules = new GameRules(); this._score = new Scoreboard(); this._sm = new StructureManager(); this._spawn = { x: 0, y: 64, z: 0 }; this._diff = "Normal"; }
-  get afterEvents() { return SIG.wa; }
-  get beforeEvents() { return SIG.wb; }
-  get gameRules() { return this._rules; }
-  get isHardcore() { return false; }
-  get scoreboard() { return this._score; }
-  get structureManager() { return this._sm; }
-  getAllPlayers() { return S.players.filter((p) => p._valid); }
-  getPlayers(q) { return queryEntities(S.overworld, q ?? {}, true); }
-  getDimension(id) {
-    const n = nsId(String(id));
-    check(DIMS[n], "world", `知らないディメンション ${fmt(id)}`, InvalidArgumentError);
-    return DIMS[n];
-  }
-  getEntity(id) { const e = S.entities.get(String(id)); return e && e._valid ? e : undefined; }
-  getTimeOfDay() { return S.time; }
-  setTimeOfDay(t) { const v = typeof t === "number" ? t : TIME_OF_DAY[t] ?? t; check(Number.isInteger(v) && v >= 0, "world", `setTimeOfDay(${fmt(t)})`); S.time = v % 24000; }
-  getAbsoluteTime() { return S.absTime; }
-  setAbsoluteTime(t) { check(Number.isInteger(t) && t >= 0, "world", `setAbsoluteTime(${t})`); S.absTime = t; }
-  getDay() { return Math.floor(S.absTime / 24000); }
-  getMoonPhase() { return "FullMoon"; }
-  getDefaultSpawnLocation() { return { ...this._spawn }; }
-  setDefaultSpawnLocation(p) { checkVec3(p, "setDefaultSpawnLocation"); this._spawn = { ...p }; }
-  getDifficulty() { return this._diff; }
-  setDifficulty(d) { this._diff = d; }
-  getDynamicProperty(k) { return S.worldDP.get(k); }
-  setDynamicProperty(k, v) { dpSet(S.worldDP, k, v, "world"); }
-  setDynamicProperties(o) { for (const [k, v] of Object.entries(o)) dpSet(S.worldDP, k, v, "world"); }
-  getDynamicPropertyIds() { return [...S.worldDP.keys()]; }
-  clearDynamicProperties() { S.worldDP.clear(); }
-  getDynamicPropertyTotalByteCount() { return dpBytes(S.worldDP); }
-  sendMessage(m) { S.log.messages.push(textOf(m)); }
-  playMusic() { } queueMusic() { } stopMusic() { }
-  getLootTableManager() {
-    notice("getLootTableManager は空の結果を返す（偽物）");
-    return { generateLootFromEntity: () => [], generateLootFromBlock: () => [], generateLootFromTable: () => [], getLootTable: () => undefined };
-  }
-}
-export const world = new World();
+# ===========================================================================
+#  走らせる
+# ===========================================================================
+def run_file(node: str, work: str, test_rel: str, *, entry="scripts/main.js", filt="", verbose=False,
+             timeout=FILE_TIMEOUT, tag="") -> dict:
+    """1 ファイルを自分の node プロセスで走らせて結果（runner.mjs の JSON）を返す。"""
+    out_path = os.path.join(work, "__nr_result_" + re.sub(r"\W", "_", test_rel) + ".json")
+    if os.path.exists(out_path):
+        os.remove(out_path)
+    env = dict(os.environ, NR_ENTRY=entry, NR_FILTER=filt or "", NR_VERBOSE="1" if verbose else "0")
+    cmd = [node, "--no-warnings", "__nr_runner.mjs", test_rel, out_path]
+    t0 = time.time()
+    output = ""
+    try:
+        proc = subprocess.run(cmd, cwd=work, env=env, timeout=timeout, text=True, encoding="utf-8",
+                              errors="replace", capture_output=not verbose)
+        output = (proc.stdout or "") + (proc.stderr or "")
+        rc = proc.returncode
+    except subprocess.TimeoutExpired:
+        return {"file": test_rel, "tag": tag, "crash": f"{timeout} 秒で終わらない（アドオンかテストの無限ループ？）",
+                "tests": [], "seconds": round(time.time() - t0, 2)}
+    if not os.path.exists(out_path):
+        tail = [ln for ln in output.strip().splitlines() if ln.strip()][-14:]
+        return {"file": test_rel, "tag": tag, "crash": f"node が結果を書かずに終わった（終了コード {rc}）",
+                "output": tail, "tests": [], "seconds": round(time.time() - t0, 2)}
+    with open(out_path, encoding="utf-8") as fh:
+        res = json.load(fh)
+    res["tag"] = tag
+    res["seconds"] = round(time.time() - t0, 2)
+    return res
 
-export class System {
-  get currentTick() { return S.tick; }
-  get afterEvents() { return SIG.sa; }
-  get beforeEvents() { return SIG.sb; }
-  get isEditorWorld() { return false; }
-  get serverSystemInfo() { return { memoryTier: "High" }; }
-  _add(kind, cb, delay, every) {
-    check(typeof cb === "function", "system", `system.${kind} に関数でないもの`, TypeError);
-    if (delay !== undefined) check(finite(delay) && delay >= 0, "system", `system.${kind} の tick ${delay}`, ArgumentOutOfBoundsError);
-    const id = S.nextRun++;
-    S.timers.push({ id, kind, cb, due: S.tick + Math.max(1, Math.floor(every ?? delay ?? 1)), every: every !== undefined ? Math.max(1, Math.floor(every)) : 0 });
-    return id;
-  }
-  run(cb) { return this._add("run", cb); }
-  runTimeout(cb, t = 1) { return this._add("runTimeout", cb, t); }
-  runInterval(cb, t = 1) { check(finite(t) && t >= 0, "system", `runInterval の間隔 ${t}`, ArgumentOutOfBoundsError); return this._add("runInterval", cb, undefined, t); }
-  clearRun(id) { for (const t of S.timers) if (t.id === id) t.cleared = true; }
-  runJob(gen) {
-    check(gen && typeof gen.next === "function", "system", "runJob にはジェネレータ（function* の戻り値）を渡す", TypeError);
-    const id = S.nextRun++; S.jobs.push({ id, gen }); return id;
-  }
-  clearJob(id) { S.jobs = S.jobs.filter((j) => j.id !== id); }
-  waitTicks(n) {
-    check(Number.isInteger(n) && n >= 1, "system", `waitTicks(${n})（1 以上の整数）`, ArgumentOutOfBoundsError);
-    return new Promise((res) => { S.timers.push({ id: S.nextRun++, kind: "waitTicks", cb: res, due: S.tick + n, every: 0 }); });
-  }
-  sendScriptEvent(id, message) {
-    check(typeof id === "string" && /^[a-z0-9_.-]+:[\w.-]+$/i.test(id) && !id.startsWith("minecraft:"), "scriptevent", `scriptevent の ID ${fmt(id)}（"ns:name"、minecraft 以外）`, NamespaceNameError);
-    queueAfter("scriptEventReceive", { id, message: String(message ?? ""), sourceType: "Server" });
-  }
-}
-export const system = new System();
 
-// ---- カスタムコンポーネント・カスタムコマンドの登録 ----
-const BLOCK_HOOKS = new Set(["beforeOnPlayerPlace", "onEntityFallOn", "onPlace", "onPlayerBreak", "onPlayerInteract", "onRandomTick", "onStepOff", "onStepOn", "onTick", "onRedstoneUpdate", "onBreak"]);
-const ITEM_HOOKS = new Set(["onBeforeDurabilityDamage", "onCompleteUse", "onConsume", "onHitEntity", "onMineBlock", "onUse", "onUseOn"]);
-function regCheck(kind, name, comp, hooks, map, DupErr) {
-  check(S.phase === "startup", "startup", `${kind}ComponentRegistry.registerCustomComponent は system.beforeEvents.startup の中だけ（今は ${S.phase}）`, CustomComponentInvalidRegistryError);
-  check(typeof name === "string" && /^[a-z0-9_]+:[a-z0-9_]+$/.test(name) && !name.startsWith("minecraft:"), "startup", `カスタムコンポーネントの名前 ${fmt(name)}`, CustomComponentNameError);
-  check(comp && typeof comp === "object", "startup", `${name} の中身が辞書でない`);
-  for (const k of Object.keys(comp)) check(hooks.has(k), "startup", `${name}: ${kind} のカスタムコンポーネントに無いフック ${k}`);
-  check(!map.has(name), "startup", `${name} を二重に登録`, DupErr);
-  map.set(name, comp);
-}
-export class BlockComponentRegistry { registerCustomComponent(name, c) { regCheck("block", name, c, BLOCK_HOOKS, S.reg.block, BlockCustomComponentAlreadyRegisteredError); } }
-export class ItemComponentRegistry { registerCustomComponent(name, c) { regCheck("item", name, c, ITEM_HOOKS, S.reg.item, ItemCustomComponentAlreadyRegisteredError); } }
-export class CustomCommandRegistry {
-  registerCommand(cmd, cb) {
-    check(S.phase === "startup", "startup", "registerCommand は startup の中だけ");
-    check(cmd && typeof cmd.name === "string" && /^[a-z0-9_]+:[a-z0-9_]+$/.test(cmd.name), "startup", `カスタムコマンドの名前 ${fmt(cmd?.name)}`, CustomComponentNameError);
-    check(typeof cmd.description === "string", "startup", `${cmd.name} の description`);
-    check(typeof cb === "function", "startup", `${cmd.name} の関数`);
-    S.reg.commands.set(cmd.name, { cmd, cb });
-  }
-  registerEnum(name, values) { check(Array.isArray(values), "startup", "registerEnum の値"); S.reg.enums.set(name, values); }
-}
-export class StartupEvent {
-  constructor() { this._b = new BlockComponentRegistry(); this._i = new ItemComponentRegistry(); this._c = new CustomCommandRegistry(); }
-  get blockComponentRegistry() { return this._b; }
-  get itemComponentRegistry() { return this._i; }
-  get customCommandRegistry() { return this._c; }
-}
-function customOf(def) { return def?.custom ?? {}; }
-function callHook(map, compName, hook, ev, params) {
-  const comp = map.get(compName);
-  if (!comp || typeof comp[hook] !== "function") return false;
-  try { comp[hook](ev, { params }); } catch (e) { recordError(`custom component ${compName}.${hook}`, e); }
-  return true;
-}
-function blockHook(key, hook, extra) {
-  const p = unpackKey(key);
-  const b = blockAt(p.x, p.y, p.z);
-  const def = DEFS.blocks[b.typeId];
-  if (!def) return;
-  for (const [name, params] of Object.entries(customOf(def))) {
-    callHook(S.reg.block, name, hook, { block: new Block(S.overworld, p.x, p.y, p.z), dimension: S.overworld, ...extra }, params);
-  }
-}
-function itemHook(item, hook, ev) {
-  if (!item) return;
-  const def = DEFS.items[item.typeId];
-  for (const [name, params] of Object.entries(customOf(def))) callHook(S.reg.item, name, hook, ev, params);
-}
-S.blockHook = (pos, hook, extra) => blockHook(blockKey(pos.x, pos.y, pos.z), hook, extra);
-S.itemHook = itemHook;
-S.unregisteredCustomComponents = () => {
-  const miss = [];
-  for (const [id, d] of Object.entries(DEFS.blocks)) for (const n of Object.keys(customOf(d))) if (!S.reg.block.has(n)) miss.push(`block ${id}: ${n}`);
-  for (const [id, d] of Object.entries(DEFS.items)) for (const n of Object.keys(customOf(d))) if (!S.reg.item.has(n)) miss.push(`item ${id}: ${n}`);
-  return miss;
-};
+def run_all(node: str, jobs: list, workers: int) -> list:
+    """jobs = [dict(work, test, entry, filt, verbose, timeout, tag)]。入力の順に結果を返す。"""
+    if workers <= 1 or len(jobs) <= 1:
+        return [run_file(node, j["work"], j["test"], **{k: v for k, v in j.items() if k not in ("work", "test")})
+                for j in jobs]
+    with cf.ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = [ex.submit(run_file, node, j["work"], j["test"],
+                          **{k: v for k, v in j.items() if k not in ("work", "test")}) for j in jobs]
+        return [f.result() for f in futs]
 
-// ===========================================================================
-//  tick の進行・起動・後片付け（テストの道具から使う）
-// ===========================================================================
-function stepBlocks() {
-  // onStepOn / onStepOff / 地面のブロックの onTick
-  for (const e of S.entities.values()) {
-    if (!e._valid) continue;
-    const k = e._onGround ? blockKey(e._loc.x, e._loc.y - 0.01, e._loc.z) : null;
-    const prev = S.stepState.get(e._id) ?? null;
-    if (k !== prev) {
-      if (prev !== null) blockHook(prev, "onStepOff", { entity: e });
-      if (k !== null) blockHook(k, "onStepOn", { entity: e });
-      S.stepState.set(e._id, k);
-    }
-  }
-  if (S.reg.block.size) {
-    for (const [k, idx] of S.blocks) {
-      const def = DEFS.blocks[S.palette[idx].typeId];
-      if (!def?.tick) continue;
-      const every = Math.max(1, def.tick[0] ?? 20);
-      if (S.tick % every === 0) blockHook(k, "onTick", {});
-    }
-  }
-}
-function runTimers() {
-  const due = S.timers.filter((t) => !t.cleared && t.due <= S.tick).sort((a, b) => a.due - b.due || a.id - b.id);
-  for (const t of due) {
-    if (t.cleared) continue;
-    if (t.every) t.due += t.every; else t.cleared = true;
-    try { t.cb(); } catch (e) { recordError(`system.${t.kind}`, e); }
-  }
-  S.timers = S.timers.filter((t) => !t.cleared);
-}
-function runJobs() {
-  for (const j of [...S.jobs]) {
-    for (let i = 0; i < 256; i++) {
-      let r;
-      try { r = j.gen.next(); } catch (e) { recordError("system.runJob", e); r = { done: true }; }
-      if (r.done) { S.jobs = S.jobs.filter((x) => x !== j); break; }
-    }
-  }
-}
-S.__tick = function () {
-  S.tick++;
-  S.perTick = 0;
-  if (world.gameRules.doDayLightCycle && S.daylightCycle) { S.time = (S.time + 1) % 24000; S.absTime++; }
-  for (const e of [...S.entities.values()]) if (e._valid) { try { e._physicsStep(); } catch (err) { recordError("physics", err); } }
-  for (const e of [...S.entities.values()]) if (e._valid) e._statusStep();
-  stepBlocks();
-  runTimers();
-  runJobs();
-  flush();
-  for (const e of S.pendingRemove) e._removeNow(false);
-  S.pendingRemove.clear();
-  flush();
-  if (S.perTick > S.maxPerTick) { S.maxPerTick = S.perTick; S.maxPerTickAt = S.tick; }
-};
-S.__startup = function () {
-  S.phase = "startup";
-  const ev = new StartupEvent();
-  S.readOnly++;
-  try { dispatch(SIG.sb.startup, "startup", ev); } finally { S.readOnly--; }
-  S.phase = "early";
-};
-S.__worldLoad = function () {
-  S.early = false; S.phase = "world";
-  queueAfter("worldLoad", {});
-  flush();
-};
-S.createPlayer = function (name, loc) {
-  const p = new Player(S.overworld, loc, name);
-  queueAfter("playerJoin", { playerId: p._id, playerName: name });
-  queueAfter("playerSpawn", { player: p, initialSpawn: true });
-  return p;
-};
-S.resetWorld = function () {
-  for (const e of [...S.entities.values()]) { e._valid = false; }
-  S.entities.clear(); S.players.length = 0; S.queue.length = 0; S.pendingRemove.clear(); S.stepState.clear();
-  S.blocks.clear(); S.lights.clear(); S.groundY = 64; S.flat = true; S.time = 1000; S.light = null;
-  S.formQueue.length = 0; S.budgetHit.clear();
-};
-S.blockAt = blockAt; S.setBlockAt = setBlockAt; S.lightAt = lightAt; S.solidAt = solidAt;
-S.getStructure = getStructure;
 
-// ---- 実機の制限（d.ts の注記から）: read-only・early-execution・無効なエンティティ ----
-const VALID_FREE = new Set(["id", "typeId", "isValid", "constructor"]);
-function guardOne(cls, clsName, proto, name, desc) {
-  const info = API.classes?.[clsName];
-  const m = info?.members?.[name];
-  const roBlocked = !!m?.ro;
-  const earlyOk = !!m?.early;
-  const earlyGuard = (clsName === "World" || clsName === "Dimension" || clsName === "StructureManager" || clsName === "Scoreboard") && !earlyOk;
-  const isEnt = proto instanceof Entity || proto === Entity.prototype;
-  const need = (kind) => {
-    if (kind === "call" || kind === "set") {
-      if (roBlocked && S.readOnly > 0) throw violation("readonly", `${clsName}.${name} は before イベント（read-only）の中では使えない — system.run へ逃がす`);
+# ===========================================================================
+#  結果のまとめ
+# ===========================================================================
+def _at(x: dict) -> str:
+    bits = [b for b in (x.get("where"), f"tick {x['tick']}" if x.get("tick") is not None else "") if b]
+    return f"（{'、'.join(bits)}）" if bits else ""
+
+
+def failures(res: dict) -> list:
+    """失敗の一覧 [(見出し, [行...])]。"""
+    out = []
+    if res.get("crash"):
+        out.append(("（ファイル）", [res["crash"]] + [f"  {ln}" for ln in res.get("output", [])]))
+        return out
+    boot = res.get("boot") or {}
+    lines = []
+    for e in boot.get("errors", []):
+        lines.append(f"例外（{e.get('where', '?')}）: {e.get('msg')}")
+        lines += [f"    at {s}" for s in (e.get("stack") or [])[:3]]
+    for v in boot.get("violations", []):
+        lines.append(f"違反 {v['kind']}: {v['msg']}{_at(v)}")
+    for c in boot.get("consoleErrors", []):
+        lines.append(f"console.error: {c['msg']}{_at(c)}")
+    for d in boot.get("dataErrors", []):
+        lines.append(f"scripts/data を読めない: {d}")
+    if lines:
+        out.append(("（起動: import → startup → worldLoad）", lines))
+    if res.get("fileError"):
+        fe = res["fileError"]
+        out.append(("（テストファイルの読み込み）", [fe["msg"]] + [f"    at {s}" for s in fe.get("stack", [])[:3]]))
+    for t in res.get("tests", []):
+        if t["ok"]:
+            continue
+        lines = []
+        if t.get("error"):
+            e = t["error"]
+            lines.append(f"{e['name']}: {e['msg']}" + (f"（{', '.join(e['stack'][:2])}）" if e.get("stack") else ""))
+        for v in t.get("violations", []):
+            lines.append(f"違反 {v['kind']}: {v['msg']}{_at(v)}")
+        for e in t.get("errors", []):
+            lines.append(f"捕まらない例外（{e['where']}）: {e['msg']}" + (f"（{', '.join(e['stack'][:2])}）" if e.get("stack") else ""))
+        for c in t.get("consoleErrors", []):
+            lines.append(f"console.error: {c['msg']}{_at(c)}")
+        out.append((t["name"], lines))
+    left = res.get("leftoverViolations") or []
+    if left:
+        out.append(("（テストの外）", [f"違反 {v['kind']}: {v['msg']}{_at(v)}" for v in left]))
+    return out
+
+
+def file_ok(res: dict) -> bool:
+    return not failures(res)
+
+
+def print_file(res: dict, label: str, verbose: bool, limit: int = 40) -> None:
+    tests = res.get("tests", [])
+    n_ok = sum(1 for t in tests if t["ok"])
+    fails = failures(res)
+    mark = "OK" if not fails else "FAIL"
+    peak = f"、パーティクル最大 {res['maxPerTick']}/tick" if res.get("maxPerTick") else ""
+    print(f"  [test] {mark} {label}: {n_ok} / {len(tests)}（{res.get('seconds', 0):.1f} 秒{peak}）")
+    if verbose:
+        for t in tests:
+            print(f"      {'ok  ' if t['ok'] else 'FAIL'} {t['name']}（{t['ms']} ms）")
+    shown = 0
+    for title, lines in fails:
+        print(f"      FAIL {title}")
+        for ln in lines[:12]:
+            print(f"          {ln}")
+        if len(lines) > 12:
+            print(f"          …ほか {len(lines) - 12} 行")
+        shown += 1
+        if shown >= limit:
+            print(f"      …ほか {len(fails) - shown} 件")
+            break
+
+
+def merge_usage(results: list) -> dict:
+    total: dict = {}
+    for r in results:
+        for k, v in (r.get("usage") or {}).items():
+            if isinstance(v, dict):
+                d = total.setdefault(k, {})
+                for kk, n in v.items():
+                    d[kk] = d.get(kk, 0) + n
+            elif isinstance(v, (int, float)):
+                total[k] = total.get(k, 0) + v
+    return total
+
+
+def coverage(usage: dict, defs: dict) -> dict:
+    """RP / BP にある nr: の演出のうち、テストで一度でも使われたもの。"""
+    def cov(have, used_keys):
+        have = sorted(have)
+        hit = [x for x in have if x in used_keys]
+        return {"used": len(hit), "total": len(have), "unused": [x for x in have if x not in used_keys]}
+    return {
+        "particles": cov([p for p in defs["particles"] if p.startswith("nr:")], usage.get("particles", {})),
+        "sounds": cov([s for s in defs["sounds"] if s.startswith("nr.")], usage.get("sounds", {})),
+        "animations": cov([a for a in defs["animations"] if a.startswith("animation.nr.")], usage.get("anims", {})),
+        "entities": cov([e for e in defs["entities"] if e.startswith("nr:")], usage.get("spawned", {})),
+        "structures": cov(list(defs["structures"]), usage.get("structures", {})),
     }
-    if (earlyGuard && S.early) throw violation("early", `${clsName}.${name} は worldLoad の前（early execution）には使えない — world.afterEvents.worldLoad か system.run の中で`);
-  };
-  const invalid = function (self) {
-    if (isEnt && !VALID_FREE.has(name) && self && self._valid === false) {
-      notice("無効なエンティティを触った（InvalidEntityError）");
-      throw new InvalidEntityError(`[fake] 無効なエンティティ ${self._typeId}#${self._id} の ${name}`);
+
+
+def print_extras(results: list) -> None:
+    lim: dict = {}
+    notes: dict = {}
+    warns = 0
+    samples = []
+    for r in results:
+        for k, n in (r.get("limitations") or {}).items():
+            lim[k] = lim.get(k, 0) + n
+        for k, n in (r.get("notices") or {}).items():
+            notes[k] = notes.get(k, 0) + n
+        warns += r.get("warns", 0)
+        samples += [w["msg"] for w in r.get("warnSamples", [])]
+    if lim:
+        print("  [test] 偽物の限界（アドオンが呼んだが偽物に無い。test_fakes/server.js に足すこと）: "
+              + ", ".join(f"{k} ×{n}" for k, n in sorted(lim.items())))
+    if notes:
+        print("  [test] 注意: " + "; ".join(f"{k} ×{n}" for k, n in sorted(notes.items())[:12]))
+    if warns:
+        print(f"  [test] console.warn {warns} 件（例: {' / '.join(s[:80] for s in samples[:3])}）")
+
+
+# ===========================================================================
+#  自己テスト（小さな偽アドオンと、わざと壊した偽アドオン）
+# ===========================================================================
+def _nbt_str(s: str) -> bytes:
+    b = s.encode("utf-8")
+    return struct.pack("<H", len(b)) + b
+
+
+def _nbt(tag: int, v) -> bytes:
+    """little-endian NBT の中身。compound は {名前: (タグ, 値)}、list は (要素のタグ, [値...])。"""
+    if tag == 1:
+        return struct.pack("<b", int(v))
+    if tag == 3:
+        return struct.pack("<i", v)
+    if tag == 8:
+        return _nbt_str(v)
+    if tag == 9:
+        et, items = v
+        return struct.pack("<bi", et, len(items)) + b"".join(_nbt(et, x) for x in items)
+    if tag == 10:
+        return b"".join(struct.pack("<b", t) + _nbt_str(k) + _nbt(t, x) for k, (t, x) in v.items()) + b"\x00"
+    raise ValueError(tag)
+
+
+def write_mcstructure(path: str, size, palette, indices) -> None:
+    """自己テスト用の小さな .mcstructure（validate_nr.read_mcstructure で読み戻せる形）。"""
+    def st(states):
+        return {k: ((1, v) if isinstance(v, bool) else (3, v) if isinstance(v, int) else (8, str(v)))
+                for k, v in states.items()}
+    root = {
+        "format_version": (3, 1),
+        "size": (9, (3, list(size))),
+        "structure": (10, {
+            "block_indices": (9, (9, [(3, list(indices)), (3, [-1] * len(indices))])),
+            "entities": (9, (10, [])),
+            "palette": (10, {"default": (10, {
+                "block_palette": (9, (10, [{"name": (8, n), "states": (10, st(s)), "version": (3, 18163713)}
+                                           for n, s in palette])),
+                "block_position_data": (10, {})})}),
+        }),
+        "structure_world_origin": (9, (3, [0, 0, 0])),
     }
-  };
-  if (typeof desc.value === "function") {
-    const f = desc.value;
-    Object.defineProperty(proto, name, { ...desc, value: function (...a) { need("call"); invalid(this); return f.apply(this, a); } });
-  } else if (desc.get || desc.set) {
-    const g = desc.get, s = desc.set;
-    Object.defineProperty(proto, name, { ...desc,
-      get: g ? function () { need("get"); invalid(this); return g.call(this); } : undefined,
-      set: s ? function (v) { need("set"); invalid(this); return s.call(this, v); } : undefined });
-  }
-}
-export function __installGuards(classes) {
-  for (const [clsName, cls] of Object.entries(classes)) {
-    const proto = cls.prototype;
-    for (const name of Object.getOwnPropertyNames(proto)) {
-      if (name === "constructor" || name.startsWith("_")) continue;
-      guardOne(cls, clsName, proto, name, Object.getOwnPropertyDescriptor(proto, name));
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as fh:
+        fh.write(b"\x0a" + _nbt_str("") + _nbt(10, root))
+
+
+_LIMB = ["intact", "wounded", "broken", "cut_lower", "cut_upper"]
+
+
+def _enum(values, default=None):
+    return {"type": "enum", "values": values, "default": default or values[0], "client_sync": True}
+
+
+def _int(lo, hi, default=0):
+    return {"type": "int", "range": [lo, hi], "default": default, "client_sync": True}
+
+
+def _despawn_parts():
+    return ({"nr:despawn": {"minecraft:instant_despawn": {}}},
+            {"nr:despawn": {"add": {"component_groups": ["nr:despawn"]}}})
+
+
+def mini_pack_docs() -> dict:
+    """自己テストの小さなパック {相対パス: JSON}（DESIGN.md の形に合わせた縮小版）。"""
+    dg, de = _despawn_parts()
+    zombie = {"format_version": "1.21.120", "minecraft:entity": {
+        "description": {"identifier": "nr:z_test", "is_spawnable": True, "is_summonable": True, "properties": {
+            "nr:head": _enum(["intact", "wounded", "jawless", "cracked", "severed", "crushed"]),
+            "nr:arm_r": _enum(_LIMB), "nr:arm_l": _enum(_LIMB), "nr:leg_r": _enum(_LIMB), "nr:leg_l": _enum(_LIMB),
+            "nr:torso": _enum(["intact", "slashed", "gutted", "halved"]),
+            "nr:blood": _int(0, 3), "nr:burn": _int(0, 3), "nr:shock": _int(0, 1), "nr:armor": _int(0, 3, 3),
+            "nr:state": _enum(["normal", "crawl", "climb", "stagger", "down", "special", "dead"]),
+            "nr:pose": _int(0, 7), "nr:ability": _int(0, 7), "nr:variant": _int(0, 3)}},
+        "component_groups": {
+            "nr:dead": {"minecraft:damage_sensor": {"triggers": [{"cause": "all", "deals_damage": "no"}]},
+                        "minecraft:collision_box": {"width": 0.6, "height": 0.4}},
+            "nr:crawler": {"minecraft:collision_box": {"width": 0.6, "height": 0.6}, "minecraft:movement": {"value": 0.08}},
+            "nr:rooted": {"minecraft:movement": {"value": 0.0}},
+            "nr:enraged": {"minecraft:movement": {"value": 0.3}},
+            **dg},
+        "components": {
+            "minecraft:health": {"value": 1000, "max": 1000},
+            "minecraft:collision_box": {"width": 0.6, "height": 1.9},
+            "minecraft:physics": {}, "minecraft:pushable": {"is_pushable": True},
+            "minecraft:type_family": {"family": ["nr_zombie", "zombie", "monster", "mob"]},
+            "minecraft:movement": {"value": 0.22}},
+        "events": {
+            "minecraft:entity_spawned": {"set_property": {"nr:variant": "math.random_integer(0, 3)"}},
+            "nr:on_death": {"add": {"component_groups": ["nr:dead"]},
+                            "set_property": {"nr:state": "dead", "nr:pose": "math.random_integer(0, 7)"}},
+            "nr:to_crawl": {"add": {"component_groups": ["nr:crawler"]}, "set_property": {"nr:state": "crawl"}},
+            "nr:root_start": {"add": {"component_groups": ["nr:rooted"]}},
+            "nr:root_end": {"remove": {"component_groups": ["nr:rooted"]}},
+            "nr:enrage": {"add": {"component_groups": ["nr:enraged"]}},
+            "nr:calm": {"remove": {"component_groups": ["nr:enraged"]}},
+            **de}}}
+    gib = {"format_version": "1.21.120", "minecraft:entity": {
+        "description": {"identifier": "nr:gib", "is_spawnable": False, "is_summonable": True, "properties": {
+            "nr:ztype": _int(0, 63), "nr:part": _int(0, 15), "nr:spin": _int(0, 7), "nr:rest": _int(0, 3),
+            "nr:bleed": _int(0, 1), "nr:side": _int(0, 1)}},
+        "component_groups": dict(dg),
+        "components": {"minecraft:health": {"value": 5, "max": 5}, "minecraft:physics": {},
+                       "minecraft:collision_box": {"width": 0.3, "height": 0.3},
+                       "minecraft:type_family": {"family": ["nr_gib"]}},
+        "events": dict(de)}}
+    proj = {"format_version": "1.21.120", "minecraft:entity": {
+        "description": {"identifier": "nr:proj_test", "is_spawnable": False, "is_summonable": True},
+        "component_groups": dict(dg),
+        "components": {"minecraft:projectile": {"on_hit": {"impact_damage": {"damage": 4}, "remove_on_hit": {}},
+                                                "gravity": 0.03},
+                       "minecraft:physics": {}, "minecraft:collision_box": {"width": 0.25, "height": 0.25}},
+        "events": dict(de)}}
+
+    def item(ident, comps):
+        return {"format_version": "1.21.120", "minecraft:item": {"description": {"identifier": ident}, "components": comps}}
+
+    def block(ident, comps, states=None, traits=None):
+        desc = {"identifier": ident}
+        if states:
+            desc["states"] = states
+        if traits:
+            desc["traits"] = traits
+        return {"format_version": "1.21.120", "minecraft:block": {"description": desc, "components": comps}}
+
+    def particle(ident):
+        return {"format_version": "1.10.0", "particle_effect": {
+            "description": {"identifier": ident, "basic_render_parameters": {
+                "material": "particles_alpha", "texture": "textures/particle/particles"}},
+            "components": {"minecraft:emitter_rate_instant": {"num_particles": 1},
+                           "minecraft:particle_lifetime_expression": {"max_lifetime": 0.5}}}}
+
+    def snd(name):
+        return {"category": "hostile", "sounds": [{"name": f"sounds/nr/test/{name}", "volume": 1.0}]}
+
+    def anim():
+        return {"animation_length": 0.5, "bones": {"head": {"rotation": {"0.0": [0, 0, 0], "0.25": [-10, 0, 0],
+                                                                         "0.5": [0, 0, 0]}}}}
+    return {
+        "BP/entities/z_test.json": zombie,
+        "BP/entities/gib.json": gib,
+        "BP/entities/proj_test.json": proj,
+        "BP/items/w_test.json": item("nr:w_test", {
+            "minecraft:max_stack_size": 1, "minecraft:durability": {"max_durability": 50}, "minecraft:damage": 7,
+            "nr:test_weapon": {"dtype": "slash", "weight": "medium"}}),
+        "BP/items/test_terminal.json": item("nr:test_terminal", {"minecraft:max_stack_size": 1}),
+        "BP/items/test_pebble.json": item("nr:test_pebble", {"minecraft:max_stack_size": 16}),
+        "BP/blocks/test_trap.json": block("nr:test_trap", {
+            "minecraft:tick": {"interval_range": [10, 10], "looping": True}, "nr:test_trap": {"damage": 2}}),
+        "BP/blocks/test_lamp.json": block("nr:test_lamp", {"minecraft:light_emission": 15}),
+        "BP/blocks/test_crate.json": block("nr:test_crate", {}, states={"nr:open": [False, True]},
+                                           traits={"minecraft:placement_direction": {
+                                               "enabled_states": ["minecraft:cardinal_direction"]}}),
+        "RP/particles/test_blood.json": particle("nr:test_blood"),
+        "RP/particles/test_spark.json": particle("nr:test_spark"),
+        "RP/sounds/sound_definitions.json": {"format_version": "1.20.20", "sound_definitions": {
+            "nr.test.hit": snd("hit"), "nr.test.swing": snd("swing"), "nr.test.ui": snd("ui")}},
+        "RP/animations/test.animation.json": {"format_version": "1.10.0", "animations": {
+            "animation.nr.z.test_react": anim(), "animation.nr.p.test_vault": anim()}},
     }
-    // d.ts にあって偽物に無いメソッドは「偽物の限界」と分かる例外にする
-    const info = API.classes?.[clsName];
-    for (const [name, m] of Object.entries(info?.members ?? {})) {
-      if (m.kind !== "method") continue;
-      const target = m.static ? cls : proto;
-      if (!(name in target)) Object.defineProperty(target, name, { value: function () { throw limitation(`${clsName}.${name}`); }, configurable: true, writable: true });
-    }
-  }
-}
-S.surfaceExtras = function (classes) {
-  // 偽物にあって d.ts に無い（実機に無い）公開メンバー。自己テストで見る
-  const out = [];
-  const membersOf = (n) => { const ms = new Set(); let c = n; while (c && API.classes?.[c]) { for (const k of Object.keys(API.classes[c].members ?? {})) ms.add(k); c = API.classes[c].extends; } return ms; };
-  for (const [clsName, cls] of Object.entries(classes)) {
-    if (!API.classes?.[clsName]) continue;
-    const ms = membersOf(clsName);
-    for (const name of Object.getOwnPropertyNames(cls.prototype)) if (name !== "constructor" && !name.startsWith("_") && !ms.has(name)) out.push(`${clsName}.${name}`);
-    for (const name of Object.getOwnPropertyNames(cls)) if (!["length", "name", "prototype"].includes(name) && !name.startsWith("_") && !ms.has(name)) out.push(`${clsName}.${name} (static)`);
-  }
-  return out;
-};
-export const IMPLEMENTED = { Entity, Player, Component, EntityComponent, EntityAttributeComponent, EntityHealthComponent,
-  EntityMovementComponent, EntityTypeFamilyComponent, EntityOnFireComponent, EntityItemComponent, EntityInventoryComponent,
-  EntityEquippableComponent, EntityProjectileComponent, Camera, ScreenDisplay, InputInfo, PlayerInputPermissions, ItemStack,
-  ItemComponent, ItemDurabilityComponent, ItemCooldownComponent, ItemFoodComponent, ItemEnchantableComponent, Container,
-  ContainerSlot, MolangVariableMap, ItemType, BlockType, EntityType, EffectType, ItemTypes, BlockTypes, EntityTypes, EffectTypes,
-  BlockPermutation, Block, BlockVolumeBase, BlockVolume, ListBlockVolume, Dimension, Structure, StructureManager,
-  ScoreboardObjective, Scoreboard, GameRules, World, System, BlockComponentRegistry, ItemComponentRegistry,
-  CustomCommandRegistry, StartupEvent };
-S.IMPLEMENTED = IMPLEMENTED;
-'''
+
+
+def write_mini_pack(root: str) -> tuple:
+    for relp, doc in mini_pack_docs().items():
+        p = os.path.join(root, *relp.split("/"))
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, "w", encoding="utf-8") as fh:
+            json.dump(doc, fh, ensure_ascii=False, indent=1)
+    # 3x2x3 の小屋: 床が石、(0,1,0) にランプ、ほかは空き（-1）
+    size = (3, 2, 3)
+    idx = []
+    for x in range(3):
+        for y in range(2):
+            for z in range(3):
+                idx.append(0 if y == 0 else 1 if (x, y, z) == (0, 1, 0) else -1)
+    write_mcstructure(os.path.join(root, "BP", "structures", "nr", "test_hut.mcstructure"), size,
+                      [("minecraft:stone", {}), ("nr:test_lamp", {})], idx)
+    return os.path.join(root, "BP"), os.path.join(root, "RP")
+
+
+NOOP_TEST = 'import { test } from "nr-test";\ntest("noop", () => {});\n'
+
+
+def _selftest_variants(tmp: str) -> list:
+    noop = os.path.join(tmp, "noop.mjs")
+    with open(noop, "w", encoding="utf-8") as fh:
+        fh.write(NOOP_TEST)
+    addon = os.path.join(SELF, "addon")
+    return [
+        dict(name="good", scripts=addon, tests=[(os.path.join(SELF, "selftest.mjs"), "selftest.mjs"),
+                                                (os.path.join(FAKES, "builtin_smoke.mjs"), SMOKE_NAME)]),
+        dict(name="bad", scripts=os.path.join(SELF, "addon_bad"),
+             tests=[(os.path.join(SELF, "selftest_bad.mjs"), "selftest_bad.mjs")]),
+        dict(name="boot_early", entry=os.path.join(SELF, "boot_early.js"), tests=[(noop, "noop.mjs")]),
+        dict(name="boot_late", entry=os.path.join(SELF, "boot_late.js"), tests=[(noop, "noop.mjs")]),
+        dict(name="boot_import", entry=os.path.join(SELF, "boot_import.js"), tests=[(noop, "noop.mjs")]),
+        dict(name="boot_unregistered", scripts=addon, tests=[(noop, "noop.mjs")],
+             extra_items={"nr:test_orphan": {"components": {"nr:nobody": {}}, "custom": {"nr:nobody": {}}}}),
+    ]
+
+
+def _check_bad_test(t: dict) -> str:
+    """bad[種類] のテストが期待どおりに落ちたか。問題があれば説明、無ければ空。"""
+    m = re.match(r"bad\[(\w+)\]", t["name"])
+    if not m:
+        return f"{t['name']}: 名前が bad[種類] の形でない"
+    kind = m.group(1)
+    if t["ok"]:
+        return f"{t['name']}: 失敗するはずが通った"
+    err = t.get("error") or {}
+    ok = {
+        "error": bool(t.get("errors")),
+        "console": bool(t.get("consoleErrors")),
+        "expect": err.get("name") == "ExpectError",
+        "throw": "わざと" in err.get("msg", ""),
+        "stuck": "止まった" in err.get("msg", ""),
+    }.get(kind)
+    if ok is None:
+        ok = any(v["kind"] == kind for v in t.get("violations", []))
+    if not ok:
+        got = [v["kind"] for v in t.get("violations", [])] + (["error"] if t.get("errors") else []) + \
+              ([err.get("name")] if err else [])
+        return f"{t['name']}: 落ち方が違う（期待 {kind}、実際 {', '.join(got) or 'なし'}）"
+    return ""
+
+
+def run_selftest(node: str, api: dict, ui_api: dict, tmp: str, workers: int, verbose: bool):
+    """偽物の自己テスト。戻り値 (ok, 問題の行, 結果の一覧, 数)。"""
+    modules = fake_modules(api)
+    bp, rp = write_mini_pack(os.path.join(tmp, "selfpack"))
+    jobs, meta = [], []
+    for v in _selftest_variants(tmp):
+        work = os.path.join(tmp, "self_" + v["name"])
+        notes: list = []
+        defs = build_defs(bp, rp, work, notes)
+        defs["items"].update(v.get("extra_items", {}))
+        rels = prepare_work(work, scripts_src=v.get("scripts"), entry_file=v.get("entry"), tests=v["tests"],
+                            defs=defs, api=api, ui_api=ui_api, modules=modules)
+        for r in rels:
+            jobs.append(dict(work=work, test=r, timeout=SELF_TIMEOUT, tag=f"self:{v['name']}", verbose=False))
+            meta.append(v["name"])
+    results = run_all(node, jobs, workers)
+    problems, counts = [], {"good": 0, "bad": 0, "boot": 0}
+    for name, res in zip(meta, results):
+        label = f"自己テスト {name} {res['file']}"
+        if res.get("crash"):
+            problems.append(f"{label}: {res['crash']}")
+            problems += [f"    {ln}" for ln in res.get("output", [])]
+            continue
+        boot = res["boot"]
+        vk = [v["kind"] for v in boot.get("violations", [])]
+        if name == "good":
+            for title, lines in failures(res):
+                problems.append(f"{label}: FAIL {title}")
+                problems += [f"    {ln}" for ln in lines[:10]]
+            if len(res["tests"]) != len(res["names"]) or not res["tests"]:
+                problems.append(f"{label}: テストが {len(res['tests'])} / {len(res['names'])} しか走らない")
+            counts["good"] += sum(1 for t in res["tests"] if t["ok"])
+        elif name == "bad":
+            if not boot.get("ok"):
+                problems.append(f"{label}: 起動で落ちた（{failures(res)[:1]}）")
+            for t in res["tests"]:
+                msg = _check_bad_test(t)
+                if msg:
+                    problems.append(f"{label}: {msg}")
+                else:
+                    counts["bad"] += 1
+            if len(res["tests"]) != len(res["names"]):
+                problems.append(f"{label}: テストが {len(res['tests'])} / {len(res['names'])} しか走らない")
+        else:
+            want = {
+                "boot_early": lambda: vk.count("early") >= 2,
+                "boot_late": lambda: vk.count("startup") >= 3,
+                "boot_import": lambda: any("AABB" in e.get("msg", "") for e in boot.get("errors", [])),
+                "boot_unregistered": lambda: any("nr:nobody" in v["msg"] for v in boot.get("violations", [])),
+            }[name]()
+            if boot.get("ok") or not want:
+                problems.append(f"{label}: 起動の失敗を見つけられない（違反 {vk}、例外 "
+                                f"{[e.get('msg', '')[:60] for e in boot.get('errors', [])]}）")
+            else:
+                counts["boot"] += 1
+        if verbose:
+            print_file(res, label, True)
+    return (not problems), problems, results, counts
+
+
+# ===========================================================================
+#  main
+# ===========================================================================
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="NIGHT RUNNER の手書き JS を偽の @minecraft/server で走らせてテストする")
+    ap.add_argument("-k", dest="filt", default="", help="名前（かファイル名）にこれを含むテストだけ（自己テストは飛ばす）")
+    ap.add_argument("--file", help="このテストファイルだけ（tools/nightrunner/ か今のフォルダからの相対）")
+    ap.add_argument("--keep", action="store_true", help="作業フォルダを消さない")
+    ap.add_argument("-v", "--verbose", action="store_true", help="テストごとの結果とアドオンの console.* を出す（1 並列）")
+    ap.add_argument("--strict", action="store_true", help="main.js が無ければ失敗（最終・CI 用）")
+    ap.add_argument("--json", help="結果を JSON に書く")
+    ap.add_argument("--selftest", action="store_true", help="偽物の自己テストだけ")
+    ap.add_argument("--no-selftest", action="store_true", help="自己テストを飛ばす")
+    ap.add_argument("-j", "--jobs", type=int, default=min(4, os.cpu_count() or 1), help="同時に走らせる node の数")
+    ap.add_argument("--timeout", type=int, default=FILE_TIMEOUT, help="1 ファイルの上限（秒）")
+    args = ap.parse_args(argv)
+
+    if os.environ.get("NR_SKIP_TESTS") == "1":
+        print("  [test] NR_SKIP_TESTS=1 なので挙動テストは飛ばす（Node が使えない時だけ）")
+        return 0
+    node = shutil.which("node") or shutil.which("node.exe")
+    if not node:
+        print("  [test] node が見つからない（Node.js 18 以上を入れること）", file=sys.stderr)
+        return 2
+    workers = 1 if args.verbose else max(1, args.jobs)
+    t_start = time.time()
+    api = parse_dts(os.path.join(TYPINGS, "server", "index.d.ts"))
+    ui_api = parse_dts(os.path.join(TYPINGS, "server-ui", "index.d.ts"))
+    bad = api_problems(api, ui_api)
+    if bad:
+        for b in bad:
+            print(f"  [test] d.ts を読めない: {b}", file=sys.stderr)
+        return 2
+
+    os.makedirs(SCRATCH, exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix="nr_test_", dir=SCRATCH)
+    report = {"ok": True, "selftest": None, "files": [], "usage": {}, "coverage": {}}
+    failed = False
+    main_js = os.path.join(SCRIPTS, "main.js")
+    has_main = os.path.isfile(main_js)
+    try:
+        # ---- 自己テスト ----
+        do_self = args.selftest or (not args.file and not args.no_selftest and (not args.filt or not has_main))
+        if do_self:
+            t0 = time.time()
+            ok, problems, sres, counts = run_selftest(node, api, ui_api, tmp, workers, args.verbose)
+            report["selftest"] = {"ok": ok, "problems": problems, "counts": counts}
+            if ok:
+                print(f"  [test] 自己テスト OK: 正しい偽アドオンで {counts['good']} 件通過、壊れた偽アドオンで "
+                      f"{counts['bad']} 件・起動 {counts['boot']} 種の失敗を検出（{time.time() - t0:.1f} 秒）")
+            else:
+                failed = True
+                print(f"  [test] 自己テスト FAIL（偽物 test_fakes/*.js の不具合）: {len(problems)} 件")
+                for p in problems[:60]:
+                    print(f"      {p}")
+        if args.selftest:
+            return finish(report, failed, args, tmp, t_start)
+
+        # ---- アドオンのテスト ----
+        if not has_main:
+            msg = f"{rel(main_js)} がまだ無い"
+            if args.strict:
+                print(f"  [test] FAIL {msg}（--strict）")
+                failed = True
+            else:
+                print(f"  [test] {msg}ので、アドオンのテストは飛ばす（自己テストだけ。OK）")
+                if not args.file:
+                    return finish(report, failed, args, tmp, t_start)
+        notes: list = []
+        work = os.path.join(tmp, "addon")
+        defs = build_defs(BP, RP, work, notes)
+        if args.file:
+            src = args.file if os.path.isabs(args.file) else next(
+                (c for c in (os.path.join(HERE, args.file), os.path.abspath(args.file), os.path.join(TESTS_DIR, args.file))
+                 if os.path.isfile(c)), None)
+            if not src or not os.path.isfile(src):
+                print(f"  [test] --file {args.file} が見つからない", file=sys.stderr)
+                return 2
+            helpers = [t for t in user_tests() if not t[1].endswith(".mjs")]
+            tests = helpers + [(src, os.path.basename(src))]
+        else:
+            tests = [(os.path.join(FAKES, "builtin_smoke.mjs"), SMOKE_NAME)] + user_tests()
+        rels = prepare_work(work, scripts_src=SCRIPTS if os.path.isdir(SCRIPTS) else None, tests=tests, defs=defs,
+                            api=api, ui_api=ui_api, modules=fake_modules(api))
+        for n in notes:
+            print(f"  [test] 注意: {n}")
+        jobs = [dict(work=work, test=r, filt=args.filt, verbose=args.verbose, timeout=args.timeout, tag="addon",
+                     entry="scripts/main.js" if has_main else "-") for r in rels]
+        results = run_all(node, jobs, workers)
+        ran = 0
+        for res in results:
+            label = "組み込み smoke" if res["file"].endswith(SMOKE_NAME) else res["file"]
+            if args.filt and not res.get("tests") and not failures(res):
+                continue
+            ran += len(res.get("tests", []))
+            print_file(res, label, args.verbose)
+            if not file_ok(res):
+                failed = True
+            report["files"].append(res)
+        if args.filt and not ran:
+            print(f"  [test] -k {args.filt} に当たるテストが無い")
+        usage = merge_usage(results)
+        report["usage"] = usage
+        report["coverage"] = coverage(usage, defs)
+        cv = report["coverage"]
+        print("  [test] 使った演出（RP / BP にある nr: のうち）: " + "、".join(
+            f"{k} {v['used']}/{v['total']}" for k, v in cv.items() if v["total"]))
+        peak = max((r.get("maxPerTick", 0) for r in results), default=0)
+        if peak:
+            print(f"  [test] 1 tick のパーティクルの最大 {peak}（予算 {PARTICLE_BUDGET}）")
+        print_extras(results)
+        n_tests = sum(len(r.get("tests", [])) for r in results)
+        n_ok = sum(1 for r in results for t in r.get("tests", []) if t["ok"])
+        print(f"  [test] {'OK' if not failed else 'FAIL'}: {n_ok} / {n_tests} テスト（{len(results)} ファイル）")
+        return finish(report, failed, args, tmp, t_start)
+    finally:
+        if args.keep:
+            print(f"  [test] 作業フォルダ: {rel(tmp)}")
+        else:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+def finish(report: dict, failed: bool, args, tmp: str, t_start: float) -> int:
+    report["ok"] = not failed
+    report["seconds"] = round(time.time() - t_start, 2)
+    if args.json:
+        path = os.path.abspath(args.json)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(report, fh, ensure_ascii=False, indent=1)
+        print(f"  [test] 結果: {rel(path)}")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

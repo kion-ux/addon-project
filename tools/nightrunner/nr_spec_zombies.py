@@ -15,6 +15,12 @@
 * 色はすべて (R, G, B) の 0〜255。長さの単位は、骨格はセンチ・モデルは px（16 = 1 ブロック）、
   距離・範囲はブロック、時間は秒（「tick」と書いたものだけ 1/20 秒）。
 * 名前はダイイングライトの敵に着想を得たオリジナル。子どもの感染者はいない（全員 150cm 以上の大人）。
+  表示名（ja / en・図鑑の文・区分名）に原作の固有名（Volatile / Viral / Howler / Demolisher / Goon /
+  Banshee / Revenant / Biter / Night Hunter / Harran / Villedor / GRE …）を使わない。内部の鍵
+  （`volatile`・`viral`・`summon_volatiles`・`volatile_screech`）は ID なので変えない（表示は「夜喰らい / Nightmaw」「俊敏型 / Feral」）。
+* 目（EYES_VOCAB）は 10 種で確定: clouded / bloodshot / milky / glowing_yellow / glowing_red / glowing_green /
+  glowing_orange / glowing_cyan / glowing_white / none（nr_paint が全部実装する）。
+* ゾンビの飛び道具（`nr:proj_spit` / `nr:proj_debris`）は ZOMBIE_PROJECTILES が持つ。
 
 下流が守る取り決め（DESIGN.md §3 のプロパティの使い方）:
 * `nr:ability`（0..7）= 今見せている能力の段階。値は種類ごとに `ability_states(z)` が
@@ -44,13 +50,15 @@ __all__ = [
     # 語彙
     "SKIN_VOCAB", "SKIN_TONES", "BLOOD_VOCAB", "EYES_VOCAB", "OUTFIT_LAYERS", "OUTFIT_COMMON_PARAMS",
     "OUTFIT_VOCAB", "MUTATION_VOCAB", "MUTATION_ARMOR", "ATTACK_EFFECTS", "ATTACK_VOCAB",
+    "ZOMBIE_PROJECTILES", "ZOMBIE_PROJECTILE_BY_ID",
     "LOCOMOTION_VOCAB", "ABILITY_TRIGGERS", "ABILITY_VOCAB", "VOICE_EVENTS", "VOICE_VOCAB",
     "GORE_KEYS", "GORE_DEFAULTS", "EXPLODE_KINDS", "CORPSE_KINDS", "WEAK_ZONES",
     # ゾンビ
     "ZOMBIE_FIELDS", "ZOMBIE_OPTIONAL_FIELDS", "ZOMBIES", "ZTYPE", "ZOMBIE_BY_KEY",
     "zombie_id", "zombies_of_class", "ability_keys", "ability_params", "ability_states",
     "outfit_params", "mutation_params", "all_attacks", "armor_sources", "part_bones", "initial_armor",
-    "zombie_collision", "zombie_animations", "zombie_sounds", "check_zombies", "unused_zombie_vocab",
+    "zombie_collision", "zombie_animations", "zombie_sounds", "zombie_projectile_ids", "check_zombies",
+    "unused_zombie_vocab",
 ]
 
 # ---------------------------------------------------------------------------
@@ -64,13 +72,13 @@ CLASS_INFO = {
     "common":  dict(ja="一般感染者", en="Common Infected", count=24,
                     hp=(16, 40), speed=(0.14, 0.28), damage=(2, 6),
                     cubes=450, tex=512, xp=(2, 8)),
-    "viral":   dict(ja="俊敏型", en="Viral", count=8,
+    "viral":   dict(ja="俊敏型", en="Feral", count=8,
                     hp=(12, 30), speed=(0.30, 0.38), damage=(2, 6),
                     cubes=450, tex=512, xp=(5, 14)),
     "special": dict(ja="特殊感染者", en="Special Infected", count=11,
                     hp=(60, 200), speed=(0.15, 0.32), damage=(3, 12),
                     cubes=650, tex=512, xp=(15, 60)),
-    "night":   dict(ja="夜の捕食者", en="Night Hunter", count=4,
+    "night":   dict(ja="夜の捕食者", en="Night Predator", count=4,
                     hp=(120, 260), speed=(0.20, 0.40), damage=(6, 12),
                     cubes=650, tex=512, xp=(50, 120)),
     "boss":    dict(ja="ボス", en="Boss", count=3,
@@ -273,7 +281,7 @@ EYES_VOCAB = {
     "milky":          dict(desc="瞳まで真っ白な白濁の目（古い・水死・焼けた感染者）",
                            sclera=(226, 226, 220), iris=(226, 226, 220), pupil=None,
                            emissive=False, glow=None),
-    "glowing_yellow": dict(desc="黄色く光る目（ボラタイル）",
+    "glowing_yellow": dict(desc="黄色く光る目（夜喰らい）",
                            sclera=(60, 50, 20), iris=(255, 220, 80), pupil=(255, 250, 200),
                            emissive=True, glow=(255, 220, 80)),
     "glowing_red":    dict(desc="赤く光る目（頂点の捕食者）",
@@ -765,6 +773,42 @@ ATTACK_VOCAB = {
                     knockback=(0.0, 0.0), needs=("arm",), fallback="swipe", effect="grab",
                     effect_s=1.5, min_range=3.0),
 }
+
+# ---------------------------------------------------------------------------
+#  ゾンビが吐く・投げる飛び道具（ID nr:proj_<key>。ATTACK_VOCAB の projectile と能力の proj が指す）
+#  形は nr_spec_catalog.PROJECTILES と同じ（gen_nr_entities は両方を同じように作る）。
+#  speed はブロック/tick、gravity はブロック/tick²、on_hit は shatter（当たって弾ける）。
+#  trail / impact は nr_registry.PARTICLES の ID。model の部品は catalog の P() と同じ形
+#  （大きさ・中心は単位、mat は nr_spec_catalog.SURFACES の鍵。nr_spec.py が照合する）
+# ---------------------------------------------------------------------------
+def _zpart(name, size, at, mat, note=""):
+    return {"name": name, "size": tuple(float(v) for v in size), "at": tuple(float(v) for v in at),
+            "mat": mat, "note": note}
+
+
+def _zproj(key, ja, en, *, speed, gravity, lifetime_ticks, trail, impact, hitbox, spin=None, model=(), note=""):
+    return dict(key=key, id="nr:proj_" + key, ja=ja, en=en, speed=speed, gravity=gravity, on_hit="shatter",
+                lifetime_ticks=lifetime_ticks, pickup=None, pickup_chance=0.0, spin=spin, trail=trail,
+                impact=impact, hitbox=hitbox, restitution=0.0, model=list(model), note=note,
+                geometry="geometry.nr.proj." + key)
+
+
+ZOMBIE_PROJECTILES = [
+    _zproj("spit", "酸の唾", "Acid Spit", speed=1.1, gravity=0.04, lifetime_ticks=100,
+           trail="nr:acid_spit_trail", impact="nr:acid_splash", hitbox=(0.3, 0.3), spin="x_slow",
+           note="攻撃 spit（吐酸者・巣守り）。着弾で酸だまり（能力 acid_puddle を持つ種類だけ）",
+           model=[_zpart("glob", (2.2, 2.0, 2.6), (0, 0, 0), "mutated", "発光する黄緑の酸の塊。表面に泡の粒、内側が明るい"),
+                  _zpart("core", (1.2, 1.2, 1.4), (0, 0, 0), "emissive_green", "芯の発光（entity_emissive_alpha）"),
+                  _zpart("drip", (0.6, 1.2, 0.6), (0, -1.2, 0.8), "mutated", "後ろへ垂れる糸")]),
+    _zproj("debris", "投げた瓦礫", "Thrown Debris", speed=1.0, gravity=0.06, lifetime_ticks=160,
+           trail="nr:dust_trail", impact="nr:shockwave_ground", hitbox=(0.7, 0.6), spin="x_slow",
+           note="攻撃 throw（解体屋）。着弾の周り 1.5 ブロックに範囲ダメージ、ガラスと nr の瓦礫を壊す",
+           model=[_zpart("slab", (10.0, 6.0, 8.0), (0, 0, 0), "concrete", "割れたコンクリ塊。角が欠け、気泡と煤"),
+                  _zpart("asphalt", (8.0, 1.6, 7.0), (0.5, 3.6, 0.2), "asphalt", "上に張り付いたアスファルトの層"),
+                  _zpart("rebar", (0.8, 0.8, 9.0), (2.0, -1.0, 1.5), "rebar", "折れて飛び出た鉄筋 2 本"),
+                  _zpart("rebar_b", (0.8, 6.0, 0.8), (-3.0, 3.0, -2.0), "rebar", "上へ曲がった鉄筋")]),
+]
+ZOMBIE_PROJECTILE_BY_ID = {p["id"]: p for p in ZOMBIE_PROJECTILES}
 
 # ---------------------------------------------------------------------------
 #  移動（アニメーション animation.nr.z.walk_<鍵> / run_<鍵>）
@@ -1900,7 +1944,7 @@ ZOMBIES = [
        voice="snarl", accent=(200, 40, 50), xp=7, aggro=32,
        bestiary_ja="感染して間もない俊敏型。全力で走り、壁をよじ登って追いかけてくる。"
                    "群れで現れると、一体が正面から来るあいだに残りが回り込んでくる。",
-       bestiary_en="A freshly turned viral. It sprints flat out and climbs walls to chase you down. In a pack, "
+       bestiary_en="A freshly turned feral. It sprints flat out and climbs walls to chase you down. In a pack, "
                    "one charges from the front while the rest circle around your flanks.",
        weakness_ja="体力は低い。UV ライトを嫌う。囲まれる前に一体ずつ。",
        weakness_en="Low health and averse to UV light. Pick them off before they surround you."),
@@ -1921,7 +1965,7 @@ ZOMBIES = [
        voice="shriek_high", accent=(130, 40, 50), xp=8, aggro=32,
        bestiary_ja="高所から跳びかかって獲物を押し倒す俊敏型。押し倒されると噛みつかれ続けるため、"
                    "攻撃を連打して振りほどく必要がある。",
-       bestiary_en="A viral that leaps from above and pins its prey. Once pinned, you keep getting bitten "
+       bestiary_en="A feral that leaps from above and pins its prey. Once pinned, you keep getting bitten "
                    "until you mash attack to throw it off.",
        weakness_ja="跳躍の直前にしゃがむ。そこで横に避ける。",
        weakness_en="It crouches right before the leap. Sidestep then."),
@@ -1941,7 +1985,7 @@ ZOMBIES = [
        loot=[("nr:infected_trophy", 0, 1, 0.2), ("nr:mutated_tissue", 0, 1, 0.1)],
        voice="hiss", accent=(164, 160, 154), xp=8, aggro=24,
        bestiary_ja="目を失い、音だけで獲物を追う俊敏型。蜘蛛のように壁や天井に張り付き、真下を通った者に落ちてくる。",
-       bestiary_en="An eyeless viral that hunts by sound alone. It clings to walls and ceilings like a spider "
+       bestiary_en="An eyeless feral that hunts by sound alone. It clings to walls and ceilings like a spider "
                    "and drops onto anyone passing below.",
        weakness_ja="しゃがんで静かに歩けば気付かれにくい。天井に注意。",
        weakness_en="Sneaking quietly keeps you unnoticed. Check the ceilings."),
@@ -1956,14 +2000,14 @@ ZOMBIES = [
                O("hair", style="buzz", color=(20, 16, 14))],
        mutations=[M("dark_veins", on=["arm_r", "arm_l", "neck"], density=2),
                   M("bite_wound", on="chest", size=2)],
-       eyes="bloodshot", hp=24, speed=0.31, damage=5, attack="claw_flurry", attacks=["headbutt", "double_swipe"],
+       eyes="bloodshot", hp=24, speed=0.31, damage=5, attack="claw_flurry", attacks=["headbutt"],
        locomotion="sprint", resist=_res(blunt=0.9, uv=0.4), gore=_gore(),
        abilities=["dodge", "wall_climb"],
        spawn=_spawn("any", 6, (1, 2), site=["street", "plaza"]),
        loot=[("nr:infected_trophy", 0, 1, 0.25), ("nr:bandage", 0, 1, 0.3), ("nr:money", 0, 1, 0.2)],
        voice="snarl", voice_pitch=0.9, accent=(200, 30, 30), xp=10, aggro=32, knockback_resist=0.1,
        bestiary_ja="生前は格闘家だった俊敏型。拳に巻いたバンテージは血で固まり、こちらの攻撃を横に避けてから連打を返してくる。",
-       bestiary_en="A viral that used to be a fighter. Its hand wraps are stiff with dried blood, and it "
+       bestiary_en="A feral that used to be a fighter. Its hand wraps are stiff with dried blood, and it "
                    "sidesteps your attacks before answering with a flurry of blows.",
        weakness_ja="連打の後に隙ができる。重い武器の大振りは避けられやすい。",
        weakness_en="It's open after a flurry. Big swings with heavy weapons are easy for it to dodge."),
@@ -1978,7 +2022,7 @@ ZOMBIES = [
                O("backpack", kind="daypack", color=(40, 40, 40), torn=2)],
        mutations=[M("dark_veins", on=["neck", "head"], density=1),
                   M("missing_cheek_teeth", side="l", size=1)],
-       eyes="bloodshot", hp=14, speed=0.38, damage=4, attack="lunge", attacks=["double_swipe"],
+       eyes="bloodshot", hp=14, speed=0.38, damage=4, attack="lunge", attacks=["tackle"],
        locomotion="sprint", resist=_res(uv=0.4), gore=_gore(),
        abilities=["parkour_chase", "wall_climb"],
        spawn=_spawn("any", 6, (1, 2), site=["rooftop"]),
@@ -2010,7 +2054,7 @@ ZOMBIES = [
        loot=[("nr:infected_trophy", 0, 1, 0.25), ("nr:money", 0, 2, 0.3)],
        voice="shriek_high", voice_pitch=0.8, accent=(230, 40, 30), xp=10, aggro=32,
        bestiary_ja="傷を負うほど凶暴になる俊敏型。体力が減ると全身の血管が赤く光り、速さも攻撃も増す。",
-       bestiary_en="A viral that gets more savage the more it is hurt. When its health drops, every vein "
+       bestiary_en="A feral that gets more savage the more it is hurt. When its health drops, every vein "
                    "glows red and it grows faster and hits harder.",
        weakness_ja="狂乱の前に一気に倒す。狂乱中は距離を取る。",
        weakness_en="Finish it before it frenzies. Keep your distance while it rages."),
@@ -2018,9 +2062,11 @@ ZOMBIES = [
     _z(key="deadfaker", ja="死にまね", en="Deadfaker", cls="viral",
        height_cm=174, heads=7.2, bulk=0.95, limb=0.95, hunch=12, arm_len=1.04,
        decay=2, skin="ashen", tone=3,
-       outfit=[O("t_shirt", color=(200, 190, 170), bloody=3, torn=2),
-               O("jeans", color=(60, 70, 90), bloody=2),
-               O("sneakers", color=(120, 120, 120), bloody=1),
+       outfit=[O("rain_jacket", color=(36, 84, 60), reflective=True, hood="down", bloody=3, torn=2),
+               O("work_pants", color=(34, 40, 40), cargo=True, bloody=2, torn=1),
+               O("boots", kind="combat", color=(22, 22, 22)),
+               O("gloves", kind="surgical", color=(110, 140, 230), torn=1, bloody=2),
+               O("name_badge", style="clip", color=(230, 230, 230)),
                O("hair", style="short", color=(30, 26, 22))],
        mutations=[M("exposed_ribs", side="l", count=3), M("torn_throat", size=2),
                   M("skin_peeled", on=["chest"], coverage=0.3)],
@@ -2032,7 +2078,7 @@ ZOMBIES = [
        voice="snarl", voice_pitch=0.95, accent=(96, 8, 10), xp=9, aggro=24,
        bestiary_ja="死体の山に紛れ、死んだふりをする俊敏型。近づいた獲物に跳ね起きて襲いかかる。"
                    "一度は死んだふりをし直すこともある。",
-       bestiary_en="A viral that hides among the dead and plays possum. When prey comes close, it springs up "
+       bestiary_en="A feral that hides among the dead and plays possum. When prey comes close, it springs up "
                    "and attacks. It may even play dead a second time.",
        weakness_ja="怪しい死体には遠くから矢を一発。",
        weakness_en="Put an arrow into suspicious corpses from a distance."),
@@ -2083,7 +2129,7 @@ ZOMBIES = [
        bestiary_ja="喉の膨れた袋で警報のような叫びを上げる特殊感染者。叫ぶと周囲の感染者が集まり、俊敏型が呼び寄せられる。"
                    "自分は戦わず距離を取ろうとする。",
        bestiary_en="A special infected that sounds an alarm-like howl through the swollen sac in its throat. "
-                   "Each howl draws in every nearby infected and calls fresh virals. It avoids fighting and keeps its distance.",
+                   "Each howl draws in every nearby infected and calls in fresh ferals. It avoids fighting and keeps its distance.",
        weakness_ja="叫ぶ前に喉の袋を撃ち抜く。袋が破れると二度と叫べない。",
        weakness_en="Shoot the throat sac before it howls. Once burst, it can never howl again."),
 
@@ -2155,13 +2201,13 @@ ZOMBIES = [
                   M("bone_spurs", on=["arm_r", "arm_l"], count=3, length=3.0),
                   M("skin_peeled", on=["torso"], coverage=0.4),
                   M("tumor_cluster", on="neck", size=2, count=3)],
-       eyes="bloodshot", hp=200, speed=0.22, damage=12, attack="charge", attacks=["throw", "slam", "ground_pound"],
+       eyes="bloodshot", hp=200, speed=0.22, damage=12, attack="throw", attacks=["charge", "slam", "stomp"],
        locomotion="brute", resist=_res(blunt=0.6, slash=0.8, pierce=0.8, blast=0.8),
        gore=_gore(armored=["arm_r", "arm_l", "torso"], armor_stages=2, armor_hp=30, armor_mult=0.3,
                   armor_strip=dict(arm_r=2, arm_l=2, torso=1),
                   sever_mult=0.4, halve=False, head_mult=1.6, stagger_frac=0.1,
                   weak_spots=[dict(part="torso", zone="back", mult=1.8, ability=None, once=False)]),
-       abilities=["rage_charge", "debris_throw", "ground_pound", "heavy_body", "armor_shed"],
+       abilities=["rage_charge", "debris_throw", "heavy_body", "armor_shed"],
        spawn=_spawn("any", 2, (1, 1), site=["construction", "warehouse", "plaza"]),
        loot=[("nr:scrap", 3, 6, 1.0), ("nr:mutated_tissue", 2, 4, 0.9), ("nr:infected_trophy", 2, 3, 1.0),
              ("nr:inhibitor", 0, 1, 0.15)],
@@ -2227,7 +2273,7 @@ ZOMBIES = [
 
     _z(key="rammer", ja="突進者", en="Rammer", cls="special",
        height_cm=198, heads=7.8, bulk=1.5, limb=1.4, hunch=30, arm_len=1.1,
-       decay=2, skin="bruised", tone=4,
+       decay=2, skin="leathery_brown", tone=4,
        outfit=[O("t_shirt", cut="jersey", print="number", number="12", color=(180, 30, 40),
                  color2=(240, 240, 240), torn=2, dirty=2),
                O("running_shorts", color=(230, 230, 230), dirty=2),
@@ -2248,7 +2294,7 @@ ZOMBIES = [
        voice="roar_deep", voice_pitch=1.1, accent=(180, 30, 40), xp=35, knockback_resist=0.9, aggro=28,
        bestiary_ja="頭と肩が骨の装甲に覆われた突進型。頭を下げて一直線に突っ込み、壁にぶつかると数秒動けなくなる。"
                    "骨の兜は刃も矢も弾く。",
-       bestiary_en="A charger whose head and shoulders are sheathed in bone armor. It lowers its head and "
+       bestiary_en="A living battering ram whose head and shoulders are sheathed in bone armor. It lowers its head and "
                    "barrels straight at you, and if it slams into a wall it is stunned for several seconds. "
                    "The bone helm turns aside blades and arrows.",
        weakness_ja="壁を背にして突進を避け、気絶中に背中を斬る。骨の兜は打撃で割れる。",
@@ -2266,7 +2312,7 @@ ZOMBIES = [
                   M("exposed_spine", length=10, spikes=True)],
        eyes="milky", hp=140, speed=0.32, damage=8, attack="pounce", attacks=["scream", "claw_flurry"],
        locomotion="leap", resist=_res(uv=0.8), gore=_gore(blood="dark", stagger_frac=0.15),
-       abilities=["long_leap", "keen_scream", "wall_climb"],
+       abilities=["long_leap", "keen_scream", "wall_climb", "pounce_pin"],
        spawn=_spawn("any", 2, (1, 1), site=["rooftop", "church", "apartment"]),
        loot=[("nr:mutated_tissue", 2, 3, 0.9), ("nr:infected_trophy", 1, 2, 1.0), ("nr:inhibitor", 0, 1, 0.1)],
        voice="wail", accent=(40, 30, 40), xp=45, knockback_resist=0.3, aggro=40,
@@ -2356,7 +2402,7 @@ ZOMBIES = [
     # =======================================================================
     #  夜の捕食者 night（4）— 夜だけ現れ、UV に弱い。体力 120〜260
     # =======================================================================
-    _z(key="volatile", ja="ボラタイル", en="Volatile", cls="night",
+    _z(key="volatile", ja="夜喰らい", en="Nightmaw", cls="night",
        height_cm=205, heads=8.2, bulk=1.0, limb=1.05, hunch=34, arm_len=1.25,
        decay=2, skin="nocturnal_grey", tone=0, digitigrade=True,
        outfit=[O("jeans", cut="shorts", color=(40, 40, 46), torn=3, dirty=3)],
@@ -2417,7 +2463,7 @@ ZOMBIES = [
        eyes="glowing_orange", hp=200, speed=0.35, damage=9, attack="claw_flurry", attacks=["pounce"],
        locomotion="sprint", resist=_res(fire=0.0, uv=1.5, blast=0.8, blunt=1.3),
        gore=_gore(crumble=True, blood="ember", bleed_mult=0.4, corpse="ash", stagger_frac=0.15),
-       abilities=["ember_aura", "fire_trail", "uv_weak", "wall_climb"],
+       abilities=["ember_aura", "fire_trail", "uv_weak", "wall_climb", "pounce_pin"],
        spawn=_spawn("night", 2, (1, 1), site=["gas_station", "street", "apartment"]),
        loot=[("nr:volatile_trophy", 1, 2, 1.0), ("nr:mutated_tissue", 1, 2, 0.8),
              ("minecraft:blaze_powder", 0, 2, 0.4), ("nr:gunpowder_pouch", 0, 1, 0.3)],
@@ -2451,10 +2497,10 @@ ZOMBIES = [
        voice="drone", accent=(140, 255, 190), xp=120, knockback_resist=1.0, aggro=32,
        bestiary_ja="感染者の巣を守る、菌糸に覆われた巨体。背中の胞子袋から俊敏型を産み落とし、胞子の雲で免疫を奪う。"
                    "目はなく、発光する菌が体を照らす。",
-       bestiary_en="A fungus-choked hulk that guards the infected hives. It births virals from spore sacs on its "
+       bestiary_en="A fungus-choked hulk that guards the infected hives. It births ferals from spore sacs on its "
                    "back and drains your immunity with spore clouds. It has no eyes; glowing fungus lights its body.",
        weakness_ja="火と UV に弱い。産み落とされた俊敏型より先に本体を焼く。",
-       weakness_en="Weak to fire and UV. Burn the warden before the virals it spawns."),
+       weakness_en="Weak to fire and UV. Burn the warden before the ferals it spawns."),
 
     # =======================================================================
     #  ボス boss（3）— 決まった場所（とチェイス 4）にだけ現れる。体力 600〜1500
@@ -2480,7 +2526,7 @@ ZOMBIES = [
                   weak_spots=[dict(part="torso", zone="heads", mult=2.0, ability="multi_head", once=False)],
                   breakables=dict(extra_head_1=1, extra_head_2=2, extra_head_3=3)),
        abilities=[A("boss_phases", thresholds=(0.6, 0.3)), "multi_head", "tumor_spawn", "ground_pound",
-                  "grab_throw_player", "heavy_body"],
+                  "grab_throw_player", "heavy_body", A("rage_charge", min=8.0, max=24.0, windup=1.4, stun_s=4.0)],
        spawn=_spawn("any", 1, (1, 1), where="structure", site=["stadium", "plaza", "hospital"]),
        loot=[("nr:apex_trophy", 1, 1, 1.0), ("nr:inhibitor", 1, 2, 1.0), ("nr:mutated_tissue", 4, 8, 1.0),
              ("nr:scrap", 3, 6, 1.0)],
@@ -2511,7 +2557,8 @@ ZOMBIES = [
        locomotion="stalk", resist=_res(fire=1.5, shock=1.6, uv=0.8, slash=0.85, pierce=0.9),
        gore=_gore(no_sever=["head"], halve=False, sever_mult=0.9, head_mult=1.5, stagger_frac=0.07,
                   regrow=dict(arm_r=20, arm_l=20)),
-       abilities=[A("boss_phases", thresholds=(0.5,)), "regenerate", "blade_dash", "wall_climb"],
+       abilities=[A("boss_phases", thresholds=(0.5,)), "regenerate", "blade_dash", "wall_climb",
+                  A("pounce_pin", pin_s=1.5, bite_dmg=4), A("dodge", chance=0.45, dist=2.4)],
        spawn=_spawn("any", 1, (1, 1), where="structure", site=["lab", "hospital"]),
        loot=[("nr:apex_trophy", 1, 1, 1.0), ("nr:inhibitor", 1, 2, 1.0), ("nr:chemicals", 3, 5, 1.0),
              ("nr:immunity_booster", 1, 2, 1.0)],
@@ -2552,9 +2599,9 @@ ZOMBIES = [
        voice="volatile_screech", voice_pitch=0.7, accent=(255, 50, 30), xp=700, knockback_resist=1.0, aggro=64,
        boss=dict(bar=(255, 200, 60), arena=32, title_ja="夜の頂点", title_en="Night Apex"),
        bestiary_ja="追跡の最終段階に姿を現す、夜の頂点に立つ捕食者。叫び一つで周囲の UV ライトを消し、"
-                   "ボラタイルの群れを呼ぶ。骨の装甲が頭と胸を守る。",
+                   "夜喰らいの群れを呼ぶ。骨の装甲が頭と胸を守る。",
        bestiary_en="The apex of the night, appearing only at the final chase level. A single shriek kills every "
-                   "UV light around it and calls in a pack of volatiles. Bone armor shields its head and chest.",
+                   "UV light around it and calls in a pack of Nightmaws. Bone armor shields its head and chest.",
        weakness_ja="装甲は打撃と爆発で割る。UV が消える前に UV 改造の武器で叩く。",
        weakness_en="Crack the armor with blunt force and explosives. Hit it with UV-modded weapons before the lights go out."),
 ]
@@ -2697,6 +2744,20 @@ def zombie_animations(z) -> dict:
 def zombie_sounds(z):
     """その種類の声の効果音 ID（nr.z.<voice>.<event>）。"""
     return [f"nr.z.{z['voice']}.{e}" for e in VOICE_EVENTS]
+
+
+def zombie_projectile_ids(z):
+    """その種類が撃つ飛び道具のエンティティ ID（攻撃の projectile と能力の proj）。"""
+    out = []
+    for a in all_attacks(z):
+        pid = ATTACK_VOCAB[a].get("projectile")
+        if pid and pid not in out:
+            out.append(pid)
+    for k in ability_keys(z):
+        pid = ability_params(z, k).get("proj")
+        if pid and pid not in out:
+            out.append(pid)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -2954,6 +3015,13 @@ def check_zombies() -> list:
             errs.append(f"{w}: sac_rupture without a sac mutation")
         if "detonate" in akeys and "explosive_nodes" not in mkeys:
             errs.append(f"{w}: detonate without explosive_nodes")
+        for a in all_attacks(z):
+            if a in ATTACK_VOCAB and ATTACK_VOCAB[a]["effect"] == "pin" and "pounce_pin" not in akeys:
+                errs.append(f"{w}: attack {a} pins but the type lacks ability pounce_pin")
+        if all(a in ATTACK_VOCAB for a in all_attacks(z)) and all(k in ABILITY_VOCAB for k in akeys):
+            for pid in zombie_projectile_ids(z):
+                if pid not in ZOMBIE_PROJECTILE_BY_ID:
+                    errs.append(f"{w}: projectile {pid} is not in ZOMBIE_PROJECTILES")
         if z["eyes"] == "none" and "eyeless" not in mkeys:
             errs.append(f"{w}: eyes none without eyeless mutation")
         # スポーン
@@ -3008,7 +3076,20 @@ def check_zombies() -> list:
         for p in pool or []:
             if p not in ZOMBIE_BY_KEY:
                 errs.append(f"ability {k}: pool key {p} is not a zombie")
+        pid = ab["params"].get("proj")
+        if pid is not None and pid not in ZOMBIE_PROJECTILE_BY_ID:
+            errs.append(f"ability {k}: proj {pid} is not in ZOMBIE_PROJECTILES")
+    seen_proj = set()
+    for p in ZOMBIE_PROJECTILES:
+        if p["id"] in seen_proj or not _KEY_RE.match(p["key"]) or p["id"] != "nr:proj_" + p["key"]:
+            errs.append(f"projectile {p['key']}: bad or duplicate id")
+        seen_proj.add(p["id"])
+        if not (p["ja"] and p["en"] and p["model"]) or p["speed"] <= 0 or p["gravity"] < 0:
+            errs.append(f"projectile {p['key']}: needs names, model, speed > 0, gravity >= 0")
     for k, at in ATTACK_VOCAB.items():
+        pid = at.get("projectile")
+        if pid is not None and pid not in ZOMBIE_PROJECTILE_BY_ID:
+            errs.append(f"attack {k}: projectile {pid} is not in ZOMBIE_PROJECTILES")
         for f in ("effect", "effect2"):
             e = at.get(f)
             if e is not None and e not in ATTACK_EFFECTS:
