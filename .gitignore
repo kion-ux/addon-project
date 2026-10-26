@@ -5,3 +5,8 @@ build_preview/
 
 # 生成の途中結果（超次元: 解いた姿勢のキャッシュ）
 tools/hyperdim/.cache/
+
+# NIGHT RUNNER: 生成の途中結果（断片・tsc の作業場所）
+tools/nightrunner/.frag/
+tools/nightrunner/.node/
+tools/nightrunner/.cache/
