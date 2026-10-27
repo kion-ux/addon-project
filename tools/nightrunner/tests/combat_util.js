@@ -38,6 +38,8 @@ export async function arena(o = {}) {
   setSkillQuery((_p, k) => skills.includes(k));
   setStaminaQuery(undefined);
   if (!P || !P.isValid) P = spawnPlayer({ x: 0.5, y: 64, z: 0.5 });
+  // 初回参加のあいさつ（ui/welcome.js の最初の持ち物）を済んだことにして、持ち物の数を変えない
+  P.setDynamicProperty("nr:welcomed", true);
   P.teleport({ x: 0.5, y: 64, z: 0.5 });
   P.setRotation({ x: 0, y: 0 });
   P.getComponent("minecraft:inventory").container.clearAll();

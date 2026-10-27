@@ -178,6 +178,11 @@ SOUNDS = {
     # ボス
     "nr.boss.intro": "ボスの出現", "nr.boss.phase": "ボスの段階移行",
     "nr.boss.death": "ボス撃破",
+    # 乗り物（scripts/world/vehicles.js。gen_nr_sounds は名前から型を選んで作る: エンジンは 2 秒のループ）
+    "nr.veh.engine_idle": "エンジンのアイドリング（2 秒のループ）", "nr.veh.engine_drive": "走るエンジンの唸り（2 秒のループ）",
+    "nr.veh.start": "セルを回してエンジンがかかる", "nr.veh.stop": "エンジンが止まる",
+    "nr.veh.horn": "クラクション", "nr.veh.crash": "車体が壁にぶつかって潰れる",
+    "nr.veh.skid": "タイヤが鳴る急ブレーキ・横滑り", "nr.veh.door": "車の扉・トランクの開け閉め",
 }
 
 ZOMBIE_VOICE_EVENTS = ("idle", "alert", "attack", "hurt", "death")

@@ -20,13 +20,13 @@
    zip の中の並びと時刻を固定して、同じ入力から同じバイト列）
 
 生成器どうしの依存（`-j` の並べ方。DEPENDS に書く）:
-* 独立（並列で走ってよい）: zombies / zombie_anim / player_anim / weapons / props / blocks / structures /
-  particles / sounds / ui / items — 互いのファイルを読まない（ID は DESIGN.md・nr_registry・nr_spec で決まっている）
+* 独立（並列で走ってよい）: zombies / zombie_anim / player_anim / weapons / weapons_ranged / props / blocks /
+  structures / particles / sounds / ui / items — 互いのファイルを読まない（ID は DESIGN.md・nr_registry・nr_spec で決まっている）
 * `gen_nr_entities`: ゾンビ・gib・小道具のジオメトリとアニメ ID（zombies / zombie_anim / props）と、
-  飛び道具・パーティクル（weapons / items / particles）を参照するので、それらの後
+  飛び道具・パーティクル（weapons / weapons_ranged / items / particles）を参照するので、それらの後
 * `gen_nr_data_js`: `gen_nr_zombies` の当たり箱（zombie_shapes.js）と同じリグ寸法を使うので zombies の後、
   エンティティの ID 表を作るので entities の後。BP のブロック・アイテムの JSON を走査して `components.js`
-  （カスタムコンポーネントの名前）を、RP の演出を走査して `fx.js` を書くので blocks / weapons / items /
+  （カスタムコンポーネントの名前）を、RP の演出を走査して `fx.js` を書くので blocks / weapons / weapons_ranged / items /
   sounds / player_anim / zombie_anim / particles の後
 * `gen_nr_packs`: 全部の断片をまとめるので**全部の後**
 """
@@ -49,6 +49,7 @@ STEPS = [
     "gen_nr_zombie_anim.py",
     "gen_nr_player_anim.py",
     "gen_nr_weapons.py",
+    "gen_nr_weapons_ranged.py",   # 飛び道具（銃・弓・クロスボウ・投げ物）。置き場所は近接と同じ
     "gen_nr_props.py",
     "gen_nr_blocks.py",
     "gen_nr_structures.py",
@@ -63,11 +64,12 @@ STEPS = [
 # 生成器 -> 先に終わっていなければならない生成器（-j のときだけ意味がある。順番に走らせるときは STEPS の順）
 DEPENDS = {
     "gen_nr_entities.py": ["gen_nr_zombies.py", "gen_nr_zombie_anim.py", "gen_nr_props.py",
-                           "gen_nr_weapons.py", "gen_nr_items.py", "gen_nr_particles.py"],
+                           "gen_nr_weapons.py", "gen_nr_weapons_ranged.py", "gen_nr_items.py",
+                           "gen_nr_particles.py"],
     # data_js は BP のブロック・アイテム（components.js のカスタムコンポーネント）と RP の演出（fx.js）も走査する
     "gen_nr_data_js.py": ["gen_nr_zombies.py", "gen_nr_entities.py", "gen_nr_blocks.py", "gen_nr_weapons.py",
-                          "gen_nr_items.py", "gen_nr_sounds.py", "gen_nr_player_anim.py", "gen_nr_zombie_anim.py",
-                          "gen_nr_particles.py"],
+                          "gen_nr_weapons_ranged.py", "gen_nr_items.py", "gen_nr_sounds.py", "gen_nr_player_anim.py",
+                          "gen_nr_zombie_anim.py", "gen_nr_particles.py"],
     "gen_nr_packs.py": [s for s in STEPS if s != "gen_nr_packs.py"],
 }
 VERIFY = ["test_nr.py", "check_nr_types.py", "validate_nr.py"]

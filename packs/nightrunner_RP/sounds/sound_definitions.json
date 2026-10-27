@@ -2341,6 +2341,142 @@
         }
       ]
     },
+    "nr.veh.crash": {
+      "category": "neutral",
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/crash_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/crash_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/crash_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "nr.veh.door": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/door_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/door_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/door_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "nr.veh.engine_drive": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/engine_drive_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/engine_drive_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "nr.veh.engine_idle": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/engine_idle_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/engine_idle_1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "nr.veh.horn": {
+      "category": "neutral",
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/horn_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/horn_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/horn_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "nr.veh.skid": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/skid_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/skid_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/skid_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "nr.veh.start": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/start_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/start_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/start_2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "nr.veh.stop": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/nr/veh/stop_0",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/stop_1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/nr/veh/stop_2",
+          "volume": 1.0
+        }
+      ]
+    },
     "nr.w.bolt_cycle": {
       "category": "player",
       "max_distance": 12.0,

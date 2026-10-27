@@ -95,25 +95,25 @@
       "bones": {
         "str_u": {
           "rotation": [
-            "math.atan(0.7972 * v.nr_usew)",
+            "math.atan(0.7937 * v.nr_usew)",
             0.0,
             0.0
           ],
           "scale": [
             1.0,
-            "math.sqrt(1.0 + 0.6355 * v.nr_usew * v.nr_usew)",
+            "math.sqrt(1.0 + 0.6299 * v.nr_usew * v.nr_usew)",
             1.0
           ]
         },
         "str_d": {
           "rotation": [
-            "-math.atan(0.6160 * v.nr_usew)",
+            "-math.atan(0.6139 * v.nr_usew)",
             0.0,
             0.0
           ],
           "scale": [
             1.0,
-            "math.sqrt(1.0 + 0.3795 * v.nr_usew * v.nr_usew)",
+            "math.sqrt(1.0 + 0.3769 * v.nr_usew * v.nr_usew)",
             1.0
           ]
         },

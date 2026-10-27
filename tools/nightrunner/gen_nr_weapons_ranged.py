@@ -20,10 +20,11 @@
     飛び道具のエンティティ・モデル（nr:proj_*、nr_proj_models.py）は gen_nr_items / gen_nr_entities の持ち物（ここでは作らない）。
 
 ■ 持ち方（三人称は gen_nr_player_anim.hold_arm_angles() の腕の絶対角との契約。アタッチャブルの変換はそこから逆算）
-  * 銃（拳銃・長物・クロスボウ）: 契約どおり**銃身は右腕の芯に沿う**（肩 → 拳の延長。gen_nr_player_anim の
-    STYLES["pistol"/"rifle"]）。腕に対する銃の向きは構え（hold_pistol / hold_rifle）でも狙い（*_aim）でも同じなので
-    tp と tp_use は同じ変換。照準器（+Y）は腕を前へ水平に上げた時に世界の上を向く。長物は銃床が腕に刺さらないよう
-    少し内側（体の側）へずらす。左手は構えの契約の角度のまま（長物の狙いでは銃の横に添える形）。
+  * 銃（拳銃・長物・クロスボウ）の使う間（tp_use）: 契約どおり**銃身は右腕の芯に沿う**（肩 → 拳の延長。
+    gen_nr_player_anim の STYLES["pistol"/"rifle"]。狙い *_aim の腕で前を向く）。照準器（+Y）は腕を前へ水平に
+    上げた時に世界の上。長物は銃床が腕に刺さらないよう少し内側（体の側）へずらす（左手は銃の横に添える形）。
+  * 構え（tp）: 拳銃は使う間と同じ変換（hold_pistol = 下げて持つ）。長物・クロスボウは hold_rifle の腕で
+    「胸の前に斜めに抱える」: 右の拳（握り）から左の拳へ銃身を向け、左手が先台に乗る（grip2）。
   * 弓: 契約どおり**右手**に持つ（左手が弦を引く。bow_draw → bow_hold）。tp は hold_bow（腕 -18°）で弓の上の弭が上・
     少し前、tp_use は引き絞り（bow_hold の腕）で弓を立て、矢の向き = 腕の向き。弦は v.nr_usew で後ろへ引かれる
     （待機アニメの弦のボーン）。
@@ -31,7 +32,7 @@
     tp_use = tp（手の中の物は動かさない）。
 
 使い方:
-  python3 tools/nightrunner/gen_nr_weapons_ranged.py                       # 全部書く（build_nr.py --only gen_nr_weapons_ranged と同じ）
+  python3 tools/nightrunner/gen_nr_weapons_ranged.py          # 全部書く（build_nr.py --only gen_nr_weapons_ranged と同じ）
   python3 tools/nightrunner/gen_nr_weapons_ranged.py --only pistol,molotov --preview
   （NR_PREVIEW=1 でも確認画像を描く）
 
@@ -61,13 +62,12 @@ if HERE not in sys.path:
 import nr_paint as NP  # noqa: E402
 import nr_weapon_common as WC  # noqa: E402
 from nr_common import PREVIEW, SCRATCH  # noqa: E402
-from nr_weapon_common import (band, beam, bolt, box, cbox, coil, disc, hex_prism, lash, nail,  # noqa: E402,F401
+from nr_weapon_common import (band, beam, bolt, cbox, coil, disc, hex_prism, lash, nail,  # noqa: E402
                               octo, polyline, rag, rbeam, ring_of, rivet, rod, weld, wrap)
 import hd_space as HS  # noqa: E402  （nr_weapon_common が tools/hyperdim を sys.path に足している）
 import hd_holds as HH  # noqa: E402
-# 近接の生成器の模様の小物（手垢・煤・点・バーコード・落書き・ホースバンド）。import してもファイルは書かない
-from gen_nr_weapons import (add_fx, barcode, dots, graffiti, grime, hose_clamp, soot,  # noqa: E402,F401
-                            spec_blood, zline)
+# 近接の生成器の模様の小物（点・落書き・手垢・煤）。import してもファイルは書かない
+from gen_nr_weapons import dots, graffiti, grime, soot  # noqa: E402
 
 try:  # 登録データの入口（nr_spec が無い・作り直し中ならカタログを直接）
     import nr_spec as SPEC  # noqa: E402
@@ -184,10 +184,15 @@ def _fp(d: dict, anchor, scale) -> dict:
 
 
 def hold_gun(wm: WC.WeaponModel, w: dict, *, scale: float, anchor=(0.0, 0.0, 0.0), nudge=(0.0, 0.0, 0.0),
-             pitch: float = 0.0, yaw: float = 0.0, cant: float = 0.0, fp=None, use=None, fp_scale=None) -> dict:
-    """銃・クロスボウ: 銃身（-Z）を右腕の芯に沿わせ、照準器（+Y）を ARM_UP へ（構えでも狙いでも同じ変換）。
-    pitch / yaw は腕の芯からの小さなずれ（度）、cant は銃身まわりの傾き、nudge は腕の静止座標でのずらし
-    （+X = 体の内側）。fp / use は一人称の上書き（fp_place_cam の引数）。"""
+             pitch: float = 0.0, yaw: float = 0.0, cant: float = 0.0, carry_up=(0.0, 0.55, -0.85), fp=None,
+             use=None, fp_scale=None) -> dict:
+    """銃・クロスボウ。
+    使う間（tp_use）: 銃身（-Z）を右腕の芯に沿わせ、照準器（+Y）を ARM_UP へ（契約: 狙い *_aim でも構えでも
+    腕の指す方を撃つ）。pitch / yaw は腕の芯からの小さなずれ（度）、cant は銃身まわりの傾き、nudge は腕の静止
+    座標でのずらし（+X = 体の内側。長物の銃床を腕の横へ逃がす）。
+    構え（tp）: 拳銃は使う間と同じ（下げて持つ）。長物（hold_rifle）は「胸の前に斜めに抱える」: 右の拳（握り）
+    から左の拳（先台）へ銃身を向け、両手で持つ（grip2 = 左手の点）。照準器は前上（carry_up）。
+    fp / use は一人称の上書き（fp_place_cam の引数）。"""
     st = ANIM_SETS.get(w["anim_set"], {})
     idle = st.get("idle", "hold_pistol")
     aim = st.get("aim")
@@ -201,21 +206,30 @@ def hold_gun(wm: WC.WeaponModel, w: dict, *, scale: float, anchor=(0.0, 0.0, 0.0
     if cant:
         up = _rot_about(up, fwd, cant)
     R = WC.frame(fwd, up)
-    tf = _arm_tf(R, anchor, scale, nudge)
+    tf_use = _arm_tf(R, anchor, scale, nudge)
     long_gun = RANGED_STYLES.get(w["anim_set"]) == "rifle"
-    s_fp = fp_scale or scale * (0.86 if long_gun else 0.95)
-    if long_gun:
-        fpd = dict(fwd=(-0.04, 0.03, 1.0), up=(0.08, 1.0, 0.0), cam_point=(6.4, -7.2, 9.5))
-        fud = dict(fwd=(-0.01, 0.015, 1.0), up=(0.02, 1.0, 0.0), cam_point=(2.6, -6.2, 8.0))
+    a = tuple(anchor)
+    grip2 = None
+    arm_r, arm_l = HOLDS[idle]["arm_r"], HOLDS[idle]["arm_l"]
+    if long_gun and arm_l:
+        Fr, Fl = fist_pos(arm_r), fist_pos(arm_l, left=True)
+        gap = float(np.linalg.norm(Fl - Fr))
+        tf = WC.place_tp(arm_r, WC.frame((Fl - Fr) / gap, carry_up), a, scale)
+        grip2 = (a[0], a[1], a[2] - gap / scale)
     else:
-        fpd = dict(fwd=(-0.06, 0.04, 1.0), up=(0.1, 1.0, 0.0), cam_point=(6.6, -6.6, 11.5))
-        fud = dict(fwd=(-0.02, 0.02, 1.0), up=(0.03, 1.0, 0.0), cam_point=(3.2, -5.6, 10.5))
+        tf = dict(tf_use)
+    s_fp = fp_scale or scale * (1.0 if long_gun else 1.0)
+    if long_gun:
+        fpd = dict(fwd=(-0.1, 0.05, 1.0), up=(0.1, 1.0, 0.0), cam_point=(5.4, -6.4, 8.5))
+        fud = dict(fwd=(-0.03, 0.02, 1.0), up=(0.03, 1.0, 0.0), cam_point=(2.4, -5.2, 7.5))
+    else:
+        fpd = dict(fwd=(-0.12, 0.06, 1.0), up=(0.12, 1.0, 0.0), cam_point=(5.0, -5.6, 9.5))
+        fud = dict(fwd=(-0.04, 0.03, 1.0), up=(0.04, 1.0, 0.0), cam_point=(2.2, -4.6, 9.0))
     fpd.update(fp or {})
     fud.update(use or {})
-    a = tuple(anchor)
-    h = {"style": RANGED_STYLES.get(w["anim_set"], "pistol"), "arm_r": HOLDS[idle]["arm_r"],
-         "arm_l": HOLDS[idle]["arm_l"], "grip1": a, "grip2": None, "tp": tf, "tp_use": dict(tf),
-         "fp": _fp(fpd, a, s_fp), "fp_use": _fp(fud, a, s_fp), "pose": idle, "pose_use": aim}
+    h = {"style": RANGED_STYLES.get(w["anim_set"], "pistol"), "arm_r": arm_r, "arm_l": arm_l, "grip1": a,
+         "grip2": grip2, "tp": tf, "tp_use": tf_use, "fp": _fp(fpd, a, s_fp), "fp_use": _fp(fud, a, s_fp),
+         "pose": idle, "pose_use": aim}
     if aim and aim in HOLDS:
         h["arm_r_use"], h["arm_l_use"] = HOLDS[aim]["arm_r"], HOLDS[aim]["arm_l"]
     return h
@@ -257,8 +271,8 @@ def hold_throw(wm: WC.WeaponModel, w: dict, *, scale: float = 1.0, grip: float =
                yaw: float = -4.0, roll: float = 0.0, fp=None, use=None) -> dict:
     """投げ物: 片手（バニラの持ち姿勢のまま）。振りかぶりは throw_wind が腕を動かすので tp_use = tp。
     一人称の使う間は手前・右上へ引いて構える。"""
-    fpd = dict(fwd=(-0.3, 0.75, 0.6), up=(0.5, 0.2, 0.85), cam_point=(7.0, -7.0, 11.0))
-    fud = dict(fwd=(-0.15, 0.9, -0.25), up=(0.6, 0.25, 0.75), cam_point=(10.5, -5.0, 8.5))
+    fpd = dict(fwd=(-0.3, 0.75, 0.6), up=(0.5, 0.2, 0.85), cam_point=(6.4, -6.2, 10.0))
+    fud = dict(fwd=(-0.2, 0.95, -0.1), up=(0.55, 0.2, 0.8), cam_point=(7.6, -4.6, 9.0))
     fpd.update(fp or {})
     fud.update(use or {})
     h = WC.hold_one_hand(wm, grip=grip, scale=scale, pitch=pitch, yaw=yaw, roll=roll, fp=fpd, use=fud)
@@ -412,6 +426,22 @@ def holes_on(centres, r: float, *, normal, dark=(14, 13, 13), rim_mul: float = 0
     return fn
 
 
+def glass_shine(*, seed: int = 0, width: float = 0.22, gain: float = 1.5):
+    """ガラスの胴の照り: 面ごとに縦（Z）に走る明るい筋 2 本と、縁の明るい線（角の反射）。"""
+    def fn(P, N, L, size, col):
+        nax = np.argmax(np.abs(N), axis=1)
+        u = np.where(nax == 0, P[:, 1], P[:, 0])                    # 面の中の横の座標
+        ph = (u * 0.9 + seed * 0.37) % 1.6
+        s1 = np.abs(ph - 0.35) < width
+        s2 = np.abs(ph - 0.75) < width * 0.4
+        edge = np.minimum(np.minimum(L[:, 0], size[0] - L[:, 0]), np.minimum(L[:, 1], size[1] - L[:, 1])) < 0.08
+        side = nax != 2
+        col = np.where((side & s1)[:, None], np.minimum(255, col * gain + 26), col)
+        col = np.where((side & s2)[:, None], np.minimum(255, col * 1.25 + 14), col)
+        return np.where((side & edge)[:, None], np.minimum(255, col * 1.2 + 18), col)
+    return fn
+
+
 def glass_windows(*, rim: float = 0.22, keep=None, seed: int = 0, streak: float = 0.22):
     """ガラスの面の真ん中を抜いて（alphatest のガラス）、縁 rim 単位だけ残す。keep(P) が真の所は抜かない
     （ラベル・液の膜）。抜かずに残る縁には斜めの照り（反射の筋）を足す。"""
@@ -426,9 +456,10 @@ def glass_windows(*, rim: float = 0.22, keep=None, seed: int = 0, streak: float 
         cut = d > rim
         if keep is not None:
             cut &= ~keep(P)
-        # 照り: 縁に沿った明るい筋
+        # 残る縁はガラスの厚みの照りで明るく、斜めの反射の筋はさらに明るく
+        col = np.where((~cut)[:, None], np.minimum(255, col * 1.2 + 18), col)
         g = ((P[:, 1] * 0.8 + P[:, 2] * 0.5 + P[:, 0] * 0.5 + seed * 0.13) % 1.4) < streak
-        col = np.where((~cut & g)[:, None], np.minimum(255, col * 1.35 + 30), col)
+        col = np.where((~cut & g)[:, None], np.minimum(255, col * 1.3 + 30), col)
         return col, cut
     return fn
 
@@ -592,7 +623,8 @@ def b_pistol(w) -> Built:
     cbox(b, (-0.62, 2.55, -1.6), (0.1, 0.32, 1.3), "slide_dark", uv=14)                 # スライドストップ（左）
     cbox(b, (-0.62, 2.2, -2.6), (0.08, 0.22, 0.32), "slide_dark", uv=14)                # 分解レバー
     cbox(b, (-0.62, 1.55, -0.55), (0.12, 0.42, 0.42), "slide_dark", uv=14)              # 弾倉の留め金
-    add_world(fr + [rail], WC.stamp("17", (-4.0, 2.05), 0.34, mul=0.62, side=1), grime((-1.5, 0.6), dark=0.75, seed=312))
+    add_world(fr + [rail], WC.stamp("17", (-4.0, 2.05), 0.34, mul=0.62, side=1),
+              grime((-1.5, 0.6), dark=0.75, seed=312))
     # ---- 用心金と引き金 ----
     trigger_group(b, z_front=-3.25, z_back=-0.85, y_top=1.55, y_bot=0.48, guard="frame", trig="slide_dark")
     # ---- 握り（14° の傾き、梨地）と弾倉の底、背の膨らみ、指の溝 ----
@@ -641,8 +673,14 @@ def b_revolver(w) -> Built:
     rib = cbox(b, (0, yb + 0.72, -7.15), (0.44, 0.3, 6.3), "chrome", uv=12)
     add_world([rib], stripes(-10.2, -4.2, 0.55, mul=0.3, normal=(1, 0, 0)),
               stripes(-10.2, -4.2, 0.55, mul=0.3, normal=(-1, 0, 0)))
-    add_world(br, bore(-10.4, (0, yb), 0.26), WC.stamp(".44 MAG", (-7.4, yb - 0.05), 0.4, mul=0.42, side=-1),
+    add_world(br, WC.stamp(".44 MAG", (-7.4, yb - 0.05), 0.4, mul=0.42, side=-1),
               soot(-10.4, -8.4, dark=0.45, seed=401), WC.pock(402, cell=0.7, r=0.14, frac=0.3))
+    # 銃口に被せた手製のコンペンセイター（水道管の切れ端に穴 3 つ、ホースバンドで締める）
+    cp = rod(b, (0, yb, -10.2), (0, yb, -11.7), 1.16, "comp", uv=12)
+    add_world(cp, holes_on([(0, yb + 0.58, z_) for z_ in (-10.75, -11.1, -11.45)], 0.13, normal=(0, 1, 0)),
+              bore(-11.7, (0, yb), 0.26), soot(-11.7, -10.6, dark=0.35, seed=407))
+    band(b, (0, yb, -10.45), (0, 0, 1), 1.3, 0.3, "clamp", uv=14)
+    cbox(b, (0.72, yb + 0.1, -10.45), (0.26, 0.38, 0.3), "clamp", uv=16)
     sight_post(b, (0, yb + 1.08, -9.95), (0.26, 0.55, 0.8), "steel_dark")
     cbox(b, (0, yb + 1.2, -10.05), (0.28, 0.2, 0.26), "sight_red", uv=16)
     rbeam(b, (0, 2.34, -4.1), (0, 2.34, -9.2), 0.66, 0.66, "chrome", k=0.8, uv=11)
@@ -682,7 +720,13 @@ def b_revolver(w) -> Built:
               WC.crack((0.72, -0.6, 0.9), (0.72, -1.9, 0.5), width=0.05, seed=405, normal=(1, 0, 0)))
     wrap(b, top + gdown * 2.7, top + gdown * 3.7, (1.55, 2.12), "tape", pitch=0.48, tilt=9, seed=406, uv=10,
          tail=(0.5, (0.5, -0.7, 0.6)))
+    lanyard(b, gbot + gdown * 0.5 + back * 0.3, drop=2.3, swing=0.8)
+    for p in ((0.62, 2.0, -0.4), (0.62, 3.4, -0.9), (0.62, 1.5, -2.2)):                  # 右のねじ
+        rivet(b, p, (1, 0, 0), d=0.32, h=0.06, style="steel_dark", uv=16)
     book.add("chrome", "chrome", base=book.pal(0), dirt=0.32, wear=0.5)
+    book.add("comp", "steel_rusty", amount=0.55, metal=(120, 118, 114))
+    book.add("clamp", "steel_clean", base=(170, 172, 174), dirt=0.3)
+    book.add("cord", "paracord", base=(120, 40, 34))
     book.add("cyl", "chrome", base=tuple(int(v * 0.9) for v in book.pal(0)), dirt=0.35)
     book.add("steel_dark", "steel_dark", base=(52, 52, 56))
     book.add("sight_red", "plastic_red", base=(196, 40, 30))
@@ -801,6 +845,12 @@ def b_double_barrel(w) -> Built:
     ac = rbeam(b, (0, 1.12, -0.95), (0, 1.12, -4.45), 1.62, 2.32, "action", k=0.86, uv=10)
     add_world(ac, engrave(605, lo=(-1, -0.2, -4.5), hi=(1, 2.4, -0.9)), WC.pock(606, cell=0.6, r=0.12, frac=0.25))
     cbox(b, (0, 2.48, -1.2), (1.3, 0.5, 0.74), "action", uv=12)
+    rod(b, (-0.86, 0.45, -4.35), (0.86, 0.45, -4.35), 0.5, "steel", uv=14)                  # 蝶番の軸
+    cbox(b, (0, 2.78, -0.35), (0.3, 0.18, 0.5), "steel", uv=16)                                # 安全子
+    cbox(b, (0, 0.18, -10.0), (0.4, 0.2, 0.9), "steel", uv=16)                                 # 先台の留め金
+    # 銃身に縛った布切れ（白い布、端が垂れる）
+    band(b, (0, yb, -16.4), (0, 0, 1), 2.05, 0.5, "rag", uv=12)
+    rag(b, (0.6, yb - 0.3, -16.4), 1.6, 0.5, "rag", hang=(0.2, -1.0, 0.3), strips=2, spread=0.25, seed=610, uv=11)
     beam(b, (0, 2.62, -1.15), (0.58, 2.64, 0.22), 0.3, 0.22, "steel", uv=14)
     for s in (-1, 1):
         beam(b, (s * 0.42, 1.9, -1.3), (s * 0.44, 2.86, -0.38), 0.32, 0.46, "steel", up=(0, 0.3, -1), uv=12)
@@ -814,7 +864,8 @@ def b_double_barrel(w) -> Built:
     wr = rbeam(b, (0, 0.62, -1.0), (0, -0.02, 1.95), 1.34, 1.9, "wood", k=0.8, fx={"knurl": 0.3}, uv=8)
     bt = rbeam(b, (0, 0.28, 1.6), (0, -0.02, 8.8), 1.56, 1.62, "wood", k=0.86, uv=7)
     bt += rbeam(b, (0, -0.55, 1.8), (0, -1.72, 8.8), 1.5, 1.52, "wood", k=0.86, uv=7)
-    add_world(wr + bt, WC.crack((0.78, 0.4, 3.0), (0.78, -1.2, 6.6), width=0.06, seed=607, normal=(1, 0, 0), branch=0.6),
+    add_world(wr + bt,
+              WC.crack((0.78, 0.4, 3.0), (0.78, -1.2, 6.6), width=0.06, seed=607, normal=(1, 0, 0), branch=0.6),
               WC.crack((-0.78, 0.2, 3.4), (-0.78, -0.8, 5.8), width=0.05, seed=608, normal=(-1, 0, 0)),
               grime((-0.8, 1.6), dark=0.75, seed=609))
     cbox(b, (0, -0.86, 9.06), (1.62, 3.42, 0.5), "rubber", uv=9, fx={"ribs": 0.26})
@@ -824,9 +875,11 @@ def b_double_barrel(w) -> Built:
     for p in ((0.8, 0.3, 4.8), (0.8, -1.1, 6.6)):
         rivet(b, p, (1, 0, 0), d=0.3, h=0.06, style="steel", uv=16)
     # 右のゴム紐と予備の 2 発
-    cbox(b, (-0.82, -0.75, 7.0), (0.12, 1.9, 0.5), "elastic", uv=12)
-    for i in range(2):
-        shell(b, (-0.98, -0.75, 6.62 + i * 0.76), (0, -1, 0), d=0.62, length=1.7, simple=True)
+    cbox(b, (-0.82, -0.75, 7.0), (0.12, 1.9, 3.4), "elastic", uv=12)
+    for c_ in ((0, 0.1, -10.2), (0, -2.42, 8.2)):                                             # スイベル
+        band(b, c_, (1, 0, 0), 0.46, 0.14, "steel", round_=False, uv=16)
+    for i in range(4):
+        shell(b, (-0.98, -0.75, 5.86 + i * 0.76), (0, -1, 0), d=0.62, length=1.7, simple=True)
     # 革のスリング（先台の金具 → 銃床の下）
     strap(b, [(0, 0.3, -10.6), (0.25, -1.4, -6.0), (0.3, -2.4, 0.0), (0.2, -2.6, 5.0), (0, -2.15, 8.2)], w=0.55,
           t=0.12, style="sling")
@@ -842,6 +895,7 @@ def b_double_barrel(w) -> Built:
     book.add("shell", "plastic_red", base=(150, 30, 28), wear=0.4)
     book.add("brass", "brass", base=book.pal(2), wear=0.5)
     book.add("sling", "leather_brown")
+    book.add("rag", "cloth_rag", base=(196, 188, 170))
     blood = [WC.blood_zone((-1.0, 0.8, -20.4), (1.0, 2.6, -16.0), 0.32, "dry", soft=0.9),
              WC.blood_zone((-0.9, -2.6, 5.0), (0.9, 0.9, 9.4), 0.18, "dry", soft=0.7)]
     return Built(wm, book, blood, hold=dict(scale=0.6, nudge=LONG_NUDGE), icon_yaw=84.0)
@@ -1156,40 +1210,41 @@ def b_survivor_bow(w) -> Built:
     # ---- 握りのパラコード ----
     wrap(b, (0, -1.8, 0.24), (0, 0.95, 0.24), (2.06, 1.4), "cord", pitch=0.4, tilt=9, seed=952, uv=10)
     # ---- 反りのリム（上下。スキー板）と補修テープ・先の滑車 ----
-    up_pts = [(4.6, 0.55), (6.6, 1.05), (8.8, 1.55), (10.8, 1.85), (12.2, 1.72), (13.05, 1.2)]
+    up_pts = [(4.6, 0.6), (6.6, 1.2), (8.6, 1.85), (10.4, 2.3), (11.8, 2.42), (12.85, 2.02)]
     limbs = []
     for s in (-1, 1):
         pts = [(0.0, s * y, z) for y, z in up_pts]
-        limbs += polyline(b, pts, [1.14, 1.1, 1.02, 0.94, 0.86], [0.5, 0.46, 0.42, 0.38, 0.36], "limb",
+        limbs += polyline(b, pts, [1.34, 1.28, 1.18, 1.06, 0.94], [0.6, 0.56, 0.5, 0.44, 0.4], "limb",
                           up=(0, 0, 1), overlap=0.16, uv=9)
-        c = np.array([0.0, s * 13.1, 1.62])
+        c = np.array([0.0, s * 13.15, 2.36])
         disc(b, c, (1, 0, 0), 0.8, 0.42, "cam", n=3, uv=12)
         rod(b, c - (0.42, 0, 0), c + (0.42, 0, 0), 0.26, "bolt", uv=16)
     # スキー板の名残: 背（-Z）に黄色いロゴの帯、腹（+Z、弦の側）は滑走面の赤
     add_world(limbs, patch((-1, 6.2, -9), (1, 8.6, 9), normal=(0, 0, -1), rgb=(214, 180, 44)),
               patch((-1, -8.6, -9), (1, -6.2, 9), normal=(0, 0, -1), rgb=(214, 180, 44)),
               patch((-1, -14, -9), (1, 14, 9), normal=(0, 0, 1), rgb=(140, 34, 28)))
-    for y_ in (-7.8, -9.1):
-        beam(b, (0, y_ + 0.3, 1.36 + (y_ + 7.8) * -0.22), (0, y_ - 0.3, 1.46 + (y_ + 7.8) * -0.22), 1.24, 0.6,
-             "tape", up=(0, 0, 1), uv=10, fx={"wrap": 0.3})
+    lz = lambda y: float(np.interp(abs(y), [p_[0] for p_ in up_pts], [p_[1] for p_ in up_pts]))  # noqa: E731
+    for y_ in (-7.6, -8.9):                                                                # 下のリムの補修テープ
+        beam(b, (0, y_ + 0.3, lz(y_ + 0.3)), (0, y_ - 0.3, lz(y_ - 0.3)), 1.42, 0.72, "tape", up=(0, 0, 1), uv=10,
+             fx={"wrap": 0.3})
     # ---- 弦（上下のボーン。使う間に後ろへ）と番えた矢 ----
-    T, B_, N = (0.0, 12.95, 2.38), (0.0, -12.95, 2.38), (0.0, 1.66, 2.38)
+    T, B_, N = (0.0, 13.0, 3.16), (0.0, -13.0, 3.16), (0.0, 1.66, 3.16)
     su = wm.bone("str_u", pivot=T)
-    beam(su, T, N, 0.14, 0.14, "string", uv=16, tags=("soft",))
-    cbox(su, (0, 1.95, 2.38), (0.24, 0.5, 0.24), "serving", uv=16)
+    beam(su, T, N, 0.18, 0.18, "string", uv=16, tags=("soft",))
+    cbox(su, (0, 1.95, 3.16), (0.26, 0.5, 0.26), "serving", uv=16)
     sd = wm.bone("str_d", pivot=B_)
-    beam(sd, B_, N, 0.14, 0.14, "string", uv=16, tags=("soft",))
-    cbox(sd, (0, 1.2, 2.38), (0.22, 0.6, 0.22), "serving", uv=16)
+    beam(sd, B_, N, 0.18, 0.18, "string", uv=16, tags=("soft",))
+    cbox(sd, (0, 1.2, 3.16), (0.24, 0.6, 0.24), "serving", uv=16)
     ar = wm.bone("arrow", pivot=N)
     xa = 0.2
-    rod(ar, (xa, 1.66, 2.3), (xa, 1.66, -11.6), 0.24, "shaft", uv=12, tags=("soft",))
+    rod(ar, (xa, 1.66, 3.08), (xa, 1.66, -11.6), 0.24, "shaft", uv=12, tags=("soft",))
     cbox(ar, (xa, 1.66, -12.15), (0.1, 0.72, 1.1), "head", rot=(45, 0, 0), uv=16, tags=("soft", "edge"))
     cbox(ar, (xa, 1.66, -12.15), (0.72, 0.1, 1.1), "head", rot=(0, 45, 0), uv=16, tags=("soft",))
     for ang in (90.0, 210.0, 330.0):
         d = np.array([math.cos(math.radians(ang)), math.sin(math.radians(ang)), 0.0])
-        beam(ar, (xa, 1.66, 0.4) + d * 0.22, (xa, 1.66, 1.9) + d * 0.22, 0.05, 0.42, "vane", up=tuple(d), uv=16,
+        beam(ar, (xa, 1.66, 1.1) + d * 0.22, (xa, 1.66, 2.6) + d * 0.22, 0.05, 0.42, "vane", up=tuple(d), uv=16,
              tags=("soft",))
-    cbox(ar, (xa, 1.66, 2.42), (0.3, 0.3, 0.28), "nock", uv=16, tags=("soft",))
+    cbox(ar, (xa, 1.66, 3.2), (0.3, 0.3, 0.28), "nock", uv=16, tags=("soft",))
     D = 9.0
     ku, kd = D / (T[1] - N[1]), D / (N[1] - B_[1])
     wm.idle = {
@@ -1214,10 +1269,10 @@ def b_survivor_bow(w) -> Built:
     book.add("riser", "steel_painted", base=book.pal(0), rust=0.25, wear=0.7)
     book.add("bolt", "steel_worn", base=(120, 120, 118))
     book.add("cord", "paracord", base=book.pal(1))
-    book.add("limb", "plastic_black", base=(30, 30, 32), wear=0.6, dirt=0.35)
+    book.add("limb", "plastic_black", base=(40, 40, 44), wear=0.7, dirt=0.35)
     book.add("tape", "tape_grey", dirt=0.6)
     book.add("cam", "aluminium", base=book.pal(3))
-    book.add("string", "rope", base=(50, 50, 46))
+    book.add("string", "rope", base=(196, 188, 160))
     book.add("serving", "rope", base=(30, 30, 30))
     book.add("shaft", "plastic_black", base=(34, 34, 36))
     book.add("head", "steel_clean", base=(176, 178, 180))
@@ -1308,9 +1363,9 @@ def b_throwing_knives(w) -> Built:
     book = WC.Stylebook(w["palette"])
     knife(b, 0.0, seed=1001)
     k2 = wm.bone("knife_b", pivot=(0, 0, 1.0), rotation=(-9.0, 0.0, 0.0))
-    knife(k2, -0.34, seed=1002, cord=False)
+    knife(k2, -0.34, seed=1002)
     k3 = wm.bone("knife_c", pivot=(0, 0, 1.0), rotation=(10.0, 0.0, 0.0))
-    knife(k3, 0.34, seed=1003, cord=False)
+    knife(k3, 0.34, seed=1003)
     lash(b, (0, 0, 2.05), (0, 0, 1), 1.12, 1.2, 0.26, 1, "band", wire=0.14)
     book.add("kblade", "steel_dark", base=book.pal(0), scratches=0.5)
     book.add("kedge", "steel_clean", base=book.pal(1))
@@ -1319,7 +1374,7 @@ def b_throwing_knives(w) -> Built:
     book.add("kring", "steel_worn")
     book.add("band", "rubber_black", base=(110, 40, 30))
     blood = [WC.blood_zone((-0.6, -0.9, -5.4), (0.6, 0.9, -3.0), 0.35, "wet", soft=0.6)]
-    return Built(wm, book, blood, hold=dict(scale=1.0, grip=0.9, pitch=30.0), icon_yaw=88.0)
+    return Built(wm, book, blood, hold=dict(scale=1.2, grip=0.9, pitch=30.0), icon_yaw=88.0)
 
 
 def blade_star(b, c, *, seed: int):
@@ -1361,7 +1416,7 @@ def b_throwing_stars(w) -> Built:
     book.add("srivet", "brass", wear=0.8)
     blood = [WC.blood_zone((-0.6, 0.6, -4.6), (0.9, 2.6, -2.6), 0.42, "dry", soft=0.6),
              WC.blood_zone((-0.6, -2.6, -1.0), (0.9, -0.6, 0.8), 0.3, "wet", soft=0.6)]
-    return Built(wm, book, blood, hold=dict(scale=1.0, grip=0.0, pitch=24.0), icon_yaw=88.0)
+    return Built(wm, book, blood, hold=dict(scale=1.35, grip=0.0, pitch=24.0), icon_yaw=88.0)
 
 
 def liquid(z_level: float, rgb, *, edge=(236, 200, 128)):
@@ -1380,60 +1435,63 @@ def liquid(z_level: float, rgb, *, edge=(236, 200, 128)):
 
 @builder("molotov")
 def b_molotov(w) -> Built:
-    """火炎瓶: 角瓶（alphatest のガラス: 液面より上の空の所は面の真ん中を抜いて縁と照りだけ）、液はガラス越しの
-    琥珀、破れたラベル 2 枚、首の帯、口に詰めて垂れた布とそれを留めたテープと針金、垂れた燃料の筋、
-    布の先の炎（待機アニメで揺れる）。瓶の首が -Z（上）。"""
+    """火炎瓶: 角を落とした茶色の瓶。下 3 分の 2 は琥珀の酒（ガラス越しの色と液面の照り）、上の空の所と肩は
+    alphatest のガラス（面の真ん中を抜いて縁と照りだけ残し、中の液面が覗く）。破れたラベル 2 枚、首の帯、
+    口に詰めて垂れた布とそれを留めたテープと銅線、垂れた燃料の筋、布の先の炎（待機アニメで揺れる）。
+    瓶の首が -Z（上）。持つのは首（握り = 首の付け根）。"""
     wm = WC.WeaponModel("molotov", uv=11)
     b = wm.root
     book = WC.Stylebook(w["palette"])
-    bw, z_bot, z_sh, z_lv = 2.3, 2.25, -1.85, -0.25
-    lab_lo, lab_hi = -0.7, 1.35
-
-    def keep(P):
-        lab = (P[:, 2] > lab_lo - 0.05) & (P[:, 2] < lab_hi + 0.05) & (np.abs(P[:, 0]) > bw / 2 - 0.05)
-        return (P[:, 2] > z_lv) | lab
-    body = [cbox(b, (0, 0, (z_bot + z_sh) / 2), (bw, bw, z_bot - z_sh), "glass", uv=11)]
-    add_world(body, liquid(z_lv, (176, 96, 26)), glass_windows(rim=0.16, keep=keep, seed=1),
-              dots([(s * bw / 2, y_, z_) for s in (-1, 1) for y_ in (-0.7, 0.7) for z_ in (1.8,)], 0.12, (150, 96, 50)))
-    cbox(b, (0, 0, z_bot - 0.16), (bw + 0.04, bw + 0.04, 0.32), "glass_dark", uv=11)
-    cbox(b, (0, 0, z_lv + 0.02), (bw - 0.12, bw - 0.12, 0.06), "fuel_top", uv=12, tags=("noao",))   # 液面（窓から見える）
-    sh = [cbox(b, (0, 0, -2.08), (bw - 0.24, bw - 0.24, 0.5), "glass", uv=12),
-          cbox(b, (0, 0, -2.48), (1.5, 1.5, 0.36), "glass", uv=12)]
-    add_world(sh, glass_windows(rim=0.16, seed=2))
-    rod(b, (0, 0, -2.6), (0, 0, -4.6), 0.92, "glass_dark", uv=12)
-    band(b, (0, 0, -4.55), (0, 0, 1), 1.08, 0.24, "glass_dark", uv=14)
-    band(b, (0, 0, -3.15), (0, 0, 1), 1.0, 0.4, "label", uv=14)                                # 首の帯
-    lab = [cbox(b, (s * (bw / 2 + 0.03), 0, (lab_lo + lab_hi) / 2), (0.06, bw - 0.12, lab_hi - lab_lo), "label",
-                uv=12, tags=("ragged",)) for s in (-1, 1)]
-    add_world(lab, WC.stamp("RYE", (0.55, 0.32), 0.62, tint=(96, 30, 24)),
-              WC.stamp("1987", (-0.2, -0.5), 0.34, tint=(70, 52, 30)), patch((-2, -1.2, 1.0), (2, 1.2, 1.4), rgb=(150, 40, 32)))
-    # 口に詰めた布（外へ垂れる）・留めたテープと針金・焦げた先
-    rod(b, (0, 0, -3.7), (0, 0.05, -5.35), 0.7, "rag", uv=11)
-    rag(b, (0.15, 0.3, -5.1), 2.3, 0.62, "rag", hang=(0.25, 0.35, 1.0), strips=2, spread=0.28, seed=5, uv=11)
-    rag(b, (-0.25, -0.15, -5.0), 1.4, 0.5, "rag", hang=(-0.6, -0.2, 1.0), strips=1, seed=6, uv=11)
-    wrap(b, (0, 0, -3.4), (0, 0, -4.15), 1.18, "tape", pitch=0.36, tilt=8, seed=7, uv=12)
-    coil(b, (0, 0, -4.3), (0, 0, 1), 1.02, 0.3, 2, "wire", wire=0.1, uv=16)
-    cbox(b, (0.05, 0.1, -5.5), (0.78, 0.72, 0.46), "rag_burnt", rot=(10, 20, 0), uv=12)
-    # 垂れた燃料の筋（瓶の外）
-    for x_, y_, z0, z1 in ((bw / 2 + 0.02, 0.35, -1.6, -0.6), (0.4, bw / 2 + 0.02, -1.7, -1.0)):
-        cbox(b, (x_, y_, (z0 + z1) / 2), (0.06 if x_ > 1 else 0.18, 0.18 if x_ > 1 else 0.06, z1 - z0), "fuel_wet",
-             uv=14, tags=("noao",))
+    bw, z_bot, z_lv, z_sh = 2.1, 2.35, -0.55, -1.55
+    # 胴は角を大きく落とした 2 枚の箱（八角に近い）
+    full = rbeam(b, (0, 0, z_bot), (0, 0, z_lv), bw, bw, "glass_full", k=0.72, uv=11)
+    add_world(full, liquid(z_lv + 0.02, (214, 128, 38)), glass_shine(seed=3, width=0.1, gain=1.25),
+              dots([(s_ * bw / 2, y_, 1.95) for s_ in (-1, 1) for y_ in (-0.62, 0.62)], 0.12, (120, 64, 22)))
+    rbeam(b, (0, 0, z_bot + 0.06), (0, 0, z_bot - 0.24), bw + 0.04, bw + 0.04, "glass_dark", k=0.72, uv=12)  # 厚い底
+    empty = [cbox(b, (0, 0, (z_lv + z_sh) / 2), (bw - 0.08, bw - 0.08, z_lv - z_sh), "glass", uv=12),
+             cbox(b, (0, 0, -1.78), (1.66, 1.66, 0.48), "glass", uv=12),
+             cbox(b, (0, 0, -2.16), (1.22, 1.22, 0.3), "glass", uv=12)]
+    add_world(empty, glass_windows(rim=0.14, seed=2))
+    cbox(b, (0, 0, z_lv - 0.03), (bw - 0.24, bw - 0.24, 0.05), "fuel_top", uv=12, tags=("noao",))  # 窓から覗く液面
+    rod(b, (0, 0, -2.25), (0, 0, -4.5), 0.86, "glass_dark", uv=12)
+    band(b, (0, 0, -4.45), (0, 0, 1), 1.02, 0.24, "glass_dark", uv=14)
+    band(b, (0, 0, -2.95), (0, 0, 1), 0.96, 0.42, "label", uv=14)                              # 首の帯
+    lab_lo, lab_hi = 0.05, 1.75
+    lab = [cbox(b, (s_ * (bw / 2 + 0.03), 0, (lab_lo + lab_hi) / 2), (0.06, bw * 0.62, lab_hi - lab_lo), "label",
+                uv=12, tags=("ragged",)) for s_ in (-1, 1)]
+    add_world(lab, WC.stamp("RYE", (0.75, 0.25), 0.55, tint=(96, 30, 24)),
+              WC.stamp("1987", (0.25, -0.45), 0.3, tint=(70, 52, 30)),
+              patch((-2, -1.2, 1.35), (2, 1.2, 1.62), rgb=(150, 40, 32)))
+    # 口に詰めた布（外へ垂れる）・留めたテープと銅線・焦げた先
+    rod(b, (0, 0, -3.6), (0, 0.05, -5.2), 0.66, "rag", uv=11)
+    rag(b, (0.15, 0.3, -4.95), 2.1, 0.6, "rag", hang=(0.25, 0.35, 1.0), strips=2, spread=0.28, seed=5, uv=11)
+    rag(b, (-0.25, -0.15, -4.85), 1.3, 0.5, "rag", hang=(-0.6, -0.2, 1.0), strips=1, seed=6, uv=11)
+    wrap(b, (0, 0, -3.25), (0, 0, -3.95), 1.12, "tape", pitch=0.35, tilt=8, seed=7, uv=12)
+    coil(b, (0, 0, -4.15), (0, 0, 1), 0.98, 0.3, 2, "wire", wire=0.1, uv=16)
+    cbox(b, (0.05, 0.1, -5.35), (0.74, 0.7, 0.44), "rag_burnt", rot=(10, 20, 0), uv=12)
+    band(b, (0, 0, -4.2), (0, 0, 1), 0.98, 0.14, "glass_dark", uv=16)                          # 口のねじ山
+    cbox(b, (0.48, 0.35, -3.6), (0.36, 0.5, 0.42), "rag", rot=(0, 20, 30), uv=14)              # 布の結び目
+    beam(b, (bw / 2 + 0.02, -0.2, -3.0), (bw / 2 + 0.02, -0.25, -0.9), 0.06, 0.62, "tape", up=(0, 1, 0), uv=12)
+    # 垂れた燃料の筋（瓶の外、液面より上）
+    cbox(b, (bw / 2 + 0.02, 0.3, -1.05), (0.06, 0.18, 0.9), "fuel_wet", uv=14, tags=("noao",))
+    cbox(b, (0.4, bw / 2 + 0.02, -1.25), (0.18, 0.06, 0.6), "fuel_wet", uv=14, tags=("noao",))
     # 炎（布の先）。待機アニメで揺らす
-    fb = wm.bone("flame", pivot=(0.05, 0.1, -5.65))
-    flame(fb, (0.05, 0.1, -5.75), 1.0, seed=11)
+    fb = wm.bone("flame", pivot=(0.05, 0.1, -5.5))
+    flame(fb, (0.05, 0.1, -5.6), 1.0, seed=11)
     wm.idle = {"flame": {"scale": list(FLICKER), "rotation": [0.0, 0.0, "8.0 * math.sin(q.anim_time * 900.0)"]}}
-    book.add("glass", "glass_tinted", base=(104, 74, 40))
-    book.add("glass_dark", "glass_tinted", base=(70, 44, 20))
-    book.raw("fuel_top", NP.style("plastic", base=(214, 150, 60), wear=0.0, dirt=0.0))
-    book.raw("fuel_wet", NP.style("plastic", base=(150, 92, 30), wear=0.0, dirt=0.1))
-    book.raw("label", NP.style("paper", base=(210, 194, 152), lines=False, dirt=0.55))
+    book.add("glass", "glass_tinted", base=(150, 104, 52))
+    book.add("glass_full", "glass_tinted", base=(150, 92, 34))
+    book.add("glass_dark", "glass_tinted", base=(92, 58, 26))
+    book.raw("fuel_top", NP.style("plastic", base=(226, 160, 70), wear=0.0, dirt=0.0))
+    book.raw("fuel_wet", NP.style("plastic", base=(170, 104, 34), wear=0.0, dirt=0.1))
+    book.raw("label", NP.style("paper", base=(214, 198, 156), lines=False, dirt=0.5))
     book.add("rag", "cloth_rag", base=book.pal(1))
     book.raw("rag_burnt", NP.style("char", embers=0.6))
     book.add("tape", "tape_grey", base=(150, 146, 136), dirt=0.55)
     book.add("wire", "copper_wire", base=(176, 110, 60))
     flame_styles(book)
-    blood = [WC.blood_zone((-1.3, -1.3, 1.0), (1.3, 1.3, 2.4), 0.16, "dry", soft=0.6)]
-    return Built(wm, book, blood, hold=dict(scale=0.96, pitch=70.0, yaw=-6.0, grip=0.25), icon_yaw=64.0)
+    blood = [WC.blood_zone((-1.3, -1.3, 1.2), (1.3, 1.3, 2.5), 0.14, "dry", soft=0.6)]
+    return Built(wm, book, blood, hold=dict(scale=1.3, pitch=28.0, yaw=-6.0, grip=-3.0), icon_yaw=64.0)
 
 
 @builder("pipe_bomb")
@@ -1456,8 +1514,8 @@ def b_pipe_bomb(w) -> Built:
         x_, y_ = 0.9 * math.cos(a), 0.9 * math.sin(a)
         z0, z1 = (1.65, -1.55) if k % 2 else (-1.65, 1.55)
         nail(b, (x_, y_, z0), (x_, y_, z1), "nail", d=0.16, head=0.36, uv=16)
-    wrap(b, (0, 0, -1.5), (0, 0, -0.62), 2.1, "tape", pitch=0.44, tilt=6, seed=1202, uv=10)
-    wrap(b, (0, 0, 0.62), (0, 0, 1.5), 2.1, "tape", pitch=0.44, tilt=-6, seed=1203, uv=10,
+    wrap(b, (0, 0, -1.4), (0, 0, -0.9), 2.08, "tape", pitch=0.5, tilt=6, seed=1202, uv=10)
+    wrap(b, (0, 0, 0.9), (0, 0, 1.4), 2.08, "tape", pitch=0.5, tilt=-6, seed=1203, uv=10,
          tail=(0.65, (0.35, -1.0, 0.25)))
     st = cbox(b, (0, 1.04, 0.0), (1.05, 0.08, 1.1), "sticker", uv=16)
     add_world([st], WC.stamp_on("!", (0, 1.09, 0.0), 0.62, normal=(0, 1, 0), up=(0, 0, -1), tint=(242, 232, 214)))
@@ -1467,14 +1525,14 @@ def b_pipe_bomb(w) -> Built:
     sp = wm.bone("spark", pivot=(0.17, 2.15, 3.45))
     spark(sp, (0.17, 2.15, 3.45), 0.42)
     wm.idle = {"spark": {"scale": list(FLICKER), "rotation": [0.0, "q.anim_time * 720.0", 0.0]}}
-    book.add("pipe", "steel_worn", base=book.pal(0), scratches=0.6, dirt=0.5)
+    book.add("pipe", "aluminium", base=(150, 154, 152), dirt=0.5)
     book.add("cap", "iron_cast", base=(88, 86, 82))
     book.add("nail", "steel_rusty", amount=0.5)
     book.add("tape", "tape_black", base=book.pal(2), dirt=0.45)
     book.add("sticker", "plastic_red", base=book.pal(3))
     book.add("fuse", "rope", base=book.pal(1))
     flame_styles(book)
-    return Built(wm, book, [], hold=dict(scale=0.95, pitch=24.0, grip=0.3), icon_yaw=76.0)
+    return Built(wm, book, [], hold=dict(scale=1.35, pitch=24.0, grip=0.0), icon_yaw=76.0)
 
 
 @builder("firecracker")
@@ -1514,7 +1572,7 @@ def b_firecracker(w) -> Built:
     book.add("gold", "brass", base=book.pal(1), wear=0.3)
     book.add("fuse", "rope", base=(78, 70, 56))
     flame_styles(book)
-    return Built(wm, book, [], hold=dict(scale=1.0, pitch=62.0, grip=0.6), icon_yaw=70.0)
+    return Built(wm, book, [], hold=dict(scale=1.6, pitch=62.0, grip=1.3), icon_yaw=70.0)
 
 
 @builder("uv_flare")
@@ -1529,7 +1587,8 @@ def b_uv_flare(w) -> Built:
     def win(P, N, L, size, col):
         # ±X の面の細い窓 2 本（抜く）
         ok = np.abs(N[:, 0]) > 0.7
-        cut = ok & (np.abs(P[:, 1]) < 0.2) & (((P[:, 2] > -1.3) & (P[:, 2] < -0.2)) | ((P[:, 2] > 0.35) & (P[:, 2] < 1.15)))
+        z = P[:, 2]
+        cut = ok & (np.abs(P[:, 1]) < 0.2) & (((z > -1.3) & (z < -0.2)) | ((z > 0.35) & (z < 1.15)))
         return col, cut
     tb = rod(b, (0, 0, 2.3), (0, 0, -1.9), 1.12, "tube", uv=11)
     add_world(tb, win, WC.pock(1301, cell=0.5, r=0.1, frac=0.3))
@@ -1556,6 +1615,8 @@ def b_uv_flare(w) -> Built:
     wrap(b, (0, 0, 2.0), (0, 0, 1.75), 1.3, "tape", pitch=0.26, tilt=6, seed=1302, uv=14,
          tail=(0.45, (0.2, -1.0, 0.3)))
     beam(b, (0.62, 0.0, 1.8), (0.62, 0.0, -0.4), 0.1, 0.42, "steel", up=(0, 1, 0), uv=14)
+    wrap(b, (0, 0, 1.35), (0, 0, 0.45), 1.24, "grip", pitch=0.3, tilt=5, seed=1303, uv=12)
+    cbox(b, (0, 0, 3.42), (0.42, 0.42, 0.2), "steel", uv=16)
     cbox(b, (0.6, 0.0, 1.95), (0.2, 0.42, 0.3), "steel", uv=16)
     book.add("tube", "aluminium", base=(186, 188, 192), dirt=0.45)
     book.raw("uv_core", NP.style("glow", base=(170, 90, 255)))
@@ -1567,7 +1628,8 @@ def b_uv_flare(w) -> Built:
     book.add("steel", "steel_worn")
     book.add("wire", "copper_wire", base=(184, 112, 64))
     book.add("tape", "tape_grey", dirt=0.5)
-    return Built(wm, book, [], hold=dict(scale=1.0, pitch=56.0, grip=0.4), icon_yaw=70.0)
+    book.add("grip", "rubber_black", base=(40, 40, 44))
+    return Built(wm, book, [], hold=dict(scale=1.45, pitch=56.0, grip=1.8), icon_yaw=70.0)
 
 
 # ===========================================================================
@@ -1603,7 +1665,8 @@ def item_doc_ranged(w: dict) -> dict:
             "minecraft:damage": 3 if hands2 else 2,
             "minecraft:repairable": {"repair_items": [
                 {"items": ["nr:scrap"], "repair_amount": "query.max_durability * 0.25"},
-                {"items": [w["id"]], "repair_amount": "context.other->query.remaining_durability + 0.12 * context.other->query.max_durability"},
+                {"items": [w["id"]], "repair_amount": "context.other->query.remaining_durability"
+                                                      " + 0.12 * context.other->query.max_durability"},
             ]},
         })
         if kind in ("bow", "crossbow"):
@@ -1658,7 +1721,7 @@ def preview(results, out_dir=SCRATCH) -> List[str]:
     for w, bt, wm, tex, hold, _dt in results:
         key = w["key"]
         tw, th = wm.model.tex_w, wm.model.tex_h
-        sheet.append((f"{key} {wm.cube_count}c {tw}x{th}", WC.render_model(wm, tex, view=(35.0, 16.0),
+        sheet.append((f"{key} {wm.cube_count}c {tw}x{th}", WC.render_model(wm, tex, view=(62.0, 14.0),
                                                                           size=(420, 220))))
         rep = WC.clip_report(wm, hold)
         uv_ = use_view(hold)

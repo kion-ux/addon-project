@@ -3943,6 +3943,166 @@ def summary():
             f"player anims {len(required_player_animations())}")
 
 
+
+# ===========================================================================
+# ▼▼▼ 乗り物（VEHICLES）— 乗り物の担当（gen_nr_vehicles / scripts/world/vehicles.js）の節 ▼▼▼
+#
+#  乗れる乗り物のエンティティ nr:veh_<key>。車体は nr_vehicle_models.build_vehicle(kind, drivable=True, …) で
+#  組み（look の中身をそのまま渡す）、gen_nr_vehicles が BP・RP・データ JS（scripts/data/vehicles.js）を書く。
+#  * speed … BP の `minecraft:movement`（`input_ground_controlled` で乗り手の入力どおりに走る）。
+#    馬の 0.3375 ≒ 14.5 m/s が目安（≒ 43 倍）。max_mps はその目安の速さ（スクリプトの轢き・音の基準）
+#  * seats … 座席の名前（**先頭が運転席** = rideable の controlling_seat 0）。位置は車体の meta["seats"]、
+#    無い名前（荷台など）は extra_seats {名前: [x, y, z]}（小道具空間の単位、座面の上の面）
+#  * health … 車の耐久（BP の `minecraft:health`）。0 で爆発して焼けた残骸（wreck の小道具）になる
+#  * roadkill … 轢いたときの強さ。min_mps より遅いと当たらない / full_mps で最大 / damage は 1 m/s あたりの
+#    体力の点 / power は吹き飛びと血の勢い / sever は手足がちぎれる強さ（0..1）/ head は頭が潰れる強さ /
+#    plow は棘付きの鋤（胴が裂ける・真っ二つ）/ self_damage は 1 体あたりの車の傷み（最大の速さで）
+#  * shield … 乗っている人へのゾンビの攻撃を車が肩代わりする割合（屋根の無いバイクは 0）
+#  * craft … 作業台 nr:crafting_bench で作る（出来上がりはスポーンエッグ `<id>_spawn_egg`）。
+#    `VEHICLE_CRAFTING`（CRAFTING と同じ形）に並べる。CRAFTING には入れない（出来上がりがアイテムの表に無いので、
+#    端末の担当がスポーンエッグを扱えるようになったら足す）
+# ===========================================================================
+VEHICLE_KINDS = ("buggy", "sedan", "taxi", "police", "pickup", "dirt_bike", "ambulance", "box_truck",
+                 "army_truck", "garbage_truck", "bus")
+VEHICLE_MPS_PER_SPEED = 43.0      # minecraft:movement 1.0 ≒ 43 m/s（乗った馬の実測からの目安）
+
+
+def _veh(key, ja, en, *, kind, look, seats, speed, health, weight, roadkill, shield, collision, hit_width=None,
+         step=1.0625, wreck=None, craft=None, extra_seats=None, egg=("#808080", "#202020"), lights_on_night=True,
+         desc_ja="", desc_en=""):
+    rk = dict(min_mps=4.0, full_mps=14.0, damage=2.0, power=1.0, sever=0.5, head=0.3, plow=False,
+              self_damage=0.5)
+    rk.update(roadkill)
+    return dict(key=key, id="nr:veh_" + key, ja=ja, en=en, kind=kind, look=dict(look), seats=tuple(seats),
+                seat_count=len(seats), speed=float(speed), max_mps=round(float(speed) * VEHICLE_MPS_PER_SPEED, 1),
+                health=int(health), weight=weight, roadkill=rk, shield=float(shield),
+                collision=tuple(float(v) for v in collision),
+                hit_width=float(hit_width if hit_width is not None else collision[0]), step=float(step),
+                wreck=wreck, craft=craft, extra_seats={k: list(v) for k, v in (extra_seats or {}).items()},
+                egg=tuple(egg), lights_on_night=bool(lights_on_night),
+                geometry="geometry.nr.veh." + key, texture="textures/nr/vehicles/" + key,
+                desc_ja=desc_ja, desc_en=desc_en)
+
+
+VEHICLES = [
+    _veh("survivor_buggy", "生存者のバギー", "Survivor Buggy", kind="buggy",
+         look=dict(paint="paint_orange", paint2="paint_black", seed=11,
+                   wear=dict(rust=0.35, dirt=0.55, scratches=0.55, dents=0.25, fade=0.25, blood=0.1)),
+         seats=("driver", "passenger"), speed=0.36, health=180, weight="heavy",
+         roadkill=dict(min_mps=3.5, full_mps=13.0, damage=2.4, power=1.3, sever=1.0, head=0.45, plow=True,
+                       self_damage=0.3),
+         shield=0.45, collision=(1.9, 1.7), hit_width=2.6, wreck="burnt_car", egg=("#c05a22", "#2a2a2a"),
+         craft=dict(inputs=[("nr:scrap", 24), ("nr:blades", 6), ("nr:duct_tape", 6), ("nr:battery", 2),
+                            ("nr:chemicals", 4)], unlock={"level": 6}, ticks=200),
+         desc_ja="生存者が鉄パイプで組んだバギー。前の棘付きの鋤で感染者を裂きながら突っ走る。2 人乗り。",
+         desc_en="A pipe-frame buggy built by survivors. Its spiked ram plow shreds the infected. Seats two."),
+    _veh("beater_sedan", "ボロボロのセダン", "Beater Sedan", kind="sedan",
+         look=dict(paint="paint_silver", paint2="paint_white", seed=23,
+                   wear=dict(rust=0.4, dirt=0.45, scratches=0.6, dents=0.35, fade=0.35, blood=0.15, bullets=6),
+                   options=dict(plate="NRC 300|4-19")),
+         seats=("driver", "passenger", "rear_l", "rear_r"), speed=0.33, health=140, weight="medium",
+         roadkill=dict(min_mps=4.0, full_mps=14.0, damage=2.0, power=1.0, sever=0.55, head=0.3,
+                       self_damage=0.6),
+         shield=0.8, collision=(1.9, 1.6), hit_width=2.6, wreck="burnt_car", egg=("#9a9ea2", "#5a1010"),
+         craft=dict(inputs=[("nr:scrap", 20), ("nr:duct_tape", 4), ("nr:battery", 2), ("nr:chemicals", 3)],
+                    unlock={"level": 4}, ticks=200),
+         desc_ja="街で拾って直した古いセダン。屋根と扉が感染者の爪から乗り手を守る。4 人乗り。",
+         desc_en="An old sedan patched back to life. Roof and doors keep claws off the passengers. Seats four."),
+    _veh("pickup_truck", "荷台付きピックアップ", "Pickup Truck", kind="pickup",
+         look=dict(paint="paint_red", paint2="paint_white", seed=37,
+                   wear=dict(rust=0.45, dirt=0.6, scratches=0.5, dents=0.3, fade=0.3, blood=0.1),
+                   options=dict(plate="SNJ 400|8-62")),
+         seats=("driver", "passenger", "bed_l", "bed_r"), speed=0.31, health=220, weight="heavy",
+         roadkill=dict(min_mps=4.0, full_mps=13.0, damage=2.6, power=1.35, sever=0.7, head=0.4,
+                       self_damage=0.35),
+         shield=0.65, collision=(2.1, 1.9), hit_width=2.8, wreck="burnt_car", egg=("#8e1e1c", "#d6d6ce"),
+         extra_seats={"bed_l": [7.0, 18.6, 30.0], "bed_r": [-8.5, 15.2, 24.0]},
+         craft=dict(inputs=[("nr:scrap", 28), ("nr:duct_tape", 6), ("nr:battery", 3), ("nr:chemicals", 4),
+                            ("nr:rags", 4)], unlock={"level": 8}, ticks=240),
+         desc_ja="ブルバー付きの重いピックアップ。運転席と助手席に、荷台にも 2 人。荷台から撃てる。",
+         desc_en="A heavy pickup with a bull bar. Two up front and two in the bed, free to shoot."),
+    _veh("dirt_bike", "オフロードバイク", "Dirt Bike", kind="dirt_bike",
+         look=dict(paint="paint_green", paint2="paint_white", seed=41,
+                   wear=dict(rust=0.2, dirt=0.65, scratches=0.5, dents=0.15, fade=0.2),
+                   options=dict(number="27", plate="NRC 125|7-21")),
+         seats=("rider",), speed=0.42, health=70, weight="light",
+         roadkill=dict(min_mps=5.0, full_mps=16.0, damage=1.2, power=0.75, sever=0.25, head=0.1,
+                       self_damage=1.2),
+         shield=0.0, collision=(0.9, 1.4), hit_width=1.2, wreck=None, step=1.0625, egg=("#2c5034", "#e8e8e0"),
+         craft=dict(inputs=[("nr:scrap", 12), ("nr:duct_tape", 3), ("nr:battery", 1), ("nr:chemicals", 2)],
+                    unlock={"level": 3}, ticks=160),
+         desc_ja="いちばん速くて軽い。轢くより避けて走る乗り物。屋根が無いので掴まれたら終わり。",
+         desc_en="The fastest and lightest ride: built for dodging, not ramming. No roof to hide under."),
+]
+
+VEHICLE_CRAFTING = [
+    _craft("veh_" + v["key"], "special", v["id"] + "_spawn_egg", 1, v["craft"]["inputs"], station="bench",
+           unlock=v["craft"].get("unlock"), ticks=int(v["craft"].get("ticks", 200)))
+    for v in VEHICLES if v.get("craft")
+]
+
+
+def vehicle_self_check():
+    """乗り物の節の自己検査（nr_spec.check() が呼ぶ）。問題の文字列の並び。"""
+    err = []
+    E = err.append
+    keys = [v["key"] for v in VEHICLES]
+    if len(keys) != len(set(keys)):
+        E("vehicles: duplicate key")
+    inv = inventory_ids()
+    prop_keys = {p["key"] for p in PROPS}
+    for v in VEHICLES:
+        n = f"vehicle {v['key']}"
+        if not _KEY_RE.match(v["key"]):
+            E(f"{n}: bad key")
+        if v["kind"] not in VEHICLE_KINDS:
+            E(f"{n}: kind {v['kind']} not in VEHICLE_KINDS")
+        if not 1 <= v["seat_count"] <= 4 or len(set(v["seats"])) != v["seat_count"]:
+            E(f"{n}: seats {v['seats']}")
+        if not 0.1 <= v["speed"] <= 0.6:
+            E(f"{n}: speed {v['speed']} (0.1..0.6)")
+        if not 1 <= v["health"] <= 1000:
+            E(f"{n}: health {v['health']}")
+        if v["weight"] not in WEIGHTS:
+            E(f"{n}: weight {v['weight']}")
+        if not 0.0 <= v["shield"] <= 1.0:
+            E(f"{n}: shield")
+        rk = v["roadkill"]
+        if not 0 < rk["min_mps"] < rk["full_mps"] <= v["max_mps"] + 6:
+            E(f"{n}: roadkill min/full mps {rk['min_mps']}/{rk['full_mps']} vs max {v['max_mps']}")
+        for k in ("sever", "head"):
+            if not 0.0 <= rk[k] <= 1.0:
+                E(f"{n}: roadkill.{k}")
+        w, h = v["collision"]
+        if not (0.3 <= w <= 3.0 and 0.5 <= h <= 3.0):
+            E(f"{n}: collision {v['collision']}")
+        if v["wreck"] is not None and v["wreck"] not in prop_keys:
+            E(f"{n}: wreck {v['wreck']} is not a prop")
+        for name in v["extra_seats"]:
+            if name not in v["seats"]:
+                E(f"{n}: extra seat {name} not in seats")
+        for c in v["egg"]:
+            if not _HEX_RE.match(c):
+                E(f"{n}: egg colour {c}")
+        if v.get("craft"):
+            for ref, k in v["craft"]["inputs"]:
+                if ref.startswith("nr:") and ref not in inv:
+                    E(f"{n}: craft input {ref} is not an item")
+                if k < 1:
+                    E(f"{n}: craft count")
+            u = v["craft"].get("unlock")
+            if u and "level" in u and not 1 <= u["level"] <= PROGRESSION["max_level"]:
+                E(f"{n}: craft unlock level")
+        for f in ("ja", "en", "desc_ja", "desc_en"):
+            if not v.get(f):
+                E(f"{n}: {f} is empty")
+    return err
+
+
+__all__ += ["VEHICLE_KINDS", "VEHICLE_MPS_PER_SPEED", "VEHICLES", "VEHICLE_CRAFTING", "vehicle_self_check"]
+# ▲▲▲ 乗り物（VEHICLES）の節ここまで ▲▲▲
+
+
 if __name__ == "__main__":
     import sys
     problems = self_check()

@@ -25,7 +25,7 @@ test("耐久: 残りが warn_frac を切ると警告（一度だけ）", async (
   // 知らせはバス "hud_notice"（HUD が聞く。テストの記録も聞くので、アクションバーへ直接は出さない）
   expect(rec.notice.length).toBe(1);
   expect(rec.notice[0].text).toContain(MACHETE.ja);
-  expect(used().actionbars).toBe(0);
+  // （アクションバーは HUD が常に書くので数えない。知らせがバスを通ったことだけを見る）
   await tick(12);
   await hit(p, z, { part: "torso" });
   await tick(2);

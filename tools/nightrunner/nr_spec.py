@@ -12,7 +12,7 @@
 * 演出 ID（パーティクル・効果音・プレイヤーのモーション・ゾンビのアニメ）の正は `nr_registry`。
   spec が参照する ID が全部登録簿にあることを `check()` が確かめる。
 * このモジュールが足すもの: 検索 `zombie(key)` / `weapon(key)` / `item(key)` / `block(key)` / `prop(key)` /
-  `structure(key)` / `projectile(key)` / `trap(key)`（鍵でもフル ID でもよい）、`ztype(key)`、
+  `structure(key)` / `projectile(key)` / `trap(key)` / `vehicle(key)`（鍵でもフル ID でもよい）、`ztype(key)`、
   `all_item_ids()`（手に持てる nr: の ID）、`all_entity_ids()`（nr: のエンティティ ID）、`ALL_PROJECTILES`、
   `SITE_STRUCTURES` / `site_structures(site)`（ゾンビの出現場所 → 建物モジュール）、
   ゾンビ側も含めた `lang_entries()` / `required_sounds()` / `required_particles()` /
@@ -149,6 +149,11 @@ def prop(key):
     return _find(_C.PROPS, key, ("nr:prop_",), "prop")
 
 
+def vehicle(key):
+    """乗れる乗り物（カタログの VEHICLES）。"survivor_buggy" / "nr:veh_survivor_buggy"。"""
+    return _find(_C.VEHICLES, key, ("nr:veh_",), "vehicle")
+
+
 def structure(key):
     """建物モジュール。"""
     return _find(_C.STRUCTURES, key, (), "structure")
@@ -184,9 +189,10 @@ def all_item_ids():
 
 
 def all_entity_ids():
-    """nr: のエンティティ ID（ゾンビ 50・gib・飛び道具・小道具）。並べ替え済み。"""
+    """nr: のエンティティ ID（ゾンビ 50・gib・飛び道具・小道具・乗り物）。並べ替え済み。"""
     ids = [_Z.zombie_id(z) for z in _Z.ZOMBIES] + ["nr:gib"]
     ids += [p["id"] for p in ALL_PROJECTILES] + [p["id"] for p in _C.PROPS]
+    ids += [v["id"] for v in _C.VEHICLES]
     return sorted(ids)
 
 
@@ -200,6 +206,9 @@ def lang_entries():
     for p in _Z.ZOMBIE_PROJECTILES:
         le["ja_JP"][f"entity.{p['id']}.name"] = p["ja"]
         le["en_US"][f"entity.{p['id']}.name"] = p["en"]
+    for v in _C.VEHICLES:                     # 乗り物（スポーンエッグの名前は gen_nr_vehicles の断片）
+        le["ja_JP"][f"entity.{v['id']}.name"] = v["ja"]
+        le["en_US"][f"entity.{v['id']}.name"] = v["en"]
     return le
 
 
@@ -264,7 +273,7 @@ def display_strings():
     for c, info in _Z.CLASS_INFO.items():
         add_row(f"class {c}", info)
     for name, rows in (("item", _C.all_items()), ("weapon", _C.WEAPONS), ("projectile", ALL_PROJECTILES),
-                       ("trap", _C.TRAPS), ("block", _C.BLOCKS), ("prop", _C.PROPS),
+                       ("trap", _C.TRAPS), ("block", _C.BLOCKS), ("prop", _C.PROPS), ("vehicle", _C.VEHICLES),
                        ("structure", _C.STRUCTURES), ("skill", _C.SKILLS), ("mod", _C.MODS),
                        ("setting", _C.SETTINGS_SCHEMA)):
         for r in rows:
@@ -426,6 +435,7 @@ def check():
     out = []
     out += [("zombies", m) for m in _Z.check_zombies()]
     out += [("catalog", m) for m in _C.self_check()]
+    out += [("vehicles", m) for m in _C.vehicle_self_check()]
     out += [("registry", m) for m in nr_registry.check(sys.modules[__name__])]
     out += [("cross", m) for m in _check_cross()]
     return out

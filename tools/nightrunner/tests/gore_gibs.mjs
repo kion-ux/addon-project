@@ -107,10 +107,13 @@ test("gibs: プレイヤーが殴ると蹴り飛ばせる（止まっていて�
   const g = spawnGib(z, "head", { x: 0, y: 0, z: -1 }, 0.3, { at: { x: 0.5, y: 64.3, z: 2.0 } });
   await tick(80);
   expect(prop(g, "nr:spin")).toBe(0);
-  const z0 = g.location.z;
+  // 転がって止まった位置はプレイヤーの前とは限らない（後ろへ回ることもある）。
+  // 殴ると「プレイヤーから遠ざかる向き」へ飛ぶことを見る
+  const away = () => Math.hypot(g.location.x - p.location.x, g.location.z - p.location.z);
+  const d0 = away();
   await hit(p, g, { point: g.location });
   await tick(3);
-  expect(g.location.z - z0).toBeGreaterThan(0.4);       // 視線の向き（+Z）へ飛んだ
+  expect(away() - d0).toBeGreaterThan(0.4);             // プレイヤーから遠ざかる向きへ飛んだ
   expect(prop(g, "nr:spin")).toBeGreaterThan(0);
   expect(used().sounds["nr.gore.squish"]).toBeGreaterThan(0);
   // kick() は gib 以外には効かない
