@@ -574,6 +574,51 @@ def d_rim(fc, d):
     fc.mul(r > 0.94, 0.6)
 
 
+def _radial(fc, d):
+    """車軸 X の車輪の側面: 中心からの (r, 角度)。ローカル座標。"""
+    P = _wp(fc, d)
+    c = np.asarray(d["c"], f32)
+    y = P[..., 1] - c[1]
+    z = P[..., 2] - c[2]
+    return np.sqrt(y * y + z * z), np.arctan2(y, z)
+
+
+def d_tyreside(fc, d):
+    """タイヤの側面（ゴムの濃淡・ビード・刻印の輪・肩）。帯の箱どうしで揃う。"""
+    r, ang = _radial(fc, d)
+    R = float(d["r"])
+    ri = float(d.get("ri", R * 0.6))
+    t = np.clip((r - ri) / max(1e-3, R - ri), 0, 1)
+    base = _rgb((30, 30, 32))
+    col = base * (0.85 + 0.25 * t)[..., None] * (0.92 + 0.12 * fc.grain(fc.seed + 1))[..., None]
+    fc.paint(np.ones(r.shape, f32), col)
+    fc.mul(np.abs(t - 0.06) < 0.06, 0.55)
+    letters = (np.abs(t - 0.55) < 0.12) & (np.sin(ang * 26.0) > 0.25) & (np.sin(ang * 1.3 + 0.4) > -0.2)
+    fc.paint(letters, (70, 70, 72), 0.75)
+    fc.mul(t > 0.88, 0.75)
+    fc.mul(r > R * 0.99, 0.6)
+
+
+def d_rimface(fc, d):
+    """ホイールの面（ローカル座標・中心から）: スポーク・その間の暗い穴・ナット・キャップ。kind: alloy / steel。"""
+    r, ang = _radial(fc, d)
+    R = max(0.3, float(d["r"]))
+    q = r / R
+    n = int(d.get("spokes", 5))
+    if d.get("kind", "alloy") == "steel":
+        holes = (np.abs(q - 0.6) < 0.11) & (np.cos(ang * n) > 0.5)
+        fc.paint(holes, (22, 20, 20), 0.95)
+        fc.mul(np.abs(q - 0.86) < 0.05, 0.7)
+    else:
+        spoke = np.cos(ang * n) > 0.2
+        gap = (q > 0.36) & (q < 0.86) & ~spoke
+        fc.paint(gap, (16, 16, 18), 0.95)
+        fc.mul((q > 0.36) & (q < 0.86) & spoke, 1.1)
+    nuts = (np.abs(q - 0.24) < 0.06) & (np.cos(ang * n + 0.6) > 0.8)
+    fc.mul(nuts, 0.55)
+    fc.mul(q > 0.93, 0.62)
+
+
 def d_smear(fc, d):
     """血を引きずった跡: 指 4 本の筋が angle の向きへ length（面の割合）だけ伸び、端から垂れる。"""
     cu, cv = d.get("at", (0.5, 0.4))
@@ -791,6 +836,7 @@ DECALS = {
     "nrv_splatter": d_splatter, "nrv_gauges": d_gauges, "nrv_star_life": d_star_life, "nrv_text": d_vtext,
     "nrv_mesh": d_mesh, "nrv_puddle": d_puddle, "nrv_wipe": d_wipe, "nrv_stencil": d_stencil,
     "nrv_lettering": d_lettering, "nrv_frame": d_frame, "nrv_halfplane": d_halfplane,
+    "nrv_tyreside": d_tyreside, "nrv_rimface": d_rimface,
 }
 
 
@@ -1015,6 +1061,25 @@ class VehicleModel:
             out.append(self.box(at, size, style, rot=rot, pivot=at, **kw))
         return out
 
+    def prism(self, at, d, length, style, axis: str = "x", sides: int = 12, rot0: float = 0.0, step: float = 0.02,
+              **kw) -> List[Cube]:
+        """正 sides 角柱（sides/2 本の帯を回して重ねる。帯の幅 = d·tan(π/sides) なので星形にならない）。
+        d は向かい合う辺の間の距離。step で帯ごとに長さを少し変えて端の面の z ファイトを避ける。"""
+        n = max(2, sides // 2)
+        wdt = d * math.tan(math.pi / (2 * n))
+        out = []
+        for k in range(n):
+            a = rot0 + k * 180.0 / n
+            L = length + step * k
+            if axis == "x":
+                size, rot = (L, d, wdt), (a, 0.0, 0.0)
+            elif axis == "y":
+                size, rot = (d, L, wdt), (0.0, a, 0.0)
+            else:
+                size, rot = (d, wdt, L), (0.0, 0.0, a)
+            out.append(self.box(at, size, style, rot=rot, pivot=at, **kw))
+        return out
+
     # ---- デカール ---------------------------------------------------------------------------
     def dec(self, cubes, faces, name, **params) -> None:
         for c in _as_list(cubes):
@@ -1074,7 +1139,7 @@ class VehicleModel:
         cubes, items1 = self._rects_at(1.0)
         area1 = sum(max(1e-3, w) * max(1e-3, h) for _, w, h in items1) or 1.0
         # 面積からの見積り（詰め込み率 0.8）から始めて、入るまで 4% ずつ下げる
-        S = min(self.max_scale, math.sqrt(0.8 * W * H / area1))
+        S = min(self.max_scale, math.sqrt(0.92 * W * H / area1))
         S = math.floor(S * 20) / 20.0
         last = None
         while S >= self.min_scale - 1e-9:
@@ -1353,40 +1418,39 @@ class VehicleModel:
     def wheel(self, name: str, center, radius: float, width: float, *, parent: str = "root",
               tyre: str = "tyre", rim: str = "rim", rim_kind: str = "alloy", spokes: int = 5, flat: bool = False,
               burnt: bool = False, dual: bool = False, hubcap: bool = True, side: float = 1.0,
-              rim_ratio: float = 0.62, n: int = 3) -> None:
-        """車輪のボーン name（pivot = 車軸の中心。rotation の X で転がる、Y で切れる）。
-        タイヤ（n 個の箱の多角柱）・ホイール（八角）・ハブ。side は外側の向き（+1 = +X）。"""
+              rim_ratio: float = 0.62, sides: int = 12) -> None:
+        """車輪のボーン name（pivot = 車軸の中心。rotation の X を増やすと前（-Z）へ転がる、Y で切れる）。
+        タイヤ（正 12 角柱）・ホイール（正 8 角柱）・ハブ。側面の模様は車軸の中心からの距離で描くので
+        帯どうしで揃う。side は外側の向き（+1 = +X）。"""
         cx, cy, cz = (float(v) for v in center)
         self.bone(name, pivot=(cx, cy, cz), parent=parent)
         self.meta["wheels"][name] = {"center": [cx, cy, cz], "radius": radius, "width": width}
         d = radius * 2
-        drop_y = 0.0
-        if flat:
-            drop_y = 0.24 * radius
+        drop_y = 0.24 * radius if flat else 0.0
         if burnt:
             # タイヤは燃え落ちて、裸の鉄のホイールが地面に沈む
             rr = radius * 0.74
             yy = cy - (radius - rr) - 0.6
-            for c in self.cyl((cx, yy, cz), rr * 2, width * 0.75, "rim_dark", axis="x", n=2, bone=name):
-                self.dec(c, "lr", "nrv_rim", kind="steel", spokes=4)
+            cs = self.prism((cx, yy, cz), rr * 2, width * 0.75, "rim_dark", axis="x", sides=8, bone=name)
+            self.wd(cs, "lr", "nrv_rimface", frame="local", c=[cx, yy, cz], r=rr, kind="steel", spokes=4)
             self.box((cx + side * 0.2, yy, cz), (width * 0.75 + 0.5, rr * 0.45, rr * 0.45), "hub", bone=name)
             return
-        tyres = []
-        if dual:
-            for k, off in enumerate((-0.25, 0.25)):
-                tyres += self.cyl((cx + off * width * side, cy - drop_y, cz), d, width * 0.46, tyre, axis="x", n=n,
-                                  bone=name, rot0=k * 7.5)
-        else:
-            tyres += self.cyl((cx, cy - drop_y, cz), d, width, tyre, axis="x", n=n, bone=name)
+        ty = cy - drop_y
+        parts = [(cx + off * width * side, width * 0.46) for off in (-0.25, 0.25)] if dual else [(cx, width)]
+        for k, (tx, tw) in enumerate(parts):
+            cs = self.prism((tx, ty, cz), d, tw, tyre, axis="x", sides=sides, bone=name, rot0=k * 7.5)
+            self.wd(cs, "lr", "nrv_tyreside", frame="local", c=[tx, ty, cz], r=radius, ri=radius * rim_ratio,
+                    seed=_h(self.key, name, k))
         if flat:
             # 潰れたタイヤの膨らみ
-            self.box((cx, max(0.6, cy - drop_y - radius + 0.9), cz), (width * 1.12, 1.8, d * 0.62), tyre, bone=name)
+            self.box((cx, max(0.6, ty - radius + 0.9), cz), (width * 1.1, 1.8, d * 0.62), tyre, bone=name)
         rw = (width * 0.5 if dual else width) + 0.3
-        rx = cx + (side * width * 0.25 if dual else 0.0)
-        for c in self.cyl((rx, cy - drop_y, cz), d * rim_ratio, rw, rim, axis="x", n=2, bone=name, rot0=22.5):
-            self.dec(c, "lr", "nrv_rim", kind=rim_kind, spokes=spokes)
+        rxx = cx + (side * width * 0.25 if dual else 0.0)
+        rr = radius * rim_ratio
+        cs = self.prism((rxx, ty, cz), rr * 2, rw, rim, axis="x", sides=8, bone=name, rot0=22.5)
+        self.wd(cs, "lr", "nrv_rimface", frame="local", c=[rxx, ty, cz], r=rr, kind=rim_kind, spokes=spokes)
         if hubcap:
-            self.box((rx, cy - drop_y, cz), (rw + 0.4, d * 0.2, d * 0.2), "hub", bone=name)
+            self.box((rxx, ty, cz), (rw + 0.4, rr * 0.36, rr * 0.36), "hub", bone=name, rot=(45, 0, 0))
 
     def mirror(self, root, side: float, *, bone: str = "body", size=(1.8, 2.6, 3.4), arm: float = 1.6,
                style: str = "paint", hanging: bool = False, missing: bool = False) -> None:

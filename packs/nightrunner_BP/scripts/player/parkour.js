@@ -18,7 +18,7 @@
 //    entityHurt の後で体力を戻す。バニラの分だけで死ぬ落下は空中で耐性（resistance V）を付けて守る。
 //  * 壁走り・壁蹴り・ドロップキックはスキル（wall_run / wall_jump / dropkick）で覚える（SKILL_GATES）。
 // ===========================================================================
-import { world, InputButton, ButtonState, EntityDamageCause } from "@minecraft/server";
+import { world, system, InputButton, ButtonState, EntityDamageCause } from "@minecraft/server";
 import { on, emit } from "../core/bus.js";
 import { valid, now, clamp, dist, distXZ, len, sub, scale, lerpV, flat, dot, yawForward, yawRight, isZombie, isPlayer } from "../core/util.js";
 import { particle, sound, playerSound, playerAnim, shake, PRIO } from "../core/fx.js";
@@ -72,7 +72,8 @@ const USE_BY_ID = Object.fromEntries((Array.isArray(ID.ITEMS) ? ID.ITEMS : []).f
  * @typedef {{mode: string, t0: number, m: any, ground: boolean, groundT: number, groundY: number, airT: number, peakY: number,
  *   vanFall: number, lastY: number, lastLoc: Vector3 | undefined, spd: number, dir: Vector3, sprintT: number, jumpT: number,
  *   sneakT: number, jumpHeldSince: number, cd: Record<string, number>, chain: number, wrUsed: boolean, stunUntil: number,
- *   rollUntil: number, landing: any, guard: boolean, boostT: number, last: string, lastT: number}} PState
+ *   rollUntil: number, landing: any, guard: boolean, boostT: number, last: string, lastT: number, jumpN: number, sneakN: number,
+ *   mJ: number, mS: number, spdHist: number[], runSpd: number}} PState
  */
 /** @type {Map<string, PState>} */
 const states = playerMap();
@@ -83,7 +84,8 @@ function pst(p) {
     const y = p.location.y;
     s = { mode: "", t0: 0, m: {}, ground: true, groundT: now(), groundY: y, airT: -9999, peakY: y, vanFall: 0, lastY: y, lastLoc: undefined,
       spd: 0, dir: { x: 0, y: 0, z: 1 }, sprintT: -9999, jumpT: -9999, sneakT: -9999, jumpHeldSince: -1, cd: {}, chain: 0, wrUsed: false,
-      stunUntil: -1, rollUntil: -1, landing: undefined, guard: false, boostT: -9999, last: "", lastT: -9999 };
+      stunUntil: -1, rollUntil: -1, landing: undefined, guard: false, boostT: -9999, last: "", lastT: -9999, jumpN: 0, sneakN: 0,
+      mJ: 0, mS: 0, spdHist: [], runSpd: 0 };
     states.set(p.id, s);
   }
   return s;
@@ -157,7 +159,12 @@ function dust(c, n, id = "dust_land") {
 function enterMode(p, st, mode, m) {
   if (st.mode) endMode(p, st, "replace", true);
   st.mode = mode; st.t0 = now(); st.m = m ?? {};
+  st.mJ = st.jumpN; st.mS = st.sneakN;
 }
+/** モードに入ってから新しくジャンプを押したか（押下の数で数える。同じ tick の前後に左右されない）。 @param {PState} st */
+function jumped(st) { return st.jumpN > st.mJ; }
+/** モードに入ってから新しくスニークを押したか。 @param {PState} st */
+function sneaked(st) { return st.sneakN > st.mS; }
 /**
  * @param {Player} p @param {PState} st @param {string} why @param {boolean} [keepAnim] 次のモードが同じ層に流すなら true
  */
@@ -386,6 +393,9 @@ onPlayerTick("parkour", 1, (p, t) => {
       st.spd = d;
       if (d > 0.05) st.dir = flat({ x: c.loc.x - st.lastLoc.x, y: 0, z: c.loc.z - st.lastLoc.z }, st.dir);
     }
+    st.spdHist.push(st.spd);
+    if (st.spdHist.length > 4) st.spdHist.shift();
+    st.runSpd = Math.max(...st.spdHist);
   }
   st.lastLoc = c.loc;
   if (c.sprint) st.sprintT = t;
@@ -494,8 +504,8 @@ function enterHang(p, st, c, top, dir) {
 function updateHang(p, st, c) {
   const m = st.m;
   const k = c.t - st.t0;
-  if (st.jumpT > st.t0 || (c.jumpHeld && k > 3)) { enterMantle(p, st, c, m.top, m.dir, "hang"); return; }
-  if (st.sneakT > st.t0 || k > nv(CL.hang_max_ticks, 200) || c.onGround) {
+  if (jumped(st) || (c.jumpHeld && k > 3)) { enterMantle(p, st, c, m.top, m.dir, "hang"); return; }
+  if (sneaked(st) || k > nv(CL.hang_max_ticks, 200) || c.onGround) {
     endMode(p, st, "drop");
     if (!c.onGround) push(p, -m.dir.x * 0.12, -m.dir.z * 0.12, 0);
     return;
@@ -536,11 +546,11 @@ function updateMantle(p, st, c) {
 // ---------------------------------------------------------------------------
 /** @param {Player} p @param {PState} st @param {Ctx} c */
 function tryVault(p, st, c) {
-  if (c.t - st.jumpT > 3 || st.jumpT === (st.cd.vaultJump ?? -1)) return false;
+  if (c.t - st.jumpT > 3 || st.jumpN === (st.cd.vaultJumpN ?? -1)) return false;
   if (c.t < (st.cd.vault ?? 0)) return false;
   const minSpd = nv(VA.min_speed, 0.12);
   const sprinting = c.t - st.sprintT <= 4;
-  if (st.spd < minSpd && !(sprinting && st.spd > minSpd * 0.5)) return false;
+  if (st.runSpd < minSpd) return false;
   if (!sprinting && c.mv.y < 0.3) return false;
   const groundY = c.t - st.groundT <= 4 ? st.groundY : c.loc.y;
   const ob = obstacleAhead(c, groundY);
@@ -550,13 +560,13 @@ function tryVault(p, st, c) {
   const highMax = Math.max(nv(VA.high_max_height, 1.6), skillNum(p, "vault_max_height", 0)) + extra;
   if (ob.h <= 0.55 || ob.h > highMax) return false;
   if (!consumeStamina(p, COST.vault * skillNum(p, "vault_stamina_mult", 1), { reason: "vault" })) return false;
-  st.cd.vaultJump = st.jumpT;
+  st.cd.vaultJumpN = st.jumpN;
   const high = ob.h > lowMax;
   const fi = nv(VA.forward_impulse, 0.55);
   const up = Math.min(0.8, Math.max(nv(VA.up_impulse, 0.45), Math.sqrt(2 * 0.08 * (ob.h + 0.2 - Math.max(0, c.loc.y - groundY)))));
   const keep = skillNum(p, "vault_speed_keep", nv(VA.speed_keep, 0.85));
   const dir = flat(c.fwd);
-  enterMode(p, st, "vault", { dir, fi, up, exit: Math.max(0.2, Math.max(st.spd, 0.28) * keep), h: ob.h, high });
+  enterMode(p, st, "vault", { dir, fi, up, exit: Math.max(0.2, Math.max(st.runSpd, 0.28) * keep), h: ob.h, high });
   push(p, dir.x * fi, dir.z * fi, up);
   anim(p, high ? "vault_high" : "vault");
   sound(c.dim, "nr.pk.vault", c.loc);
@@ -585,7 +595,7 @@ function tryWallrun(p, st, c) {
   if (!c.jumpHeld || st.wrUsed || c.t < (st.cd.wallrun ?? 0) || c.t - st.airT < 2) return false;
   if (!hasSkill(p, SKILL_GATES.wallrun)) return false;
   const sprinting = c.t - st.sprintT <= 6;
-  if (!sprinting && st.spd < nv(WR.min_speed, 0.18)) return false;
+  if (!sprinting && st.runSpd < nv(WR.min_speed, 0.18)) return false;
   const w = sideWall(c, nv(WR.wall_check_dist, 0.8));
   if (!w) return false;
   const along = sub(c.fwd, scale(w.n, dot(c.fwd, w.n)));
@@ -596,7 +606,7 @@ function tryWallrun(p, st, c) {
   const T = Math.max(4, Math.round(skillNum(p, "wallrun_ticks", nv(WR.duration_ticks, 24))));
   st.wrUsed = true;
   enterMode(p, st, "wallrun", { side: w.side, n: w.n, dir, y0: c.loc.y, ty: c.loc.y, T, rise: skillNum(p, "wallrun_rise", nv(WR.rise, 1.2)),
-    spd: Math.max(st.spd, nv(WR.forward_impulse, 0.42)), sink: 0, miss: 0 });
+    spd: Math.max(st.runSpd, nv(WR.forward_impulse, 0.42)), sink: 0, miss: 0 });
   loopAnim(p, w.side > 0 ? "wallrun_r" : "wallrun_l", "q.is_on_ground || q.state_time > 1.5");
   sound(c.dim, "nr.pk.wallrun", c.loc);
   done(p, st, "wallrun", { side: w.side > 0 ? "r" : "l" });
@@ -607,8 +617,8 @@ function updateWallrun(p, st, c) {
   const m = st.m;
   const k = c.t - st.t0;
   if ((c.onGround && k > 1) || k >= m.T) { endMode(p, st, c.onGround ? "ground" : "time"); return; }
-  if (st.sneakT > st.t0) { endMode(p, st, "detach"); push(p, m.n.x * 0.25, m.n.z * 0.25, 0); return; }
-  if (st.jumpT > st.t0 && wallJump(p, st, c)) return;
+  if (sneaked(st)) { endMode(p, st, "detach"); push(p, m.n.x * 0.25, m.n.z * 0.25, 0); return; }
+  if (jumped(st)) { st.mJ = st.jumpN; if (wallJump(p, st, c)) return; }
   if (!wallStill(c, m.n, nv(WR.wall_check_dist, 0.8) + 0.25)) { if (++m.miss > 1) { endMode(p, st, "edge"); return; } } else m.miss = 0;
   const half = Math.max(1, Math.round(m.T / 2));
   if (k < half) { const f = (k + 1) / half; m.ty = m.y0 + m.rise * (1 - (1 - f) * (1 - f)); }
@@ -634,7 +644,7 @@ function wallJump(p, st, c) {
   st.chain++;
   st.wrUsed = false;
   st.cd.wallrun = c.t + 4;
-  st.cd.vaultJump = st.jumpT;
+  st.cd.vaultJumpN = st.jumpN;
   st.peakY = c.loc.y;
   done(p, st, "walljump", { chain: st.chain });
   return true;
@@ -645,15 +655,15 @@ function wallJump(p, st, c) {
 // ---------------------------------------------------------------------------
 /** @param {Player} p @param {PState} st @param {Ctx} c */
 function trySlide(p, st, c) {
-  if (c.t - st.sneakT > 2 || st.sneakT === (st.cd.slideSneak ?? -1)) return false;
+  if (c.t - st.sneakT > 2 || st.sneakN === (st.cd.slideSneakN ?? -1)) return false;
   if (c.t < (st.cd.slide ?? 0) || c.t - st.sprintT > 3) return false;
-  if (st.spd < nv(SL.trigger_speed, 0.24)) return false;
+  if (st.runSpd < nv(SL.trigger_speed, 0.24)) return false;
   if (!consumeStamina(p, COST.slide, { reason: "slide" })) return false;
-  st.cd.slideSneak = st.sneakT;
+  st.cd.slideSneakN = st.sneakN;
   const tackle = skillEff(p, "slide_tackle");
   const T = Math.round(nv(SL.duration_ticks, 18) + (tackle ? nv(tackle.slide_ticks_add, 0) : 0));
   const dir = st.spd > 0.05 ? st.dir : flat(c.fwd);
-  enterMode(p, st, "slide", { dir, spd: Math.max(st.spd, 0.28) * nv(SL.speed_boost, 1.35), T, hit: new Set(), tackle });
+  enterMode(p, st, "slide", { dir, spd: Math.max(st.runSpd, 0.28) * nv(SL.speed_boost, 1.35), T, hit: new Set(), tackle });
   push(p, dir.x * st.m.spd, dir.z * st.m.spd, 0);
   anim(p, "slide");
   sound(c.dim, "nr.pk.slide", c.loc);
@@ -707,8 +717,9 @@ function tryDropkick(p, st, z) {
   if (valid(z)) {
     const kr = clamp(nv(zombieSpec(z)?.knockback_resist, 0), 0, 1);
     const k = force * (1 - kr);
-    try { z.applyImpulse({ x: dir.x * k, y: up * (1 - kr * 0.5), z: dir.z * k }); } catch { /* 物理が無い */ }
     if (!wasCorpse && !res?.killed && !isCorpse(z)) stagger(z, Math.round(nv(eff.dropkick_stagger_ticks, nv(DK.stagger_ticks, 30))));
+    // 吹き飛ばしは次の tick（同じ一撃のバニラの被弾 → gore の押し返しが速度を上書きするので、その後に足す）
+    system.run(() => { if (valid(z)) { try { z.applyImpulse({ x: dir.x * k, y: up * (1 - kr * 0.5), z: dir.z * k }); } catch { /* 物理が無い */ } } });
   }
   if (st.mode) endMode(p, st, "dropkick", true);
   push(p, -dir.x * 0.3, -dir.z * 0.3, 0.3);
@@ -789,7 +800,7 @@ export function fireGrapple(p, use) {
 function updateGrapple(p, st, c) {
   const m = st.m;
   const k = c.t - st.t0;
-  if (st.sneakT > st.t0) { endMode(p, st, "cancel"); return; }
+  if (sneaked(st)) { endMode(p, st, "cancel"); return; }
   const hand = { x: c.loc.x, y: c.loc.y + 1.3, z: c.loc.z };
   if (k % 2 === 0) drawLine(c.dim, hand, k < m.fly ? lerpV(hand, m.anchor, (k + 1) / m.fly) : m.anchor);
   if (k < m.fly) return;
@@ -843,7 +854,7 @@ function updateGlide(p, st, c) {
   const m = st.m;
   const k = c.t - st.t0;
   if (c.onGround && k > 1) { endMode(p, st, "land"); return; }
-  if (GL.fold_on_sneak !== false && st.sneakT > st.t0) { endMode(p, st, "fold"); return; }
+  if (GL.fold_on_sneak !== false && sneaked(st)) { endMode(p, st, "fold"); return; }
   const turn = nv(GL.turn_rate, 6);
   m.yaw += clamp(angleDiff(c.yaw, m.yaw), -turn, turn);
   const f = yawForward(m.yaw);
@@ -929,9 +940,9 @@ world.afterEvents.playerButtonInput.subscribe((ev) => {
   const st = pst(p);
   const t = now();
   if (ev.button === InputButton.Jump) {
-    st.jumpT = t;
+    st.jumpT = t; st.jumpN++;
     if (st.mode === "grabbed") guard("grab.mash", () => mash(p, st, "jump"));
-  } else if (ev.button === InputButton.Sneak) st.sneakT = t;
+  } else if (ev.button === InputButton.Sneak) { st.sneakT = t; st.sneakN++; }
 }, { buttons: [InputButton.Jump, InputButton.Sneak], state: ButtonState.Pressed });
 
 world.afterEvents.entityHitEntity.subscribe((ev) => {
