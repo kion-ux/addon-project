@@ -112,6 +112,78 @@
     },
     "nr_volatile_trophy": {
       "textures": "textures/nr/items/volatile_trophy"
+    },
+    "nr_w_buzzsaw_glaive": {
+      "textures": "textures/nr/items/buzzsaw_glaive"
+    },
+    "nr_w_claw_hammer": {
+      "textures": "textures/nr/items/claw_hammer"
+    },
+    "nr_w_cleaver": {
+      "textures": "textures/nr/items/cleaver"
+    },
+    "nr_w_combat_knife": {
+      "textures": "textures/nr/items/combat_knife"
+    },
+    "nr_w_crowbar": {
+      "textures": "textures/nr/items/crowbar"
+    },
+    "nr_w_fire_axe": {
+      "textures": "textures/nr/items/fire_axe"
+    },
+    "nr_w_hatchet": {
+      "textures": "textures/nr/items/hatchet"
+    },
+    "nr_w_kitchen_spear": {
+      "textures": "textures/nr/items/kitchen_spear"
+    },
+    "nr_w_kukri": {
+      "textures": "textures/nr/items/kukri"
+    },
+    "nr_w_leaf_spring_greatsword": {
+      "textures": "textures/nr/items/leaf_spring_greatsword"
+    },
+    "nr_w_machete": {
+      "textures": "textures/nr/items/machete"
+    },
+    "nr_w_nail_bat": {
+      "textures": "textures/nr/items/nail_bat"
+    },
+    "nr_w_pipe_mace": {
+      "textures": "textures/nr/items/pipe_mace"
+    },
+    "nr_w_pipe_wrench": {
+      "textures": "textures/nr/items/pipe_wrench"
+    },
+    "nr_w_piston_hammer": {
+      "textures": "textures/nr/items/piston_hammer"
+    },
+    "nr_w_pitchfork": {
+      "textures": "textures/nr/items/pitchfork"
+    },
+    "nr_w_police_baton": {
+      "textures": "textures/nr/items/police_baton"
+    },
+    "nr_w_rebar_club": {
+      "textures": "textures/nr/items/rebar_club"
+    },
+    "nr_w_rebar_spear": {
+      "textures": "textures/nr/items/rebar_spear"
+    },
+    "nr_w_scrap_katana": {
+      "textures": "textures/nr/items/scrap_katana"
+    },
+    "nr_w_scythe": {
+      "textures": "textures/nr/items/scythe"
+    },
+    "nr_w_sickle": {
+      "textures": "textures/nr/items/sickle"
+    },
+    "nr_w_sign_axe": {
+      "textures": "textures/nr/items/sign_axe"
+    },
+    "nr_w_sledgehammer": {
+      "textures": "textures/nr/items/sledgehammer"
     }
   }
 }

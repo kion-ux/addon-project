@@ -659,6 +659,8 @@ def define_all(C):
                  lL=(30, 0, 0), ground=True)),
         (0.58, P(rAc=arc(-42, -0.3), rBc=unit(0.05, -0.85, -0.55), gap=2.8, w=(46, 0, 0), rL=(-38, 0, 0),
                  lL=(28, 0, 0), ground=True)),
+        (0.7, P(rAc=arc(-5, -0.8), rBc=unit(0.3, 0.75, -0.6), gap=3.2, w=(14, 0, 0), rL=(-14, 0, 0), lL=(8, 0, 0),
+                ground=True)),   # 槌を体の前へ引き上げてから戻る（腕が胴を抜けない）
         (0.8, Z),
     ], style="two_hand", proxy="club2", views=("side", "tq"), meta={"hit": 0.42})
 
@@ -677,10 +679,12 @@ def define_all(C):
     ], kind="act", loop="hold_on_last_frame", meta={"then": "bow_hold"}, **BW)
     clip("bow_hold", 1.0, [(0, drawn), (0.5, drawn2), (1.0, drawn)], kind="aim", loop=True,
          meta={"from": "bow_draw", "stop": "0.0"}, **BW)
+    # 放つ: 弦の手は矢の線に沿って頬から後ろへ弾け、外へ開いて下りる（頭の上は通らない）。弓の腕は反動で少し上へ
     clip("bow_release", 0.3, [
         (0, dict(drawn, aim=1.0)),
-        (0.04, dict(drawn, lAt=(3.0, 27.5, 3.0), rAt=(-4.5, 23.5, -20), aim=1.0)),
-        (0.16, dict(drawn, lAt=(4.0, 25.0, 3.0), rAt=(-4.5, 22.0, -20), b=(0, -15, 0), aim=0.6)),
+        (0.04, dict(drawn, lAt=(1.0, 26.5, -1.0), rAt=(-4.5, 23.5, -20), aim=1.0)),
+        (0.12, dict(drawn, lAt=(10.0, 23.0, 1.5), rAt=(-4.5, 23.0, -20), b=(0, -18, 0), aim=0.9)),
+        (0.2, dict(drawn, lAt=(9.0, 15.0, 0.5), rAt=(-4.5, 22.0, -19), b=(0, -12, 0), aim=0.5)),
         (0.3, P(aim=0.0)),
     ], kind="act", first_w=1.0, meta={"from": "bow_hold"}, **BW)
 

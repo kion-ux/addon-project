@@ -1,1 +1,2686 @@
-{}
+{
+  "entity_sounds": {
+    "entities": {
+      "nr:gib": {
+        "events": {
+          "death": {
+            "sound": "nr.gore.splat",
+            "volume": 0.8
+          },
+          "fall.big": {
+            "sound": "nr.gore.gib_land",
+            "volume": 1.0
+          },
+          "fall.small": {
+            "sound": "nr.gore.gib_land",
+            "volume": 0.7
+          },
+          "hurt": {
+            "sound": "nr.gore.squish",
+            "volume": 0.8
+          },
+          "land": {
+            "sound": "nr.gore.gib_land",
+            "volume": 0.9
+          },
+          "step": ""
+        },
+        "pitch": [
+          0.85,
+          1.15
+        ],
+        "volume": 1.0
+      },
+      "nr:z_berserker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.shriek_high.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.shriek_high.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.shriek_high.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.791,
+              0.94
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.89,
+              1.088
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.744,
+          0.856
+        ],
+        "volume": 1.0
+      },
+      "nr:z_brawler": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.snarl.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.snarl.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.snarl.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.785,
+              0.932
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.883,
+              1.079
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.837,
+          0.963
+        ],
+        "volume": 1.0
+      },
+      "nr:z_bride": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.sob.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.sob.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.sob.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.833,
+              0.99
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.938,
+              1.146
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_bruiser": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.roar_deep.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.roar_deep.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.roar_deep.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.737,
+              0.875
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 1.0
+          },
+          "step": {
+            "pitch": [
+              0.829,
+              1.013
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 0.75
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_charred": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.rasp_dry.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.rasp_dry.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.rasp_dry.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.809,
+              0.961
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.91,
+              1.113
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_cinder_hunter": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.crackle.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.crackle.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.crackle.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.755,
+              0.896
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.849,
+              1.038
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_construction_worker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.793,
+              0.942
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.893,
+              1.091
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.837,
+          0.963
+        ],
+        "volume": 1.0
+      },
+      "nr:z_convict": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.783,
+              0.929
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.88,
+              1.076
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.837,
+          0.963
+        ],
+        "volume": 1.0
+      },
+      "nr:z_crawler": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.wet_choke.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.wet_choke.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.wet_choke.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.814,
+              0.966
+            ],
+            "sound": "nr.zstep.crawl",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.916,
+              1.119
+            ],
+            "sound": "nr.zstep.crawl",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.883,
+          1.016
+        ],
+        "volume": 1.0
+      },
+      "nr:z_deadfaker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.snarl.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.snarl.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.snarl.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.809,
+              0.961
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.91,
+              1.113
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.883,
+          1.016
+        ],
+        "volume": 1.0
+      },
+      "nr:z_delivery_rider": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.814,
+              0.966
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.916,
+              1.119
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.977,
+          1.124
+        ],
+        "volume": 1.0
+      },
+      "nr:z_drifter": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.819,
+              0.972
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.921,
+              1.126
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.818,
+          0.942
+        ],
+        "volume": 1.0
+      },
+      "nr:z_drowned": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.gurgle.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.gurgle.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.gurgle.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.796,
+              0.945
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.895,
+              1.094
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_elder": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_old.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_old.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_old.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.831,
+              0.987
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.935,
+              1.143
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_firefighter": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.787,
+              0.934
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.885,
+              1.082
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.883,
+          1.016
+        ],
+        "volume": 1.0
+      },
+      "nr:z_flesh_colossus": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.roar_giant.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.roar_giant.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.roar_giant.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.579,
+              0.687
+            ],
+            "sound": "nr.zstep.giant",
+            "volume": 1.0
+          },
+          "step": {
+            "pitch": [
+              0.651,
+              0.796
+            ],
+            "sound": "nr.zstep.giant",
+            "volume": 1.0
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_gasbag": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.wet_choke.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.wet_choke.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.wet_choke.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.8,
+              0.95
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 1.0
+          },
+          "step": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 0.75
+          }
+        },
+        "pitch": [
+          0.698,
+          0.802
+        ],
+        "volume": 1.0
+      },
+      "nr:z_hazmat_worker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.muffled.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.muffled.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.muffled.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.8,
+              0.95
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_hive_warden": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.drone.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.drone.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.drone.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.704,
+              0.836
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 1.0
+          },
+          "step": {
+            "pitch": [
+              0.792,
+              0.968
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 0.75
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_jogger": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_female.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_female.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_female.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.828,
+              0.984
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.932,
+              1.139
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          1.023,
+          1.177
+        ],
+        "volume": 1.0
+      },
+      "nr:z_juggernaut": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.muffled.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.muffled.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.muffled.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.762,
+              0.905
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 1.0
+          },
+          "step": {
+            "pitch": [
+              0.858,
+              1.048
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 0.75
+          }
+        },
+        "pitch": [
+          0.744,
+          0.856
+        ],
+        "volume": 1.0
+      },
+      "nr:z_keener": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.wail.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.wail.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.wail.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.783,
+              0.929
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.88,
+              1.076
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_klaxon": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.howl.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.howl.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.howl.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.8,
+              0.95
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_leaper": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.shriek_high.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.shriek_high.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.shriek_high.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.823,
+              0.978
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.926,
+              1.132
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_line_cook": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.809,
+              0.961
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.91,
+              1.113
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.856,
+          0.984
+        ],
+        "volume": 1.0
+      },
+      "nr:z_longarm": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.745,
+              0.885
+            ],
+            "sound": "nr.zstep.crawl",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.839,
+              1.025
+            ],
+            "sound": "nr.zstep.crawl",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.651,
+          0.749
+        ],
+        "volume": 1.0
+      },
+      "nr:z_mechanic": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.802,
+              0.953
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.903,
+              1.103
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_night_apex": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.volatile_screech.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.volatile_screech.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.volatile_screech.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.638,
+              0.757
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.718,
+              0.877
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.651,
+          0.749
+        ],
+        "volume": 1.0
+      },
+      "nr:z_nurse": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_female.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_female.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_female.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.844,
+              1.002
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.949,
+              1.16
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_office_clerk": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_female.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_female.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_female.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.839,
+              0.996
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.943,
+              1.153
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_office_worker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.805,
+              0.955
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.905,
+              1.106
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_patient": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.wet_choke.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.wet_choke.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.wet_choke.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.814,
+              0.966
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.916,
+              1.119
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_police_officer": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.8,
+              0.95
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_punk": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.798,
+              0.947
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.897,
+              1.097
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.977,
+          1.124
+        ],
+        "volume": 1.0
+      },
+      "nr:z_rammer": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.roar_deep.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.roar_deep.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.roar_deep.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.759,
+              0.901
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 1.0
+          },
+          "step": {
+            "pitch": [
+              0.853,
+              1.043
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 0.75
+          }
+        },
+        "pitch": [
+          1.023,
+          1.177
+        ],
+        "volume": 1.0
+      },
+      "nr:z_reanimator": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.whisper_rasp.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.whisper_rasp.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.whisper_rasp.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.774,
+              0.92
+            ],
+            "sound": "nr.zstep.stalk",
+            "volume": 0.45
+          },
+          "step": {
+            "pitch": [
+              0.871,
+              1.065
+            ],
+            "sound": "nr.zstep.stalk",
+            "volume": 0.25
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_riot_police": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.muffled.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.muffled.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.muffled.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.791,
+              0.94
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.89,
+              1.088
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_rooftop_runner": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.snarl.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.snarl.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.snarl.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.805,
+              0.955
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.905,
+              1.106
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          1.023,
+          1.177
+        ],
+        "volume": 1.0
+      },
+      "nr:z_security_guard": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.807,
+              0.958
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.908,
+              1.109
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_shade_stalker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.click.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.click.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.click.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.774,
+              0.92
+            ],
+            "sound": "nr.zstep.stalk",
+            "volume": 0.45
+          },
+          "step": {
+            "pitch": [
+              0.871,
+              1.065
+            ],
+            "sound": "nr.zstep.stalk",
+            "volume": 0.25
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_skitter": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.chitter.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.chitter.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.chitter.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.819,
+              0.972
+            ],
+            "sound": "nr.zstep.claw",
+            "volume": 0.72
+          },
+          "step": {
+            "pitch": [
+              0.921,
+              1.126
+            ],
+            "sound": "nr.zstep.claw",
+            "volume": 0.4
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_soldier": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_male.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_male.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_male.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.789,
+              0.937
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.888,
+              1.085
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_spewer": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.retch.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.retch.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.retch.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.805,
+              0.955
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.905,
+              1.106
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_sprinter": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.snarl.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.snarl.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.snarl.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.8,
+              0.95
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_subject_zero": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.distorted.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.distorted.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.distorted.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.707,
+              0.839
+            ],
+            "sound": "nr.zstep.stalk",
+            "volume": 0.45
+          },
+          "step": {
+            "pitch": [
+              0.795,
+              0.972
+            ],
+            "sound": "nr.zstep.stalk",
+            "volume": 0.25
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_surgeon": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.groan_female.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.groan_female.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.groan_female.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.823,
+              0.978
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.926,
+              1.132
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_ticker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.whimper.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.whimper.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.whimper.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.814,
+              0.966
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.63
+          },
+          "step": {
+            "pitch": [
+              0.916,
+              1.119
+            ],
+            "sound": "nr.zstep.shuffle",
+            "volume": 0.35
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_volatile": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.volatile_screech.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.volatile_screech.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.volatile_screech.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.745,
+              0.885
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.81
+          },
+          "step": {
+            "pitch": [
+              0.839,
+              1.025
+            ],
+            "sound": "nr.zstep.run",
+            "volume": 0.45
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_wallcrawler": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.hiss.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.hiss.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.hiss.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.807,
+              0.958
+            ],
+            "sound": "nr.zstep.claw",
+            "volume": 0.72
+          },
+          "step": {
+            "pitch": [
+              0.908,
+              1.109
+            ],
+            "sound": "nr.zstep.claw",
+            "volume": 0.4
+          }
+        },
+        "pitch": [
+          0.93,
+          1.07
+        ],
+        "volume": 1.0
+      },
+      "nr:z_wrecker": {
+        "events": {
+          "ambient": {
+            "sound": "nr.z.roar_deep.idle",
+            "volume": 0.9
+          },
+          "death": {
+            "sound": "nr.z.roar_deep.death",
+            "volume": 1.0
+          },
+          "fall.big": {
+            "pitch": [
+              0.9,
+              1.1
+            ],
+            "sound": "nr.gore.body_fall",
+            "volume": 0.9
+          },
+          "fall.small": {
+            "pitch": [
+              0.8,
+              1.0
+            ],
+            "sound": "nr.pk.land_soft",
+            "volume": 0.6
+          },
+          "hurt": {
+            "sound": "nr.z.roar_deep.hurt",
+            "volume": 0.85
+          },
+          "land": {
+            "pitch": [
+              0.692,
+              0.822
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 1.0
+          },
+          "step": {
+            "pitch": [
+              0.778,
+              0.951
+            ],
+            "sound": "nr.zstep.heavy",
+            "volume": 0.75
+          }
+        },
+        "pitch": [
+          0.744,
+          0.856
+        ],
+        "volume": 1.0
+      }
+    }
+  }
+}

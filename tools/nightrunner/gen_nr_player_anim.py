@@ -199,56 +199,32 @@ def kabsch(src, dst, weights) -> np.ndarray:
     return U @ D @ Vt
 
 
-def _look_gn(d, a0, twist, x):
-    x = np.asarray(x, float).copy()
-    for _ in range(60):
-        f = rot((x[0], x[1], twist)) @ a0 - d
-        J = np.zeros((3, 2))
-        for i in range(2):
-            dx = np.zeros(2)
-            dx[i] = 1e-3
-            J[:, i] = (rot((x[0] + dx[0], x[1] + dx[1], twist)) @ a0 - d - f) / 1e-3
-        step, *_ = np.linalg.lstsq(J, -f, rcond=None)
-        x = x + np.clip(step, -40, 40)
-        if np.linalg.norm(step) < 1e-5:
-            break
-    return x, float(np.linalg.norm(rot((x[0], x[1], twist)) @ a0 - d))
+def swing_rot(a, d) -> np.ndarray:
+    """向き a を d へ移す一番小さい回転（軸 a×d）。"""
+    a = np.asarray(a, float) / max(np.linalg.norm(a), 1e-9)
+    d = np.asarray(d, float) / max(np.linalg.norm(d), 1e-9)
+    ax = np.cross(a, d)
+    s_, c_ = float(np.linalg.norm(ax)), float(np.clip(a @ d, -1.0, 1.0))
+    if s_ < 1e-9:
+        if c_ > 0:
+            return np.eye(3)
+        ax = np.cross(a, np.array([1.0, 0.0, 0.0]))
+        if np.linalg.norm(ax) < 1e-6:
+            ax = np.cross(a, np.array([0.0, 0.0, 1.0]))
+        return rodrigues(ax / np.linalg.norm(ax) * math.pi)
+    return rodrigues(ax / s_ * math.atan2(s_, c_))
 
 
-def _rot_angle(R) -> float:
-    return math.degrees(math.acos(float(np.clip((np.trace(R) - 1.0) / 2.0, -1.0, 1.0))))
-
-
-def look_rot(d, a0, twist=0.0, guess=None) -> np.ndarray:
-    """腕・脚の向き: 休みの向き a0（局所の単位ベクトル）を d へ向ける [rx, ry, twist]。ガウス・ニュートン。
-    ねじれ（twist）を決めると向きの解は二つ（腕が自分の軸まわりに 180° 回ったもの）。回転の小さい方を取る
-    （180° 回った解は箱が体の内側へずれて胴に刺さり、肌の向きも裏返る）。guess があれば 360° の倍数で寄せる。"""
-    d = np.asarray(d, float)
-    d = d / max(np.linalg.norm(d), 1e-9)
-    rx0 = -math.degrees(math.acos(float(np.clip(-d[1], -1, 1))))
-    s = math.sin(math.radians(rx0))
-    ry0 = math.degrees(math.atan2(d[0] / s, d[2] / s)) if abs(s) > 1e-6 else 0.0
-    starts = [(rx0, ry0), (-rx0, ry0 + 180.0)]
-    if guess is not None:
-        starts.append((guess[0], guess[1]))
-    sols = []
-    for st in starts:
-        x, res = _look_gn(d, a0, twist, st)
-        if res < 1e-3:
-            sols.append(x)
-    if not sols:
-        x, _res = _look_gn(d, a0, twist, starts[-1])
-        sols = [x]
-    ang = [_rot_angle(rot((x[0], x[1], twist))) for x in sols]
-    best = min(ang)
-    near = [x for x, a in zip(sols, ang) if a < best + 8.0]   # ほぼ同じなら前のキーに近い方
-    if guess is not None:
-        g2 = np.array([guess[0], guess[1]], float)
-        near = [g2 + (x - g2 + 180.0) % 360.0 - 180.0 for x in near]
-        x = min(near, key=lambda v: float(np.sum((v - g2) ** 2)))
-    else:
-        x = near[0]
-    return np.array([x[0], x[1], twist])
+def look_rot(d, a0, twist=0.0, guess=None, ref=None) -> np.ndarray:
+    """腕の向き: 休みの向き a0（局所の単位ベクトル）を d へ向ける [rx, ry, rz]。
+    基準の姿勢 ref（構えの腕。無ければ休み）から一番小さく振って向ける（肩の自然な動き。構えと同じ向きなら
+    構えそのもの）。twist は腕の軸まわりのねじり（度）。guess（前のキー）に近いオイラー角で返す。"""
+    R0 = rot(ref) if ref is not None else np.eye(3)
+    R = swing_rot(R0 @ a0, d) @ R0
+    if twist:
+        R = R @ rodrigues(np.asarray(a0, float) / np.linalg.norm(a0) * math.radians(twist))
+    prev = guess if guess is not None else (ref if ref is not None else (0.0, 0.0, 0.0))
+    return euler(R, prev)
 
 
 def rodrigues(w) -> np.ndarray:
@@ -435,7 +411,8 @@ GRIP_RANGE = {"two_hand": (2.4, 8.0), "spear": (3.0, 12.0), "rifle": (5.0, 11.0)
 #    fb=(x,y,z)  全身の回転（中心 c、既定はクリップの centre）   tr=(x,y,z) 全身の平行移動
 #    w=(x,y,z)   胴（waist、腰まわり）  b=(x,y,z) 胸（body、首の付け根まわり。主に y のひねり）
 #    rA/lA       腕（胸に対して）     rAw/lAw 腕（体＝エンティティ基準の向き）
-#    rAt/lAt     腕で指す点（体の座標、fb の前 = 全身の回転と一緒に動く）。rAz/lAz はそのときの腕のねじり
+#    rAt/lAt     腕で指す点（体の座標、fb の前 = 全身の回転と一緒に動く）。腕は構え（無ければ休み）から一番小さく
+#                振って向ける。rAz/lAz はそのうえで腕の軸まわりのねじり（度）
 #    rAg/lAg     腕で指す点（エンティティの座標。全身を回しても動かない = 障害物・地面に手をつく）
 #    rAc/lAc     腕で指す点（胸の座標。腰・胸のひねりと一緒に動く。両手武器の「体の正面の弧」）
 #    rB / rBc    右手の持ち物の向き（体の座標 / 胸の座標。rBg はエンティティの座標）。腕の向きと合わせて
@@ -670,7 +647,8 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
                     R = refine_two_hand(R, a0, d, C.T @ blade, bw, clip, _grip_pref(P, clip))
                 e = euler(R, g)
             else:
-                e = look_rot(d, a0, float(P.get(f"{key}z", 0.0)), g if prev else None)
+                ref = base.ch[bone]["rot"] if base is not None else None
+                e = look_rot(d, a0, float(P.get(f"{key}z", 0.0)), g if prev else None, ref)
         elif key in P:
             e = _v(P, key)
         elif base is not None:
@@ -694,9 +672,8 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
         a0 = a0 / np.linalg.norm(a0)
         d = C.T @ (target - sh)
         base_l = base.ch["leftArm"]["rot"] if base is not None else None
-        twist = float(P.get("lAz", base_l[2] if base_l is not None else 0.0))
         guess = pv("leftArm") if prev else base_l
-        S.ch["leftArm"] = {"rot": look_rot(d, a0, twist, guess), "pos": _v(P, "lAp")}
+        S.ch["leftArm"] = {"rot": look_rot(d, a0, float(P.get("lAz", 0.0)), guess, base_l), "pos": _v(P, "lAp")}
         W2 = fk(S.ch)
         S.reach = float(np.linalg.norm(fist_world(W2, "leftArm") - target))
         S.gap = float(gap)
@@ -717,7 +694,12 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
         dy = gy - min_y(S.W)
         S.ch["root"]["pos"] = S.ch["root"]["pos"] + np.array([0.0, dy, 0.0])
         S.W = fk(S.ch)
-    # しゃがみ時の値（M = T(root)·Rx(28) を子で打ち消す。§ 冒頭）
+    sneak_values(S)
+    return S
+
+
+def sneak_values(S: Solved) -> None:
+    """しゃがみ時の値（M = T(root)·Rx(28) を子で打ち消す。§ 冒頭）。S.ch から作り直す。"""
     U = rot((-SNEAK_ROOT_ROT, 0.0, 0.0))
     for b, cv in S.ch.items():
         S.sn[b] = {k: np.array(v, float) for k, v in cv.items()}
@@ -735,7 +717,6 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
     S.sn["head"]["pos"] = np.array([0.0, 1.0, 0.0])
     for bone in ("rightArm", "leftArm"):
         S.sn[bone]["rot"] = S.ch[bone]["rot"] - [SNEAK_ARM_X, 0, 0]
-    return S
 
 
 # ===========================================================================
@@ -850,7 +831,131 @@ def solve_clip(clip: Clip) -> List[Tuple[float, Solved, dict]]:
         S = solve_pose(Pm, clip, prev, base)
         out.append((t, S, P))
         prev = S
+    unwrap_clip(out, clip)
+    return inbetween_clip(out, clip)
+
+
+def _path_len(e0, e1, k=8) -> float:
+    """成分ごとの補間（統合版のキーの間）で回る角度の合計。"""
+    Rs = [rot(e0 + (e1 - e0) * u) for u in np.linspace(0.0, 1.0, k + 1)]
+    return sum(_rot_angle(a.T @ b) for a, b in zip(Rs, Rs[1:]))
+
+
+def _rot_angle(R) -> float:
+    return math.degrees(math.acos(float(np.clip((np.trace(R) - 1.0) / 2.0, -1.0, 1.0))))
+
+
+def _slerp_e(e0, e1, u) -> np.ndarray:
+    R0, R1 = rot(e0), rot(e1)
+    Q = R0.T @ R1
+    ang = math.radians(_rot_angle(Q))
+    if ang < 1e-6:
+        return np.asarray(e0, float) + (np.asarray(e1, float) - e0) * u
+    ax = np.array([Q[2, 1] - Q[1, 2], Q[0, 2] - Q[2, 0], Q[1, 0] - Q[0, 1]])
+    if np.linalg.norm(ax) < 1e-6:   # 180°: 軸は対称部分から
+        w_, v_ = np.linalg.eigh((Q + Q.T) / 2.0)
+        ax = v_[:, int(np.argmax(w_))]
+    ax = ax / np.linalg.norm(ax)
+    return euler(R0 @ rodrigues(ax * ang * u), np.asarray(e0, float) + (np.asarray(e1, float) - e0) * u)
+
+
+def _wasteful(e0, e1) -> bool:
+    e0, e1 = np.asarray(e0, float), np.asarray(e1, float)
+    if np.max(np.abs(e1 - e0)) < 30.0:
+        return False
+    geo = _rot_angle(rot(e0).T @ rot(e1))
+    return _path_len(e0, e1) > geo * 1.3 + 12.0
+
+
+def inbetween_clip(sol, clip: Clip, min_dt: float = 0.02, depth: int = 3):
+    """キーの間の成分ごとの補間が遠回り（武器の向きで腕が大きくねじれる所）なら、回転の最短の道（球面補間）の
+    中間のキーを足す。打ち消しの重み・狙いの重みは前後の平均。"""
+    n = len(sol)
+    if n < 2:
+        return sol
+    base_w = _key_weights(clip, n)
+    wts = [float(P.get("wgt", w)) for (_t, _S, P), w in zip(sol, base_w)]
+    aims = [float(P.get("aim", w)) for (_t, _S, P), w in zip(sol, wts)]
+    bones = [b for b in ORDER if b != "root"]
+
+    def mid(t0, S0, w0, a0, t1, S1, w1, a1, lvl):
+        if lvl >= depth or t1 - t0 < 2 * min_dt:
+            return []
+        bad = [b for b in bones if b in S0.ch and b in S1.ch and _wasteful(S0.ch[b]["rot"], S1.ch[b]["rot"])]
+        if not bad:
+            return []
+        S = Solved()
+        for b in S0.ch:
+            S.ch[b] = {}
+            for k in S0.ch[b]:
+                v0 = np.asarray(S0.ch[b][k], float)
+                v1 = np.asarray(S1.ch[b].get(k, v0), float)
+                S.ch[b][k] = _slerp_e(v0, v1, 0.5) if k == "rot" else (v0 + v1) / 2.0
+        S.head_written = S0.head_written or S1.head_written
+        sneak_values(S)
+        S.W = fk(S.ch)
+        tm, wm, am = round((t0 + t1) / 2.0, 4), (w0 + w1) / 2.0, (a0 + a1) / 2.0
+        return (mid(t0, S0, w0, a0, tm, S, wm, am, lvl + 1) + [(tm, S, {"wgt": wm, "aim": am, "_inb": True})]
+                + mid(tm, S, wm, am, t1, S1, w1, a1, lvl + 1))
+
+    out = [sol[0]]
+    for i in range(1, n):
+        (t0, S0, _P0), (t1, S1, _P1) = sol[i - 1], sol[i]
+        out += mid(t0, S0, wts[i - 1], aims[i - 1], t1, S1, wts[i], aims[i], 0)
+        out.append(sol[i])
     return out
+
+
+_SHIFTS = np.array([(a, b, c) for a in (-360.0, 0.0, 360.0) for b in (-360.0, 0.0, 360.0)
+                    for c in (-360.0, 0.0, 360.0)])
+
+
+def _euler_cands(e) -> np.ndarray:
+    """同じ回転を表すオイラー角の候補（二つの枝 × 360° のずれ）。"""
+    e = np.asarray(e, float)
+    alt = np.array([e[0] + 180.0, 180.0 - e[1], e[2] + 180.0])
+    alt = e + (alt - e + 180.0) % 360.0 - 180.0
+    return np.concatenate([e[None, :] + _SHIFTS, alt[None, :] + _SHIFTS])
+
+
+def unwrap_sequence(vals: List[np.ndarray], fixed: Tuple[int, ...]) -> List[np.ndarray]:
+    """キーごとのオイラー角を、同じ回転のまま「隣のキーとの差の二乗和」が最小になる表し方へ（動的計画法）。
+    統合版は成分ごとに補間するので、枝が入れ替わると間で腕がぐるっと回る。fixed のキーは値をそのまま使う。"""
+    n = len(vals)
+    cands = [np.asarray(vals[i], float)[None, :] if i in fixed else _euler_cands(vals[i]) for i in range(n)]
+    cost = np.zeros(len(cands[0]))
+    back = []
+    for i in range(1, n):
+        d = np.sum((cands[i][:, None, :] - cands[i - 1][None, :, :]) ** 2, axis=2) + cost[None, :]
+        back.append(np.argmin(d, axis=1))
+        cost = np.min(d, axis=1)
+    j = int(np.argmin(cost))
+    out = [cands[-1][j]]
+    for i in range(n - 1, 0, -1):
+        j = int(back[i - 1][j])
+        out.append(cands[i - 1][j])
+    return out[::-1]
+
+
+def unwrap_clip(sol: List[Tuple[float, Solved, dict]], clip: Clip) -> None:
+    """全部の骨の回転の並びをつなぐ。最初のキーは固定（構え・前のクリップの続き）。最後のキーも固定
+    （一発ものは 0 に戻る・hold_on_last_frame は次のクリップの最初・ループは最初と同じ）。"""
+    n = len(sol)
+    if n < 2:
+        return
+    for bone in ORDER:
+        if bone == "root":
+            continue
+        vals = [np.asarray(S.ch.get(bone, {}).get("rot", _ZERO), float) for _t, S, _P in sol]
+        if clip.loop is True:
+            vals[-1] = vals[0].copy()
+        new = unwrap_sequence(vals, (0, n - 1))
+        for (_t, S, _P), v in zip(sol, new):
+            if bone in S.ch:
+                S.ch[bone]["rot"] = v
+    for _t, S, _P in sol:
+        sneak_values(S)
+        S.W = fk(S.ch)
 
 
 def build_clip(clip: Clip) -> dict:

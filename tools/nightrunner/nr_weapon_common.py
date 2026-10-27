@@ -2283,13 +2283,17 @@ def _geo_and_tex(wm: WeaponModel, tex: Image.Image):
     return NV.load_geometry(wm.geometry_doc()), np.asarray(tex.convert("RGBA"), np.uint8)
 
 
-def icon_pose(wm: WeaponModel, flip: bool = False) -> dict:
-    """アイコン用: 柄を左下、先を右上に（45°）。flip で刃の向きを反対に。"""
+def icon_pose(wm: WeaponModel, flip: bool = False, roll: float = 0.0) -> dict:
+    """アイコン用: 柄を左下、先を右上に（45°）。flip で刃の向きを反対に。roll（度）で武器を自分の軸まわりに
+    回す（横 ±X に広がる爪・刃を正面に見せる。ピッチフォークは 90）。"""
     a = math.radians(45.0)
-    fwd = (0.0, math.sin(a), -math.cos(a))
-    up = (0.0, math.cos(a), math.sin(a))
+    fwd = np.array([0.0, math.sin(a), -math.cos(a)])
+    up = np.array([0.0, math.cos(a), math.sin(a)])
     if flip:
-        up = (0.0, -up[1], -up[2])
+        up = -up
+    if roll:
+        r = math.radians(roll)
+        up = up * math.cos(r) + np.cross(fwd, up) * math.sin(r)
     return {"root": {"rotation": euler_of(frame(fwd, up))}}
 
 
@@ -2300,11 +2304,11 @@ def render_model(wm: WeaponModel, tex: Image.Image, view="three_quarter", size=(
 
 
 def bake_icon(wm: WeaponModel, tex: Image.Image, size: int = ICON_SIZE, flip: bool = False,
-              yaw: float = 72.0, pitch: float = 12.0, margin: float = 0.04) -> Image.Image:
+              yaw: float = 72.0, pitch: float = 12.0, margin: float = 0.04, roll: float = 0.0) -> Image.Image:
     """3D モデルを斜め横から描いて、透過のアイコンにする（α は 0 / 255 の二値、縁に 1px の暗い輪郭）。"""
     geo, t = _geo_and_tex(wm, tex)
     cam = NV.Camera(yaw=yaw, pitch=pitch, margin=margin)
-    big = NV.render(geo, t, camera=cam, size=size, pose=icon_pose(wm, flip), bg=None, ss=6, cull=False,
+    big = NV.render(geo, t, camera=cam, size=size, pose=icon_pose(wm, flip, roll), bg=None, ss=6, cull=False,
                     light="studio")
     a = np.asarray(big, np.uint8).copy()
     alpha = a[..., 3] >= 96

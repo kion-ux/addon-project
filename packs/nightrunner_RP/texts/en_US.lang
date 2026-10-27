@@ -2,7 +2,7 @@
 ## 名前は tools/nightrunner/nr_spec*.py、文言は各生成器の lang 断片が正
 pack.description=Parkour x zombies x dismemberment gore. Run the rooftops, survive the night. Gore level 0-100 (default 100)
 pack.name=NIGHT RUNNER: Infected City
-entity.nr:gib.name=Severed Body Part
+entity.nr:gib.name=Severed Remains
 entity.nr:proj_arrow.name=Survivor Arrow
 entity.nr:proj_bolt.name=Crossbow Bolt
 entity.nr:proj_debris.name=Thrown Debris

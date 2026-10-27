@@ -1707,11 +1707,12 @@ def r_mod_fire(v):
 
 
 def r_mod_shock(v):
-    """感電の改造の放電: 鋭い「バチッ」と短いジジジ。"""
+    """感電の改造の放電: 鋭い「バチッ」と短いジジジ + 低いビリつきの胴（飽和で詰めて聞こえる大きさに）。"""
     d = 0.5
     out = arc(d, 90, 900, 0.8, 1.6) * perc(d, 0.002, 0.15)
-    put(out, nrm(hp(white(0.01), 2000) * perc(0.01, 0.0001, 0.002)), 0.0, 1.0)
-    return out
+    put(out, nrm(lp(arc(d, 50, 150, 0.95, 0.0), 2500)) * perc(d, 0.003, 0.12), 0.0, 0.6)
+    put(out, nrm(hp(white(0.01), 2000) * perc(0.01, 0.0001, 0.002)), 0.0, 0.8)
+    return sat(out, 2.5)
 
 
 def r_mod_bleed(v):
@@ -1839,8 +1840,9 @@ def r_electric_zap(v):
     out = silence(d + 0.05)
     put(out, nrm(hp(white(0.012), 1500) * perc(0.012, 0.0001, 0.0025)), 0.0, 1.0)
     put(out, arc(d, 80 + 20 * v, 1200, 0.9, 1.5) * perc(d, 0.002, d * 0.35, 1.5), 0.002, 0.8)
+    put(out, nrm(lp(arc(d, 50, 160, 0.95, 0.0), 2500)) * perc(d, 0.003, d * 0.4, 1.5), 0.002, 0.6)
     put(out, nrm(hp(white(d), 4000)) * perc(d, 0.01, d * 0.5), 0.0, 0.15)
-    return sat(out, 1.8)
+    return sat(out, 2.8)
 
 
 def r_electric_buzz(v):
@@ -2051,9 +2053,10 @@ def r_barricade_hit(v):
     """バリケードを叩く: 板の低い木の鳴り + 板・釘のがたつき + 落ちる埃。"""
     out = silence(0.8)
     put(out, wood(0.4, R.uniform(95, 140), 0.06, 0.4, 0.8), 0.0, 1.0)
-    put(out, thud(0.35, 120, 55, 0.05, click=0.4, body=0.8, nf=900), 0.0, 0.8)
-    for _ in range(5):
-        put(out, wood(0.12, R.uniform(300, 600), 0.015, 0.5, 0.5), 0.015 + R.exponential(0.05), R.uniform(0.1, 0.25))
+    put(out, wood(0.25, R.uniform(220, 320), 0.03, 0.5, 0.9), 0.0, 0.7)
+    put(out, thud(0.35, 120, 55, 0.05, click=0.4, body=0.8, nf=900), 0.0, 0.6)
+    for _ in range(6):
+        put(out, wood(0.12, R.uniform(300, 700), 0.015, 0.5, 0.6), 0.015 + R.exponential(0.05), R.uniform(0.2, 0.4))
     put(out, mclick(0.05, R.uniform(1800, 2600), 0.01, 0.8), 0.01, 0.15)
     put(out, grit(0.25, 700, 2500, 9000) * perc(0.25, 0.02, 0.1), 0.04, 0.12)
     return sat(out, 1.5)
@@ -2267,11 +2270,14 @@ def r_zstep(kind, v):
         put(out, footstep(1.1, 0.4, 0.3, True), 0.0, 1.0)
         put(out, slap(0.05, 1100, 0.8, 0.01), 0.002, 0.5)
     elif kind == "heavy":
-        put(out, thud(0.35, 95, 40, 0.07, drop=0.02, click=0.4, body=1.0, nf=800), 0.0, 1.0)
-        put(out, footstep(2.0, 0.4, 0.5, False), 0.0, 0.6)
+        put(out, thud(0.35, 95, 40, 0.07, drop=0.02, click=0.4, body=1.0, nf=800), 0.0, 0.8)
+        put(out, footstep(1.6, 0.4, 0.5, False), 0.0, 0.9)
+        put(out, slap(0.06, 900, 0.7, 0.012), 0.002, 0.4)
+        put(out, grit(0.15, 900, 1200, 7000), 0.005, 0.3)
     elif kind == "giant":
         put(out, thud(0.8, 62, 26, 0.18, drop=0.04, click=0.3, body=1.0, nf=400), 0.0, 1.0)
-        put(out, grit(0.4, 1500, 1000, 7000), 0.01, 0.35)
+        put(out, crack(0.3, 12, 0.05, 300, 2200, 0.5), 0.003, 0.45)
+        put(out, grit(0.4, 1500, 1000, 7000), 0.01, 0.45)
         for _ in range(4):
             put(out, thud(0.1, R.uniform(250, 400), 150, 0.012, click=0.5, body=0.4, nf=2500), 0.05 + R.exponential(0.12),
                 R.uniform(0.05, 0.15))
@@ -2284,7 +2290,7 @@ def r_zstep(kind, v):
     elif kind == "claw":
         for j in range(3):
             put(out, tongue_click(R.uniform(2600, 4200), 6.0), 0.012 * j + R.uniform(0, 0.006), 0.8 - 0.15 * j)
-        put(out, thud(0.12, 180, 100, 0.02, click=0.1, body=0.5, nf=1200), 0.005, 0.5)
+        put(out, thud(0.12, 180, 100, 0.02, click=0.1, body=0.5, nf=1200), 0.005, 0.25)
     else:  # stalk
         put(out, lp(footstep(0.8, 0.2, 0.1, False), 1800), 0.0, 1.0)
         put(out, cloth(0.2, 200, 700, 4000, 0.4), 0.0, 0.3)
@@ -2300,7 +2306,7 @@ def r_heartbeat(v):
     out = silence(0.75)
     put(out, thud(0.25, 62, 38, 0.06, drop=0.01, click=0.0, body=1.0, nf=150), 0.0, 1.0)
     put(out, thud(0.2, 75, 45, 0.045, drop=0.01, click=0.0, body=1.0, nf=180), 0.24 + 0.02 * v, 0.7)
-    return sat(lp(out, 260, 2), 2.5)
+    return sat(lp(out, 350, 2), 3.0)
 
 
 def r_immunity_warn(v):
@@ -2510,10 +2516,10 @@ def r_ui_headshot(v):
 def r_ui_kill(v):
     """撃破: 重く短い低音 + 下がる短い音 + ざらついた砕け。"""
     out = silence(0.6)
-    put(out, thud(0.4, 85, 38, 0.08, click=0.5, body=1.0, nf=500), 0.0, 1.0)
+    put(out, thud(0.4, 85, 38, 0.08, click=0.5, body=1.0, nf=500), 0.0, 0.8)
     f = np.geomspace(700 + 80 * v, 260, ns(0.25))
-    put(out, nrm(osc(0.25, f, 10, 1.3)) * perc(0.25, 0.003, 0.09), 0.0, 0.35)
-    put(out, crack(0.15, 6, 0.02, 800, 4000, 0.3), 0.0, 0.3)
+    put(out, nrm(osc(0.25, f, 10, 1.3)) * perc(0.25, 0.003, 0.09), 0.0, 0.6)
+    put(out, crack(0.15, 6, 0.02, 800, 4000, 0.3), 0.0, 0.5)
     return sat(out, 1.6)
 
 
@@ -2791,7 +2797,7 @@ def r_ab_bone_plate(v):
     put(out, metal(0.4, R.uniform(2600, 3200), "blade", 0.12, 0.5, 1.5, contact=0.0), 0.002, 0.25)
     for _ in range(4):
         put(out, wood(0.06, R.uniform(1500, 3000), 0.008, 0.6, 0.6), 0.05 + R.exponential(0.06), 0.15)
-    return out
+    return sat(out, 2.0)
 
 
 def r_ab_boss_phases(v):
@@ -3883,8 +3889,9 @@ ZSTEP_VOL = {"shuffle": 0.35, "run": 0.45, "heavy": 0.75, "giant": 1.0, "crawl":
 
 
 def sounds_json(S) -> dict:
-    """エンティティの自動の音: ambient → 声の idle、hurt / death → 声、step → 足音、落下 → 体の当たり。
-    voice_pitch は entity の pitch の範囲に掛ける（スクリプトが鳴らす声と同じ移調）。"""
+    """エンティティの自動の音: ambient → 声の idle、hurt / death → 声、step → 足音、land（跳んだ後の着地）→
+    重めの足音、落下 → 体の当たり。voice_pitch は entity の pitch の範囲に掛ける（スクリプトが鳴らす声と同じ移調）。
+    nr:gib は land / 落下 → 部位が落ちる音、hurt / death → 潰れる音、step は鳴らさない。"""
     ents = {}
     for z in S.ZOMBIES:
         vp = float(z.get("voice_pitch", 1.0) or 1.0)
@@ -3900,6 +3907,8 @@ def sounds_json(S) -> dict:
                 "death": {"sound": f"nr.z.{voice}.death", "volume": 1.0},
                 "step": {"sound": f"nr.zstep.{kind}", "volume": ZSTEP_VOL[kind],
                          "pitch": [round(0.9 * sp, 3), round(1.1 * sp, 3)]},
+                "land": {"sound": f"nr.zstep.{kind}", "volume": round(min(1.0, 1.8 * ZSTEP_VOL[kind]), 3),
+                         "pitch": [round(0.8 * sp, 3), round(0.95 * sp, 3)]},
                 "fall.big": {"sound": "nr.gore.body_fall", "volume": 0.9, "pitch": [0.9, 1.1]},
                 "fall.small": {"sound": "nr.pk.land_soft", "volume": 0.6, "pitch": [0.8, 1.0]},
             },
@@ -3911,6 +3920,7 @@ def sounds_json(S) -> dict:
             "hurt": {"sound": "nr.gore.squish", "volume": 0.8},
             "death": {"sound": "nr.gore.splat", "volume": 0.8},
             "step": "",
+            "land": {"sound": "nr.gore.gib_land", "volume": 0.9},
             "fall.big": {"sound": "nr.gore.gib_land", "volume": 1.0},
             "fall.small": {"sound": "nr.gore.gib_land", "volume": 0.7},
         },
@@ -3921,13 +3931,15 @@ def sounds_json(S) -> dict:
 # ---------------------------------------------------------------- スペクトログラムの一覧
 SHEET_IDS = (
     "nr.gore.slash_flesh", "nr.gore.blunt_flesh", "nr.gore.bone_crack", "nr.gore.sever", "nr.gore.head_pop",
-    "nr.gore.spurt", "nr.gore.gut_spill", "nr.gore.drip", "nr.w.swing_heavy", "nr.w.hit_metal", "nr.w.pistol",
-    "nr.w.shotgun", "nr.w.rifle", "nr.w.reload", "nr.fx.explosion", "nr.fx.electric_zap", "nr.fx.fire_loop",
-    "nr.fx.uv_hum", "nr.fx.glass_break", "nr.pk.step_run", "nr.pk.slide", "nr.pk.breath", "nr.pl.heartbeat",
-    "nr.chase.start", "nr.night.start", "nr.ui.click", "nr.trap.alarm",
-    "nr.z.groan_male.idle", "nr.z.groan_female.alert", "nr.z.snarl.attack", "nr.z.shriek_high.alert",
-    "nr.z.howl.alert", "nr.z.roar_deep.attack", "nr.z.wet_choke.death", "nr.z.volatile_screech.alert",
-    "nr.z.whisper_rasp.idle",
+    "nr.gore.spurt", "nr.gore.gut_spill", "nr.w.swing_heavy", "nr.w.hit_metal", "nr.w.pistol", "nr.w.shotgun",
+    "nr.w.rifle", "nr.w.reload", "nr.fx.explosion", "nr.fx.explosion_big", "nr.fx.electric_zap", "nr.fx.fire_loop",
+    "nr.fx.uv_hum", "nr.fx.glass_break", "nr.fx.toxic_hiss", "nr.pk.step_run", "nr.pk.land_hard", "nr.pk.slide",
+    "nr.pk.grapple_reel", "nr.pk.glider_wind", "nr.pk.breath", "nr.pl.heartbeat", "nr.pl.immunity_warn",
+    "nr.chase.start", "nr.night.start", "nr.ui.click", "nr.ui.headshot", "nr.trap.alarm", "nr.world.barricade_hit",
+    "nr.z.groan_male.idle", "nr.z.shriek_high.alert", "nr.z.howl.alert", "nr.z.roar_deep.attack",
+    "nr.z.wet_choke.death", "nr.z.volatile_screech.alert", "nr.ab.howl_alarm", "nr.ab.detonate",
+    "nr.ab.ground_pound", "nr.ab.reanimate", "nr.ab.sac_rupture", "nr.boss.intro", "nr.zstep.giant",
+    "nr.zstep.claw",
 )
 _LUT_PTS = ((0.0, (0, 0, 4)), (0.15, (31, 12, 72)), (0.3, (85, 15, 109)), (0.45, (136, 34, 106)),
             (0.6, (186, 54, 85)), (0.72, (227, 89, 51)), (0.84, (249, 140, 10)), (0.93, (249, 201, 50)),

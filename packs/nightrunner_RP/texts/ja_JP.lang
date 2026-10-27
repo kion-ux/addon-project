@@ -2,7 +2,7 @@
 ## 名前は tools/nightrunner/nr_spec*.py、文言は各生成器の lang 断片が正
 pack.description=パルクール × ゾンビ × 部位破壊ゴア。屋上を走り、夜を生き延びろ。ゴアレベル 0〜100（既定 100）
 pack.name=NIGHT RUNNER: 感染都市
-entity.nr:gib.name=ちぎれた部位
+entity.nr:gib.name=ちぎれた肉片
 entity.nr:proj_arrow.name=生存者の矢
 entity.nr:proj_bolt.name=ボルト
 entity.nr:proj_debris.name=投げた瓦礫
