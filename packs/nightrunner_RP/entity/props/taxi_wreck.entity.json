@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_taxi_wreck",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "glass": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/nr/props/taxi_wreck"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.taxi_wreck"
+      },
+      "animations": {
+        "open": "animation.nr.prop.taxi_wreck.open"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.taxi_wreck",
+        "controller.render.nr.prop.taxi_wreck.glass"
+      ],
+      "spawn_egg": {
+        "base_color": "#d8a622",
+        "overlay_color": "#1e2024"
+      }
+    }
+  }
+}

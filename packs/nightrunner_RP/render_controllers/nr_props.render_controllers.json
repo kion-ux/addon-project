@@ -1,0 +1,904 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.nr.prop.ambulance": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_fr": false
+        },
+        {
+          "glass_rear_l": false
+        },
+        {
+          "glass_rear_r": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fr": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rear_l": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rear_r": "q.property('nr:glass') == 1"
+        },
+        {
+          "beacon_a": "(q.property('nr:lights') == 1) && math.mod(math.floor(q.life_time * 10.0), 8.0) < 4.0 && math.mod(math.floor(q.life_time * 10.0), 2.0) == 0"
+        },
+        {
+          "beacon_b": "(q.property('nr:lights') == 1) && math.mod(math.floor(q.life_time * 10.0), 8.0) >= 4.0 && math.mod(math.floor(q.life_time * 10.0), 2.0) == 0"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.ambulance.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fr": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rear_l": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rear_r": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.army_truck": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_fr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fr": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.army_truck.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fr": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.box_truck": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_fr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fr": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.box_truck.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fr": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.burnt_car": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        }
+      ]
+    },
+    "controller.render.nr.prop.city_bus": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_door_fa": false
+        },
+        {
+          "glass_door_fb": false
+        },
+        {
+          "glass_door_ma": false
+        },
+        {
+          "glass_door_mb": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_door_fa": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_door_fb": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_door_ma": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_door_mb": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_sign": "(q.property('nr:lights') == 1) && math.mod(q.life_time, 1.6) < 1.1"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.city_bus.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_door_fa": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_door_fb": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_door_ma": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_door_mb": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.dumpster": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        }
+      ]
+    },
+    "controller.render.nr.prop.garbage_truck": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_fr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fr": "q.property('nr:glass') == 1"
+        },
+        {
+          "beacon_a": "(q.property('nr:lights') == 1) && math.mod(math.floor(q.life_time * 10.0), 8.0) < 4.0 && math.mod(math.floor(q.life_time * 10.0), 2.0) == 0"
+        },
+        {
+          "beacon_b": "(q.property('nr:lights') == 1) && math.mod(math.floor(q.life_time * 10.0), 8.0) >= 4.0 && math.mod(math.floor(q.life_time * 10.0), 2.0) == 0"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.garbage_truck.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fr": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.helicopter_crash": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_extra": "q.property('nr:lights') == 1"
+        }
+      ]
+    },
+    "controller.render.nr.prop.helicopter_crash.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.overturned_car": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_rr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rr": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.overturned_car.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rr": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.pickup_truck": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_fr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fr": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_extra": "q.property('nr:lights') == 1"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.pickup_truck.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fr": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.police_car": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_rl": false
+        },
+        {
+          "glass_rr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rr": "q.property('nr:glass') == 1"
+        },
+        {
+          "beacon_a": "(q.property('nr:lights') == 1) && math.mod(math.floor(q.life_time * 10.0), 8.0) < 4.0 && math.mod(math.floor(q.life_time * 10.0), 2.0) == 0"
+        },
+        {
+          "beacon_b": "(q.property('nr:lights') == 1) && math.mod(math.floor(q.life_time * 10.0), 8.0) >= 4.0 && math.mod(math.floor(q.life_time * 10.0), 2.0) == 0"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.police_car.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rr": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.propane_tank": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        }
+      ]
+    },
+    "controller.render.nr.prop.sedan_wreck": {
+      "geometry": "Geometry.default",
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.v1",
+            "Texture.v2",
+            "Texture.v3"
+          ]
+        }
+      },
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.skins[q.property('nr:variant')]"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_rl": false
+        },
+        {
+          "glass_rr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rr": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.sedan_wreck.glass": {
+      "geometry": "Geometry.default",
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.v1",
+            "Texture.v2",
+            "Texture.v3"
+          ]
+        }
+      },
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Array.skins[q.property('nr:variant')]"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rr": "q.property('nr:glass') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.shipping_container": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        }
+      ]
+    },
+    "controller.render.nr.prop.spike_log": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "rope": "q.property('nr:open') == 0"
+        }
+      ]
+    },
+    "controller.render.nr.prop.taxi_wreck": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_rl": false
+        },
+        {
+          "glass_rr": false
+        },
+        {
+          "glass_smash": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_fl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rl": "q.property('nr:glass') == 1"
+        },
+        {
+          "smash_rr": "q.property('nr:glass') == 1"
+        },
+        {
+          "lights_extra": "q.property('nr:lights') == 1"
+        },
+        {
+          "lights_hazard": "(q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || ((q.property('nr:alarm') == 1) && math.mod(q.life_time, 0.8) < 0.4)"
+        }
+      ]
+    },
+    "controller.render.nr.prop.taxi_wreck.glass": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_fl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rl": "q.property('nr:glass') == 0"
+        },
+        {
+          "glass_rr": "q.property('nr:glass') == 0"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.pistol.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            90.0,
+            -0.0,
+            6.48
+          ],
+          "position": [
+            -0.01,
+            22.08,
+            1.16
+          ],
+          "scale": [
+            0.78,
+            0.78,
+            0.78
+          ]
+        }
+      }
+    },
+    "animation.nr.w.pistol.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            70.85,
+            66.08,
+            -62.34
+          ],
+          "position": [
+            -3.35,
+            27.63,
+            -3.12
+          ],
+          "scale": [
+            0.741,
+            0.741,
+            0.741
+          ]
+        }
+      }
+    },
+    "animation.nr.w.pistol.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            90.0,
+            -0.0,
+            6.48
+          ],
+          "position": [
+            -0.01,
+            22.08,
+            1.16
+          ],
+          "scale": [
+            0.78,
+            0.78,
+            0.78
+          ]
+        }
+      }
+    },
+    "animation.nr.w.pistol.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            78.82,
+            62.78,
+            -54.61
+          ],
+          "position": [
+            -3.68,
+            29.01,
+            -6.5
+          ],
+          "scale": [
+            0.741,
+            0.741,
+            0.741
+          ]
+        }
+      }
+    }
+  }
+}

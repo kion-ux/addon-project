@@ -1,0 +1,223 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.nr.prop.ambulance.open": {
+      "loop": true,
+      "bones": {
+        "door_rear_l": {
+          "rotation": [
+            0.0,
+            50.0,
+            0.0
+          ]
+        },
+        "door_rear_r": {
+          "rotation": [
+            0.0,
+            -155.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.army_truck.open": {
+      "loop": true,
+      "bones": {
+        "tailgate": {
+          "rotation": [
+            -85.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.box_truck.open": {
+      "loop": true,
+      "bones": {
+        "shutter": {
+          "position": [
+            0.0,
+            20.1,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.burnt_car.open": {
+      "loop": true,
+      "bones": {
+        "trunk": {
+          "rotation": [
+            72.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.city_bus.open": {
+      "loop": true,
+      "bones": {
+        "luggage": {
+          "rotation": [
+            0.0,
+            0.0,
+            80.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.dumpster.open": {
+      "loop": true,
+      "bones": {
+        "lid": {
+          "rotation": [
+            -100.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.garbage_truck.open": {
+      "loop": true,
+      "bones": {
+        "hopper": {
+          "rotation": [
+            38.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.helicopter_crash.open": {
+      "loop": true,
+      "bones": {
+        "crate_lid": {
+          "rotation": [
+            62.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.overturned_car.open": {
+      "loop": true,
+      "bones": {
+        "trunk": {
+          "rotation": [
+            72.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.pickup_truck.open": {
+      "loop": true,
+      "bones": {
+        "toolbox_lid": {
+          "rotation": [
+            70.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.police_car.open": {
+      "loop": true,
+      "bones": {
+        "trunk": {
+          "rotation": [
+            72.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.sedan_wreck.open": {
+      "loop": true,
+      "bones": {
+        "trunk": {
+          "rotation": [
+            72.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.shipping_container.open": {
+      "loop": true,
+      "bones": {
+        "door_l": {
+          "rotation": [
+            0.0,
+            118.0,
+            0.0
+          ]
+        },
+        "door_r": {
+          "rotation": [
+            0.0,
+            -118.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.smoke": {
+      "loop": true,
+      "animation_length": 2.4,
+      "particle_effects": {
+        "0.0": {
+          "effect": "smoke",
+          "locator": "smoke",
+          "pre_effect_script": "v.size = 1.6; v.life = 3.2;"
+        }
+      }
+    },
+    "animation.nr.prop.spike_log.held": {
+      "loop": true,
+      "bones": {
+        "swing": {
+          "rotation": [
+            75.0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.spike_log.swing": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 8.0,
+      "bones": {
+        "swing": {
+          "rotation": [
+            "75.0 * math.cos(q.anim_time * 120.0) * math.exp(-q.anim_time * 0.45)",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.nr.prop.taxi_wreck.open": {
+      "loop": true,
+      "bones": {
+        "trunk": {
+          "rotation": [
+            72.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  }
+}

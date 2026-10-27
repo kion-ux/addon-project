@@ -1,0 +1,111 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.molotov.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -54.11,
+            1.09,
+            -1.5
+          ],
+          "position": [
+            -0.01,
+            22.33,
+            0.9
+          ],
+          "scale": [
+            0.82,
+            0.82,
+            0.82
+          ]
+        }
+      }
+    },
+    "animation.nr.w.molotov.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -47.59,
+            -14.29,
+            164.79
+          ],
+          "position": [
+            -3.74,
+            27.91,
+            -2.72
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    },
+    "animation.nr.w.molotov.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -54.11,
+            1.09,
+            -1.5
+          ],
+          "position": [
+            -0.01,
+            22.33,
+            0.9
+          ],
+          "scale": [
+            0.82,
+            0.82,
+            0.82
+          ]
+        }
+      }
+    },
+    "animation.nr.w.molotov.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -29.92,
+            -48.32,
+            -165.93
+          ],
+          "position": [
+            -7.98,
+            27.24,
+            -0.43
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    },
+    "animation.nr.w.molotov.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "flame": {
+          "scale": [
+            "1.0 + 0.12 * math.sin(q.anim_time * 1440.0)",
+            "1.0 + 0.1 * math.sin(q.anim_time * 1080.0 + 40.0)",
+            "1.0 + 0.16 * math.sin(q.anim_time * 1260.0 + 90.0)"
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            "6.0 * math.sin(q.anim_time * 900.0)"
+          ]
+        }
+      }
+    }
+  }
+}

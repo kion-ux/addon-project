@@ -1,0 +1,40 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_shipping_container",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/nr/props/shipping_container"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.shipping_container"
+      },
+      "animations": {
+        "open": "animation.nr.prop.shipping_container.open"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.shipping_container"
+      ],
+      "spawn_egg": {
+        "base_color": "#c05a22",
+        "overlay_color": "#70766f"
+      }
+    }
+  }
+}

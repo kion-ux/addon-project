@@ -1,0 +1,45 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_burnt_car",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/nr/props/burnt_car"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.burnt_car"
+      },
+      "animations": {
+        "open": "animation.nr.prop.burnt_car.open",
+        "smoke": "animation.nr.prop.smoke"
+      },
+      "particle_effects": {
+        "smoke": "nr:smoke_dark"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          },
+          "smoke"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.burnt_car"
+      ],
+      "spawn_egg": {
+        "base_color": "#2c2624",
+        "overlay_color": "#c05a22"
+      }
+    }
+  }
+}

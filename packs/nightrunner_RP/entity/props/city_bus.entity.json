@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_city_bus",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "glass": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/nr/props/city_bus"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.city_bus"
+      },
+      "animations": {
+        "open": "animation.nr.prop.city_bus.open"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.city_bus",
+        "controller.render.nr.prop.city_bus.glass"
+      ],
+      "spawn_egg": {
+        "base_color": "#28466e",
+        "overlay_color": "#d6d6ce"
+      }
+    }
+  }
+}

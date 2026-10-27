@@ -59,7 +59,7 @@
         戻り値の dict: style / arm_r / arm_l / grip1 / grip2 / tp / tp_use / fp / fp_use
         （tp〜fp_use は {rotation, position, scale}）
         飛び道具の型（肩付けの銃・弓など）は自分で HOLD_STYLES に足し、place_tp / fp_place_cam で同じ dict を作る
-  書き出し: write_weapon(w, wm, tex, hold, frags, icon=..., charge=..., item_extra=..., write_recipe=...)、
+  書き出し: write_weapon(w, wm, tex, hold, frags, icon=..., charge=..., item_extra=..., write_recipe=..., item=...)、
         attachable_doc(), hold_animation_doc(), item_doc(), recipe_doc(), vanilla_damage(),
         bake_icon(wm, tex, flip=, yaw=, roll=), icon_pose(), Frags（item_texture / lang の断片）, seed_of(key)
   確認: render_model(), render_held(), render_fp(), contact_sheet()（nr_preview の薄い包み）
@@ -2460,8 +2460,10 @@ def contact_sheet(items, cols=None, title=None) -> Image.Image:
 # ===========================================================================
 def write_weapon(w: dict, wm: WeaponModel, tex: Image.Image, hold: dict, frags: Frags, *,
                  icon: Optional[Image.Image] = None, charge: bool = True, item_extra: Optional[dict] = None,
-                 write_recipe: bool = True, icon_flip: bool = False) -> dict:
-    """武器 1 つ分を全部書く。戻り値は {"geo", "texture", "icon", "attachable", "anim", "item", "recipe"}（パス）。"""
+                 write_recipe: bool = True, icon_flip: bool = False, item: Optional[dict] = None) -> dict:
+    """武器 1 つ分を全部書く。戻り値は {"geo", "texture", "icon", "attachable", "anim", "item", "recipe"}（パス）。
+    item を渡すと item_doc の代わりにそれを BP のアイテムとして書く（飛び道具: 重ねられる投げ物・耐久の無い物など、
+    近接用の item_doc の形に合わない物。charge / item_extra は使わない）。"""
     key = w["key"]
     n = wm.cube_count
     if n > MAX_CUBES:
@@ -2490,7 +2492,7 @@ def write_weapon(w: dict, wm: WeaponModel, tex: Image.Image, hold: dict, frags: 
     write_json(p, hold_animation_doc(key, hold, wm.idle or None))
     out["anim"] = p
     p = os.path.join(ITEM_DIR, f"{key}.item.json")
-    write_json(p, item_doc(w, charge=charge, extra=item_extra))
+    write_json(p, item if item is not None else item_doc(w, charge=charge, extra=item_extra))
     out["item"] = p
     r = recipe_doc(w) if write_recipe else None
     if r:

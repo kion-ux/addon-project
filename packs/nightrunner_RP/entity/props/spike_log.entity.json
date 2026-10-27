@@ -1,0 +1,34 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_spike_log",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/nr/props/spike_log"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.spike_log"
+      },
+      "animations": {
+        "held": "animation.nr.prop.spike_log.held",
+        "swing": "animation.nr.prop.spike_log.swing",
+        "ctrl": "controller.animation.nr.prop.spike_log"
+      },
+      "scripts": {
+        "animate": [
+          "ctrl"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.spike_log"
+      ],
+      "spawn_egg": {
+        "base_color": "#2c2624",
+        "overlay_color": "#8e1e1c"
+      }
+    }
+  }
+}

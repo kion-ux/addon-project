@@ -226,7 +226,7 @@ def vehicle_styles(paint="paint_red", wear=None, paint2=None, paint3=None, **ove
                                    blood=0.2 * blood, torn=0.15, seams=False),
         "carpet": NP.cloth_style("#2a2826", dirt=0.55 + 0.3 * dirt, blood=0.2 * blood, seams=False, folds=0.3),
         "headliner": NP.cloth_style("#8a867c", dirt=0.4 + 0.3 * dirt, seams=False, folds=0.4),
-        "under": NP.style("rust", amount=min(1.0, 0.5 + 0.45 * rust), metal="#3a3a3c", dirt=0.6),
+        "under": NP.metal_style("#323234", dirt=min(1.0, 0.6 + 0.3 * dirt), wear=0.2, scratches=0.25),
         "engine": NP.metal_style("#4a4c50", dirt=0.7, wear=0.35, scratches=0.3),
         "exhaust": NP.style("rust", amount=0.92, dirt=0.4),
         "steel": NP.metal_style("#8a8e92", dirt=0.35 + 0.3 * dirt, wear=0.5, scratches=0.5),
@@ -251,7 +251,7 @@ def vehicle_styles(paint="paint_red", wear=None, paint2=None, paint3=None, **ove
         "rope": NP.cloth_style("#9c8458", pattern="stripes", alt="#6e5a38", period=0.4, dirt=0.45, seams=False),
         "chain": NP.metal_style("#6c6e70", dirt=0.45, wear=0.6, scratches=0.4),
         "blood": NP.style("blood"), "blood_dry": NP.style("blood_dry"), "gore": NP.style("gore_wet"),
-        "skin_dead": NP.style("skin", tone="grey", decay=3),
+        "skin_dead": NP.style("skin", tone="grey_green", decay=3),
         "bone": NP.style("bone", age=0.6, blood=0.2, dirt=0.3),
         "fuel": NP.style("plastic", base="#1e1a14", wear=0.0, wet=0.95, dirt=0.0),
         "ash": NP.style("char", base="#3c3834"),
@@ -264,7 +264,7 @@ def vehicle_styles(paint="paint_red", wear=None, paint2=None, paint3=None, **ove
     }
     if burnt >= 0.5:
         # 焼けた車: 塗装は焼けた鉄（錆・煤・虹色の焼け）、樹脂とゴムは炭、布は灰
-        hot = NP.style("rust", amount=0.6, metal="#3a3634", dirt=0.45, burn=min(0.95, 0.55 + 0.4 * burnt))
+        hot = NP.style("rust", amount=0.1, metal="#3a3733", dirt=0.3, burn=min(0.97, 0.6 + 0.4 * burnt))
         for k in ("paint", "paint2", "paint3"):
             st[k] = dict(hot)
         for k in ("trim", "bumper", "rubber", "dash", "interior", "plate", "plate_y", "plate_g", "sign",
@@ -273,7 +273,7 @@ def vehicle_styles(paint="paint_red", wear=None, paint2=None, paint3=None, **ove
         for k in ("seat", "seat_vinyl", "carpet", "headliner", "seat_bus"):
             st[k] = NP.style("char", base="#34302c")
         for k in ("chrome", "rim", "rim_white", "alu", "steel", "hub"):
-            st[k] = NP.style("rust", amount=0.55, metal="#4a4644", dirt=0.5, burn=0.7)
+            st[k] = NP.style("rust", amount=0.12, metal="#4a4644", dirt=0.5, burn=0.75)
         for k in ("lens_w", "lens_r", "lens_a", "lens_b", "glass_shard"):
             st[k] = NP.style("glass", base="#2c2a28", dirt=0.6, burn=0.6)
     st.update(over)
@@ -1231,7 +1231,7 @@ class VehicleModel:
         if not self.model.tex_w:
             self.pack()
         lo, hi = self.bounds()
-        ext = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))
+        ext = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]), float(self.meta.get("vb_ext", 0.0)))
         vb_w = round(2 * ext / 16.0 + 1.0, 2)
         y0 = min(0.0, float(lo[1]))
         vb_h = round((float(hi[1]) - y0) / 16.0 + 1.0, 2)
@@ -1955,8 +1955,6 @@ def _build_car(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) ->
               lo=list(cage.origin), hi=[cage.origin[i] + cage.size[i] for i in range(3)])
         vm.box((0, Y(belt + 3.6), -5.0), (1.0, 1.0, 10.0), "steel_dark")
         vm.box((0, Y(belt + 2.2), -9.0), (1.6, 2.6, 1.0), "steel_dark")
-    if kind == "sedan" and o.get("lit_head") is None:
-        pass
     # ---- 血・弾痕・汚れ ---------------------------------------------------------------------------
     if blood > 0.05:
         drv = [c for c in vm.bmap.get("door_fr", Bone("x")).cubes if c.style == o.get("door_style", P)]
@@ -2106,7 +2104,6 @@ def _truck_cab(vm, C: dict, w: dict, o: dict, gst: dict, rng, panels: list, driv
         vm.rod((s * (hw - 0.8), belt, zws), (s * (hw - 0.8), top, ztop), 1.4, P, h=1.4)
     if C.get("soft_top"):
         ct = vm.box2((-(hw - 0.2), top - 0.6, ztop - 0.4), (hw - 0.2, roof + 0.8, zb + 0.4), "canvas")
-        vm.dec(ct, "up", "nrv_seam", segs=[], width=0.0) if False else None
     else:
         rf = vm.box2((-(hw - 0.3), top - 0.4, ztop - 0.4), (hw - 0.3, roof, zb), P)
         panels.append((rf, "up"))
@@ -2251,10 +2248,10 @@ def _box_body(vm, C: dict, w: dict, o: dict, gst: dict, rng, panels: list) -> di
             vm.box((s * 1.4, y0 + oh * 0.45, z1 + 0.9), (0.6, 2.6, 0.6), "chrome", bone=bone)
             panels.append((dk, "south"))
             out[name] = dk
-            vm.open_pose[bone] = {"rotation": [0, s * -150.0, 0]}
+            vm.open_pose[bone] = {"rotation": [0, s * 155.0, 0]}
             dst = w["doors"].get(name, "closed")
             if dst in ("open", "ajar"):
-                vm.set_rotation(bone, (0, s * (-110.0 if dst == "open" else -35.0), 0))
+                vm.set_rotation(bone, (0, s * (105.0 if dst == "open" else 35.0), 0))
     else:
         # シャッター（横の筋）。open_pose で上へ
         vm.bone("shutter", pivot=(0, y1, z1), parent="body")
@@ -2293,7 +2290,7 @@ def _bed(vm, C: dict, w: dict, o: dict, rng, panels: list) -> None:
     vm.dec(tg, "south", "nrv_lettering", text=C.get("tailgate_text", "NRTRUCK"), colour=(214, 212, 200),
            box=(0.15, 0.3, 0.85, 0.7))
     panels.append((tg, ["south", "north"]))
-    vm.set_rotation("tailgate", (float(C.get("tailgate", 88.0)), 0, 0))
+    vm.set_rotation("tailgate", (-float(C.get("tailgate", 88.0)), 0, 0))
 
 
 def _canvas_bed(vm, C: dict, w: dict, o: dict, rng, panels: list) -> dict:
@@ -2314,7 +2311,7 @@ def _canvas_bed(vm, C: dict, w: dict, o: dict, rng, panels: list) -> dict:
     vm.bone("tailgate", pivot=(0, y0, z1), parent="body")
     tg = vm.box2((-(hw - 0.2), y0, z1 - 0.2), (hw - 0.2, y1, z1 + 0.8), "paint", bone="tailgate")
     panels.append((tg, "south"))
-    vm.open_pose["tailgate"] = {"rotation": [85.0, 0, 0]}
+    vm.open_pose["tailgate"] = {"rotation": [-85.0, 0, 0]}
     # 弓形の骨と幌
     nb = C.get("bows", 5)
     for zz in np.linspace(z0 + 2.0, z1 - 2.0, nb):
@@ -2325,8 +2322,6 @@ def _canvas_bed(vm, C: dict, w: dict, o: dict, rng, panels: list) -> dict:
     for s in (-1, 1):
         side = "east" if s < 0 else "west"
         cv = vm.box2((s * (hw - 0.1), y1 - 0.4, z0 + 0.4), (s * (hw + 0.5), yc - 1.0, z1 - 0.4), "canvas")
-        for k, zz in enumerate(np.linspace(z0 + 2.0, z1 - 2.0, nb)):
-            vm.dec(cv, side, "nrv_seam", segs=[], width=0.0) if False else None
         can.append(cv)
     top = vm.box2((-(hw + 0.5), yc - 1.0, z0 + 0.4), (hw + 0.5, yc + 0.4, z1 - 0.4), "canvas")
     for k in range(3):
@@ -2351,7 +2346,6 @@ def _compactor(vm, C: dict, w: dict, o: dict, rng, panels: list) -> None:
     for s in (-1, 1):
         side = "east" if s < 0 else "west"
         wl = vm.box2((s * (hw - 1.0), y0, z0), (s * hw, y1, z1), "paint")
-        vm.dec(wl, side, "drips", amount=0.8, start=0.05) if False else None
         vm.dec(wl, side, "rust_streaks", amount=0.8)
         panels.append((wl, side))
         side_band(vm, s, hw - 4.0, hw - 0.4, 2 * C["R2"] + 1.0, y0, z0 + 2, z1,
@@ -2362,28 +2356,22 @@ def _compactor(vm, C: dict, w: dict, o: dict, rng, panels: list) -> None:
     rf = vm.box2((-hw, y1 - 1.0, z0), (hw, y1 + 0.4, z1), "paint")
     panels.append((rf, "up"))
     vm.box2((-hw, y0, z0), (hw, y1, z0 + 1.0), "paint")
-    lt = C.get("logo_text")
-    if lt:
-        for c, side in ((vm.bmap["body"].cubes[-1], "north"),):
-            pass
     # ホッパー（後ろの口が開いていて、黒い汁と布くず）
     hz0, hz1 = C["hz"]
     hy0, hy1 = C["hy"]
     vm.bone("hopper", pivot=(0, hy1, hz0), parent="body")
     for s in (-1, 1):
         hs = vm.box2((s * (hw - 1.0), hy0, hz0), (s * hw, hy1, hz1), "paint", bone="hopper")
-        vm.halfplane = None
         panels.append((hs, "east" if s < 0 else "west"))
     vm.box2((-hw, hy1 - 1.0, hz0), (hw, hy1, hz1 - 6.0), "paint", bone="hopper")
     vm.box2((-hw, hy0, hz0), (hw, hy0 + 4.0, hz1), "paint", bone="hopper")
     inner = vm.box2((-(hw - 1.0), hy0 + 4.0, hz0 + 1.0), (hw - 1.0, hy0 + 4.6, hz1 - 1.0), "trash", bone="hopper")
-    vm.dec(inner, "up", "nrv_puddle", kind="blood") if False else None
     vm.dec(inner, "up", "grime", amount=1.0)
     vm.box2((-(hw - 1.0), hy0 + 4.0, hz1 - 2.0), (hw - 1.0, hy0 + 10.0, hz1 - 1.0), "paint", bone="hopper")
     bl = vm.box((0, hy1 - 6.0, (hz0 + hz1) / 2), (2 * hw - 3.0, 1.2, (hz1 - hz0) * 0.7), "steel_rusty",
                 bone="hopper", rot=(32, 0, 0))
     vm.box((3.0, hy1 - 7.0, hz0 + 8.0), (6.0, 1.6, 5.0), "cloth", bone="hopper", rot=(20, 30, 0))
-    vm.open_pose["hopper"] = {"rotation": [-38.0, 0, 0]}
+    vm.open_pose["hopper"] = {"rotation": [38.0, 0, 0]}
     # リフターとゴミ箱
     lx = -(hw + 3.0)
     vm.box2((-(hw + 0.2), y0 + 2.0, hz0 - 10.0), (-(hw + 1.2), y0 + 18.0, hz0 - 8.0), "steel_dark")
@@ -2478,7 +2466,6 @@ def _dress_box_truck(vm, C, w, o, rng, panels, drivable):
                box=(0.12, 0.2, 0.88, 0.42))
         vm.dec(c, side, "nrv_text", text=o.get("phone", "0120-55-81"), colour=(30, 70, 140),
                box=(0.3, 0.46, 0.7, 0.56))
-        vm.dec(c, side, "nrv_band", y=(y0 + 2.0, y0 + 4.0)) if False else None
         vm.wd(c, side, "nrv_band", y=(y0 + 2.5, y0 + 5.0), colour=(200, 120, 30), wear=0.3)
     gt = o.get("graffiti")
     if gt:
@@ -2556,7 +2543,6 @@ def _dress_army_truck(vm, C, w, o, rng, panels, drivable):
     # 燃料缶・荷台の弾薬箱・土嚢
     for k, zz in enumerate((-6.0, 0.0)):
         jc = vm.box((-(C["bw"] / 2 + 2.2), C["by"][0] - 3.0, zz), (3.4, 8.6, 5.6), "paint")
-        vm.dec(jc, "east", "nrb_xpress") if False else None
         vm.dec(jc, "*", "grime", amount=0.6)
     z0, z1 = C["bz"]
     y0 = C["by"][0]
@@ -2579,7 +2565,7 @@ def _dress_pickup(vm, C, w, o, rng, panels, drivable):
     vm.dec(tb, ["up", "south"], "nrb_diamond_plate")
     vm.bone("toolbox_lid", pivot=(0, y1 + 5.1, z0 + 1.0), parent="body")
     vm.box((0, y1 + 5.3, z0 + 4.0), (2 * hw - 1.0, 0.4, 6.0), "diamond", bone="toolbox_lid")
-    vm.open_pose["toolbox_lid"] = {"rotation": [-70.0, 0, 0]}
+    vm.open_pose["toolbox_lid"] = {"rotation": [70.0, 0, 0]}
     vm.wheel("spare", (4.0, y0 + 2.0, z0 + 22.0), 7.0, 4.0, parent="body", rim="rim_dark", rim_kind="steel")
     vm.set_rotation("spare", (0, 0, 90))
     vm.meta["wheels"].pop("spare", None)
@@ -2706,11 +2692,26 @@ def _build_bus(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) ->
     doors = [D["door_f"], D["door_m"]]
     vm.meta.update(kind=kind, roof_y=roof + 5.0)
     # ---- 下の車体（両側。+X 側は扉の開口） ------------------------------------------------------------
+    lug = o.get("luggage")            # (z0, z1, y0, y1): -X 側の床下の荷物入れ（ボーン luggage が上へ開く）
     for s in (-1, 1):
         side = "east" if s < 0 else "west"
         skip = [(a, b, y0) for a, b in doors] if s > 0 else []
+        if s < 0 and lug:
+            skip = [(lug[0], lug[1], lug[2])]
+            vm.box2((-sk, lug[3], lug[0]), (-(hw - 1.4), belt, lug[1]), P)
         for c in side_band(vm, s, hw - 1.4, sk, y0, belt, zf + 3.0, zr - 3.0, arches, P, skip=skip):
             panels.append((c, side))
+    if lug:
+        z0_, z1_, ya, yb = lug
+        vm.box2((-(hw - 9.0), ya, z0_), (-(hw - 8.0), yb, z1_), "trim")
+        vm.box2((-(hw - 1.4), ya - 0.6, z0_), (-(hw - 9.0), ya, z1_), "diamond")
+        vm.bone("luggage", pivot=(-hw - 0.2, yb, 0.0), parent="body")
+        dr = vm.box2((-hw - 0.3, ya, z0_ + 0.2), (-hw + 0.5, yb, z1_ - 0.2), P, bone="luggage")
+        panels.append((dr, "east"))
+        vm.box((-hw - 0.45, ya + 1.6, (z0_ + z1_) / 2), (0.3, 0.8, 4.0), "chrome", bone="luggage")
+        vm.open_pose["luggage"] = {"rotation": [0, 0, 80.0]}
+        for k, (zz, st) in enumerate(((z0_ + 4.0, "leather"), ((z0_ + z1_) / 2, "cloth"), (z1_ - 4.0, "plastic_blue"))):
+            vm.box((-(hw - 4.6), ya + 2.6, zz), (5.0, 5.2, 5.4), st, rot=(0, 8 * k, 0))
         # 窓の下の白い帯
         vm.wd([c for c, _ in panels if c.origin[0] * s > 0], side, "nrv_band", y=(belt - 3.0, belt), colour=(226, 226, 216))
     vm.box2((-(hw - 1.4), y0, zf + 3.0), (hw - 1.4, D["floor"], zr - 3.0), "carpet")
@@ -2750,7 +2751,7 @@ def _build_bus(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) ->
     ac = vm.box((0, roof + 2.5, 40.0), (30.0, 5.0, 36.0), "plastic_white")
     vm.dec(ac, ["east", "west"], "nrb_slits", rows=4, box=(0.08, 0.2, 0.92, 0.8))
     vm.dec(ac, "up", "nrv_grille", kind="mesh", box=(0.1, 0.1, 0.45, 0.9), period=1.0)
-    vm.bone("hatch", pivot=(0, roof + 0.2, -25.0), parent="body", rotation=(-58, 0, 0))
+    vm.bone("hatch", pivot=(0, roof + 0.2, -25.0), parent="body", rotation=(58, 0, 0))
     vm.box((0, roof + 0.6, -20.0), (10.0, 0.8, 10.0), "steel", bone="hatch")
     vm.box2((-5.0, roof - 0.2, -25.0), (5.0, roof + 0.4, -15.0), "trim")
     vm.locator("roof", (0, roof, 0))
@@ -2907,7 +2908,6 @@ def _build_buggy(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) 
     vm.bone("plow", pivot=(0, 10.0, -32.0), parent="body")
     for s in (-1, 1):
         pl = vm.box((s * 6.6, 10.0, -36.4), (14.2, 11.0, 1.2), "steel_rusty", bone="plow", rot=(0, s * 28.0, 0))
-        vm.dec(pl, "north", "nrv_seam", segs=[], width=0.0) if False else None
         vm.rod((s * 4.0, 8.0, -31.0), (s * 8.0, 9.0, -35.0), 1.0, "steel_dark", bone="plow")
     for k in range(8):
         x = -11.0 + k * (22.0 / 7)
@@ -2918,13 +2918,13 @@ def _build_buggy(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) 
     # 後ろ（むき出しのエンジン・排気管・タンク・スペアタイヤ・灯り）
     eng = vm.box2((-6.5, 8.0, 12.0), (6.5, 16.0, 22.0), "engine")
     vm.dec(eng, ["east", "west"], "nrv_grille", kind="h", count=6, box=(0.1, 0.1, 0.9, 0.6), deep=(40, 40, 42))
-    for c in vm.cyl((0, 18.0, 16.0), 5.0, 3.0, "chrome", axis="y", n=2):
-        pass
+    vm.prism((0, 18.0, 16.0), 5.0, 3.0, "chrome", axis="y", sides=8)
     for s in (-1, 1):
         vm.rod((s * 4.0, 12.0, 22.0), (s * 5.0, 22.0, 26.0), 1.2, "exhaust")
     vm.cyl((0, 12.0, 6.6), 5.0, 14.0, "plastic_red", axis="x", n=2)
     vm.wheel("spare", (0.0, 18.0, 25.6), 6.4, 4.0, parent="body", rim="rim_dark", rim_kind="steel")
     vm.set_rotation("spare", (0, 90, 0))
+    vm.meta["wheels"].pop("spare", None)
     for s in (-1, 1):
         vm.lamp((s * 6.0, 12.0, 23.0), (2.4, 1.8, 0.6), "r", face="south", lit_bone="lights_tail", kind="round")
     # サスペンション（A アームとショック）と車輪
@@ -3075,7 +3075,8 @@ def build_vehicle(kind: str, *, key: Optional[str] = None, identifier: Optional[
 #  10. 確認用の絵（nr_preview。窓は「窓なし」と「窓を不透明に」の 2 枚を混ぜて半透明に見せる）
 # ===========================================================================
 def preview(vm: VehicleModel, img: Image.Image, view="three_quarter", size: int = 360, props: Optional[dict] = None,
-            t: float = 0.0, ss: int = 2, bg=(38, 40, 46), glass_alpha: float = 0.5, extra_hidden=()) -> Image.Image:
+            t: float = 0.0, ss: int = 2, bg=(38, 40, 46), glass_alpha: float = 0.5, extra_hidden=(),
+            pose=None) -> Image.Image:
     import nr_preview as V
     props = dict({"nr:lights": 1, "nr:alarm": 0, "nr:glass": 0, "nr:open": 0}, **(props or {}))
     geo = {"format_version": "1.16.0", "minecraft:geometry": [vm.to_json()]}
@@ -3084,7 +3085,8 @@ def preview(vm: VehicleModel, img: Image.Image, view="three_quarter", size: int 
     ctx_q = {"life_time": t}
     hid = set(V.part_visibility_hidden(body_rules, names, properties=props, queries=ctx_q)) | set(extra_hidden)
     a = np.array(img)
-    body = V.render(geo, a, view=view, size=size, hidden=sorted(hid), hide_mode="exact", ss=ss, bg=bg, floor=False)
+    body = V.render(geo, a, view=view, size=size, hidden=sorted(hid), hide_mode="exact", ss=ss, bg=bg, floor=False,
+                    pose=pose)
     gl_vis = [b for b in vm.glass_bones if props.get("nr:glass", 0) == 0]
     if not gl_vis:
         return body
@@ -3098,8 +3100,85 @@ def preview(vm: VehicleModel, img: Image.Image, view="three_quarter", size: int 
                     sub = a2[y:y + h_, x:x + w_]
                     sub[..., 3] = np.where(sub[..., 3] > 0, 255, 0)
     hid2 = hid - set(gl_vis)
-    full = V.render(geo, a2, view=view, size=size, hidden=sorted(hid2), hide_mode="exact", ss=ss, bg=bg, floor=False)
+    full = V.render(geo, a2, view=view, size=size, hidden=sorted(hid2), hide_mode="exact", ss=ss, bg=bg, floor=False,
+                    pose=pose)
     b0 = np.asarray(body.convert("RGB"), f32)
     b1 = np.asarray(full.convert("RGB"), f32)
     out = b0 + (b1 - b0) * glass_alpha
     return Image.fromarray(np.clip(out + 0.5, 0, 255).astype(np.uint8), "RGB")
+
+
+# ===========================================================================
+#  11. 自己検査（python3 nr_vehicle_models.py [--sheet]）
+# ===========================================================================
+def check_textures(vm: VehicleModel, img: Image.Image) -> List[str]:
+    """アルファの約束（rendering.md M2・M3・M7）: 窓のボーン以外の texel は α ∈ {0, 16(発光), 255}、
+    α 0 は RGB も 0。窓の texel は半透明（60〜238）か 0。違反を文字列で返す。"""
+    a = np.array(img)
+    probs = []
+    glass = np.zeros(a.shape[:2], bool)
+    for bn in vm.glass_bones:
+        for c in vm.bmap[bn].cubes:
+            for f in FACES:
+                r = c.rects.get(f)
+                if r and r[2] > 0:
+                    glass[r[1]:r[1] + r[3], r[0]:r[0] + r[2]] = True
+    al = a[..., 3]
+    body_bad = (~glass) & ~np.isin(al, (0, NP.EMISSIVE_ALPHA, 255))
+    if body_bad.any():
+        probs.append(f"{vm.key}: 本体の texel に中間のα {sorted(set(al[body_bad].tolist()))[:6]}")
+    zero_rgb = (al == 0) & (a[..., :3].max(-1) > 0)
+    if zero_rgb.any():
+        probs.append(f"{vm.key}: α 0 なのに RGB が 0 でない texel {int(zero_rgb.sum())}")
+    gl_bad = glass & (al > 0) & ((al < 60) | (al > 238))
+    if gl_bad.any():
+        probs.append(f"{vm.key}: 窓の texel のα が範囲外 {int(gl_bad.sum())}")
+    return probs
+
+
+def _selftest(sheet: bool = False) -> int:
+    import time as _t
+    errs = []
+    cells = []
+    for kind in KINDS:
+        t0 = _t.time()
+        drv = kind in ("buggy", "dirt_bike")
+        vm = build_vehicle(kind, seed=3, drivable=drv)
+        vm.pack()
+        img = vm.paint()
+        names = set(vm.bone_names())
+        need = {"wheel_f", "wheel_r"} if kind == "dirt_bike" else {"wheel_fl", "wheel_fr", "wheel_rl", "wheel_rr"}
+        if not need <= names:
+            errs.append(f"{kind}: 車輪のボーンが足りない {sorted(need - names)}")
+        if kind != "dirt_bike" and "steering_wheel" not in names:
+            errs.append(f"{kind}: steering_wheel が無い")
+        if vm.cube_count() > 700:
+            errs.append(f"{kind}: キューブ {vm.cube_count()}")
+        errs += check_textures(vm, img)
+        doc = vm.to_json()
+        for b in doc["bones"]:
+            for c in b.get("cubes", []):
+                for f, uv in c["uv"].items():
+                    u, v = uv["uv"]
+                    w, h = uv["uv_size"]
+                    if u < 0 or v < 0 or u + w > vm.tex_w or v + h > vm.tex_h:
+                        errs.append(f"{kind}: UV がはみ出す {b['name']}.{f}")
+        print(f"  {kind:14s} {vm.cube_count():4d} cubes  {vm.tex_w}x{vm.tex_h}  密度 {vm.scale:.2f}  "
+              f"窓 {len(vm.glass_bones)}  灯り {len(vm.light_bones)}  {_t.time() - t0:.1f}s")
+        if sheet:
+            cells.append((kind, preview(vm, img, view=(35.0, 20.0), size=300)))
+    if sheet and cells:
+        import nr_preview as V
+        out = os.path.join(os.environ.get("NR_SCRATCH", os.path.join(os.path.dirname(TOOLS), "build_preview",
+                                                                       "nightrunner")), "vehicles.png")
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        V.contact_sheet(cells, cols=4, title="nr_vehicle_models (kinds)").save(out)
+        print(f"  確認画像: {out}")
+    for e in errs:
+        print("  NG", e)
+    print(f"nr_vehicle_models: {len(KINDS)} 種、{'問題なし' if not errs else f'{len(errs)} 件の問題'}")
+    return 1 if errs else 0
+
+
+if __name__ == "__main__":
+    sys.exit(_selftest(sheet="--sheet" in sys.argv[1:]))

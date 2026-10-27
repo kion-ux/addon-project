@@ -1,0 +1,31 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.nr.prop.spike_log": {
+      "initial_state": "held",
+      "states": {
+        "held": {
+          "animations": [
+            "held"
+          ],
+          "transitions": [
+            {
+              "swing": "q.property('nr:open') == 1"
+            }
+          ],
+          "blend_transition": 1.5
+        },
+        "swing": {
+          "animations": [
+            "swing"
+          ],
+          "transitions": [
+            {
+              "held": "q.property('nr:open') == 0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -125,14 +125,26 @@
     "nr_w_combat_knife": {
       "textures": "textures/nr/items/combat_knife"
     },
+    "nr_w_crossbow": {
+      "textures": "textures/nr/items/crossbow"
+    },
     "nr_w_crowbar": {
       "textures": "textures/nr/items/crowbar"
+    },
+    "nr_w_double_barrel": {
+      "textures": "textures/nr/items/double_barrel"
     },
     "nr_w_fire_axe": {
       "textures": "textures/nr/items/fire_axe"
     },
+    "nr_w_firecracker": {
+      "textures": "textures/nr/items/firecracker"
+    },
     "nr_w_hatchet": {
       "textures": "textures/nr/items/hatchet"
+    },
+    "nr_w_hunting_rifle": {
+      "textures": "textures/nr/items/hunting_rifle"
     },
     "nr_w_kitchen_spear": {
       "textures": "textures/nr/items/kitchen_spear"
@@ -146,14 +158,23 @@
     "nr_w_machete": {
       "textures": "textures/nr/items/machete"
     },
+    "nr_w_molotov": {
+      "textures": "textures/nr/items/molotov"
+    },
     "nr_w_nail_bat": {
       "textures": "textures/nr/items/nail_bat"
+    },
+    "nr_w_pipe_bomb": {
+      "textures": "textures/nr/items/pipe_bomb"
     },
     "nr_w_pipe_mace": {
       "textures": "textures/nr/items/pipe_mace"
     },
     "nr_w_pipe_wrench": {
       "textures": "textures/nr/items/pipe_wrench"
+    },
+    "nr_w_pistol": {
+      "textures": "textures/nr/items/pistol"
     },
     "nr_w_piston_hammer": {
       "textures": "textures/nr/items/piston_hammer"
@@ -164,14 +185,23 @@
     "nr_w_police_baton": {
       "textures": "textures/nr/items/police_baton"
     },
+    "nr_w_pump_shotgun": {
+      "textures": "textures/nr/items/pump_shotgun"
+    },
     "nr_w_rebar_club": {
       "textures": "textures/nr/items/rebar_club"
     },
     "nr_w_rebar_spear": {
       "textures": "textures/nr/items/rebar_spear"
     },
+    "nr_w_revolver": {
+      "textures": "textures/nr/items/revolver"
+    },
     "nr_w_scrap_katana": {
       "textures": "textures/nr/items/scrap_katana"
+    },
+    "nr_w_scrap_smg": {
+      "textures": "textures/nr/items/scrap_smg"
     },
     "nr_w_scythe": {
       "textures": "textures/nr/items/scythe"
@@ -184,6 +214,18 @@
     },
     "nr_w_sledgehammer": {
       "textures": "textures/nr/items/sledgehammer"
+    },
+    "nr_w_survivor_bow": {
+      "textures": "textures/nr/items/survivor_bow"
+    },
+    "nr_w_throwing_knives": {
+      "textures": "textures/nr/items/throwing_knives"
+    },
+    "nr_w_throwing_stars": {
+      "textures": "textures/nr/items/throwing_stars"
+    },
+    "nr_w_uv_flare": {
+      "textures": "textures/nr/items/uv_flare"
     }
   }
 }

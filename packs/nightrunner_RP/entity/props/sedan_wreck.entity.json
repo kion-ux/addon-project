@@ -1,0 +1,45 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_sedan_wreck",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "glass": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/nr/props/sedan_wreck",
+        "v1": "textures/nr/props/sedan_wreck_v1",
+        "v2": "textures/nr/props/sedan_wreck_v2",
+        "v3": "textures/nr/props/sedan_wreck_v3"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.sedan_wreck"
+      },
+      "animations": {
+        "open": "animation.nr.prop.sedan_wreck.open"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.sedan_wreck",
+        "controller.render.nr.prop.sedan_wreck.glass"
+      ],
+      "spawn_egg": {
+        "base_color": "#8e1e1c",
+        "overlay_color": "#d6d6ce"
+      }
+    }
+  }
+}

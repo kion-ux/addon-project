@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_police_car",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "glass": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/nr/props/police_car"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.police_car"
+      },
+      "animations": {
+        "open": "animation.nr.prop.police_car.open"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.police_car",
+        "controller.render.nr.prop.police_car.glass"
+      ],
+      "spawn_egg": {
+        "base_color": "#1e2024",
+        "overlay_color": "#d6d6ce"
+      }
+    }
+  }
+}

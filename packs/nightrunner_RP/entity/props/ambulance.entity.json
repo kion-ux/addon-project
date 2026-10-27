@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_ambulance",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "glass": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/nr/props/ambulance"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.ambulance"
+      },
+      "animations": {
+        "open": "animation.nr.prop.ambulance.open"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.ambulance",
+        "controller.render.nr.prop.ambulance.glass"
+      ],
+      "spawn_egg": {
+        "base_color": "#d6d6ce",
+        "overlay_color": "#8e1e1c"
+      }
+    }
+  }
+}

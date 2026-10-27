@@ -64,13 +64,14 @@ Minecraft **統合版 (Bedrock)** 用の、パルクール × ゾンビ × 部�
 | `gen_nr_zombie_anim.py` | ゾンビのアニメーション・アニメーションコントローラ |
 | `gen_nr_player_anim.py` | プレイヤーのパルクール・武器モーション（`playAnimation` で再生） |
 | `gen_nr_weapons.py` | 武器のモデル・テクスチャ・アイコン・アタッチャブル・アイテム JSON・レシピ |
-| `gen_nr_props.py` | 小道具エンティティ（車・バス・コンテナ…）のモデル・テクスチャ |
+| `gen_nr_props.py` | 小道具 `nr:prop_*` の全部: モデル（`models/entity/nr/props/<key>.geo.json`）・テクスチャ（`textures/nr/props/<key>.png`、色違い `<key>_v1`…）・**BP エンティティ**（`entities/props/<key>.json`）・**クライアントエンティティ**（`entity/props/<key>.entity.json`）・レンダーコントローラ `controller.render.nr.prop.<key>` と窓の `.<key>.glass`（`render_controllers/nr_props.render_controllers.json`）・アニメ `animation.nr.prop.*`（`animations/nr_props.animation.json`、`animation_controllers/nr_props.animation_controllers.json`）・**`scripts/data/prop_shapes.js`**（バリアのマスと使う場所）。他の生成器へは `prop_assets(key)` / `barrier_cells(key, rot)` / `spawn_offset(key, rot)` |
+| `nr_vehicle_models.py` | 乗り物の車体のパラメトリックな組み立て（車輪・ハンドル・扉・窓・灯り・傷み）。**`gen_nr_props.py` と `gen_nr_vehicles.py` が共有**（どちらも読むだけ。変えるときは両方の確認画像を見る） |
 | `gen_nr_blocks.py` | カスタムブロック（バリケード・街灯・UV ライト・罠・瓦礫…）のモデル・テクスチャ・BP JSON |
 | `gen_nr_structures.py` | `.mcstructure` の書き出し（建物モジュール）と `scripts/data/structures.js` |
 | `gen_nr_particles.py` | スプライトアトラスとパーティクル |
 | `gen_nr_sounds.py` | 効果音の合成（numpy + ffmpeg）と sound_definitions の断片 |
 | `gen_nr_ui.py` | 独自グリフのフォント（HUD 用）、フォームのアイコン、パックアイコン |
-| `gen_nr_entities.py`（+ `nr_proj_models.py`） | BP: ゾンビ 50・gib・飛び道具・小道具のエンティティ、スポーンルール、ルートテーブル / RP: クライアントエンティティ、レンダーコントローラ（`render_controllers/nr_entities.render_controllers.json`。ゾンビ・gib の分は gen_nr_zombies が書くので書かない）、**飛び道具のモデル・テクスチャ・アニメ**（`geometry.nr.proj.<key>` = `models/entity/projectiles/<key>.geo.json`、`textures/nr/proj/<key>.png`、`animation.nr.proj.*` = `animations/nr_proj.animation.json` と `animation_controllers/nr_proj.animation_controllers.json`）、透明化の目だけのテクスチャ（`textures/nr/zombies_fx/`） |
+| `gen_nr_entities.py`（+ `nr_proj_models.py`） | BP: ゾンビ 50・gib・飛び道具のエンティティ（小道具 `nr:prop_*` は `gen_nr_props`）、スポーンルール、ルートテーブル / RP: クライアントエンティティ、レンダーコントローラ（`render_controllers/nr_entities.render_controllers.json`。ゾンビ・gib の分は gen_nr_zombies が書くので書かない）、**飛び道具のモデル・テクスチャ・アニメ**（`geometry.nr.proj.<key>` = `models/entity/projectiles/<key>.geo.json`、`textures/nr/proj/<key>.png`、`animation.nr.proj.*` = `animations/nr_proj.animation.json` と `animation_controllers/nr_proj.animation_controllers.json`）、透明化の目だけのテクスチャ（`textures/nr/zombies_fx/`） |
 | `gen_nr_items.py` | 武器以外のアイテム（回復・投擲物・素材・道具）とレシピ |
 | `gen_nr_data_js.py` | `scripts/data/*.js`（spec とリグ寸法を JS へ） |
 | `gen_nr_packs.py` | manifest、断片のまとめ、言語ファイル。**最後に走る** |
@@ -367,6 +368,7 @@ spec（武器の音・改造・罠・アイテムのモーション）が参照�
 |---|---|---|
 | `zombies.js` | `gen_nr_data_js` | `ZOMBIES`（spec の全フィールド + `id` `ztype`）、`ZTYPE`（key→番号）、`ABILITIES`、`ATTACKS`、`LOCOMOTIONS`、`VOICES`、`GORE_KEYS` |
 | `zombie_shapes.js` | `gen_nr_zombies` | `SHAPES[key] = {height, width, stand: {part: [box...]}, lie: {...}, locators: {name: [r,u,f]}}` |
+| `prop_shapes.js` | `gen_nr_props` | `PROP_SHAPES[key] = {id, size, anchor, rects, top, variants, lights, open, points: [{kind, c: [r,u,f], radius}], rot: {"0"|"90"|"180"|"270": {yaw, spawn: [ex, ez], cells: [[dx,dy,dz]...], points: [{kind, p: [dx,dy,dz]}]}}}`、`PROP_ROTATIONS`、`PROP_PROPERTIES`。cells は原点のマス B（整数の角）からのバリア、spawn は B の角からエンティティを置くずれ、p はエンティティの位置からの世界のずれ（yaw ごとに計算済み） |
 | `weapons.js` / `items.js` / `mods.js` / `traps.js` / `blocks.js` / `props.js` / `skills.js` / `crafting.js` | `gen_nr_data_js` | spec の同名の表（`WEAPONS` は ID→定義の辞書 `WEAPON_BY_ID` も） |
 | `settings.js` | `gen_nr_data_js` | `SETTINGS_DEFAULTS`、`PARKOUR_TUNING` |
 | `fx.js` | `gen_nr_data_js` | 登録簿の `PARTICLES`（名前の配列）、`SOUNDS`、`PLAYER_ANIMS`、`ZOMBIE_ONESHOTS` |
@@ -389,6 +391,8 @@ spec（武器の音・改造・罠・アイテムのモーション）が参照�
 | `nr:revive` / `nr:revive_crawl` | 死体を蘇らせる（蘇生者の reanimate）。`nr:dead` を外して `nr:alive` と立つ（這う）当たり箱・速さ、`nr:state` を `normal`（`crawl`）に。同じ tick の続けてのイベントのフィルタは前の set_property を見ないので、這わせるなら `nr:revive` → `nr:to_crawl` ではなく `nr:revive_crawl` を一つ |
 
 `nr:gib`・`nr:proj_*`・`nr:prop_*` にも `nr:despawn` を持たせる。
+
+**小道具 `nr:prop_*`**（`gen_nr_props`）: AI・重力・当たりなし（`physics` の has_gravity / has_collision が false）、押せない、`damage_sensor` で全ダメージ無効（殴る・撃つは entityHitEntity / projectileHitEntity で拾う）、`persistent`。歩けない所・屋根は**バリアブロック**（`prop_shapes.js` の cells をスクリプトが置く）。プロパティは全種類で同じ 5 つ（int・client_sync）: `nr:variant`（色違い）、`nr:open`（0/1。トランク・扉・蓋・シャッターが開く。杭丸太は 1 で縄が切れて揺れる）、`nr:lights`（0/1。前照灯・回転灯・行き先表示・残り火）、`nr:alarm`（0/1。前照灯とウインカーが点滅）、`nr:glass`（0/1。窓が割れた見た目）。イベント `nr:open` / `nr:close` / `nr:lights_on` / `nr:lights_off` / `nr:alarm_on` / `nr:alarm_off` / `nr:smash_glass` / `nr:despawn`。
 
 ### 手書きスクリプトの構成（`packs/nightrunner_BP/scripts/`）
 

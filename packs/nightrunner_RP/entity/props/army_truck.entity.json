@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:prop_army_truck",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "glass": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/nr/props/army_truck"
+      },
+      "geometry": {
+        "default": "geometry.nr.prop.army_truck"
+      },
+      "animations": {
+        "open": "animation.nr.prop.army_truck.open"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_open = 0.0;"
+        ],
+        "pre_animation": [
+          "v.nr_open = math.lerp(v.nr_open, q.property('nr:open'), math.clamp(q.delta_time * 3.0, 0.0, 1.0));"
+        ],
+        "animate": [
+          {
+            "open": "v.nr_open"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.prop.army_truck",
+        "controller.render.nr.prop.army_truck.glass"
+      ],
+      "spawn_egg": {
+        "base_color": "#4c5436",
+        "overlay_color": "#1e2024"
+      }
+    }
+  }
+}
