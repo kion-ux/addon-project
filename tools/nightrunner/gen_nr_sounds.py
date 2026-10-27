@@ -1282,6 +1282,11 @@ def _voiced(event, P, v):
             y = utter(PG, d, [(0, 0.4), (0.5 * d, 0.7), (d, 0.3)], [(0, "growl"), (d, "growl")], amp, oq=0.45,
                       growl=0.8, drive=3.0, tilt=-5, bw=1.6, k=0.85)
             put(out, nrm(y), t0, 0.55)
+    if "hiccup" in ex and event == "idle":                 # 音節の合間のしゃくり上げる吸う息
+        for (t0, d, *_r), (t1, *_q) in zip(segs, segs[1:]):
+            gap = t1 - (t0 + d)
+            if gap > 0.04:
+                put(out, _inhale(min(0.09, gap), k0, 0.5), t0 + d, 1.0)
     if event == "alert" and v % 2 == 0 and "hiccup" not in ex:
         out = np.concatenate([_inhale(0.14, k0, 0.35), out])
     return out
@@ -1441,6 +1446,303 @@ def r_voice(key, event, P, v):
     """ゾンビの声の 1 変種。P = VOICE_VOCAB[key]。"""
     y = _voiced(event, P, v) if P.get("f0") else _noise_voice(event, P, v)
     return _voice_post(y, event, P, v)
+
+
+# =====================================================================
+#  武器（nr.w.*）
+# =====================================================================
+def r_swing_light(v):
+    """軽い風切り（ナイフ・鉈・パイプ）: 速い帯域の掃引 + 刃の細い笛。"""
+    d = 0.24 + 0.03 * (v % 3)
+    return whoosh(d, 600 + 120 * v, 4200 + 300 * v, R.uniform(0.45, 0.6), 1.6, 2.0, tone=0.25)
+
+
+def r_swing_heavy(v):
+    """重い風切り（両手斧・大槌）: 低く長い掃引 + 空気を押す低い「ぶおん」。"""
+    d = 0.45 + 0.05 * v
+    w = whoosh(d, 170, 1500, 0.55, 1.2, 1.6, tone=0.1)
+    vb = bell(d, 0.55)
+    low = tvf(white(d), lambda tc, f: g_lp(120.0 + 260.0 * at(vb, tc), 2)(f)) * vb ** 2
+    return mix(w, 0.7 * nrm(low))
+
+
+def r_hit_metal(v):
+    """金属音（武器が金属・壁の鉄に当たる）: 打撃の粒 + 板・管・棒の響き（うなり付き）+ 細かいびびり。"""
+    kind = ("plate", "pipe", "bar", "plate")[v % 4]
+    out = metal(1.0, R.uniform(380, 900), kind, R.uniform(0.25, 0.45), 0.55, 1.3)
+    out = mix(out, 0.25 * nrm(hp(white(0.05), 3000) * perc(0.05, 0.0002, 0.008)))
+    return out
+
+
+def r_hit_wood(v):
+    """木の打撃音（木の板・柄・バリケード）。"""
+    out = silence(0.45)
+    put(out, wood(0.4, R.uniform(140, 260), R.uniform(0.03, 0.05), 0.45, 0.8), 0.0, 1.0)
+    put(out, thud(0.2, 160, 90, 0.025, click=0.3, body=0.4), 0.0, 0.5)
+    put(out, crackles(0.15, 200, 1500, 5000) * perc(0.15, 0.001, 0.03), 0.003, 0.15)
+    return out
+
+
+def r_break(v):
+    """武器が壊れる: 木の柄が裂ける（破断の群れ + 繊維）+ 刃の金属が折れる響き + 落ちる破片。"""
+    out = silence(1.2)
+    put(out, crack(0.4, 22, 0.06, 700, 5200, 0.5), 0.0, 1.0)
+    put(out, tear(0.25, 1500, 200, 800, 6000, 0.2, 2.0, 0.2), 0.01, 0.5)
+    put(out, metal(0.8, R.uniform(1500, 2400), "blade", 0.25, 0.6, 1.6), 0.0, 0.55)
+    for _ in range(4):
+        t = R.uniform(0.25, 0.75)
+        put(out, metal(0.3, R.uniform(1800, 4000), "bar", 0.06, 0.5, 1.4, n=4), t, R.uniform(0.12, 0.3))
+        put(out, wood(0.12, R.uniform(400, 800), 0.012, 0.4, 0.8), t + R.uniform(0.02, 0.1), R.uniform(0.1, 0.25))
+    return out
+
+
+def _stickslip(d, r0, r1, body=(300.0, 1500.0), jit=0.2):
+    """きしみ（摩擦の引っかかりの列: 速さ r0 → r1 回/秒）を胴の共鳴に通す（弓・扉・縄・腱）。"""
+    rate = np.geomspace(r0, r1, ns(d)) * (1.0 + jit * lfn(d, 12.0))
+    ph = np.cumsum(rate) / SR
+    pul = np.zeros(ns(d))
+    idx = np.nonzero(np.diff(np.floor(ph), prepend=0.0) > 0)[0]
+    pul[idx] = np.exp(R.normal(0.0, 0.35, len(idx)))
+    k = 6
+    ir = modes(0.05, R.uniform(body[0], body[1], k), R.uniform(0.004, 0.015, k), R.uniform(0.4, 1.0, k))
+    return nrm(conv(pul, ir)[:ns(d)])
+
+
+def _string(d, f0, tau=0.15, n=14, drop=0.0, bright=0.6):
+    """弦のはじき（倍音ごとに速く消える）。"""
+    t = tax(d)
+    y = np.zeros(len(t))
+    f = f0 * (1.0 - drop * (1.0 - np.exp(-t / 0.05)))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    for k in range(1, n + 1):
+        if k * f0 < SR * 0.45:
+            y += np.sin(k * ph) * np.exp(-t * k ** 0.7 / tau) / k ** (1.0 - bright * 0.5)
+    return nrm(y)
+
+
+def r_bow_draw(v):
+    """弓を引く: 弦と弓のきしみ（速まる摩擦）+ 張力の低い唸り + 腕の衣擦れ。"""
+    d = 0.75
+    out = 0.8 * _stickslip(d, 22, 65, (250, 1300)) * env_pts(d, [(0, 0), (0.1, 0.6), (0.6, 1), (d, 0)])
+    out = out + 0.35 * cloth(d, 160, 800, 5000, 0.3)
+    out = out + 0.2 * nrm(lp(white(d), 400) * bell(d, 0.7))
+    return out
+
+
+def r_bow_release(v):
+    """弓を放つ: 弦の「びん」+ 矢の「ひゅっ」+ 弓の腕の鈍い当たり。"""
+    out = silence(0.65)
+    put(out, _string(0.5, R.uniform(95, 130), 0.14, 14, 0.06), 0.0, 0.8)
+    put(out, nrm(hp(white(0.01), 1500) * perc(0.01, 0.0002, 0.002)), 0.0, 0.6)
+    put(out, whoosh(0.18, 2500, 600, 0.15, 1.8, 2.0, tone=0.2), 0.0, 0.6)
+    put(out, thud(0.15, 180, 100, 0.02, click=0.2, body=0.3), 0.0, 0.4)
+    return out
+
+
+def r_crossbow_shot(v):
+    """クロスボウを撃つ: 引き金の掛け金 + 重い弦の叩き + 太矢の風切り + 台座の「どん」。"""
+    out = silence(0.75)
+    put(out, mclick(0.04, 2600, 0.004), 0.0, 0.5)
+    put(out, _string(0.4, R.uniform(150, 190), 0.07, 12, 0.08, 0.9), 0.008, 1.0)
+    put(out, thud(0.25, 150, 70, 0.03, click=0.8, body=0.5, nf=2500), 0.008, 0.9)
+    put(out, whoosh(0.25, 3000, 500, 0.12, 2.0, 2.2, tone=0.3), 0.01, 0.55)
+    put(out, metal(0.3, 900, "bar", 0.05, 0.4, 1.0, n=4), 0.01, 0.2)
+    return sat(out, 1.6)
+
+
+def r_crossbow_reload(v):
+    """クロスボウの装填: 巻き上げのラチェット（速まるカチカチ）+ 張っていく弦のきしみ + 掛け金の「がちん」。"""
+    d = 1.4
+    out = silence(d)
+    ph = np.cumsum(np.geomspace(7.0, 13.0, ns(1.0))) / SR
+    for i in np.nonzero(np.diff(np.floor(ph)) > 0)[0]:
+        put(out, mclick(0.04, R.uniform(2200, 3000), 0.005), 0.05 + i / SR, R.uniform(0.4, 0.6))
+    put(out, 0.5 * _stickslip(1.0, 18, 45, (300, 1400)), 0.05, 0.4)
+    put(out, mclick(0.08, 1700, 0.012, 1.2), 1.15, 1.0)
+    put(out, thud(0.12, 220, 120, 0.02, click=0.5, body=0.4), 1.15, 0.5)
+    return out
+
+
+def r_gun(v, size, body_f, crack_amt, tail, bright, rt, d, mech, drive=3.0, extra=""):
+    """銃の共通（下の各レシピから呼ぶ）。"""
+    out = gunshot(d, size, body_f, crack_amt, tail, bright, rt, drive)
+    if mech:
+        put(out, mclick(0.05, R.uniform(2000, 2800), 0.006, 1.2), R.uniform(0.018, 0.03), 0.18 * mech)
+        put(out, mclick(0.05, R.uniform(1600, 2200), 0.008, 1.0), R.uniform(0.045, 0.07), 0.12 * mech)
+    if extra == "shell":
+        t = R.uniform(0.35, 0.55)
+        for j in range(3):
+            put(out, metal(0.12, R.uniform(3500, 5200), "bar", 0.03, 0.5, 1.5, n=4), t + j * R.uniform(0.05, 0.1), 0.04 / (j + 1))
+    if extra == "ring":
+        put(out, metal(0.6, R.uniform(1100, 1400), "bar", 0.15, 0.4, 1.2), 0.002, 0.05)
+    if extra == "supersonic":
+        put(out, nrm(hp(friedlander(0.004, 0.0003, 1.2), 1500)), 0.0, 0.7)
+    return out
+
+
+def r_pistol(v):
+    """拳銃: 乾いた鋭い破裂 + 中くらいの胴 + スライドの金属音 + 薬莢の落ちる音 + 街の残響。"""
+    return r_gun(v, 0.8, 130, 1.0, 0.9, 1.0, 1.2, 1.4, 1.0, 3.0, "shell")
+
+
+def r_revolver(v):
+    """リボルバー: 重く太い破裂 + シリンダーの金属の鳴り + 長めの残響。"""
+    return r_gun(v, 1.15, 105, 1.1, 1.0, 0.9, 1.5, 1.8, 0.4, 3.2, "ring")
+
+
+def r_shotgun(v):
+    """散弾銃: 胸に響く低い爆音 + 太い胴 + 長い街の残響。"""
+    return r_gun(v, 1.6, 78, 0.9, 1.2, 0.75, 1.9, 2.2, 0.0, 3.6)
+
+
+def r_rifle(v):
+    """ライフル: 超音速の鋭い破裂 + 遠くまで転がる長い残響。"""
+    return r_gun(v, 1.3, 95, 1.4, 1.35, 1.2, 2.2, 2.4, 0.0, 3.2, "supersonic")
+
+
+def r_smg(v):
+    """短機関銃（連射用に短い）: 軽い破裂 + ボルトの往復の音 + 短い残響。"""
+    return r_gun(v, 0.75, 140, 0.9, 0.55, 1.1, 0.6, 0.7, 1.3, 3.0)
+
+
+def r_reload(v):
+    """弾倉の交換: 弾倉を外す掛け金 → 抜ける擦れ → 差し込む「かちっ」→ スライドを引いて放す。"""
+    d = 1.35
+    out = silence(d)
+    put(out, mclick(0.05, 2200, 0.006), 0.0, 0.6)
+    put(out, mslide(0.14, 1200, 4500, 0.5), 0.04, 0.4)
+    put(out, mslide(0.12, 1200, 4500, 0.5), 0.55, 0.35)
+    put(out, mclick(0.07, 1600, 0.01, 1.2), 0.67, 1.0)
+    put(out, thud(0.1, 260, 150, 0.015, click=0.4, body=0.3), 0.67, 0.4)
+    put(out, mslide(0.09, 1800, 6000, 0.8), 0.95, 0.5)
+    put(out, mclick(0.06, 2500, 0.006, 1.3), 1.04, 0.8)
+    put(out, mclick(0.08, 1900, 0.01, 1.5), 1.16, 1.0)
+    return out
+
+
+def r_pump(v):
+    """ポンプの往復: 引く擦れ + 「がしゃ」→ 押す擦れ + 「がちゃ」。"""
+    out = silence(0.55)
+    put(out, mslide(0.11, 900, 4000, 0.7), 0.0, 0.6)
+    put(out, mclick(0.08, 1500, 0.012, 1.2), 0.1, 1.0)
+    put(out, thud(0.1, 240, 140, 0.015, click=0.3, body=0.3), 0.1, 0.4)
+    put(out, mslide(0.1, 900, 4000, 0.7), 0.2, 0.55)
+    put(out, mclick(0.08, 1700, 0.01, 1.3), 0.3, 1.0)
+    return out
+
+
+def r_empty_click(v):
+    """弾切れ: 撃鉄が空を叩く乾いた小さな音。"""
+    out = silence(0.12)
+    put(out, mclick(0.08, R.uniform(2800, 3600), 0.004, 1.4), 0.0, 1.0)
+    put(out, mclick(0.05, R.uniform(1500, 2000), 0.006, 0.8), 0.012, 0.3)
+    return out
+
+
+def r_throw(v):
+    """投げる: 腕の風切り + 服の擦れ。"""
+    out = silence(0.4)
+    put(out, cloth(0.25, 260, 900, 6000, 0.6), 0.0, 0.4)
+    put(out, whoosh(0.3, 350, 2600, 0.45, 1.4, 2.0), 0.03, 1.0)
+    return out
+
+
+def r_knife_stick(v):
+    """投げナイフが刺さる: 「とすっ」+ 柄のびよーんという震え（振幅の揺れる刃の鳴り）。"""
+    out = silence(0.7)
+    put(out, thud(0.2, 270, 140, 0.02, click=0.7, body=0.4, nf=2500), 0.0, 1.0)
+    put(out, wood(0.15, 380, 0.015, 0.4, 0.6), 0.0, 0.4)
+    q = metal(0.6, R.uniform(330, 450), "blade", 0.25, 0.3, 0.6, contact=0.0)
+    q = q * (0.55 + 0.45 * np.cos(2 * np.pi * R.uniform(24, 34) * tax(0.6)))
+    put(out, q, 0.003, 0.35)
+    return out
+
+
+def r_reload_revolver(v):
+    """シリンダーを振り出して 1 発ずつ込める: 振り出し → 空薬莢が落ちる → 3 発込める → 回して閉じる。"""
+    d = 2.3
+    out = silence(d)
+    put(out, mclick(0.06, 2000, 0.008, 1.2), 0.0, 0.8)
+    put(out, mslide(0.08, 1500, 5000, 0.6), 0.15, 0.3)
+    for j in range(6):
+        t = R.uniform(0.3, 0.65)
+        put(out, metal(0.15, R.uniform(3200, 5200), "bar", 0.035, 0.5, 1.5, n=4), t, R.uniform(0.08, 0.2))
+    for t in (0.85, 1.12, 1.38):
+        put(out, mslide(0.06, 2000, 6000, 0.4), t, 0.3)
+        put(out, mclick(0.04, R.uniform(2600, 3200), 0.004), t + 0.055, 0.5)
+    for j in range(7):
+        put(out, mclick(0.03, 3000, 0.003), 1.62 + j * 0.03, 0.25)
+    put(out, mclick(0.08, 1700, 0.01, 1.5), 1.9, 1.0)
+    return out
+
+
+def r_reload_shell(v):
+    """散弾を 1 発込める: 薬室へ押し込む擦れ + 「かちっ」+ ばねの小さな鳴り。"""
+    out = silence(0.4)
+    put(out, mslide(0.09, 900, 3500, 0.5), 0.0, 0.5)
+    put(out, mclick(0.05, R.uniform(1800, 2300), 0.006, 1.0), 0.085, 0.9)
+    put(out, metal(0.15, R.uniform(700, 900), "bar", 0.03, 0.3, 0.8, n=3), 0.09, 0.15)
+    return out
+
+
+def r_bolt_cycle(v):
+    """ボルトを引いて戻す: 起こす「かち」→ 引く擦れ → 薬莢 → 押す擦れ → 倒す「がち」。"""
+    out = silence(0.75)
+    put(out, mclick(0.05, 2200, 0.006, 1.1), 0.0, 0.7)
+    put(out, mslide(0.12, 1000, 4500, 0.6), 0.05, 0.6)
+    put(out, metal(0.15, 4300, "bar", 0.03, 0.5, 1.4, n=4), 0.22, 0.1)
+    put(out, mslide(0.11, 1000, 4500, 0.6), 0.33, 0.6)
+    put(out, mclick(0.08, 1600, 0.01, 1.4), 0.46, 1.0)
+    return out
+
+
+def r_mod_fire(v):
+    """火炎の改造が燃え上がる: 「ぼっ」と開く炎（暗い所から明るくなる雑音）+ はぜる火。"""
+    d = 0.9
+    cut = np.geomspace(300.0, 4000.0, ns(d))
+    w = tvf(pink(d), lambda tc, f: g_lp(at(cut, tc), 2)(f)) * env_pts(d, [(0, 0), (0.08, 1), (0.3, 0.7), (d, 0)])
+    out = nrm(w) + 0.5 * fire_bed(d, 1.0, 0.6) * env_pts(d, [(0, 0), (0.1, 1), (d, 0)])
+    put(out, thud(0.3, 80, 45, 0.08, click=0.0, body=0.5, nf=300), 0.0, 0.6)
+    return out
+
+
+def r_mod_shock(v):
+    """感電の改造の放電: 鋭い「バチッ」と短いジジジ。"""
+    d = 0.5
+    out = arc(d, 90, 900, 0.8, 1.6) * perc(d, 0.002, 0.15)
+    put(out, nrm(hp(white(0.01), 2000) * perc(0.01, 0.0001, 0.002)), 0.0, 1.0)
+    return out
+
+
+def r_mod_bleed(v):
+    """出血の改造で血が噴く: 短い噴出 + 飛沫。"""
+    d = 0.7
+    sp = bp(white(d), 2600, 0.6) * (0.4 + 0.6 * np.abs(lfn(d, 40.0))) * perc(d, 0.005, 0.18)
+    return nrm(sp) + 0.5 * nrm(bubbles(d, 50, 500, 2000)) * perc(d, 0.01, 0.2) + 0.4 * splatter(d, 12, 0.1, 0.8)
+
+
+def r_mod_toxic(v):
+    """毒の改造の霧が噴く: しゅっという噴射 + 泡立つ液。"""
+    d = 0.8
+    hs = filt(white(d), g_bp(4500, 1.0), g_hp(1500)) * env_pts(d, [(0, 0), (0.02, 1), (0.3, 0.5), (d, 0)])
+    return nrm(hs) + 0.4 * nrm(bubbles(d, 60, 600, 2500)) * perc(d, 0.02, 0.3)
+
+
+def r_mod_uv(v):
+    """UV の改造が焼く唸り: 一瞬高まる電気の唸り + 焼けるじゅっ。"""
+    d = 0.8
+    h = hum(d, 60.0 + 10.0 * v, 30, 0.8, 0.5) * env_pts(d, [(0, 0), (0.05, 1), (0.4, 0.6), (d, 0)])
+    sz = crackles(d, 400, 2500, 9000, 0.7) * perc(d, 0.02, 0.25)
+    return nrm(h) + 0.5 * sz + 0.3 * nrm(hp(white(d), 3000)) * perc(d, 0.01, 0.2)
+
+
+def r_mod_impact(v):
+    """衝撃の改造の小さな破裂: 圧の「ぼん」+ 砂ぼこり。"""
+    out = silence(0.8)
+    put(out, nrm(hp(friedlander(0.02, 0.0015, 1.3), 60)), 0.0, 1.0)
+    put(out, thud(0.4, 110, 45, 0.07, click=0.3, body=0.8), 0.0, 0.9)
+    put(out, grit(0.2, 1500, 1500, 8000), 0.01, 0.3)
+    return room(sat(out, 2.0), 0.6, 0.2)
 
 
 #@@ TABLE
