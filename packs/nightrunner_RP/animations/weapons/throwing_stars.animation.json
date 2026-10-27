@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.throwing_stars.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -6.06,
+            3.63,
+            -0.38
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.throwing_stars.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -47.59,
+            -14.29,
+            164.79
+          ],
+          "position": [
+            -3.74,
+            28.06,
+            -2.59
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    },
+    "animation.nr.w.throwing_stars.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -6.06,
+            3.63,
+            -0.38
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.throwing_stars.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -29.92,
+            -48.32,
+            -165.93
+          ],
+          "position": [
+            -7.84,
+            27.3,
+            -0.32
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    }
+  }
+}

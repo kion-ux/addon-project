@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.throwing_knives.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -12.08,
+            3.39,
+            -0.72
+          ],
+          "position": [
+            -0.05,
+            22.39,
+            0.12
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.throwing_knives.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -47.59,
+            -14.29,
+            164.79
+          ],
+          "position": [
+            -3.72,
+            27.41,
+            -3.15
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    },
+    "animation.nr.w.throwing_knives.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -12.08,
+            3.39,
+            -0.72
+          ],
+          "position": [
+            -0.05,
+            22.39,
+            0.12
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.throwing_knives.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -29.92,
+            -48.32,
+            -165.93
+          ],
+          "position": [
+            -8.48,
+            27.02,
+            -0.82
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    }
+  }
+}

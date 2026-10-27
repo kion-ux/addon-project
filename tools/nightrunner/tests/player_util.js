@@ -35,6 +35,8 @@ export async function runner(o = {}) {
   setTime(o.time ?? 1000);
   setLight(null);
   const p = spawnPlayer(o.at ?? { x: 0.5, y: 64, z: 0.5 }, o.item, { yaw: o.yaw ?? 0 });
+  // 初回参加のあいさつ（ui/welcome.js: 最初の持ち物と基本のスキル）を済んだことにして、テストの条件を変えない
+  p.setDynamicProperty("nr:welcomed", true);
   await tick(o.wait ?? 2);
   for (const k of o.skills ?? []) grantSkill(p, k);
   clearRec();

@@ -1,0 +1,106 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.uv_flare.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -38.09,
+            1.76,
+            -1.38
+          ],
+          "position": [
+            -0.02,
+            22.45,
+            0.69
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.uv_flare.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -47.59,
+            -14.29,
+            164.79
+          ],
+          "position": [
+            -3.73,
+            27.77,
+            -2.84
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    },
+    "animation.nr.w.uv_flare.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -38.09,
+            1.76,
+            -1.38
+          ],
+          "position": [
+            -0.02,
+            22.45,
+            0.69
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.uv_flare.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -29.92,
+            -48.32,
+            -165.93
+          ],
+          "position": [
+            -8.12,
+            27.17,
+            -0.54
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ]
+        }
+      }
+    },
+    "animation.nr.w.uv_flare.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "head": {
+          "scale": [
+            "1.0 + 0.06 * math.sin(q.anim_time * 1500.0)",
+            "1.0 + 0.06 * math.sin(q.anim_time * 1500.0)",
+            "1.0 + 0.06 * math.sin(q.anim_time * 1500.0)"
+          ]
+        }
+      }
+    }
+  }
+}

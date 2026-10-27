@@ -1,0 +1,135 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.survivor_bow.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            37.89,
+            -0.0,
+            -0.0
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            0.74,
+            0.74,
+            0.74
+          ]
+        }
+      }
+    },
+    "animation.nr.w.survivor_bow.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            17.36,
+            70.59,
+            -118.62
+          ],
+          "position": [
+            -4.0,
+            26.45,
+            -3.37
+          ],
+          "scale": [
+            0.666,
+            0.666,
+            0.666
+          ]
+        }
+      }
+    },
+    "animation.nr.w.survivor_bow.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            90.0,
+            22.27,
+            6.48
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            0.74,
+            0.74,
+            0.74
+          ]
+        }
+      }
+    },
+    "animation.nr.w.survivor_bow.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            76.61,
+            70.01,
+            -58.26
+          ],
+          "position": [
+            -3.13,
+            26.34,
+            -8.37
+          ],
+          "scale": [
+            0.666,
+            0.666,
+            0.666
+          ]
+        }
+      }
+    },
+    "animation.nr.w.survivor_bow.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "str_u": {
+          "rotation": [
+            "math.atan(0.7972 * v.nr_usew)",
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            "math.sqrt(1.0 + 0.6355 * v.nr_usew * v.nr_usew)",
+            1.0
+          ]
+        },
+        "str_d": {
+          "rotation": [
+            "-math.atan(0.6160 * v.nr_usew)",
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            "math.sqrt(1.0 + 0.3795 * v.nr_usew * v.nr_usew)",
+            1.0
+          ]
+        },
+        "arrow": {
+          "position": [
+            0.0,
+            0.0,
+            "9.0 * v.nr_usew"
+          ],
+          "scale": [
+            "v.nr_usew > 0.12 ? 1.0 : 0.0",
+            "v.nr_usew > 0.12 ? 1.0 : 0.0",
+            "v.nr_usew > 0.12 ? 1.0 : 0.0"
+          ]
+        }
+      }
+    }
+  }
+}

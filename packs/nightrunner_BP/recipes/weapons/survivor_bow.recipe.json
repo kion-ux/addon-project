@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_survivor_bow"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " SR",
+      "B R",
+      " SR"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:scrap"
+      },
+      "R": {
+        "item": "minecraft:string"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:w_survivor_bow",
+      "count": 1
+    }
+  }
+}

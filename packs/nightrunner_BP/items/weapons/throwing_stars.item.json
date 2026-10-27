@@ -1,0 +1,38 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:w_throwing_stars",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_w_throwing_stars",
+      "minecraft:display_name": {
+        "value": "item.nr:w_throwing_stars"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:rarity": "common",
+      "minecraft:tags": {
+        "tags": [
+          "nr:weapon",
+          "nr:ranged",
+          "nr:throwable",
+          "nr:throw",
+          "nr:slash",
+          "nr:light",
+          "nr:cls_throwable"
+        ]
+      },
+      "nr:weapon": {
+        "key": "throwing_stars"
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 30.0,
+        "movement_modifier": 0.82
+      }
+    }
+  }
+}

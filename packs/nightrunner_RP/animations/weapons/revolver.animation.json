@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.revolver.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            90.0,
+            -0.0,
+            6.48
+          ],
+          "position": [
+            -0.03,
+            21.95,
+            1.25
+          ],
+          "scale": [
+            0.84,
+            0.84,
+            0.84
+          ]
+        }
+      }
+    },
+    "animation.nr.w.revolver.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            70.85,
+            66.08,
+            -62.34
+          ],
+          "position": [
+            -3.2,
+            27.59,
+            -3.1
+          ],
+          "scale": [
+            0.798,
+            0.798,
+            0.798
+          ]
+        }
+      }
+    },
+    "animation.nr.w.revolver.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            90.0,
+            -0.0,
+            6.48
+          ],
+          "position": [
+            -0.03,
+            21.95,
+            1.25
+          ],
+          "scale": [
+            0.84,
+            0.84,
+            0.84
+          ]
+        }
+      }
+    },
+    "animation.nr.w.revolver.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            78.82,
+            62.78,
+            -54.61
+          ],
+          "position": [
+            -3.53,
+            28.97,
+            -6.47
+          ],
+          "scale": [
+            0.798,
+            0.798,
+            0.798
+          ]
+        }
+      }
+    }
+  }
+}

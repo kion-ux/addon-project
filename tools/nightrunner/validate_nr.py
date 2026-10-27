@@ -1821,7 +1821,12 @@ def check_items():
 def check_blocks():
     for ident, (b, p) in sorted(I.blocks.items()):
         where = f"block {ident}"
-        states = (b.get("description") or {}).get("states") or {}
+        desc = b.get("description") or {}
+        states = dict(desc.get("states") or {})
+        # 特性（traits）が足す状態（placement_direction の minecraft:cardinal_direction など）も状態として数える
+        for trait in (desc.get("traits") or {}).values():
+            for sname in (trait or {}).get("enabled_states", []) or []:
+                states.setdefault(sname, None)
         comp_sets = [("components", b.get("components") or {})]
         for i, perm in enumerate(b.get("permutations", []) or []):
             comp_sets.append((f"permutations[{i}]", perm.get("components") or {}))
