@@ -256,6 +256,24 @@ def disc(bone: Bone, centre, axis, radius: float, thick: float, style: str, n: i
     return out
 
 
+def octo(bone: Bone, centre, axis, radius: float, thick: float, style: str, *, phase: float = 22.5,
+         **kw) -> List[Cube]:
+    """辺がまっすぐな正八角柱（ピストン・大ハンマーの頭・太いパイプ）。外接円の半径 radius、軸 axis に厚み thick。
+    十字と斜め十字の細長い箱 4 本の和はちょうど正八角形になる（disc() の星形・rod() の角の出っ張りが無い）。
+    phase は八角形の向き（22.5 で平らな辺が局所 ±X・±Y を向く）。"""
+    a = _v3(axis)
+    a = a / np.linalg.norm(a)
+    R0 = frame(a, (0, 1, 0) if abs(a[1]) < 0.9 else (1, 0, 0))
+    long_ = 2 * radius * math.cos(math.radians(22.5))
+    short = 2 * radius * math.sin(math.radians(22.5))
+    out = []
+    for k in range(4):
+        t = math.radians(phase - 22.5 + 45.0 * k)
+        Rr = R0 @ np.array([[math.cos(t), -math.sin(t), 0], [math.sin(t), math.cos(t), 0], [0, 0, 1.0]])
+        out.append(oriented(bone, centre, (long_, short, thick), Rr, style, **kw))
+    return out
+
+
 def ring_of(bone: Bone, centre, axis, radius: float, n: int, size, style: str, *, phase=0.0, skip=(), **kw):
     """軸 axis まわりの円周に n 個の箱（歯・鋲・爪）。箱の局所 +Y が外向き、局所 Z が軸。"""
     a = _v3(axis)
