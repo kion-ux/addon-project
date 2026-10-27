@@ -1,0 +1,156 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.nr.gib.move": {
+      "initial_state": "fly",
+      "states": {
+        "fly": {
+          "animations": [
+            "spin"
+          ],
+          "transitions": [
+            {
+              "rest_0": "v.gspin == 0 && v.grest == 0"
+            },
+            {
+              "rest_1": "v.gspin == 0 && v.grest == 1"
+            },
+            {
+              "rest_2": "v.gspin == 0 && v.grest == 2"
+            },
+            {
+              "rest_3": "v.gspin == 0 && v.grest == 3"
+            }
+          ]
+        },
+        "rest_0": {
+          "animations": [
+            "rest_0"
+          ],
+          "transitions": [
+            {
+              "fly": "v.gspin > 0"
+            },
+            {
+              "rest_1": "v.gspin == 0 && v.grest == 1"
+            },
+            {
+              "rest_2": "v.gspin == 0 && v.grest == 2"
+            },
+            {
+              "rest_3": "v.gspin == 0 && v.grest == 3"
+            }
+          ],
+          "blend_transition": 0.12,
+          "blend_via_shortest_path": true
+        },
+        "rest_1": {
+          "animations": [
+            "rest_1"
+          ],
+          "transitions": [
+            {
+              "fly": "v.gspin > 0"
+            },
+            {
+              "rest_0": "v.gspin == 0 && v.grest == 0"
+            },
+            {
+              "rest_2": "v.gspin == 0 && v.grest == 2"
+            },
+            {
+              "rest_3": "v.gspin == 0 && v.grest == 3"
+            }
+          ],
+          "blend_transition": 0.12,
+          "blend_via_shortest_path": true
+        },
+        "rest_2": {
+          "animations": [
+            "rest_2"
+          ],
+          "transitions": [
+            {
+              "fly": "v.gspin > 0"
+            },
+            {
+              "rest_0": "v.gspin == 0 && v.grest == 0"
+            },
+            {
+              "rest_1": "v.gspin == 0 && v.grest == 1"
+            },
+            {
+              "rest_3": "v.gspin == 0 && v.grest == 3"
+            }
+          ],
+          "blend_transition": 0.12,
+          "blend_via_shortest_path": true
+        },
+        "rest_3": {
+          "animations": [
+            "rest_3"
+          ],
+          "transitions": [
+            {
+              "fly": "v.gspin > 0"
+            },
+            {
+              "rest_0": "v.gspin == 0 && v.grest == 0"
+            },
+            {
+              "rest_1": "v.gspin == 0 && v.grest == 1"
+            },
+            {
+              "rest_2": "v.gspin == 0 && v.grest == 2"
+            }
+          ],
+          "blend_transition": 0.12,
+          "blend_via_shortest_path": true
+        }
+      }
+    },
+    "controller.animation.nr.gib.bleed": {
+      "initial_state": "dry",
+      "states": {
+        "dry": {
+          "transitions": [
+            {
+              "trail": "v.gbleed && v.gspin > 0"
+            },
+            {
+              "drip": "v.gbleed && v.gspin == 0"
+            }
+          ]
+        },
+        "trail": {
+          "animations": [
+            "trail"
+          ],
+          "transitions": [
+            {
+              "dry": "!v.gbleed"
+            },
+            {
+              "drip": "v.gspin == 0"
+            }
+          ]
+        },
+        "drip": {
+          "particle_effects": [
+            {
+              "effect": "bleed"
+            }
+          ],
+          "transitions": [
+            {
+              "dry": "!v.gbleed"
+            },
+            {
+              "trail": "v.gspin > 0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

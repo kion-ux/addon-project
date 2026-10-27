@@ -1189,12 +1189,14 @@ def check_client_like(kind, table):
             R.err("reference", f"{where}spawn_egg.texture {egg['texture']} が item_texture に無い")
         check_molang_list(where, _desc_strings(d), res=(me[0] + "_desc", ident), all_strings=True)
         USERS[(me[0] + "_desc", ident)].add(me)
-        # テクスチャとジオメトリの寸法
+        # テクスチャとジオメトリの寸法（同じ短名のテクスチャがあればそれと比べる。nr:gib の z_<key> / generic の
+        # ように配列で組を選ぶエンティティ。無ければ最初のテクスチャと）
+        texs = d.get("textures") or {}
         for k, g in geos.items():
             info = GEO_INFO.get(g)
             if not info:
                 continue
-            for tk, t in (d.get("textures") or {}).items():
+            for t in ([texs[k]] if k in texs else []) + list(texs.values()):
                 if t in I.tex_files:
                     tex_size_vs_geo(where, t, info)
                     break

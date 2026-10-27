@@ -1,0 +1,49 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "nr:sense_ping",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/nr/particle/nr_fx"
+      }
+    },
+    "components": {
+      "minecraft:emitter_lifetime_once": {},
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 1
+      },
+      "minecraft:emitter_shape_point": {},
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": 0.6
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "0.35 + 0.15 * (v.particle_age / v.particle_lifetime)",
+          "0.35 + 0.15 * (v.particle_age / v.particle_lifetime)"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 1024,
+          "texture_height": 512,
+          "uv": [
+            960,
+            320
+          ],
+          "uv_size": [
+            64,
+            64
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "math.clamp((v.cr ?? 1), 0, 1)",
+          "math.clamp((v.cg ?? 0.85), 0, 1)",
+          "math.clamp((v.cb ?? 0.3), 0, 1)",
+          "math.clamp(math.min((v.particle_age / v.particle_lifetime) * 8, (1.0 - (v.particle_age / v.particle_lifetime)) * 2), 0.0, 1.0)"
+        ]
+      }
+    }
+  }
+}

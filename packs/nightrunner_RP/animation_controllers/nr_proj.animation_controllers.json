@@ -1,0 +1,27 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.nr.proj.trail": {
+      "initial_state": "off",
+      "states": {
+        "off": {
+          "transitions": [
+            {
+              "on": "v.nr_trail"
+            }
+          ]
+        },
+        "on": {
+          "animations": [
+            "trail"
+          ],
+          "transitions": [
+            {
+              "off": "!v.nr_trail"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -16,10 +16,18 @@ mcmodel の各キューブが持つ style 名（cube.style）と面ごとのデ�
 公開 API:
   paint_model(model, stylebook, seed=0, face_light=True, ao=True) -> PIL.Image (RGBA, tex_w x tex_h)
       model.tex_w が 0 なら model.pack() してから塗る。cube.style が stylebook に無ければ KeyError。
-      cube.decals = {面: "名前" | {"name": 名前, ...} | [それらのリスト]}
-  zombie_styles(tone, decay, eyes, hair_colour=None, blood=0.4, hair_style="matted", dirt=0.4,
+      cube.decals = {面: "名前" | {"name": 名前, ...} | [それらのリスト]}。キー "*" はキューブ単位の
+      デカールで、各デカールの faces（既定は 6 面）に描く（例 {"*": {"name": "section", "faces": ["down"]}}）
+  zombie_styles(tone, decay, eyes, hair_colour=None, blood=0.1, hair_style="matted", dirt=0.4,
                 life_tone=None, blood_kind="red") -> 体の stylebook（skin / skin_dark / flesh / cut_flesh /
-      bone / teeth / gums / guts / brain / blood / blood_dry / eye / hair / nail）
+      bone / teeth / gums / guts / brain / blood / blood_dry / eye / hair / nail）。体の血は既定で少なめ
+      （古い乾いた茶色が多い = blood_age 0.6）。血の量は傷・断面・顔の口元が受け持つ
+  EYES / eye_info(kind, glow_colour=None) … 目の全種類（nr_spec_zombies.EYES_VOCAB と同じ名前・色）:
+      clouded / bloodshot / milky / glowing_yellow|red|green|orange|cyan / glowing_white（闇の中の光点）/
+      none（眼窩）。glowing_* は EMISSIVE_ALPHA で光る。"eye" 素材（目玉キューブ）と face デカールの両方
+  section_decal(faces, **params) -> {面: {"name": "section", ...}}（断面の上書き。下の section を参照）
+  cube_world_matrices(model) -> {id(cube): 4x4}（3D ノイズを引く休みの姿勢のモデル空間）
+  seam_ratio(model, img) -> 側面の角での模様の切れ具合（1 に近いほど繋がっている。自己テストが使う）
   skin_tone(skin, life_tone=None) -> SKINS の 1 系統に生前の肌色（SKIN_TONES）を混ぜた dict
   style(mat, **params) / cloth_style / denim_style / knit_style / leather_style / metal_style /
   painted_metal_style / outfit_palette(kind) -> スタイル（stylebook の 1 項目）
@@ -34,20 +42,30 @@ mcmodel の各キューブが持つ style 名（cube.style）と面ごとのデ�
   emissive）= number、stripe（colour, count, orient h|v|d, width, hazard, reflective）、badge（kind
   shield|star|circle|patch, colour, text）、grime、stitches、drips、handprint、buttons、pocket、zipper、
   cracks、rust_streaks、veins、glow_spot、logo（架空のロゴ）。位置は at=(u, v)（面の正規化座標）。
+  section … キューブ・面ごとの断面の上書き（cut_flesh の素材の「どの面が断面か・骨はどこか」を
+  キューブごとに変える）: kind limb|neck|torso|plain、centre、bone_at（neck / torso では背骨。背中側に置く）、
+  bone_r、bones=[(u, v, r)]、fat、skin、wet、trachea_at（neck）。皮膚の縁 → 黄色い脂肪の輪 → 赤い筋肉の束
+  → 白い骨（髄）、neck は頸椎・脊髄・気管・食道・頸動脈、torso は腰椎・背筋・大動脈・腸の輪切り。
 
 発光（Bedrock の entity_emissive_alpha 系マテリアル）:
   アルファが 255 未満の texel が光る（光り方 = 1 - alpha/255）。
   * EMISSIVE_ALPHA = 16  … 光る texel（≈94% 自己発光。光る目・UV ランプ・燠火・酸の血）
-  * EMISSIVE_HALO  = 160 … 光る目の周りのにじみ（≈37% 自己発光）
+  * EMISSIVE_HALO  = 40  … 光る目・光る点の周りのにじみ（≈84% 自己発光。DESIGN §13 / rendering.md M3 の
+    「発光画素は α=3〜40」に収める。弱い光に見せるのは α ではなく暗い色で）
   * それ以外の塗った texel は必ず 255、アトラスの使っていない所は 0（どの面からも参照されない）
   光る texel を持つテクスチャはアルファテスト系マテリアル（entity_alphatest 等）で描かないこと
   （alpha 16 の texel が捨てられて穴になる）。
 
-座標の約束（tools/preview.py の FACE_CORNERS と同じ向き）:
+座標の約束（統合版の実際の対応。DESIGN.md §13・nr_preview.py の _CORNERS と同じ）:
   側面（north/south/east/west）は画像の上が上（+Y）。だから垂れる血は世界の下向き = 画像の +v 方向へ
   流れる（契約の「-V」は世界座標での下向きの意味）。
-  north: u→+X, south: u→-X, east: u→+Z, west: u→-Z, up: u→+X / v→-Z, down: u→+X / v→+Z。
-  この向きだと側面 4 枚が north→east→south→west の順で切れ目なく繋がる。
+  ファイル座標で **east は min-X の面（体の右）で u→-Z**、**west は max-X の面で u→+Z**、
+  north（min-Z）: u→+X, south（max-Z）: u→-X, up: u→+X / v→-Z, down: u→+X / v→+Z。
+  この向きだと側面 4 枚が east→north→west→south の順（mcmodel の矩形の並び）で切れ目なく繋がる。
+  （tools/preview.py・hd_scene.py は east を +X に置く旧い並びなので、確認画像は nr_preview で描く）
+  3D ノイズを引く位置は「休みの姿勢のモデル空間」: ボーンとキューブの rotation（pivot 回り）を
+  掛けてから引くので、回ったキューブや傾いたボーンの境でも模様が繋がる（cube_world_matrices）。
+  細かい 2D の模様も、側面は帯の通しの座標で引く（側面の角 3 つで切れない）。
 
 計測（このリポジトリの 4 コア機、python3 tools/nightrunner/nr_paint.py の自己テスト）:
   * 512x512・400 キューブ・18 スタイル・デカール 10 枚: 0.6 秒前後（予算 3 秒）。
@@ -78,7 +96,7 @@ if TOOLS not in sys.path:
 #  定数
 # ---------------------------------------------------------------------------
 EMISSIVE_ALPHA = 16
-EMISSIVE_HALO = 160
+EMISSIVE_HALO = 40
 
 FACES = ("up", "down", "east", "north", "west", "south")
 SIDES = ("east", "north", "west", "south")
@@ -523,29 +541,88 @@ class Field:
 
 
 def _face_frame(face, o, sz):
-    """面の (原点, a 方向, b 方向)。P = O + A*fa + B*fb（preview.py と同じ向き）。"""
+    """面の (原点, a 方向, b 方向)。P = O + A*fa + B*fb（ファイル座標。nr_preview の _CORNERS と同じ）。
+
+    統合版の実際の対応（DESIGN.md §13）: east は min-X の面で左上が (x0, y1, z1)、u は -Z へ。
+    west は max-X の面で左上が (x1, y1, z0)、u は +Z へ。だから側面の帯は east → north → west →
+    south → east の順で切れ目なく一周する（mcmodel の矩形の並びと同じ）。"""
     ox, oy, oz = o
     sx, sy, sz_ = sz
     if face == "north":
         return (ox, oy + sy, oz), (sx, 0, 0), (0, -sy, 0)
     if face == "south":
         return (ox + sx, oy + sy, oz + sz_), (-sx, 0, 0), (0, -sy, 0)
-    if face == "west":
-        return (ox, oy + sy, oz + sz_), (0, 0, -sz_), (0, -sy, 0)
     if face == "east":
+        return (ox, oy + sy, oz + sz_), (0, 0, -sz_), (0, -sy, 0)
+    if face == "west":
         return (ox + sx, oy + sy, oz), (0, 0, sz_), (0, -sy, 0)
     if face == "up":
         return (ox, oy + sy, oz + sz_), (sx, 0, 0), (0, 0, -sz_)
     return (ox, oy, oz), (sx, 0, 0), (0, 0, sz_)
 
 
+def _rotm(rot) -> np.ndarray:
+    """統合版の rotation [rx, ry, rz]（度）→ 回転行列 R = Rz(-rz)·Ry(ry)·Rx(-rx)（nr_preview・nr_rig と同じ）。"""
+    ax, ay, az = (math.radians(float(v)) for v in rot)
+    cx, sx_ = math.cos(-ax), math.sin(-ax)
+    cy, sy_ = math.cos(ay), math.sin(ay)
+    cz, sz_ = math.cos(-az), math.sin(-az)
+    Rx = np.array([[1, 0, 0], [0, cx, -sx_], [0, sx_, cx]])
+    Ry = np.array([[cy, 0, sy_], [0, 1, 0], [-sy_, 0, cy]])
+    Rz = np.array([[cz, -sz_, 0], [sz_, cz, 0], [0, 0, 1]])
+    return Rz @ Ry @ Rx
+
+
+def _pivot_mat(pivot, rot) -> np.ndarray:
+    M = np.eye(4)
+    if rot is not None and any(abs(float(v)) > 1e-9 for v in rot):
+        p = np.asarray(pivot, float)
+        R = _rotm(rot)
+        M[:3, :3] = R
+        M[:3, 3] = p - R @ p
+    return M
+
+
+def cube_world_matrices(model) -> Dict[int, np.ndarray]:
+    """{id(cube): 4x4}。休みの姿勢（ジオメトリに書いたボーンとキューブの rotation だけ）での
+    キューブの局所座標 → モデル空間。3D ノイズをこの空間で引くので、回ったキューブ（指・腱・腸）や
+    猫背で傾いた胸と腹の境でも模様が繋がる。"""
+    bones = {b.name: b for b in getattr(model, "bones", [])}
+    world: Dict[str, np.ndarray] = {}
+
+    def bw(name, depth=0):
+        if name in world:
+            return world[name]
+        b = bones[name]
+        M = _pivot_mat(b.pivot or (0, 0, 0), b.rotation)
+        par = getattr(b, "parent", None)
+        if par and par in bones and depth < 64:
+            M = bw(par, depth + 1) @ M
+        world[name] = M
+        return M
+
+    out: Dict[int, np.ndarray] = {}
+    for b in getattr(model, "bones", []):
+        Wb = bw(b.name)
+        for c in b.cubes:
+            if c.rotation and any(c.rotation):
+                piv = c.pivot or [c.origin[i] + c.size[i] / 2 for i in range(3)]
+                out[id(c)] = Wb @ _pivot_mat(piv, c.rotation)
+            else:
+                out[id(c)] = Wb
+    return out
+
+
 # 面の u/v がキューブのどの軸か、法線がどの軸か（0=X,1=Y,2=Z）
 _FACE_AXES = {"north": (0, 1, 2), "south": (0, 1, 2), "east": (2, 1, 0), "west": (2, 1, 0),
               "up": (0, 2, 1), "down": (0, 2, 1)}
+# 側面が箱を一周する順（u の向きに繋がる。mcmodel の矩形も左からこの順に並ぶ）
+_SIDE_RING = ("east", "north", "west", "south")
 
 
-def _build_field(entries, ybounds, seed, H=0, W=0) -> Field:
-    """entries: [(cube_index, cube, face, rect)]。H, W はアトラスの寸法（隣接参照用）。"""
+def _build_field(entries, ybounds, seed, H=0, W=0, mats=None) -> Field:
+    """entries: [(cube_index, cube, face, rect)]。H, W はアトラスの寸法（隣接参照用）。
+    mats: {id(cube): 4x4}（cube_world_matrices）。あればキューブの局所座標をモデル空間へ移す。"""
     nf = len(entries)
     x0 = np.empty(nf, np.int64)
     y0 = np.empty(nf, np.int64)
@@ -566,11 +643,29 @@ def _build_field(entries, ybounds, seed, H=0, W=0) -> Field:
         fc[i] = _FCODE[face]
         ci[i] = k
         o, a, b = _face_frame(face, cube.origin, cube.size)
+        M = mats.get(id(cube)) if mats else None
+        if M is not None:
+            Rm = M[:3, :3]
+            o = Rm @ np.asarray(o, float) + M[:3, 3]
+            a = Rm @ np.asarray(a, float)
+            b = Rm @ np.asarray(b, float)
         O[i] = o
         A[i] = a
         B[i] = b
-        hh = _seed(seed, k, face)
-        off[i] = ((hh & 0xFFFF) / 65535.0 * 97.0, ((hh >> 16) & 0x7FFF) / 32767.0 * 89.0)
+        if face in SIDES:
+            # 側面は帯（east → north → west → south）の通しの座標にする: 細かい 2D の模様も
+            # 側面の角 3 つでは切れずに回り込む（ずらしはキューブごと）
+            hh = _seed(seed, k, "side")
+            pu = 0.0
+            for f_ in _SIDE_RING[:_SIDE_RING.index(face)]:
+                r_ = cube.rects.get(f_)
+                pu += (r_[2] if r_ is not None and r_[2] > 0 else
+                       max(1, int(round(cube.size[_FACE_AXES[f_][0]] * float(cube._scale or 1)))))
+            off[i] = ((hh & 0xFFFF) / 65535.0 * 97.0 + pu / float(cube._scale or 1),
+                      ((hh >> 16) & 0x7FFF) / 32767.0 * 89.0)
+        else:
+            hh = _seed(seed, k, face)
+            off[i] = ((hh & 0xFFFF) / 65535.0 * 97.0, ((hh >> 16) & 0x7FFF) / 32767.0 * 89.0)
         size = list(cube.size)
         # 同じ長さなら縦（Y）を長軸とみなす
         la = max(range(3), key=lambda ax_: (size[ax_] + (0.01 if ax_ == 1 else 0.0)))
@@ -880,7 +975,8 @@ def m_skin(F, p, sd):
         col = _mix(col, _rgb((22, 17, 16)), black * 0.8)
         F.wetm = np.maximum(F.wetm if F.wetm is not None else 0, deep * 0.35)
     # 爛れ・かさぶた・膿疱（ゆがんだ Worley。種類も大きさもばらばら）
-    les = float(_P(p, "lesions", [0.0, 0.06, 0.2, 0.3, 0.38][di]))
+    # 既定の量は控えめ（多いと全身に血が飛んだ「そばかす」に見える）
+    les = float(_P(p, "lesions", [0.0, 0.04, 0.1, 0.16, 0.24][di]))
     if les > 0:
         wu = (_n2(F, 0.9, 0.9, sd + 14, 2) - 0.5) * 1.1
         wv = (_n2(F, 0.9, 0.9, sd + 15, 2) - 0.5) * 1.1
@@ -889,6 +985,8 @@ def m_skin(F, p, sd):
         act = cid < f32(les)
         hb = _fin((cid * 16777216).astype(np.uint32) ^ np.uint32(sd & 0xFFFF))
         rr = np.maximum(0.09 + 0.24 * _u01(hb) ** 1.5, f32(0.7 * cf) / F.s)
+        # 小さな面（鼻先・指・耳）を 1 つの爛れが覆い尽くして「赤い四角」にならないように
+        rr = np.minimum(rr, np.maximum(f32(0.3 * cf) * np.minimum(F.fw, F.fh) / F.s, f32(0.7 * cf) / F.s))
         kind = _u01(_fin(hb ^ np.uint32(0x632BE5AB)))
         d = F1 / rr
         halo = act * _ss(2.2, 0.9, d)
@@ -899,8 +997,8 @@ def m_skin(F, p, sd):
         pus = inside & (kind >= 0.85)
         gr2 = _grain(F, sd + 17)
         sc = _ramp(gr2 * 0.5 + d * 0.5, [(0.0, (34, 16, 12)), (0.5, (62, 30, 20)), (1.0, (96, 50, 34))])
-        so = _ramp(d + (gr2 - 0.5) * 0.25, [(0.0, (40, 4, 6)), (0.45, (80, 12, 12)), (0.85, (122, 32, 28)),
-                                            (1.0, (136, 58, 50))])
+        so = _ramp(d + (gr2 - 0.5) * 0.25, [(0.0, (38, 8, 8)), (0.45, (72, 22, 18)), (0.85, (108, 44, 34)),
+                                            (1.0, (128, 66, 54))])
         pu = _ramp(d + (gr2 - 0.5) * 0.2, [(0.0, (214, 198, 140)), (0.45, (186, 160, 96)), (0.75, (140, 54, 44)),
                                            (1.0, (124, 52, 46))])
         col = np.where(scab[:, None], sc, col)
@@ -909,9 +1007,10 @@ def m_skin(F, p, sd):
         hgt += scab * (1 - d) * 0.6 + pus * (1 - d) * 0.8 - sore * (1 - d) * 0.9
         F.wetm = np.maximum(F.wetm if F.wetm is not None else 0, (sore | pus) * 0.9)
     # 皮膚が剥がれて肉が見える所（decay 2 以上）
-    expo = float(_sx(p, "exposed", [0.0, 0.0, 0.02, 0.07, 0.15][di]))
+    expo = float(_sx(p, "exposed", [0.0, 0.0, 0.02, 0.05, 0.13][di]))
     if expo > 0:
-        f = _n3(F, 0.34, sd + 18, 3, warp=1.6)
+        # 大きめの斑を少しだけ（細かい斑が全身に散ると血しぶきに見える）
+        f = _n3(F, 0.2, sd + 18, 3, warp=1.2)
         th = _thr(expo)
         e = (f - th) / (0.08 / np.sqrt(F.s))
         peel = _ss(-2.0, -1.3, e) * (1 - _ss(-1.3, -0.8, e))      # めくれた皮の縁（少し明るい）
@@ -920,6 +1019,8 @@ def m_skin(F, p, sd):
         col = col * (1.0 + peel[:, None] * np.array([0.07, 0.06, 0.02], f32))
         col = _mix(col, _rgb((50, 18, 14)), crust * 0.85)
         fl = _flesh_colour(F, sd + 19, base=(116, 20, 22), wet=0.0, fat=0.03)
+        # 腐って黒ずんだ肉（傷口の新しい赤と区別する）
+        fl = _mix(fl, fl * np.array([0.62, 0.85, 0.75], f32) + _rgb((24, 14, 8)), np.full(F.n, 0.7, f32))
         if expo > 0.4:
             # 皮の無い体: 長軸に沿った黄色い脂肪の筋と白い腱
             tend = _ss(0.72, 0.86, _streak(F, 0.3, sd + 24))
@@ -1194,12 +1295,56 @@ def m_gore_wet(F, p, sd):
     return col
 
 
-_EYE_KINDS = ("clouded", "bloodshot", "glowing_yellow", "glowing_red", "glowing_green", "none")
+# 目の種類（nr_spec_zombies.EYES_VOCAB と同じ名前・同じ色。自己テストで突き合わせる）。
+# sclera 白目 / iris 虹彩 / pupil 瞳（None は無し）/ glow 発光色（None は光らない）
+EYES: Dict[str, dict] = {
+    "clouded": dict(sclera=(200, 196, 184), iris=(150, 160, 170), pupil=(110, 120, 130), glow=None),
+    "bloodshot": dict(sclera=(220, 140, 130), iris=(90, 60, 40), pupil=(10, 8, 8), glow=None),
+    "milky": dict(sclera=(226, 226, 220), iris=(226, 226, 220), pupil=None, glow=None),
+    "glowing_yellow": dict(sclera=(60, 50, 20), iris=(255, 220, 80), pupil=(255, 250, 200),
+                           glow=(255, 220, 80)),
+    "glowing_red": dict(sclera=(60, 10, 10), iris=(255, 50, 30), pupil=(255, 200, 180),
+                        glow=(255, 50, 30)),
+    "glowing_green": dict(sclera=(40, 60, 20), iris=(150, 255, 60), pupil=(230, 255, 200),
+                          glow=(150, 255, 60)),
+    "glowing_orange": dict(sclera=(60, 30, 10), iris=(255, 140, 40), pupil=(255, 230, 180),
+                           glow=(255, 140, 40)),
+    "glowing_cyan": dict(sclera=(20, 50, 50), iris=(110, 240, 255), pupil=(220, 255, 255),
+                         glow=(110, 240, 255)),
+    "glowing_white": dict(sclera=(10, 10, 14), iris=(240, 240, 255), pupil=(255, 255, 255),
+                          glow=(240, 240, 255)),
+    "none": dict(sclera=(40, 10, 10), iris=None, pupil=None, glow=None),
+}
+_EYE_KINDS = tuple(EYES)
+# 光点だけの目（白目は闇、中心の 1 texel だけ光る）
+_PINPOINT_EYES = ("glowing_white",)
+
+
+def eye_info(kind: str, glow_colour=None) -> dict:
+    """目の種類 → {sclera, iris, pupil, glow}（float32 の色か None）。glow_colour で発光色を差し替え。
+    EYES に無い "glowing_*" は glow_colour（無ければ黄色）で光る目として扱う。それ以外の未知の名前は
+    ValueError（spec の綴り間違いを黙って通さない）。"""
+    if kind in EYES:
+        info = dict(EYES[kind])
+    elif str(kind).startswith("glowing_"):
+        info = dict(EYES["glowing_yellow"])
+        if glow_colour is None:
+            glow_colour = info["glow"]
+    else:
+        raise ValueError(f"未知の目 '{kind}'（{', '.join(EYES)}）")
+    if glow_colour is not None and info["glow"] is not None:
+        gc = tuple(int(v) for v in _rgb(glow_colour))
+        info["glow"] = gc
+        info["iris"] = gc
+    return {k: (None if v is None else _rgb(v)) for k, v in info.items()}
 
 
 def m_eye(F, p, sd):
-    """目玉（小さなキューブ用）。front 面（既定 north）に虹彩。"""
+    """目玉（小さなキューブ用）。front 面（既定 north）に虹彩と瞳。EYES の全種類:
+    clouded 灰青の濁った瞳 / bloodshot 赤い白目と開いた黒い瞳 / milky 瞳まで白濁 / none 眼窩の闇 /
+    glowing_* 全体が光る（中心ほど白い）/ glowing_white 闇の中心の 1 点だけ光る。"""
     kind = _P(p, "kind", "clouded")
+    info = eye_info(kind, p.get("glow_colour"))
     front = _FCODE[_P(p, "front", "north")]
     x = (F.fa - 0.5) * 2
     y = (F.fb - 0.5) * 2
@@ -1210,30 +1355,39 @@ def m_eye(F, p, sd):
         col = _ramp(r + (gr - 0.5) * 0.3, [(0.0, (8, 2, 2)), (0.6, (34, 6, 6)), (1.2, (96, 18, 16))])
         F.wetm = np.full(F.n, 0.8, f32)
         return col
-    if kind.startswith("glowing"):
-        gc = {"glowing_yellow": (255, 214, 72), "glowing_red": (255, 46, 24),
-              "glowing_green": (150, 255, 90)}.get(kind, (255, 214, 72))
-        gc = _rgb(_P(p, "glow_colour", gc))
-        core = _mix(gc, _rgb((255, 250, 220)), _ss(0.55, 0.0, r) * is_front)
-        col = core * (0.82 + 0.18 * gr)[:, None]
+    if info["glow"] is not None:
+        gc = info["glow"]
+        if kind in _PINPOINT_EYES:
+            # 闇の玉。前の面の中心の 1〜2 texel だけが光る
+            col = info["sclera"] * (0.7 + 0.5 * gr)[:, None] + f32(6)
+            rpx = r * np.minimum(F.fw, F.fh) * 0.5
+            pt = is_front & (rpx < np.maximum(0.75, np.minimum(F.fw, F.fh) * 0.12))
+            col = np.where(pt[:, None], np.broadcast_to(info["pupil"], (F.n, 3)), col)
+            F.glow = pt
+            F.wetm = np.full(F.n, 0.6, f32)
+            return col
+        core = _ramp(np.where(is_front, r, 1.0 + 0.3 * r),
+                     [(0.0, info["pupil"]), (0.35, np.minimum(255, gc * 1.0 + 30)), (0.85, gc),
+                      (1.5, gc * 0.62)])
+        col = core * (0.84 + 0.16 * gr)[:, None]
         F.glow = np.ones(F.n, bool)
         return col
-    if kind == "bloodshot":
-        scl = _ramp(gr * 0.5 + _n2(F, 3.0, 3.0, sd + 2, 2) * 0.5, [(0.2, (150, 52, 46)), (0.6, (196, 108, 96)), (0.9, (214, 150, 132))])
-        iris_c = _rgb((54, 36, 26))
-        ir = 0.42
-    else:
-        scl = _ramp(gr * 0.5 + _n2(F, 3.0, 3.0, sd + 2, 2) * 0.5, [(0.2, (150, 140, 110)), (0.6, (196, 186, 154)), (0.9, (214, 206, 180))])
-        iris_c = _rgb((168, 180, 182))
-        ir = 0.6
+    scl0 = info["sclera"]
+    t = gr * 0.5 + _n2(F, 3.0, 3.0, sd + 2, 2) * 0.5
+    scl = _ramp(t, [(0.2, scl0 * 0.66), (0.6, scl0 * 0.86), (0.9, scl0 * 0.95)])
+    if kind == "clouded":
+        scl = scl * np.array([0.96, 0.94, 0.86], f32)          # 死んだ白目の黄ばみ
     vn, _, _ = _iso(F, 1.2, sd + 3, 2, warp=1.0, width=0.8)
     vn = vn * (np.minimum(F.fw, F.fh) >= 4)          # 小さな目玉に血管の線を引くと傷に見える
-    scl = _mix(scl, _rgb((150, 24, 24)), vn * (0.7 if kind == "bloodshot" else 0.35))
-    iris = _mix(iris_c * 0.8, iris_c, _ss(ir, 0.0, r))
-    if kind == "bloodshot":
-        iris = _mix(iris, _rgb((10, 6, 6)), _ss(0.22, 0.12, r))
-    else:
-        iris = _mix(iris, _rgb((222, 228, 226)), _ss(0.35, 0.0, r) * 0.6)   # 白濁
+    scl = _mix(scl, _rgb((150, 24, 24)), vn * (0.7 if kind == "bloodshot" else 0.3))
+    ir = {"bloodshot": 0.46, "milky": 0.62}.get(kind, 0.58)
+    iris_c = info["iris"]
+    iris = _mix(iris_c * 0.78, iris_c, _ss(ir, 0.0, r))
+    if info["pupil"] is not None:
+        pr = 0.30 if kind == "bloodshot" else 0.2           # 充血型は瞳が開ききっている
+        iris = _mix(iris, info["pupil"], _ss(pr, pr * 0.55, r))
+    if kind in ("clouded", "milky"):
+        iris = _mix(iris, _rgb((228, 232, 232)), _ss(0.45, 0.0, r) * (0.35 if kind == "clouded" else 0.6))
     col = np.where((is_front & (r < ir))[:, None], iris, scl)
     col = col * (1.0 - _ss(0.7, 1.2, r)[:, None] * 0.35)
     F.wetm = np.full(F.n, 0.9, f32)
@@ -1846,11 +2000,13 @@ MATERIAL_PARAMS = {
             "spores / iridescent / emissive_vein / decay_tint",
     "flesh": "base (128,24,26) / fat 0..1 (0) / wet (0.7)",
     "cut_flesh": "tone（皮膚の縁）/ section 断面の面 ('up','down') / fat 脂肪の内側の半径 (0.76) / "
-                 "bone True / bone_r (0.26) / bone_at (0,0) / centre (0.5,0.5)",
+                 "bone True / bone_r (0.26) / bone_at (0,0) / centre (0.5,0.5)。キューブごとに変えるときは "
+                 "section デカール（section_decal）で面を描き直す",
     "bone": "age 0..1 (0.4)", "teeth": "decay / tooth_w 単位 (0.55) / row 'upper'|'lower'",
     "gums": "-", "guts": "rot 0..1 (0.5)", "brain": "-", "blood": "blood_kind", "blood_dry": "blood_kind",
-    "gore_wet": "-", "eye": "kind clouded|bloodshot|glowing_yellow|glowing_red|glowing_green|none / "
-                            "front 'north' / glow_colour",
+    "gore_wet": "-", "eye": "kind（EYES のキー: clouded|bloodshot|milky|glowing_yellow|glowing_red|"
+                            "glowing_green|glowing_orange|glowing_cyan|glowing_white|none）/ front 'north' / "
+                            "glow_colour",
     "hair": "style matted|long|short|buzz|balding|patchy / skin（balding の地肌）",
     "nail": "-", "cloth": "pattern plain|stripes|hstripes|pinstripe|plaid|camo|print|check / period 単位 / "
                           "alt, alt2, alt3, accent / folds / seams / torn 0..1 / under 破れ目の下の色",
@@ -1928,7 +2084,9 @@ def _ov_burn(F, col, amt, sd):
     return _mix(col, ch, charm)
 
 
-def _ov_blood(F, col, amt, mode, sd, kind="red"):
+def _ov_blood(F, col, amt, mode, sd, kind="red", age=0.0):
+    """血の上塗り。amt 0..1（量）、age 0..1（0 = 新しく赤い、1 = 古く乾いた茶色が多い）。
+    量が少ないときは飛沫の点を減らす（少量の血が全身に散った「そばかす」に見えないように）。"""
     if amt <= 0:
         return col
     b_hi, b_mid, b_dk, b_glow = _blood_cols(kind)
@@ -1942,13 +2100,15 @@ def _ov_blood(F, col, amt, mode, sd, kind="red"):
     # 薄く塗り広げた縁（半透明、かすれ）
     smear = _ss(-1.8, -0.2, e) * _ss(0.45, 0.7, _n2(F, 1.1, 0.5, sd + 11, 2)) * 0.55
     # 飛沫: 「飛んだ方向」の帯の中にだけ点が集まる
-    zone = _ss(-0.05, 0.08, _n3(F, 0.2, sd + 2, 2, warp=1.0) - f32(_thr(0.12 + 0.4 * amt)))
+    zone = _ss(-0.05, 0.08, _n3(F, 0.2, sd + 2, 2, warp=1.0) - f32(_thr(0.06 + 0.46 * amt)))
+    dens = min(1.0, 0.2 + 1.6 * amt)
     cf = 1.4
     F1, _, cid, _, _ = worley2(F.U * f32(cf), F.V * f32(cf), sd + 3)
     hr = _u01(_fin((cid * 16777216).astype(np.uint32) ^ np.uint32((sd + 4) & 0xFFFF)))
     rmin = f32((0.85 if mode == "soak" else 0.55) * cf) / F.s
     rr = np.maximum(0.08 + 0.3 * hr ** 2, rmin)
-    dots = ((cid < (0.45 if mode == "soak" else 0.6) * zone + 0.015 * amt) & (F1 < rr)).astype(f32)
+    dots = ((cid < (0.45 if mode == "soak" else 0.6) * zone * dens + 0.015 * amt * amt)
+            & (F1 < rr)).astype(f32)
     cov = np.maximum(stain, dots)
     dr, dgl = _drip_mask(F, stain > 0.5, amt, sd + 5)
     cov = np.maximum(cov, dr)
@@ -1971,8 +2131,15 @@ def _ov_blood(F, col, amt, mode, sd, kind="red"):
                   [(0.0, b_hi), (0.4, b_mid), (1.0, b_dk)])
     thin = col * tint + b_mid * 0.3
     bc = _mix(thin, fresh, _ss(0.0, 0.5, thick))
-    dry = _ss(0.55, 0.8, _n3(F, 0.5, sd + 8, 2))
-    bc = _mix(bc, bc * np.array([0.62, 0.8, 0.75], f32) + _rgb((8, 5, 2)), dry * 0.65)
+    ag = float(min(1.0, max(0.0, age)))
+    dry = np.clip(_ss(0.55 - 0.45 * ag, 0.8 - 0.4 * ag, _n3(F, 0.5, sd + 8, 2)), 0, 1)
+    if ag > 0:
+        # 古い血: 乾いて黒ずんだ赤茶色（明るい赤は傷口の新しい血だけに残す）
+        dried = np.minimum(bc * np.array([0.5, 0.62, 0.55], f32) + _rgb((26, 12, 6)), 255)
+        bc = _mix(bc, dried, dry * (0.7 + 0.25 * ag))
+        thin = _mix(thin, col * np.array([0.62, 0.5, 0.45], f32) + _rgb((22, 8, 4)), np.full(F.n, 0.6 * ag, f32))
+    else:
+        bc = _mix(bc, bc * np.array([0.62, 0.8, 0.75], f32) + _rgb((8, 5, 2)), dry * 0.65)
     out = _mix(col, thin * 0.85 + col * 0.15, smear * (1 - cov))
     out = _mix(out, bc, cov)
     # 照り: 厚い血の上の縁、点々、垂れの先端
@@ -2086,8 +2253,12 @@ class _Face:
         self.rgb[...] = self.rgb + (col - self.rgb) * m[..., None]
 
     def mul(self, mask, factor):
+        """mask の所を factor 倍。factor はスカラー・(3,) の色ごと・(h, w) の texel ごと・(h, w, 3)。"""
         m = np.clip(np.asarray(mask, f32), 0, 1)[..., None]
-        self.rgb[...] = self.rgb * (1.0 + (np.asarray(factor, f32) - 1.0) * m)
+        f = np.asarray(factor, f32)
+        if f.ndim == 2:
+            f = f[..., None]
+        self.rgb[...] = self.rgb * (1.0 + (f - 1.0) * m)
 
     def emit(self, mask, col, alpha=EMISSIVE_ALPHA, thr=0.5):
         m = np.asarray(mask) > thr
@@ -2487,9 +2658,187 @@ def d_glow_spot(fc: _Face, d):
     fc.emit(fc.ellipse(cu, cv, r, r), col)
     halo = fc.ellipse(cu, cv, r * 1.6, r * 1.6) * (1 - fc.ellipse(cu, cv, r, r))
     m = halo > 0.5
-    fc.rgb[m] = fc.rgb[m] * 0.5 + col * 0.5
+    # にじみはほぼ全発光（α=EMISSIVE_HALO）なので色を暗くして「弱い光」にする
+    fc.rgb[m] = fc.rgb[m] * 0.35 + col * 0.3
     fc.alpha[m] = np.minimum(fc.alpha[m], EMISSIVE_HALO)
     fc.glow[m] = True
+
+
+def _sec_disc(fc: _Face, cx, cy, rx, ry=None, soft=1.0):
+    """texel 座標の楕円のマスク（縁 1 texel で滑らか）と正規化距離。"""
+    ry = rx if ry is None else ry
+    dx = (fc.px - cx) / max(0.5, rx)
+    dy = (fc.py - cy) / max(0.5, ry)
+    dd = np.sqrt(dx * dx + dy * dy)
+    return np.clip((1.0 - dd) * max(0.5, min(rx, ry)) / soft + 0.5, 0, 1), dd
+
+
+def _sec_bone(fc: _Face, cx, cy, R, sd, marrow=True, spongy=False):
+    """断面の骨: 白い皮質の輪と、赤い髄（spongy なら海綿状の黄色い骨）、周りの暗い溝。texel 単位。"""
+    R = max(0.8, R)
+    m, dd = _sec_disc(fc, cx, cy, R)
+    groove = np.clip(1.0 - np.abs(dd - 1.0 - 0.6 / R) * R / 0.9, 0, 1) * (dd > 0.95)
+    fc.mul(groove, 0.5)
+    gr = fc.grain(sd)
+    cort = _ramp(gr.reshape(-1), [(0.0, (196, 184, 158)), (1.0, (240, 232, 212))]).reshape(fc.h, fc.w, 3)
+    fc.paint(m, cort)
+    if spongy:
+        sp = _ramp(fc.grain(sd + 1).reshape(-1), [(0.0, (150, 70, 52)), (0.45, (206, 168, 120)),
+                                                   (1.0, (230, 206, 160))]).reshape(fc.h, fc.w, 3)
+        fc.paint(np.clip((0.78 - dd) * R + 0.5, 0, 1), sp)
+    elif marrow and R >= 1.3:
+        mar = _ramp(fc.grain(sd + 2).reshape(-1), [(0.0, (92, 22, 18)), (0.5, (138, 46, 32)),
+                                                    (1.0, (186, 120, 70))]).reshape(fc.h, fc.w, 3)
+        fc.paint(np.clip((0.55 - dd) * R + 0.5, 0, 1), mar)
+
+
+def d_section(fc: _Face, d):
+    """切断面の断面（キューブ・面ごとの上書き。cut_flesh の素材が塗った面を描き直す）。
+
+    外から 皮膚の縁 → 黄色い脂肪の輪 → 赤い筋肉の束（白い筋膜の線）→ 骨。濡れた照りと溜まった血。
+    params（座標は面の正規化座標 u →右, v →下。半径は面の短い方の半分を 1 とした割合）:
+      kind     "limb"（既定。骨 1 本）/ "neck"（頸椎・気管・食道・頸動脈）/ "torso"（腰椎と背筋・大動脈・
+               ぎっしり詰まった腸の輪切り）/ "plain"（骨なし）
+      centre   断面の中心 (0.5, 0.5)
+      bone_at  骨（neck / torso では背骨）の位置。None で骨なし。既定は limb = centre、
+               neck / torso = 中心から v の小さい側へ（呼ぶ側が「背中の向き」に合わせて渡すこと）
+      bone_r   骨の半径（limb 0.26 / neck 0.24 / torso 0.17）。bones=[(u, v, r), ...] で骨を足せる
+      fat      脂肪の輪の内側の半径（limb 0.74 / neck 0.84 / torso 0.8）。skin 皮膚の縁の内側 (0.9)
+      wet      濡れ (0.8)
+    """
+    kind = d.get("kind", "limb")
+    w, h = fc.w, fc.h
+    sd = fc.seed
+    cu, cv = d.get("centre", (0.5, 0.5))
+    half = min(w, h) * 0.5
+    x = (fc.px / w - cu) / 0.5
+    y = (fc.py / h - cv) / 0.5
+    rag = (fc.noise(1.3, sd + 1, 2) - 0.5) * 0.16
+    pe = 2.6
+    r = (np.abs(x) ** pe + np.abs(y) ** pe) ** (1 / pe) * (1.0 + rag)
+    dflt = {"limb": (0.74, 0.26), "neck": (0.84, 0.24), "torso": (0.8, 0.17), "plain": (0.74, 0.0)}
+    fat_in, br0 = dflt.get(kind, dflt["limb"])
+    fat_in = float(d.get("fat", fat_in))
+    skin_in = float(d.get("skin", 0.9))
+    if "bone_at" in d:
+        bone_at = d["bone_at"]
+    elif kind in ("neck", "torso"):
+        bone_at = (cu, cv - (0.27 if kind == "neck" else 0.32))
+    elif kind == "plain":
+        bone_at = None
+    else:
+        bone_at = (cu, cv)
+    br = float(d.get("bone_r", br0)) * half
+    # --- 筋肉（束の断面: Worley のセルごとに色が少し違い、境に白い筋膜）
+    F1, F2, cid, _, _ = worley2(fc.px / fc.s * 1.4 + 3.1, fc.py / fc.s * 1.4 + 1.7, sd + 2)
+    memb = 1.0 - _ss(0.02, 0.13, F2 - F1)
+    mt = 0.5 + (cid - 0.5) * 0.5 + (fc.grain(sd + 3) - 0.5) * 0.25 - memb * 0.3
+    mus = _ramp(mt.reshape(-1), [(0.0, (60, 6, 8)), (0.45, (116, 14, 16)), (0.8, (160, 34, 32)),
+                                 (1.1, (190, 72, 62))]).reshape(h, w, 3)
+    mus = mus + (_rgb((206, 150, 140)) - mus) * (memb * 0.4)[..., None]
+    fc.paint(np.ones((h, w), f32), mus)
+    # --- 脂肪の輪（ぶつぶつした黄色）。内側の縁は筋肉へ不規則に食い込む
+    G1, G2, gc, _, _ = worley2(fc.px / fc.s * 2.6, fc.py / fc.s * 2.6, sd + 4)
+    ft = 0.55 + (gc - 0.5) * 0.4 - (1.0 - _ss(0.0, 0.2, G2 - G1)) * 0.3
+    fat = _ramp(ft.reshape(-1), [(0.0, (150, 112, 54)), (0.5, (214, 182, 98)),
+                                 (1.0, (240, 216, 142))]).reshape(h, w, 3)
+    wob = (fc.noise(2.2, sd + 5, 2) - 0.5) * 0.08
+    fc.paint(_ss(fat_in - 0.03, fat_in + 0.02, r + wob), fat)
+    # --- 皮膚の縁（体の肌の色）と、切り口の外周の暗さ
+    base, shd, hil = _tone(fc.style if fc.style.get("tone") is not None else {"tone": "pale"})
+    sk = _ramp(fc.grain(sd + 6).reshape(-1), [(0.0, shd), (0.6, base), (1.0, hil)]).reshape(h, w, 3)
+    fc.paint(_ss(skin_in - 0.02, skin_in + 0.03, r), sk)
+    fc.mul(_ss(0.95, 1.06, r), 0.62)
+    # --- 種類ごとの中身
+    inner = r < fat_in - 0.02
+    if kind in ("neck", "torso") and bone_at is not None:
+        sx, sy = bone_at[0] * w, bone_at[1] * h
+        bx, by = sx - cu * w, sy - cv * h
+        n_ = math.hypot(bx, by)
+        bx, by = (bx / n_, by / n_) if n_ > 1e-6 else (0.0, -1.0)
+        qx, qy = -by, bx
+        along = (fc.px - sx) * bx + (fc.py - sy) * by          # 背中へ +
+        across = (fc.px - sx) * qx + (fc.py - sy) * qy
+        R = max(1.2, br)
+        if kind == "torso":
+            # 背骨の両脇の太い背筋（暗い赤の塊）と、腹腔の腸の輪切り・大動脈
+            for sg in (-1, 1):
+                em, _ = _sec_disc(fc, sx + qx * sg * 1.9 * R + bx * 0.7 * R, sy + qy * sg * 1.9 * R + by * 0.7 * R,
+                                  1.25 * R, 1.25 * R)
+                fc.mul(em * inner, np.array([0.78, 0.6, 0.62], f32))
+            # 腹腔: 脂肪の輪の内側で、背骨と背筋より前。腸の輪切り（管の壁・中身）がぎっしり詰まり、
+            # 隙間に血が溜まる。腸 1 本は面の短い方の半分の 0.3 ほど（小さいと砂嵐に見える）
+            cav = inner & (along < -1.5 * R) & (r < fat_in - 0.05)
+            cell = max(3.2, 0.3 * half)
+            H1, H2, hc, _, _ = worley2(fc.px / cell + 0.37, fc.py / cell + 0.71, sd + 7, jitter=0.55)
+            tube = _ss(0.47, 0.40, H1)
+            wall = _ss(0.47, 0.42, H1) * (1 - _ss(0.36, 0.30, H1))
+            gcol = _ramp((hc * 0.6 + fc.grain(sd + 8) * 0.4).reshape(-1),
+                         [(0.0, (158, 88, 84)), (0.5, (200, 132, 122)), (1.0, (222, 168, 146))]).reshape(h, w, 3)
+            fc.paint(cav * 0.95, _rgb((48, 4, 8)))                  # 腸の間に溜まった血
+            fc.paint(cav * tube, gcol)
+            fc.paint(cav * wall, _rgb((112, 44, 52)), 0.85)
+            lum = cav * _ss(0.2, 0.1, H1) * (hc > 0.35)
+            fc.paint(lum, _rgb((92, 62, 30)), 0.9)                 # 中身（黄褐色）
+            fc.paint(cav * tube * (fc.grain(sd + 13) > 0.9), _GLINT, 0.5)
+            am, _ = _sec_disc(fc, sx - bx * 2.1 * R, sy - by * 2.1 * R, 0.6 * R)
+            fc.paint(am, _rgb((210, 170, 160)))                    # 大動脈の壁
+            am2, _ = _sec_disc(fc, sx - bx * 2.1 * R, sy - by * 2.1 * R, 0.38 * R)
+            fc.paint(am2, _rgb((70, 4, 8)))
+        else:
+            # 首: 前に気管（白い軟骨の輪と暗い穴）、その後ろに潰れた食道、両脇に頸動脈
+            ta = d.get("trachea_at")
+            if ta is None:
+                tx, ty = cu * w - bx * 0.6 * half, cv * h - by * 0.6 * half
+            else:
+                tx, ty = ta[0] * w, ta[1] * h
+            tr = max(1.2, 0.2 * half)
+            tm, _ = _sec_disc(fc, tx, ty, tr)
+            fc.paint(tm, _rgb((222, 204, 196)))
+            lm, _ = _sec_disc(fc, tx, ty, max(0.55, tr * 0.55))
+            fc.paint(lm, _rgb((26, 6, 8)))
+            ex_, ey_ = (tx + sx) / 2 + bx * 0.1 * half, (ty + sy) / 2 + by * 0.1 * half
+            om, _ = _sec_disc(fc, ex_, ey_, max(1.0, 0.24 * half), max(0.7, 0.1 * half))
+            fc.paint(om, _rgb((150, 58, 62)))
+            fc.paint(om * (np.abs((fc.px - ex_) * bx + (fc.py - ey_) * by) < 0.5), _rgb((60, 12, 16)))
+            for sg in (-1, 1):
+                vx_ = tx + qx * sg * 0.42 * half + bx * 0.12 * half
+                vy_ = ty + qy * sg * 0.42 * half + by * 0.12 * half
+                cm, _ = _sec_disc(fc, vx_, vy_, max(0.7, 0.1 * half))
+                fc.paint(cm, _rgb((96, 6, 10)))
+                jm, _ = _sec_disc(fc, vx_ + qx * sg * 0.16 * half, vy_ + qy * sg * 0.16 * half, max(0.6, 0.09 * half))
+                fc.paint(jm * (1 - cm), _rgb((54, 14, 34)))
+        # 椎骨: 椎体（海綿骨）・椎弓と脊柱管（中に白っぽい脊髄）・後ろへ突き出す棘突起・（腰椎は）横突起
+        _sec_bone(fc, sx - bx * 0.35 * R, sy - by * 0.35 * R, 1.05 * R, sd + 9, spongy=True)
+        arch, _ = _sec_disc(fc, sx + bx * 0.75 * R, sy + by * 0.75 * R, 0.78 * R)
+        fc.paint(arch, _rgb((226, 216, 192)))
+        sp_len = 2.4 * R if kind == "torso" else 1.9 * R
+        spn = (along > 0.9 * R) & (along < sp_len) & (np.abs(across) < np.maximum(0.5, 0.34 * R - 0.08 * (along - R)))
+        fc.paint(spn * inner, _rgb((222, 210, 184)))
+        if kind == "torso":
+            tp = (np.abs(along - 0.55 * R) < max(0.5, 0.24 * R)) & (np.abs(across) > 0.8 * R) & (np.abs(across) < 2.1 * R)
+            fc.paint(tp * inner, _rgb((214, 202, 176)))
+        canal, _ = _sec_disc(fc, sx + bx * 0.8 * R, sy + by * 0.8 * R, max(0.6, 0.42 * R))
+        fc.paint(canal, _rgb((40, 8, 10)))
+        cord, _ = _sec_disc(fc, sx + bx * 0.8 * R, sy + by * 0.8 * R, max(0.45, 0.26 * R))
+        fc.paint(cord * (R >= 1.8), _rgb((216, 190, 170)))
+    elif bone_at is not None and br > 0:
+        _sec_bone(fc, bone_at[0] * w, bone_at[1] * h, br, sd + 9)
+    for b_ in d.get("bones", ()) or ():
+        _sec_bone(fc, b_[0] * w, b_[1] * h, float(b_[2]) * half, sd + 10)
+    # --- 濡れ: 切り口に溜まった血（低い所が暗い）と照り
+    wet = float(d.get("wet", 0.8))
+    if wet > 0:
+        pool = _ss(0.55, 0.75, fc.noise(0.9, sd + 11, 2)) * (r < skin_in) * wet
+        fc.mul(pool, np.array([0.62, 0.3, 0.3], f32))
+        gl = (fc.grain(sd + 12) > 0.94 - 0.04 * wet) & (r < fat_in)
+        fc.paint(gl, _GLINT, 0.45 * wet)
+
+
+def section_decal(faces=("down",), **params) -> Dict[str, dict]:
+    """断面デカールを面ごとに置く辞書（cube.decals にそのまま入れる / update する）。
+    例: Cube(..., "cut_flesh", decals=section_decal(("up",), kind="neck", bone_at=(0.5, 0.24)))"""
+    return {f: dict(params, name="section") for f in faces}
 
 
 def d_logo(fc: _Face, d):
@@ -2571,7 +2920,7 @@ def d_face(fc: _Face, d):
         fc.mul(fc.blob(0.5, min(0.99, mv + 0.22), 0.5, 0.05), 0.82)                # 顎の下の影
     # --- 目 ---
     for s_ in (-1, 1):
-        _eye(fc, 0.5 + s_ * eu, ev, eyes, decay, gore, s_)
+        _eye(fc, 0.5 + s_ * eu, ev, eyes, decay, gore, s_, d.get("glow_colour"))
     # --- 口 ---
     if upper:
         _mouth_upper(fc, mv, mouth, decay, gore)
@@ -2590,14 +2939,16 @@ def d_face(fc: _Face, d):
             for s_ in (-1, 1):
                 fc.paint(fc.seg(0.5 + s_ * 0.045, nv + 0.01, 0.5 + s_ * 0.05, mv - 0.03, 1.0),
                          fc.bcol * 0.8, 0.8 * gore)
-        if gore > 0.4:
-            for s_ in (-1, 1):
-                tear = np.zeros((h, w), f32)
-                x = int((0.5 + s_ * (eu - 0.03)) * w)
-                y0 = int((ev + 0.04) * h)
-                y1 = int(min(h - 1, (ev + 0.04 + 0.12 * gore + 0.08 * fc.grain(sd + 43 + s_)[0, 0]) * h))
-                tear[y0:y1, x:x + 1] = 1.0
-                fc.paint(tear, fc.bcol * 0.8, 0.75 * gore)
+    # 血の涙（gore が強いとき。目が無い種類は眼窩から必ず流す。bleed=False で無し）
+    if gore > 0.4 or (eyes == "none" and d.get("bleed", True)):
+        tg = max(gore, 0.6) if eyes == "none" else gore
+        for s_ in (-1, 1):
+            tear = np.zeros((h, w), f32)
+            x = int((0.5 + s_ * (eu - 0.03)) * w)
+            y0 = int((ev + 0.04) * h)
+            y1 = int(min(h - 1, (ev + 0.04 + 0.12 * tg + 0.08 * fc.grain(sd + 43 + s_)[0, 0]) * h))
+            tear[y0:y1, x:x + 1] = 1.0
+            fc.paint(tear, fc.bcol * 0.8, 0.75 * tg)
 
 
 def _mouth_upper(fc: _Face, mv, kind, decay, gore):
@@ -2658,51 +3009,67 @@ def _face_jaw(fc: _Face, d, mouth, decay, gore):
         fc.drips_from(np.maximum(top * (g > 0.45), (m > 0.5).astype(f32)), gore, fc.seed + 93)
 
 
-def _eye(fc: _Face, cu, ev, kind, decay, gore, side):
+def _eye(fc: _Face, cu, ev, kind, decay, gore, side, glow_colour=None):
+    """顔の目 1 つ（EYES の全種類）。cu, ev は目の中心（面の正規化座標）、side は -1 = u の小さい側。"""
+    info = eye_info(kind, glow_colour)
     w, h = fc.w, fc.h
-    ew = max(1.6, w * (0.064 if kind.startswith("glowing") else 0.075))   # 目の半幅（texel）
+    glowing = info["glow"] is not None
+    ew = max(1.6, w * (0.064 if glowing else 0.075))   # 目の半幅（texel）
     eh = max(0.7, h * 0.03)
     ru, rv = ew / w, eh / h
     open_ = fc.ellipse(cu, ev, ru, rv, soft=0.6)
     lid = fc.ellipse(cu, ev - 0.6 / h, ru * 1.15, rv * 1.6) * (1 - open_)
     fc.paint(lid, _rgb((70, 34, 34)), 0.55)                 # 赤黒い瞼
     if kind == "none":
+        # 目が無い: 暗い眼窩の穴（奥ほど黒い）と、縁の乾いた血
         fc.paint(fc.ellipse(cu, ev, ru * 1.05, rv * 1.7), _rgb((14, 2, 2)))
         fc.paint(fc.ellipse(cu, ev - 0.5 / h, ru * 0.6, rv * 0.6), _rgb((60, 8, 8)), 0.5)
+        fc.paint(np.clip(fc.ellipse(cu, ev, ru * 1.25, rv * 2.1) - fc.ellipse(cu, ev, ru * 1.05, rv * 1.7), 0, 1),
+                 _rgb((58, 14, 12)), 0.6)
         return
-    if kind.startswith("glowing"):
-        gc = {"glowing_yellow": (255, 214, 72), "glowing_red": (255, 46, 24),
-              "glowing_green": (150, 255, 90)}.get(kind, (255, 214, 72))
-        gc = _rgb(gc)
+    dx = (fc.px - cu * w) / max(0.5, ru * w)
+    dy = (fc.py - ev * h) / max(0.5, rv * h)
+    rr = np.sqrt(dx * dx + dy * dy)
+    if glowing:
+        gc = info["glow"]
         eye_m = np.maximum(open_, fc.ellipse(cu, ev, ru, rv * 1.2))
+        if kind in _PINPOINT_EYES:
+            # 闇の中の光点: 白目は真っ暗、中心の 1 texel（大きな顔なら十字に 5 texel）だけ光る
+            fc.paint(eye_m, info["sclera"] + f32(4))
+            pt = (np.abs(fc.px - cu * w) < 0.75) & (np.abs(fc.py - ev * h) < 0.75)
+            if ew >= 3.0:
+                pt = pt | ((np.abs(fc.px - cu * w) < 1.6) & (np.abs(fc.py - ev * h) < 0.6))
+            fc.emit(pt, info["pupil"], thr=0.5)
+            return
+        # にじみ（目の外側 1 texel）: 暗い発光色。発光は α=EMISSIVE_HALO（DESIGN §13 の 3〜40）
         halo = fc.ellipse(cu, ev, ru + 1.2 / w, rv + 1.2 / h)
         m = (halo > 0.5) & (eye_m <= 0.4)
-        fc.rgb[m] = fc.rgb[m] * 0.55 + gc * 0.45
+        fc.rgb[m] = fc.rgb[m] * 0.35 + gc * 0.3
         fc.alpha[m] = np.minimum(fc.alpha[m], EMISSIVE_HALO)
         fc.glow[m] = True
-        dx = (fc.px - cu * w) / max(0.5, ru * w)
-        dy = (fc.py - ev * h) / max(0.5, rv * h)
-        rr = np.sqrt(dx * dx + dy * dy)
-        core = _ramp(rr.reshape(-1), [(0.0, (255, 252, 236)), (0.35, np.minimum(255, gc * 1.0 + 30)),
+        core = _ramp(rr.reshape(-1), [(0.0, info["pupil"]), (0.35, np.minimum(255, gc * 1.0 + 30)),
                                       (0.8, gc), (1.3, gc * 0.7)]).reshape(h, w, 3)
         fc.emit(eye_m, core, thr=0.4)
         return
-    if kind == "bloodshot":
-        scl = _rgb((188, 92, 82))
-        iris = _rgb((48, 30, 22))
-    else:  # clouded
-        scl = _rgb((170, 146, 108))
-        iris = _rgb((206, 214, 212))
+    scl = info["sclera"] * np.array([0.84, 0.8, 0.7] if kind == "clouded" else [0.86, 0.84, 0.82], f32)
     gr = fc.grain(fc.seed + 61 + side)
     fc.paint(open_, scl * (0.86 + 0.18 * gr)[..., None])
-    # 虹彩（少し上・内側を見る）
+    if kind == "bloodshot":
+        # 白目の毛細血管（1 texel の赤い点）
+        fc.paint(open_ * (fc.grain(fc.seed + 64 + side) > 0.7), _rgb((150, 30, 28)), 0.7)
+    # 虹彩（少し上・内側を見る）。milky は虹彩も白く、灰青のにごりだけ
     iu = cu - side * 0.15 * ru
     ir = fc.ellipse(iu, ev, max(0.55, ew * 0.48) / w, max(0.6, eh * 1.0) / h) * open_
-    fc.paint(ir, iris)
-    if kind == "bloodshot":
-        fc.paint(fc.ellipse(iu, ev, 0.5 / w, 0.5 / h) * open_, _rgb((8, 4, 4)))
+    if kind == "milky":
+        fc.paint(ir, _rgb((196, 204, 210)), 0.5)
     else:
-        fc.paint(fc.ellipse(iu, ev, max(0.5, ew * 0.25) / w, 0.5 / h) * open_, _rgb((228, 232, 230)), 0.6)
+        fc.paint(ir, info["iris"])
+    pupil = info["pupil"]
+    if pupil is not None:
+        pw = max(0.5, ew * (0.3 if kind == "bloodshot" else 0.18))
+        fc.paint(fc.ellipse(iu, ev, pw / w, 0.5 / h) * open_, pupil, 0.85 if kind == "clouded" else 1.0)
+    if kind == "clouded":
+        fc.paint(fc.ellipse(iu, ev, max(0.5, ew * 0.25) / w, 0.5 / h) * open_, _rgb((228, 232, 230)), 0.35)
     # 上瞼の影と照り
     top = open_ * (fc.py < ev * h - eh * 0.2)
     fc.mul(top, 0.72)
@@ -2779,7 +3146,7 @@ DECALS = {
     "text": d_text, "number": d_text, "stripe": d_stripe, "badge": d_badge, "grime": d_grime,
     "stitches": d_stitches, "drips": d_drips, "handprint": d_handprint, "buttons": d_buttons,
     "pocket": d_pocket, "zipper": d_zipper, "cracks": d_cracks, "rust_streaks": d_rust_streaks,
-    "veins": d_veins, "glow_spot": d_glow_spot, "logo": d_logo,
+    "veins": d_veins, "glow_spot": d_glow_spot, "logo": d_logo, "section": d_section,
 }
 
 
@@ -2815,7 +3182,17 @@ def paint_model(model, stylebook: Dict[str, dict], seed: int = 0, face_light: bo
     cubes = model.all_cubes()
     if not cubes:
         return Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ys = [c.origin[1] for c in cubes] + [c.origin[1] + c.size[1] for c in cubes]
+    mats = cube_world_matrices(model)
+    ys = []
+    for c in cubes:
+        M = mats.get(id(c))
+        o, s = np.asarray(c.origin, float), np.asarray(c.size, float)
+        if M is None:
+            ys += [o[1], o[1] + s[1]]
+            continue
+        cor = np.array([[o[0] + s[0] * i, o[1] + s[1] * j, o[2] + s[2] * k]
+                        for i in (0, 1) for j in (0, 1) for k in (0, 1)])
+        ys += list((cor @ M[:3, :3].T + M[:3, 3])[:, 1])
     ybounds = (min(ys), max(ys))
     groups: Dict[str, list] = {}
     for k, cube in enumerate(cubes):
@@ -2833,7 +3210,7 @@ def paint_model(model, stylebook: Dict[str, dict], seed: int = 0, face_light: bo
             raise ValueError(f"style '{name}': 未知の素材 '{mat}'（{sorted(MATERIALS)}）")
         fn, bmode = MATERIALS[mat]
         sd = _seed(seed, name, mat, p.get("seed", 0))
-        F = _build_field(groups[name], ybounds, sd, H, W)
+        F = _build_field(groups[name], ybounds, sd, H, W, mats)
         col = fn(F, p, sd)
         hard = F.hard
         wear = float(p.get("wear", 0.0))
@@ -2847,7 +3224,8 @@ def paint_model(model, stylebook: Dict[str, dict], seed: int = 0, face_light: bo
             col = _ov_burn(F, col, burn, sd + 103)
         blood = float(p.get("blood", 0.0))
         if blood > 0 and bmode != "none":
-            col = _ov_blood(F, col, blood, bmode, sd + 104, p.get("blood_kind", "red"))
+            col = _ov_blood(F, col, blood, bmode, sd + 104, p.get("blood_kind", "red"),
+                            float(p.get("blood_age", 0.0)))
         wetp = float(p.get("wet", 0.0))
         wetm = F.wetm
         if wetp > 0:
@@ -2870,16 +3248,24 @@ def paint_model(model, stylebook: Dict[str, dict], seed: int = 0, face_light: bo
         if not cube.decals:
             continue
         p = stylebook[cube.style]
+        items = []
         for face, dv in cube.decals.items():
-            rect = cube.rects.get(face)
-            if rect is None:
+            if face == "*":
+                # キューブ単位のデカール: d["faces"]（既定は 6 面全部）の各面に描く
+                for j, d in enumerate(_decal_list(dv)):
+                    for f_ in d.get("faces") or FACES:
+                        items.append((f_, 100 + j, d))
                 continue
-            for j, d in enumerate(_decal_list(dv)):
-                fn = DECALS.get(d.get("name"))
-                if fn is None:
-                    raise ValueError(f"未知のデカール '{d.get('name')}'（{sorted(DECALS)}）")
-                fc = _Face(at, cube, face, rect, p, _seed(seed, k, face, j, d.get("seed", 0)))
-                fn(fc, d)
+            items += [(face, j, d) for j, d in enumerate(_decal_list(dv))]
+        for face, j, d in items:
+            rect = cube.rects.get(face)
+            if rect is None or rect[2] <= 0 or rect[3] <= 0:
+                continue
+            fn = DECALS.get(d.get("name"))
+            if fn is None:
+                raise ValueError(f"未知のデカール '{d.get('name')}'（{sorted(DECALS)}）")
+            fc = _Face(at, cube, face, rect, p, _seed(seed, k, face, j, d.get("seed", 0)))
+            fn(fc, d)
     # 陰影を掛けて量子化（光る texel には掛けない）
     sh = np.where(at.glow, 1.0, at.shade)
     rgb = at.rgb * sh[..., None]
@@ -2970,7 +3356,7 @@ def outfit_palette(kind: str) -> Dict[str, dict]:
     return P[kind]
 
 
-def zombie_styles(tone, decay=2, eyes="clouded", hair_colour=None, blood=0.4, hair_style="matted",
+def zombie_styles(tone, decay=2, eyes="clouded", hair_colour=None, blood=0.1, hair_style="matted",
                   dirt=0.4, life_tone: Optional[int] = None, blood_kind: str = "red") -> Dict[str, dict]:
     """ゾンビの体の stylebook（skin / skin_dark / flesh / cut_flesh / bone / teeth / gums / guts /
     brain / blood / blood_dry / eye / hair / nail）。
@@ -2989,8 +3375,10 @@ def zombie_styles(tone, decay=2, eyes="clouded", hair_colour=None, blood=0.4, ha
     hair = hair_colour or "#3a3029"
     bk = dict(blood_kind=blood_kind)
     return {
-        "skin": style("skin", tone=colours, decay=decay, blood=blood, dirt=dirt, **bk, **extras),
-        "skin_dark": style("skin", tone=dark, decay=min(4.0, decay + 1), blood=min(1.0, blood + 0.15),
+        "skin": style("skin", tone=colours, decay=decay, blood=blood, dirt=dirt, blood_age=0.6, **bk,
+                      **extras),
+        "skin_dark": style("skin", tone=dark, decay=min(4.0, decay + 1), blood=min(1.0, blood * 1.5),
+                           blood_age=0.6,
                            dirt=min(1.0, dirt + 0.2), **bk, **extras),
         "flesh": style("flesh", blood=0.0, wet=0.7, **bk),
         "cut_flesh": style("cut_flesh", tone=colours, bone=True, **bk),
@@ -3004,7 +3392,7 @@ def zombie_styles(tone, decay=2, eyes="clouded", hair_colour=None, blood=0.4, ha
         "eye": style("eye", kind=eyes),
         "hair": style("hair", base=hair, style=hair_style, blood=blood * 0.6, dirt=dirt,
                       skin=colours["base"], **bk),
-        "nail": style("nail", dirt=0.5, blood=0.2, **bk),
+        "nail": style("nail", dirt=0.5, blood=0.2, blood_age=0.5, **bk),
     }
 
 
@@ -3198,6 +3586,17 @@ def _skin_swatches():
     return out
 
 
+def _eye_swatches():
+    """目の全種類（目玉キューブの north 面と、顔デカールの目）。"""
+    out = []
+    skin = zombie_styles("grey_green", 2, "clouded")["skin"]
+    for k in EYES:
+        out.append((f"{k} eyeball", style("eye", kind=k), None))
+        out.append((f"{k} face", skin, {"name": "face", "eyes": k, "mouth": "closed", "decay": 2,
+                                         "gore": 0.0, "eye_v": 0.42, "eye_gap": 0.22}))
+    return out
+
+
 def _build_swatch_model(us=4, cube=8, items=None):
     from mcmodel import Cube, Model
     m = Model("geometry.nr.test.swatches", uv_scale=us, max_atlas=(2048, 2048))
@@ -3219,7 +3618,7 @@ def _build_swatch_model(us=4, cube=8, items=None):
 
 
 def _iso_tile(atlas: Image.Image, cube, size=132) -> Image.Image:
-    """キューブを斜め上から見た絵（up / north / east の 3 面）を PIL のアフィン変換で作る。"""
+    """キューブを斜め上から見た絵（up / north / west の 3 面。west が +X の面）を PIL のアフィン変換で作る。"""
     def face(f):
         x, y, w, h = cube.rects[f]
         return atlas.crop((x, y, x + w, y + h)).convert("RGBA")
@@ -3244,8 +3643,8 @@ def _iso_tile(atlas: Image.Image, cube, size=132) -> Image.Image:
         return o + ex * (x - 0.5) + ez * (z - 0.5) * -1 + ey * (y - 0.5)
     # north 面（Z=0）: u→+X, v→-Y。画面上では手前左に来るよう ez を反転
     put(face("north"), P(0, 1, 0), P(1, 1, 0) - P(0, 1, 0), P(0, 0, 0) - P(0, 1, 0))
-    # east 面（X=1）: u→+Z
-    put(face("east"), P(1, 1, 0), P(1, 1, 1) - P(1, 1, 0), P(1, 0, 0) - P(1, 1, 0))
+    # west 面（X=1。統合版の対応では +X の面は west で u→+Z）
+    put(face("west"), P(1, 1, 0), P(1, 1, 1) - P(1, 1, 0), P(1, 0, 0) - P(1, 1, 0))
     # up 面（Y=1）: u→+X, v→-Z
     put(face("up"), P(0, 1, 1), P(1, 1, 1) - P(0, 1, 1), P(0, 1, 0) - P(0, 1, 1))
     return tile
@@ -3330,9 +3729,10 @@ def _demo_model(kind, seed=7):
 
 
 def _demo_zombie(out_dir, seed=7):
-    """箱人形のゾンビ 2 体を塗って、tools/preview.py で描く（目視用）。戻り値は塗りの秒数。"""
-    import preview
-    S = 520
+    """箱人形のゾンビ 2 体を塗って、nr_preview（統合版と同じ面の対応）で描く（目視用）。
+    ジオメトリは nr_common.write_geometry（1.16.0）で書く。戻り値は塗りの秒数。"""
+    import nr_common
+    import nr_preview as V
     tiles = []
     dt = 0.0
     for kind in ("office", "worker"):
@@ -3342,21 +3742,81 @@ def _demo_zombie(out_dir, seed=7):
         dt += time.time() - t0
         gp = os.path.join(out_dir, f"demo_{kind}.geo.json")
         tp = os.path.join(out_dir, f"demo_{kind}.png")
-        m.write(gp)
+        nr_common.write_geometry(gp, m)
         img.save(tp)
-        for yaw in (200, 20):
-            tiles.append(preview.render(gp, tp, S, yaw, -6, margin=0.03).crop((S // 5, 0, S - S // 5, S)))
-        head = preview.render(gp, tp, S * 3, 22, -4, margin=0.03)
-        hw = head.size[0]
-        tiles.append(head.crop((int(hw * 0.36), int(hw * 0.02), int(hw * 0.64), int(hw * 0.26))).resize(
-            (int(hw * 0.28 * S / (hw * 0.24)), S), Image.NEAREST))
-    sheet = Image.new("RGB", (sum(t.size[0] for t in tiles), S), (18, 20, 26))
-    x = 0
-    for t in tiles:
-        sheet.paste(t, (x, 0))
-        x += t.size[0]
-    sheet.save(os.path.join(out_dir, "paint_demo_zombie.png"))
+        for yaw in (-160, 30):
+            tiles.append((f"{kind} yaw {yaw}", V.render(m, img, view=(yaw, 6), size=(300, 460))))
+        cam = V.Camera(yaw=-22, pitch=4, target=(0, 28, -4), scale=460 * 0.8 / 9.0)
+        tiles.append((f"{kind} head", V.render(m, img, camera=cam, size=(300, 460))))
+    V.contact_sheet(tiles, cols=6).save(os.path.join(out_dir, "paint_demo_zombie.png"))
     return dt
+
+
+def _seam_model():
+    """継ぎ目の検査用: 大きさの違う箱と、傾いたボーンの上の箱（猫背の胸のように）。"""
+    from mcmodel import Cube, Model
+    m = Model("geometry.nr.test.seams", uv_scale=4, max_atlas=(512, 512))
+    m.bone("root")
+    b = m.bone("body", (0, 12, 0), "root")
+    b.add(Cube((-4, 12, -2), (8, 8, 4), "skin"))
+    b.add(Cube((-6, 2, -3), (5, 10, 6), "skin"))
+    b.add(Cube((1, 2, -3), (5, 10, 6), "skin"))
+    c = m.bone("chest", (0, 20, 0), "body", [12.0, 0.0, 0.0])
+    c.add(Cube((-4.5, 20, -2.5), (9, 7, 5), "skin"))
+    c.add(Cube((-1.5, 27, -1.5), (3, 2, 3), "skin", rotation=[0, 0, 20]))
+    m.pack()
+    return m
+
+
+def seam_ratio(model, img, styles=("skin",)) -> float:
+    """側面の帯の 3 つの角（east|north, north|west, west|south）で、角をまたぐ隣の列の差 ÷ 面の中の
+    隣の列の差（全キューブの平均）。模様が角で繋がっていれば 1 に近い（ずれていると 2〜3）。"""
+    a = np.asarray(img).astype(np.float32)[..., :3]
+    cross, inner = [], []
+    for c in model.all_cubes():
+        if c.style not in styles:
+            continue
+        r = c.rects
+        for fa, fb in (("east", "north"), ("north", "west"), ("west", "south")):
+            ua, va, wa, ha = r[fa]
+            ub, vb, wb, hb = r[fb]
+            if wa < 3 or wb < 3 or ha < 3 or ha != hb:
+                continue
+            cross.append(np.abs(a[va:va + ha, ua + wa - 1] - a[vb:vb + hb, ub]).mean())
+            inner.append(np.abs(a[va:va + ha, ua + wa - 1] - a[va:va + ha, ua + wa - 2]).mean())
+    return float(np.mean(cross) / max(1e-6, np.mean(inner))) if cross else 1.0
+
+
+def _seam_check(out_dir, seed=3):
+    """3D ノイズが箱の角で繋がるか（新しい面の対応）を数値と nr_preview の絵で確かめる。
+    比較に、east と west の矩形を入れ替えて塗った（＝旧い向きで塗った）ものも測る。"""
+    m = _seam_model()
+    st = {"skin": style("skin", tone="grey_green", decay=3, rot=0.45, blood=0.35, blood_age=0.3,
+                        dirt=0.2, lesions=0.0)}
+    img = paint_model(m, st, seed, face_light=False, ao=False)
+    ok = seam_ratio(m, img)
+    for c in m.all_cubes():
+        c.rects["east"], c.rects["west"] = c.rects["west"], c.rects["east"]
+    old = paint_model(m, st, seed, face_light=False, ao=False)
+    for c in m.all_cubes():
+        c.rects["east"], c.rects["west"] = c.rects["west"], c.rects["east"]
+    old_ratio = seam_ratio(m, old)
+    try:
+        import nr_preview as V
+        img2 = paint_model(m, st, seed)
+        for c in m.all_cubes():
+            c.rects["east"], c.rects["west"] = c.rects["west"], c.rects["east"]
+        old2 = paint_model(m, st, seed)
+        for c in m.all_cubes():
+            c.rects["east"], c.rects["west"] = c.rects["west"], c.rects["east"]
+        tiles = []
+        for lab, t in (("now (bedrock faces)", img2), ("old east/west", old2)):
+            for yaw in (40, -140):
+                tiles.append((f"{lab} yaw {yaw}", V.render(m, t, view=(yaw, 18), size=320)))
+        V.contact_sheet(tiles, cols=4).save(os.path.join(out_dir, "paint_seams.png"))
+    except Exception as e:  # noqa: BLE001  目視用
+        print("seam render skipped:", e)
+    return ok, old_ratio
 
 
 def _perf_model(n=400, us=3):
@@ -3421,6 +3881,32 @@ def main():
     m_lo, book_lo, labels_lo = _build_swatch_model(us=2)
     atlas_lo = paint_model(m_lo, book_lo, seed=1)
     _swatch_sheet(atlas_lo, labels_lo, os.path.join(SCRATCH, "paint_swatches_x2.png"), flat_scale=8)
+    # 目の種類（spec の EYES_VOCAB と同じか・光る目だけが発光 texel を持つか）
+    try:
+        import nr_spec_zombies as SZ
+        vocab = SZ.EYES_VOCAB
+        same = set(vocab) == set(EYES) and all(
+            all((EYES[k][f] is None) if vocab[k][f] is None else tuple(EYES[k][f]) == tuple(vocab[k][f])
+                for f in ("sclera", "iris", "pupil", "glow")) for k in vocab)
+        print("eyes match nr_spec_zombies.EYES_VOCAB:", "OK" if same else "NG")
+        assert same, "nr_paint.EYES が spec の EYES_VOCAB と食い違う"
+    except ImportError:
+        pass
+    m_e, book_e, labels_e = _build_swatch_model(us=12, items=_eye_swatches())
+    atlas_e = paint_model(m_e, book_e, seed=4)
+    _swatch_sheet(atlas_e, labels_e, os.path.join(SCRATCH, "paint_eyes.png"), cols=5)
+    ae = np.asarray(atlas_e)[..., 3]
+    for lab, c in labels_e:
+        u, v, w, h = c.rects["north"]
+        glowing = bool((ae[v:v + h, u:u + w] < 255).any() & (ae[v:v + h, u:u + w] > 0).any())
+        want = EYES.get(lab.split()[0], {}).get("glow") is not None
+        assert glowing == want, f"目 {lab}: 発光 {glowing} != {want}"
+    print(f"eyes: {len(EYES)} kinds (eyeball + face) painted, emissive only on glowing_* OK")
+    # 継ぎ目（側面の角で 3D の模様が繋がるか）
+    ratio, old_ratio = _seam_check(SCRATCH)
+    print(f"seams: across-edge / in-face column difference {ratio:.2f} (old east/west order {old_ratio:.2f})"
+          f" {'OK' if ratio < 1.4 else 'NG'} -> {os.path.join(SCRATCH, 'paint_seams.png')}")
+    assert ratio < 1.4, "箱の角で模様が切れている（面の向きを確かめる）"
     # デモのゾンビ
     try:
         dt = _demo_zombie(SCRATCH)

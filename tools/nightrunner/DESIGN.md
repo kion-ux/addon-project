@@ -60,7 +60,7 @@ Minecraft **統合版 (Bedrock)** 用の、パルクール × ゾンビ × 部�
 | `nr_spec.py`（`nr_spec_zombies.py` / `nr_spec_catalog.py` を再輸出） | 全登録データ（ゾンビ 50 体・武器・アイテム・罠・ブロック・小道具・建物・スキル）。**名前（日英）はここ** |
 | `nr_paint.py` | 写実寄りの素材ペインタ（腐肉・筋肉・骨・内臓・血・布・金属・ゴム…） |
 | `nr_rig.py` / `nr_kit.py` | ゾンビの共通骨格・ゴア用ボーン・断面（stump）・ちぎれた部位（gib）の抽出 / 服・装備・変異の部品集 |
-| `gen_nr_zombies.py`（+ `zoo_*.py`） | ゾンビ 50 体のジオメトリ・テクスチャ・gib ジオメトリ |
+| `gen_nr_zombies.py`（+ `zoo_*.py`） | ゾンビ 50 体のジオメトリ（`models/entity/nr/zombies/<key>.geo.json`）・テクスチャ（`textures/nr/zombies/<key>.png`）・gib ジオメトリ（`models/entity/nr/gibs/<key>.geo.json`、汎用 `generic.geo.json` + `textures/nr/gibs/generic.png`）、**レンダーコントローラ `controller.render.nr.zombie`（合わせられない種類があれば `controller.render.nr.z.<key>` も）と `controller.render.nr.gib`**（`render_controllers/nr_zombie.render_controllers.json`）、**`scripts/data/zombie_shapes.js`**（当たり箱・ロケータ）。gen_nr_entities へは `zombie_assets(key)` / `gib_generic_assets()` / `owned_render_controllers()` |
 | `gen_nr_zombie_anim.py` | ゾンビのアニメーション・アニメーションコントローラ |
 | `gen_nr_player_anim.py` | プレイヤーのパルクール・武器モーション（`playAnimation` で再生） |
 | `gen_nr_weapons.py` | 武器のモデル・テクスチャ・アイコン・アタッチャブル・アイテム JSON・レシピ |
@@ -70,7 +70,7 @@ Minecraft **統合版 (Bedrock)** 用の、パルクール × ゾンビ × 部�
 | `gen_nr_particles.py` | スプライトアトラスとパーティクル |
 | `gen_nr_sounds.py` | 効果音の合成（numpy + ffmpeg）と sound_definitions の断片 |
 | `gen_nr_ui.py` | 独自グリフのフォント（HUD 用）、フォームのアイコン、パックアイコン |
-| `gen_nr_entities.py` | BP: ゾンビ 50・gib・飛び道具・小道具のエンティティ、スポーンルール、ルートテーブル / RP: クライアントエンティティ、レンダーコントローラ |
+| `gen_nr_entities.py`（+ `nr_proj_models.py`） | BP: ゾンビ 50・gib・飛び道具・小道具のエンティティ、スポーンルール、ルートテーブル / RP: クライアントエンティティ、レンダーコントローラ（`render_controllers/nr_entities.render_controllers.json`。ゾンビ・gib の分は gen_nr_zombies が書くので書かない）、**飛び道具のモデル・テクスチャ・アニメ**（`geometry.nr.proj.<key>` = `models/entity/projectiles/<key>.geo.json`、`textures/nr/proj/<key>.png`、`animation.nr.proj.*` = `animations/nr_proj.animation.json` と `animation_controllers/nr_proj.animation_controllers.json`）、透明化の目だけのテクスチャ（`textures/nr/zombies_fx/`） |
 | `gen_nr_items.py` | 武器以外のアイテム（回復・投擲物・素材・道具）とレシピ |
 | `gen_nr_data_js.py` | `scripts/data/*.js`（spec とリグ寸法を JS へ） |
 | `gen_nr_packs.py` | manifest、断片のまとめ、言語ファイル。**最後に走る** |
@@ -386,6 +386,7 @@ spec（武器の音・改造・罠・アイテムのモーション）が参照�
 | `nr:root_start` / `nr:root_end` | `nr:rooted`（その場で動かない。叫び・溜め・掴み中） |
 | `nr:enrage` / `nr:calm` | `nr:enraged`（速さ ×1.35、追跡範囲を広げる。夜の追跡・ボスの段階） |
 | `nr:despawn` | 即座に消える（`minecraft:instant_despawn`） |
+| `nr:revive` / `nr:revive_crawl` | 死体を蘇らせる（蘇生者の reanimate）。`nr:dead` を外して `nr:alive` と立つ（這う）当たり箱・速さ、`nr:state` を `normal`（`crawl`）に。同じ tick の続けてのイベントのフィルタは前の set_property を見ないので、這わせるなら `nr:revive` → `nr:to_crawl` ではなく `nr:revive_crawl` を一つ |
 
 `nr:gib`・`nr:proj_*`・`nr:prop_*` にも `nr:despawn` を持たせる。
 

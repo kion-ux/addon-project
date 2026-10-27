@@ -1,60 +1,70 @@
 # -*- coding: utf-8 -*-
-"""NIGHT RUNNER: 感染都市 — ゾンビ 50 体のアニメーションとアニメコントローラ（DESIGN.md §3 / §12 / §13）。
+"""NIGHT RUNNER: 感染都市 — ゾンビ 50 体のアニメーションとアニメコントローラ（DESIGN.md §3 / §5 / §12 / §13）。
 
 出力（packs/nightrunner_RP/）:
-  animations/nr_zombie_move.animation.json       移動（walk_/run_/idle_<移動> 13 種）・状態（這う・上半身だけ・片脚跳び・
-                                                  片脚引きずり・壁登り・よろめき・倒れ・起き上がり・首なし・死体 dead_0..7）・
-                                                  重ね（見る・生きている揺れ・折れた腕・腸・燃える・感電・被弾）
-  animations/nr_zombie_attack.animation.json     攻撃 atk_<攻撃>（ATTACK_VOCAB の 24 種すべて。windup/active/recover の tick に合わせる）
-  animations/nr_zombie_ability.animation.json    能力 ab_<能力>_<段階>（ABILITY_VOCAB の全段階）と ab_<能力>（anim=True）
-  animations/nr_zombie_oneshot.animation.json    nr_registry.ZOMBIE_ONESHOTS（react_* ほか。加算・最初と最後のキーが 0）
-  animations/nr_zombie_gib.animation.json        nr:gib の空中の回転（nr:spin）と寝姿（nr:rest）
-  animation_controllers/nr_zombie.animation_controllers.json      ゾンビ（全 50 体で共通）
-  animation_controllers/nr_zombie_gib.animation_controllers.json  nr:gib
+  animations/nr_zombie_move.animation.json       移動 walk_/run_/idle_<型>（LOCOMOTION_VOCAB の 13 型。歩き・走りは移動距離の
+                                                  位相 v.nr_ph で回るので足が滑らない）・体の状態（st_gimp 折れた脚を引きずる /
+                                                  st_crawl1 片脚で蹴る這い / st_drag 上半身だけで腸を引きずる / st_climb /
+                                                  st_stagger / st_down 倒れる / st_rise 起き上がる）・死体 dead_0..7（death.js の
+                                                  POSE）と dead_half / dead_down（hold_on_last_frame）・重ね ov_*（生きている揺れと
+                                                  顎のカチカチ・標的を見る・被弾・燃えてもがく・感電・折れた腕・腸・盾の構え）・fx_trail
+  animations/nr_zombie_attack.animation.json     攻撃 atk_<攻撃>（ATTACK_VOCAB の 24 種。windup / active / recover の tick どおり）
+  animations/nr_zombie_ability.animation.json    能力の段階 ab_<能力>_<段階>（31）と ab_wall_climb（anim=True）
+  animations/nr_zombie_oneshot.animation.json    nr_registry.ZOMBIE_ONESHOTS（加算・最初と最後のキーが 0）
+  animations/nr_zombie_gib.animation.json        nr:gib の空中の回転（nr:spin）・寝姿（nr:rest × nr:side）・血の尾
+  animation_controllers/nr_zombie.animation_controllers.json      ゾンビ（全 50 体で共通の 12 本）
+  animation_controllers/nr_zombie_gib.animation_controllers.json  nr:gib（2 本）
 
 ────────────────────────────────────────────────────────────────────────────
 ■ 約束（gen_nr_entities・手書きスクリプトとの契約）
 * すべてのアニメは**加算**（バインドポーズ = nr_rig.rest_pose の猫背・腕の外転の上に足す）。
-  override_previous_animation は使わない。
-* ゾンビの常時の見た目はプロパティ駆動のコントローラ（reference/rendering.md A2〜A7）:
-    move   … nr:state・脚・胴の状態 → 立ち（idle/walk/run の混ぜ）/ 片脚引きずり / 片脚跳び / 這う / 上半身だけ /
-              壁登り / よろめき / 倒れ→起き上がり / 首なし / 特殊 / 死体 dead_<nr:pose>（hold_on_last_frame）
-    arm_r / arm_l / leg_r / leg_l / head / torso … 部位の状態。折れた腕はぶら下がる、断面は bleed_stump、
-              切れた直後の数秒は blood_fountain（v.nr_age で「読み込み直後」を除く）
-    burn / shock / hurt … 燃えてもがく（q.is_on_fire）・感電の震え（nr:shock）・被弾ののけぞり（q.hurt_time）
-    ability … nr:ability の値 1..7 → 短い名前 ab_1..ab_7（種類ごとに ability_states(z) の段階のアニメへ写す）
+  override_previous_animation は使わない。ボーン名は §3 の骨格（+ throat_sac・gib の p_*）だけ。
+* ゾンビの常時の見た目はプロパティ駆動のコントローラ（rendering.md A2〜A7。条件は pre_animation の v.nr_* だけを読む）:
+    move    init → stand（idle/walk/run を v.nr_mv・v.nr_run で混ぜる）/ gimp / crawl / crawl1 / drag / climb /
+            stagger / down → rise / owned（体ごとの能力の段階の間は空）/ dead_<nr:pose>（這い・上半身だけ・倒れから
+            死ぬと dead_5 / dead_half / dead_down）。死体のまま読み込まれたら held_<n>（倒れる動きを飛ばす）
+    alive   生きている揺れ・標的を見る・被弾ののけぞり（q.hurt_time）。死体・体ごとの能力の間は止まる
+    fx      燃えてもがく（q.is_on_fire）・感電の震え（nr:shock。loc_chest に放電）
+    arm_r / arm_l / leg_r / leg_l / head / torso
+            断面のロケータから bleed_stump（持続）。切れた直後の 1.6 秒は blood_fountain も（読み込み直後 v.nr_age <= 1.5・
+            死体・炭化 nr:burn 3 は噴かない）。折れた腕はぶら下がる（腕の動きは v.nr_aw* = 0.3 倍）
+    guts    裂けた腹から垂れた腸が揺れて滴る / trail 下半身に断面のある体が這うと血の跡
+    ability nr:ability 1..7 → ab_1..ab_7（種類ごとに ability_states(z) の段階のアニメへ写す。無い値は none）。
+            0 の間は盾持ちの構え（ov_shield_guard）
 * 攻撃 atk_* と一発もの（ZOMBIE_ONESHOTS）は**スクリプトの playAnimation**（v.attack_time は使わない）。
     攻撃:    zombieAnim(z, "atk_<攻撃>", {controller: "nr.z.atk", blendOutTime: 0.1})   — windup の始まりに呼ぶ
-    一発もの: zombieAnim(z, "<名前>")（既定 controller "nr.z.os"）
-  どちらも加算で最初と最後のキーが 0（P3）。長さは ONESHOT_META / ATTACK_META（下）。
-  能力の段階 ab_*_* は nr:ability を入れれば自動で出る（スクリプトは playAnimation しない。するなら controller "nr.z.ab"）。
-* 移動の周期は q.modified_distance_moved に固定（足が滑らない）。pre_animation が v.nr_ph（0..1）を積算し、
-  歩き・走り・這い・跳びのアニメは anim_time_update = v.nr_ph。1 周期の距離は種類の脚の長さから決める。
-  idle は v.nr_age（個体ごとに乱数でずらす）で回す。
-* 体格の違い: 位置のチャンネルは v.nr_s（身長 / 176cm）倍、寝た姿勢の床合わせは種類ごとの定数 v.nr_gl_*
-  （このファイルが素体のリグで順運動学を解いて決め、initialize に書く）。猫背の打ち消しは v.nr_hn（hunch）。
-* 腕の動き（arm_*・forearm_*・hand_*）は v.nr_awr / v.nr_awl 倍（折れた腕 = 0.3。代わりに arm_*_broken がぶら下げる）。
+    一発もの: zombieAnim(z, "<名前>")（既定 controller "nr.z.os"）。knockdown / getup は nr:state down の倒れ・起き上がり
+             （コントローラの st_down / st_rise）と同時に流れる「手応え」
+  どちらも加算で最初と最後のキーが 0（P3）。長さ・当たりの時刻は ATTACK_META / ONESHOT_META。
+  能力の段階 ab_*_* は nr:ability を入れれば自動で出る（スクリプトは playAnimation しない）。
+* 移動の位相: pre_animation が q.modified_distance_moved の増分を「今の状態の 1 周期の距離」で割って v.nr_ph（0..4）に
+  積算し、歩き・走り・這いのアニメは anim_time_update = math.mod(v.nr_ph, 長さ)。周期の距離は型の歩幅 × 種類の脚の長さ。
+* 体格の違い: 位置のチャンネルは v.nr_s（身長 / 176cm）倍。寝た姿勢の床合わせは種類ごとの v.nr_gl_*（このファイルが
+  素体のリグで順運動学を解き、v.nr_s で割った値を initialize に書く）。猫背の打ち消しは v.nr_hn（hunch）。
+  死体・倒れの置き方は gore/hitloc.js の箱に合わせる（pose 1・5 = prone: 股関節が原点で頭が前、ほか = lie: 足元が原点で頭が後ろ）。
 
-■ gen_nr_entities へ（このモジュールを import して使う）
-    client_animations(z)      -> {短い名前: アニメ／コントローラの ID}   client entity の description.animations
-    client_animate(z)         -> scripts.animate のリスト
-    client_initialize(z)      -> scripts.initialize（Molang の行のリスト）
-    client_pre_animation(z)   -> scripts.pre_animation（Molang の行のリスト）
-    client_particle_effects(z)-> {短い名前: パーティクル ID}            description.particle_effects
-    client_sound_effects(z)   -> {}（今は使わない）
-    gib_client()              -> {"animations", "animate", "initialize", "pre_animation", "particle_effects"}（nr:gib）
-    ONESHOT_META / ATTACK_META -> {短い名前: {"length", "controller", "blend"}}（スクリプト向けの推奨）
+■ gen_nr_entities へ（このモジュールを import して使う。クリップを作らずに呼べる）
+    client_animations(z)       -> {短い名前: アニメ／コントローラの ID}   client entity の description.animations
+    client_animate(z)          -> scripts.animate のリスト（コントローラ 12 本）
+    client_initialize(z)       -> scripts.initialize（Molang の行のリスト）
+    client_pre_animation(z)    -> scripts.pre_animation（Molang の行のリスト）
+    client_particle_effects(z) -> {短い名前: パーティクル ID}            description.particle_effects
+    client_sound_effects(z)    -> {}（今は使わない）
+    gib_client()               -> {"animations", "animate", "initialize", "pre_animation", "particle_effects"}（nr:gib）
+    ATTACK_META / ONESHOT_META -> {短い名前: {"length", "controller", "blend", ...}}（スクリプト向けの推奨。build_all 後）
+    AB_FULL                    -> 体ごとの能力の段階（その間 move は owned）
 
 ■ 確認
-    python3 tools/nightrunner/gen_nr_zombie_anim.py            # 生成 + 検査
-    python3 tools/nightrunner/gen_nr_zombie_anim.py --qa       # + build_preview/nightrunner/zombie_anim/ に確認画像
+    python3 tools/nightrunner/gen_nr_zombie_anim.py            # 生成 + 検査（全 50 体の名前・コントローラの短い名前・
+                                                               #   P3・ロケータ・変数・Molang の構文）
+    python3 tools/nightrunner/gen_nr_zombie_anim.py --floor    # + 床との関係の数字
+    python3 tools/nightrunner/gen_nr_zombie_anim.py --qa       # + build_preview/nightrunner/zombie_anim/zombie_anim_qa.png
     （NR_PREVIEW=1 でも描く）。nr_preview のアニメ評価器で、書き出した JSON そのものを素体のリグに当てて描く。
 """
 from __future__ import annotations
 
 import argparse
 import copy
-import json
 import math
 import os
 import re
@@ -497,6 +507,12 @@ def _is_zero(vec, ch) -> bool:
 CH_JSON = {"rot": "rotation", "pos": "position", "scl": "scale"}
 
 
+def _tkey(t: float) -> str:
+    """キーフレームの時刻の文字列（バニラと同じく小数点を必ず付ける: "0.0"、"0.0625"）。"""
+    s = fmt(t, 4)
+    return s if "." in s else s + ".0"
+
+
 def clip_json(clip: Clip) -> dict:
     """Bedrock のアニメーション 1 本（ボーン名は小文字のまま）。"""
     out: Dict[str, object] = {}
@@ -526,7 +542,7 @@ def clip_json(clip: Clip) -> dict:
         else:
             val = {}
             for t, v, lerp in seq:
-                ts = fmt(t, 4)
+                ts = _tkey(t)
                 vv = _vec(v, ch, b, clip)
                 if lerp == "linear":
                     val[ts] = vv
@@ -540,14 +556,13 @@ def clip_json(clip: Clip) -> dict:
             if (b, ch) in chans and CH_JSON[ch] in bones.get(b, {}):
                 raise ValueError(f"{clip.name}: {b}.{ch} has both keys and expr")
             bones.setdefault(b, {})[CH_JSON[ch]] = _vec(v, ch, b, clip)
-    if not bones:
-        bones = {"root": {"rotation": [0.0, 0.0, 0.0]}}
-    out["bones"] = {b: bones[b] for b in sorted(bones)}
+    if bones or not clip.particles:          # 演出だけのアニメは bones を書かない（バニラの breeze と同じ）
+        out["bones"] = {b: bones[b] for b in sorted(bones)}
     if clip.particles:
         pe = {}
         for t in sorted(clip.particles):
             effs = clip.particles[t]
-            pe[fmt(t, 4)] = effs if len(effs) > 1 else effs[0]
+            pe[_tkey(t)] = effs if len(effs) > 1 else effs[0]
         out["particle_effects"] = pe
     return out
 
@@ -635,6 +650,46 @@ def _smooth(x: float) -> float:
 
 def _frac(x: float) -> float:
     return x - math.floor(x)
+
+
+# ===========================================================================
+#  4b. 床合わせの定数（v.nr_gl*）
+# ===========================================================================
+#  寝た姿勢（死体・倒れ・這い）は、体のいちばん低い点が床（y=0）に来るよう root を持ち上げる。
+#  持ち上げる量は体格で大きく違う（bulk 0.75〜2.4）ので、種類ごとに素体のリグで順運動学を解いて
+#  「身長の倍率で割った値」を initialize の v.nr_gl* に書く（アニメ側は位置に v.nr_s を掛けるので
+#  (v.nr_gl*) * v.nr_s = その種類の本当の持ち上げ量）。
+GROUND_FITS: Dict[str, Tuple[Callable, tuple]] = {}     # 変数名 -> (骨格 -> ポーズ, 数えないボーン)
+
+
+def ground_fit(var: str, skip: tuple = ()):
+    """寝た姿勢の床合わせを登録する飾り。関数は skel -> ポーズ（root の位置 y = 0 のもの）。"""
+    def deco(fn):
+        GROUND_FITS[var] = (fn, tuple(skip))
+        return fn
+    return deco
+
+
+def skel_scale(skel: Skel) -> float:
+    return float(skel.L.t) / REF_T
+
+
+def ground_lift(skel: Skel, pose: dict, skip=()) -> float:
+    """pose（root の y = 0）で体のいちばん低い点を床へ合わせる持ち上げ量（その骨格の単位）。"""
+    W = skel.world(_numeric(pose, skel))
+    return -skel.min_y(W, skip)
+
+
+def ensure_vars(skel: Skel) -> dict:
+    """skel.vars に v.nr_gl*（身長の倍率で割った値）を入れる（クリップの逆運動学・QA が使う）。"""
+    if getattr(skel, "vars", None) is not None and skel.vars.get("_done"):
+        return skel.vars
+    skel.vars = {"v.nr_s": 1.0}
+    s = skel_scale(skel)
+    for var, (fn, skip) in GROUND_FITS.items():
+        skel.vars[var] = round(ground_lift(skel, fn(skel), skip) / s, 3)
+    skel.vars["_done"] = 1.0
+    return skel.vars
 
 
 # ===========================================================================
@@ -807,6 +862,7 @@ def _numeric(pose: dict, skel: Optional["Skel"] = None) -> dict:
     var = dict(DESIGN_VARS)
     if skel is not None:
         var["v.nr_hn"] = skel.hunch
+        var.update(getattr(skel, "vars", None) or {})      # その骨格の床合わせの定数（v.nr_gl*）
     out = {}
     for b, e in pose.items():
         out[b] = {}
@@ -910,6 +966,7 @@ def make_upper(U: dict) -> Callable:
         if extra:
             pose = padd(pose, extra(phi, ctx))
         return pose
+    upper.U = U                       # idle が同じ構えを作り直すため
     return upper
 
 
@@ -1398,44 +1455,102 @@ def knuckle_quad(skel: Skel, mode: str) -> Quad:
 
 # ---------------------------------------------------------------------------
 #  うつ伏せ（這う・上半身だけ）: 股関節の高さを原点に前へ倒し、頭が +f（ジオメトリの -Z）
+#  （gore/hitloc.js の prone の箱と同じ置き方。床からの高さは種類ごとの v.nr_glp / v.nr_glh）
 # ---------------------------------------------------------------------------
-def prone_base(skel: Skel, half: bool = False) -> dict:
-    """うつ伏せの全身（root を前へ 90° 倒し、股関節を原点の真上に、体の前面を床に）。"""
-    hip = skel.piv["leg_r"][1]
-    lift = skel.L.chest_d / 2 + 0.15
-    return P(root=(90.0, 0, 0), root_pos=(0.0, lift, hip),
-             torso=("-0.45 * v.nr_hn", 0, 0), chest=("-0.55 * v.nr_hn", 0, 0))
+ARM_BONES = ARM_R + ARM_L
+LEG_BONES = LEG_R + LEG_L
 
 
-def crawl_quad(skel: Skel, mode: str, half: bool = False) -> Quad:
-    """這う（脚が無い・折れた・nr:state crawl）/ 上半身だけ（half）。腕を交互に前へ伸ばして体を引き寄せる。"""
+def prone_base(skel: Skel, half: bool = False, lift=None) -> dict:
+    """うつ伏せの全身（root を前へ 90° 倒し、股関節を原点の真上に、体の前面を床に）。
+    lift = None なら床合わせの変数（v.nr_glp / 上半身だけは v.nr_glh）。"""
+    hip = float(skel.piv["leg_r"][1]) / skel_scale(skel)
+    y = ("v.nr_glh" if half else "v.nr_glp") if lift is None else lift
+    return P(root=(90.0, 0, 0), root_pos=(0.0, y, hip),
+             torso=("-0.45 * v.nr_hn", 0, 0), chest=("-0.55 * v.nr_hn", 0, 0),
+             neck=(-38, 0, 0), head=(-30, 0, 0))
+
+
+@ground_fit("v.nr_glp", skip=ARM_BONES + LEG_BONES)
+def _fit_prone(skel: Skel) -> dict:
+    return prone_base(skel, False, 0.0)
+
+
+@ground_fit("v.nr_glh", skip=ARM_BONES + LEG_BONES + ("pelvis",))
+def _fit_half(skel: Skel) -> dict:
+    return prone_base(skel, True, 0.0)
+
+
+PRONE_FOOT = 62.0        # うつ伏せの足の甲を床につける（つま先を後ろへ伸ばす）
+PRONE_SHIN = 4.0
+
+
+def _settle_legs(skel: Skel, pose: dict) -> float:
+    """うつ伏せで脚（太腿・脛・足の甲）が床に乗る股の rx（加算）。"""
+    best = (1e9, 0.0)
+    for rx in np.linspace(-40, 30, 141):
+        p = padd(pose, {f"leg_{s}": {"rot": [float(rx), 0, 0]} for s in "rl"},
+                 {f"shin_{s}": {"rot": [PRONE_SHIN, 0, 0]} for s in "rl"},
+                 {f"foot_{s}": {"rot": [PRONE_FOOT, 0, 0]} for s in "rl"})
+        W = skel.world(_numeric(p, skel))
+        lo = min(_bone_min_y(skel, W, b) for b in LEG_BONES)
+        if lo >= 0.35 and lo < best[0]:                  # 揺れの分だけ少し浮かせる
+            best = (lo, float(rx))
+    return best[1]
+
+
+CRAWL_LEGS = {"trail": "両脚を引きずる", "half": "下半身なし（腸を引きずる）",
+              "one_r": "右脚だけで床を蹴る", "one_l": "左脚だけで床を蹴る"}
+
+
+def crawl_quad(skel: Skel, mode: str, legs: str = "trail") -> Quad:
+    """這う（脚が無い・折れた・nr:state crawl）。腕を交互に前へ伸ばして体を引き寄せる。
+    legs = "trail"（脚を引きずる）/ "half"（上半身だけ・腸を引きずる）/ "one_r" "one_l"（片脚で蹴る）。
+    肘は外へ張る（腕の ry ±90。肘が床へ潜らない）。"""
     run = mode == "run"
+    half = legs == "half"
     pb = prone_base(skel, half)
+    sk_vars = ensure_vars(skel)
+    base_y = sk_vars["v.nr_glh" if half else "v.nr_glp"]
+    pb_num = prone_base(skel, half, base_y)
+    leg_rx = _settle_legs(skel, pb_num) if not half else 0.0
+    good = legs[-1] if legs.startswith("one_") else ""
 
     def body(phi):
-        heave = 0.8 * max(0.0, _sin(phi * 2 - 0.1)) * (1.4 if run else 1.0)
+        heave = 0.8 * max(0.0, _sin(phi * 2 - 0.1)) * (1.4 if run else 1.0) * (0.7 if half else 1.0)
         rl = (12 if run else 8) * _sin(phi)
         p = padd(pb, P(root_pos=(0.0, heave * 0.5, 0.0),
                        torso=(-4 * heave, 0, 0), chest=(-6 * heave, 3 * _sin(phi), rl),
                        waist=(0, 4 * _sin(phi), rl * 0.4),
-                       neck=(-38 - 4 * heave, 4 * _sin(phi), 0),
-                       head=(-30 + 3 * _sin(phi * 2), 6 * _sin(phi + 0.2), rl * -0.5),
+                       neck=(-4 * heave, 4 * _sin(phi), 0),
+                       head=(3 * _sin(phi * 2), 6 * _sin(phi + 0.2), rl * -0.5),
                        jaw=(14 + 10 * max(0.0, _sin(phi * 2 + 0.3)), 0, 0)))
-        # 脚は後ろへだらりと伸び、引きずられて揺れる（切れていれば見えない）
-        if not half:
-            for s, sgn in SIDES:
-                p = padd(p, {f"leg_{s}": {"rot": [8 + 4 * _sin(phi + (0.5 if s == 'l' else 0)), 0, -sgn * 6]},
-                             f"shin_{s}": {"rot": [10 + 8 * max(0.0, _sin(phi * 2)), 0, 0]},
-                             f"foot_{s}": {"rot": [40, 0, -sgn * 20]}})
+        if half:                                  # 腸が後ろへ伸びて床を擦り、のたうつ
+            p = padd(p, P(guts=(-20 + 8 * _sin(phi * 2), 10 * _sin(phi), 14 * _sin(phi + 0.3))))
+            return p
+        for s, sgn in SIDES:
+            if s == good:                         # 蹴る脚: 膝を横へ引き上げてから伸ばして押す
+                k = 0.5 - 0.5 * _cos(phi + (0.0 if s == "r" else 0.5))
+                # 太腿を ry で 90° ひねると膝の曲げが床と平行になる（足が宙に上がらない蛙足）
+                p = padd(p, {f"leg_{s}": {"rot": [leg_rx - 10 * k, sgn * 90, -sgn * (10 + 32 * k)]},
+                             f"shin_{s}": {"rot": [10 + 56 * k, 0, 0]},
+                             f"foot_{s}": {"rot": [30 - 10 * k, 0, 0]}})
+                continue
+            # 引きずられる脚: 床の上でだらりと揺れる（切れていれば見えない）
+            o = 0.5 if s == "l" else 0.0
+            p = padd(p, {f"leg_{s}": {"rot": [leg_rx + 2 * _sin(phi + o), 0, -sgn * (5 + 2 * _sin(phi + o))]},
+                         f"shin_{s}": {"rot": [PRONE_SHIN + 4 * max(0.0, _sin(phi * 2 + o)), 0, 0]},
+                         f"foot_{s}": {"rot": [PRONE_FOOT, 0, -sgn * 12]}})
         return p
     base = body(0.0)
     sh = {s: shoulder_ground(skel, base, s) for s, _ in SIDES}
-    S = 6.0 if run else 4.6
+    S = (6.0 if run else 4.6) * (0.85 if half else 1.0)
     limbs = {}
     for s, sgn in SIDES:
-        limbs[f"hand_{s}"] = dict(offset=0.0 if s == "r" else 0.5, x=sh[s][0] + sgn * 1.2, z=sh[s][2] - 4.0, y0=0.45)
+        limbs[f"hand_{s}"] = dict(offset=0.0 if s == "r" else 0.5, x=sh[s][0] + sgn * 1.6, z=sh[s][2] - 4.0,
+                                  y0=0.45)
     return Quad(body=body, limbs=limbs, stride=S, duty=0.55, lift=2.0 if not run else 2.8,
-                arm_ry={"r": 10.0, "l": -10.0})
+                arm_ry={"r": 90.0, "l": -90.0})
 
 
 # ---------------------------------------------------------------------------
@@ -1481,3 +1596,2115 @@ def qa_frames(lib: dict, full_id: str, times: Sequence[float], name: str, build:
         for (lab, img), t in zip(fr, times):
             items.append(((label or full_id.split(".")[-1]) + f" {view[:5]} t={t:.2f}", img))
     return items
+
+
+# ===========================================================================
+#  10. 型ごとの骨格（移動の型の平均）
+# ===========================================================================
+_STYLE_SKEL: Dict[str, Skel] = {}
+
+
+def style_skel(loco: str) -> Skel:
+    """移動の型の平均の骨格（身長 176cm にそろえる = v.nr_s 1 の「正規化した単位」）。"""
+    if loco not in _STYLE_SKEL:
+        sk = ref_skel("style_" + loco, style_build(loco))
+        ensure_vars(sk)
+        _STYLE_SKEL[loco] = sk
+    return _STYLE_SKEL[loco]
+
+
+def design_skel() -> Skel:
+    """状態・攻撃・能力・一発ものを作る基準の骨格（REF_BUILD）。"""
+    if "_ref" not in _STYLE_SKEL:
+        sk = ref_skel("ref", REF_BUILD)
+        ensure_vars(sk)
+        _STYLE_SKEL["_ref"] = sk
+    return _STYLE_SKEL["_ref"]
+
+
+def phase_time(length: float) -> str:
+    """移動の位相 v.nr_ph（0..4 で折り返す）を、長さ length のクリップの時刻に。"""
+    return f"math.mod(v.nr_ph, {fmt(length)})"
+
+
+# ===========================================================================
+#  11. 移動のクリップ（walk_/run_/idle_<型>）と周期の距離
+# ===========================================================================
+LOCO_CYCLES: Dict[str, dict] = {}       # 型 -> {"walk": ブロック/位相, "run": ..., "LL": 脚の長さ（単位）}
+IDLE_LEN = 3.2                          # 立ち止まった時の重心移動の周期（秒）
+
+
+def _idle_upper(U: dict) -> Callable:
+    """歩きの上半身の構え（U）から、振りを小さくした立ち姿の上半身を作る。"""
+    arms = dict(U.get("arms", {}))
+    arms.update(A=1.6, foreA=1.2, handA=0.0, rzA=0.0, lag=0.15)
+    head = dict(U.get("head", {}))
+    head.update(nod=1.2, loll=min(4.0, float(head.get("loll", 4.0))), lollLag=0.3)
+    torso = dict(U.get("torso", {}))
+    torso["lurch"] = (0.0, 4.0)
+    jaw = U.get("jaw", (4.0, 2.0, 2.0))
+    ex = U.get("extra")
+
+    def breath(phi, ctx):
+        p = P(chest=(1.6 * _sin(phi * 3), 0, 0), torso=(0.8 * _sin(phi * 3 - 0.1), 0, 0),
+              neck=(-0.8 * _sin(phi * 3), 0, 0))
+        if ex is not None:                       # 型の癖（頭の振り・腹の揺れ）は弱めて残す
+            p = padd(p, pscale(ex(phi, ctx), 0.35, chans=("rot",)))
+        return p
+    U2 = dict(U, arms=arms, head=head, torso=torso, jaw=(jaw[0] * 0.8, jaw[1] * 0.6, 3), extra=breath)
+    return make_upper(U2)
+
+
+def idle_gait_clip(loco: str, g: Gait, skel: Skel, name: Optional[str] = None, extra: Optional[dict] = None) -> Clip:
+    """二足の型の立ち姿（両足を床に固定し、重心だけゆっくり左右へ移す）。extra = 足す固定のポーズ。"""
+    gi = Gait(**{**g.__dict__})
+    gi.stride, gi.lift, gi.flight, gi.bob, gi.surge = 0.0, 0.0, 0.0, 0.0, 0.0
+    gi.toe_drag, gi.heel, gi.toeoff = 0.0, 0.0, 0.0
+    gi.sway, gi.roll, gi.twist = g.sway * 0.6, g.roll * 0.5, g.twist * 0.3
+    gi.length, gi.keys, gi.offset, gi.legs, gi.drag_leg = 1.0, 12, 0.5, {}, ""
+    gi.upper = _idle_upper(g.upper.U) if g.upper is not None and hasattr(g.upper, "U") else None
+    if extra:
+        up0 = gi.upper
+        gi.upper = lambda phi, ctx, _u=up0: padd(_u(phi, ctx) if _u else {}, extra)
+    c = Clip(name or f"idle_{loco}", IDLE_LEN, loop=True, note=f"{loco} の立ち姿")
+    n = gi.keys
+    poses = [gait_pose(gi, skel, i / n) for i in range(n)]
+    for i, p in enumerate(poses + [poses[0]]):
+        c.key(IDLE_LEN * i / n, p)
+    return c
+
+
+def idle_quad_clip(loco: str, Q: Quad, skel: Skel) -> Clip:
+    """四つ足・這いの型の止まった姿（手足を床に固定し、体だけ息をする）。"""
+    Qi = Quad(**{**Q.__dict__})
+    Qi.stride, Qi.lift, Qi.keys = 0.0, 0.0, 12
+    c = Clip(f"idle_{loco}", IDLE_LEN, loop=True, note=f"{loco} の止まった姿")
+    n = Qi.keys
+    poses = [quad_pose(Qi, skel, i / n) for i in range(n)]
+    for i, p in enumerate(poses + [poses[0]]):
+        c.key(IDLE_LEN * i / n, padd(p, P(chest=(1.5 * _sin(i / n * 3), 0, 0))))
+    return c
+
+
+def _phase_clip(c: Clip) -> Clip:
+    c.anim_time_update = phase_time(c.length)
+    return c
+
+
+QUAD_BUILDERS = {"scuttle": scuttle_quad, "knuckle": knuckle_quad,
+                 "crawl": lambda sk, mode: crawl_quad(sk, mode)}
+
+
+def build_locomotion() -> List[Clip]:
+    """LOCOMOTION_VOCAB の全型の walk_ / run_ / idle_ と LOCO_CYCLES。"""
+    ensure_cycles()
+    gaits = loco_gaits()
+    out: List[Clip] = []
+    for loco in SPEC.LOCOMOTION_VOCAB:
+        sk = style_skel(loco)
+        if loco in QUAD_BUILDERS:
+            qs = {m: QUAD_BUILDERS[loco](sk, m) for m in ("walk", "run")}
+            for m, Q in qs.items():
+                out.append(_phase_clip(quad_clip(f"{m}_{loco}", Q, sk, note=f"{loco} {m}")))
+            out.append(idle_quad_clip(loco, qs["walk"], sk))
+        elif loco == "limp":
+            for m in ("walk", "run"):
+                a = gait_clip(f"{m}_limp_r", gaits["limp"][m]["r"], sk)
+                b = gait_clip(f"{m}_limp_l", gaits["limp"][m]["l"], sk)
+                out.append(_phase_clip(select_clip(f"{m}_limp", a, b, "v.nr_limp")))
+            out.append(idle_gait_clip(loco, gaits["limp"]["walk"]["r"], sk))
+        else:
+            g = gaits[loco]
+            for m in ("walk", "run"):
+                out.append(_phase_clip(gait_clip(f"{m}_{loco}", g[m], sk, note=f"{loco} {m}")))
+            out.append(idle_gait_clip(loco, g["walk"], sk))
+    return out
+
+
+def ensure_cycles() -> None:
+    """LOCO_CYCLES / STATE_CYCLES（位相 1 あたりのブロック）を、クリップを作らずに求める
+    （gen_nr_entities が client_initialize / client_pre_animation だけを呼んでも使えるように）。"""
+    if LOCO_CYCLES and STATE_CYCLES:
+        return
+    gaits = loco_gaits()
+    for loco in SPEC.LOCOMOTION_VOCAB:
+        sk = style_skel(loco)
+        LL = leg_len(sk)
+        if loco in QUAD_BUILDERS:
+            qw, qr = QUAD_BUILDERS[loco](sk, "walk"), QUAD_BUILDERS[loco](sk, "run")
+            LOCO_CYCLES[loco] = dict(walk=qw.stride / qw.duty / 16.0, run=qr.stride / qr.duty / 16.0, LL=LL)
+        else:
+            g = gaits[loco]
+            gw, gr = (g["walk"]["r"], g["run"]["r"]) if loco == "limp" else (g["walk"], g["run"])
+            LOCO_CYCLES[loco] = dict(walk=cycle_blocks(gw, 1.0, sk), run=cycle_blocks(gr, 1.0, sk), LL=LL)
+    sk = design_skel()
+    STATE_CYCLES["gimp"] = cycle_blocks(gaits["limp"]["walk"]["r"], 1.0, sk)
+    q1 = crawl_quad(sk, "walk", "one_r")
+    STATE_CYCLES["crawl1"] = q1.stride / q1.duty / 16.0
+    qh = crawl_quad(sk, "walk", "half")
+    STATE_CYCLES["drag"] = qh.stride / qh.duty / 16.0
+    STATE_CYCLES["crawl_walk"] = LOCO_CYCLES["crawl"]["walk"]
+    STATE_CYCLES["crawl_run"] = LOCO_CYCLES["crawl"]["run"]
+
+
+# ===========================================================================
+#  12. 姿勢を組む道具（キーのクリップ・床合わせ・手足を床に寝かせる）
+# ===========================================================================
+TK = 1.0 / 20.0     # 1 tick（秒）
+
+
+def keyed(name: str, length: float, keys, loop=False, lerp: str = "catmullrom", **kw) -> Clip:
+    """keys = [(時刻, ポーズ[, lerp])] からクリップを作る。"""
+    c = Clip(name, float(length), loop=loop, lerp=lerp, **kw)
+    for k in keys:
+        c.key(k[0], k[1], k[2] if len(k) > 2 else None)
+    return c
+
+
+def timed(c: Clip, seconds: float, name: Optional[str] = None) -> Clip:
+    """位相で作ったクリップを秒の長さに伸ばす（q.anim_time で回す）。"""
+    k = seconds / c.length
+    out = copy.deepcopy(c)
+    out.name = name or c.name
+    out.length = seconds
+    out.keys = [(t * k, p, l) for t, p, l in c.keys]
+    out.anim_time_update = None
+    return out
+
+
+# 寝た姿勢では猫背（休みの回転に焼いてある）をまっすぐに戻す
+STRAIGHT = P(torso=("-0.45 * v.nr_hn", 0, 0), chest=("-0.55 * v.nr_hn", 0, 0),
+             neck=("0.35 * v.nr_hn", 0, 0), head=("0.55 * v.nr_hn", 0, 0))
+
+
+def lift_to(pose: dict, y) -> dict:
+    """root の位置の y を y（数か Molang）に置き換える。"""
+    p = copy.deepcopy(pose)
+    r = p.setdefault("root", {})
+    pos = list(r.get("pos", [0.0, 0.0, 0.0]))
+    pos[1] = y
+    r["pos"] = pos
+    return p
+
+
+def grounded(skel: Skel, pose: dict, extra: float = 0.0, skip=()) -> dict:
+    """いちばん低い点を床に置く root の y（設計の骨格で計算した正規化の数）を書いたポーズ。"""
+    L = ground_lift(skel, lift_to(pose, 0.0), skip) / skel_scale(skel)
+    return lift_to(pose, round(L + extra, 3))
+
+
+def settle(skel: Skel, pose: dict, bones: Sequence[str], axis: int, lo: float, hi: float,
+           check: Sequence[str], clear: float = 0.2, steps: int = 121) -> dict:
+    """bones の回転の axis 成分に lo..hi の角度を足し、check のボーンの一番低い点が床から clear 以上で
+    いちばん床に近い角度を選ぶ（寝た手足を床に乗せる）。root の y はその時点の値のまま。"""
+    best = fallback = None
+    for a in np.linspace(lo, hi, steps):
+        add = {b: {"rot": [float(a) if i == axis else 0.0 for i in range(3)]} for b in bones}
+        p = padd(pose, add)
+        W = skel.world(_numeric(p, skel))
+        m = min(_bone_min_y(skel, W, b) for b in check)
+        if m >= clear and (best is None or m < best[0]):
+            best = (m, float(a))
+        if m < clear and (fallback is None or m > fallback[0]):
+            fallback = (m, float(a))
+    if best is None:                       # どの角度でも床に潜る → いちばん浅いもの
+        best = fallback
+    return padd(pose, {b: {"rot": [best[1] if i == axis else 0.0 for i in range(3)]} for b in bones})
+
+
+def _arm(s: str, rx=0.0, ry=0.0, rz=0.0, fx=0.0, hx=0.0, hz=0.0) -> dict:
+    """片腕のポーズ（rz は「外へ開く」が正。左腕は符号を反転して書く）。"""
+    sgn = 1.0 if s == "r" else -1.0
+    return {f"arm_{s}": {"rot": [rx, sgn * ry, sgn * rz]}, f"forearm_{s}": {"rot": [fx, 0.0, 0.0]},
+            f"hand_{s}": {"rot": [hx, 0.0, sgn * hz]}}
+
+
+def _leg(s: str, rx=0.0, ry=0.0, rz=0.0, kx=0.0, fx=0.0, fz=0.0) -> dict:
+    """片脚（rz は「外へ開く」が正。kx = 膝の曲げ、fx = 足首）。"""
+    sgn = 1.0 if s == "r" else -1.0
+    return {f"leg_{s}": {"rot": [rx, sgn * ry, sgn * rz]}, f"shin_{s}": {"rot": [kx, 0.0, 0.0]},
+            f"foot_{s}": {"rot": [fx, 0.0, sgn * fz]}}
+
+
+def body(*parts) -> dict:
+    return padd(*parts)
+
+
+# ===========================================================================
+#  13. 寝た姿勢（死体 dead_0..7・倒れ・這ったままの死）
+# ===========================================================================
+#  death.js の POSE: 0 BACK 仰向け / 1 FRONT うつ伏せ / 2 LEFT 左へ / 3 RIGHT 右へ / 4 CRUMPLE 膝から崩れる /
+#  5 CRAWL 這ったまま突っ伏す / 6 HALF 上半身だけ / 7 BLOWN 大の字に吹き飛ぶ。
+#  置き方は gore/hitloc.js に合わせる: 1・5 は prone（股関節が原点・頭が前）、ほかは lie（足元が原点・頭が後ろ）。
+SUP = padd(P(root=(-90, 0, 0)), STRAIGHT)         # 仰向け（足元を軸に後ろへ倒れた）
+
+
+def _trunk(skel: Skel, pose: dict, half: bool = False) -> dict:
+    """胴（手足を除く）のいちばん低い点を床に置いた高さへ root を上げる（手足を床に乗せる前に）。"""
+    skip = ARM_BONES + LEG_BONES + (("pelvis",) if half else ())
+    p0 = lift_to(pose, 0.0)
+    return lift_to(p0, ground_lift(skel, p0, skip))
+
+
+def _sup_limbs(skel: Skel, pose: dict) -> dict:
+    """仰向けの腕・脚を床に乗せる（腕は後ろ = 床へ、脚も床へ）。"""
+    pose = _trunk(skel, pose)
+    p = settle(skel, pose, ["arm_r"], 0, -40, 70, ["arm_r", "forearm_r", "hand_r"], clear=0.15)
+    p = settle(skel, p, ["arm_l"], 0, -40, 70, ["arm_l", "forearm_l", "hand_l"], clear=0.15)
+    p = settle(skel, p, ["leg_r"], 0, -60, 30, ["leg_r", "shin_r", "foot_r"], clear=0.15)
+    p = settle(skel, p, ["leg_l"], 0, -60, 30, ["leg_l", "shin_l", "foot_l"], clear=0.15)
+    return p
+
+
+def _pro_limbs(skel: Skel, pose: dict) -> dict:
+    """うつ伏せの腕・脚を床に乗せる（腕は前 = 床へ）。"""
+    pose = _trunk(skel, pose)
+    p = settle(skel, pose, ["arm_r"], 0, -60, 20, ["arm_r", "forearm_r", "hand_r"], clear=0.15)
+    p = settle(skel, p, ["arm_l"], 0, -60, 20, ["arm_l", "forearm_l", "hand_l"], clear=0.15)
+    p = settle(skel, p, ["leg_r"], 0, -40, 30, ["leg_r", "shin_r", "foot_r"], clear=0.15)
+    p = settle(skel, p, ["leg_l"], 0, -40, 30, ["leg_l", "shin_l", "foot_l"], clear=0.15)
+    return p
+
+
+_LYING_CACHE: Dict[Tuple[str, str], dict] = {}
+
+
+def _pose_skel() -> Skel:
+    """寝た姿勢の手足の角度を決める骨格（REF_BUILD。床合わせの変数は使わない）。"""
+    if "_pose" not in _STYLE_SKEL:
+        _STYLE_SKEL["_pose"] = ref_skel("ref", REF_BUILD)
+    return _STYLE_SKEL["_pose"]
+
+
+def lying(name: str, skel: Optional[Skel] = None) -> dict:
+    """寝た姿勢の最終形（root の y = 0）。手足の角度は基準の骨格で一度だけ決める（クリップと同じ回転）。
+    種類ごとの床合わせ（GROUND_FITS → v.nr_gl_*）は、この同じ回転をその種類の骨格に当てて測る。"""
+    if name not in _LYING_CACHE:
+        _LYING_CACHE[name] = lift_to(LYING_DEFS[name](_pose_skel()), 0.0)
+    return copy.deepcopy(_LYING_CACHE[name])
+
+
+def _l_back(sk):            # 0 BACK: 仰向け、腕を投げ出し、頭は横へ
+    p = body(SUP, P(head=(0, 55, 8), neck=(0, 15, 0), jaw=(24, 0, 6)),
+             _arm("r", 0, -10, 62, -18, 0, 8), _arm("l", 0, 14, 38, -46, 10, 0),
+             _leg("r", 0, 6, 9, 6, 10, 26), _leg("l", -34, -8, 15, 46, 20, 30))
+    return _sup_limbs(sk, p)
+
+
+def _l_front(sk):           # 1 FRONT: うつ伏せ（股関節が原点）、片腕は頭の先へ
+    p = body(prone_base(sk, False, 0.0), P(neck=(34, 0, 0), head=(28, 72, 0), jaw=(16, 0, 0)),
+             _arm("r", -150, 0, 18, -20, -10, 0), _arm("l", 8, 20, 14, -10, 30, 0),
+             _leg("r", 0, -10, 6, PRONE_SHIN, PRONE_FOOT, 12), _leg("l", 0, 22, 26, 38, PRONE_FOOT, 10))
+    return _pro_limbs(sk, p)
+
+
+def _l_left(sk):            # 2 LEFT: 仰向けから左へ転がって横向き、膝を曲げる
+    p = body(padd(P(root=(-90, 0, 64)), STRAIGHT), P(head=(10, 20, 30), neck=(6, 0, 10), jaw=(18, 0, 0)),
+             _arm("l", -70, 0, 10, -40, 0, 0), _arm("r", -100, 0, 0, -30, 0, 0),
+             _leg("l", -30, 0, 4, 40, 20, 0), _leg("r", -46, 0, -6, 52, 26, 0))
+    return _sup_limbs(sk, p)
+
+
+def _l_right(sk):           # 3 RIGHT: 2 の左右反転
+    return pmirror(_l_left(sk))
+
+
+def _l_crumple(sk):         # 4 CRUMPLE: 膝から崩れて仰向けに、膝を立てて左へ倒す
+    p = body(padd(P(root=(-90, 0, 18)), STRAIGHT), P(head=(0, 30, 10), jaw=(30, 0, 0)),
+             _arm("r", 0, 0, 30, -60, 30, 0), _arm("l", 0, 0, 44, -20, 0, 10),
+             _leg("r", -64, 0, -22, 96, 30, 0), _leg("l", -56, 0, -30, 92, 24, 0))
+    return _sup_limbs(sk, p)
+
+
+def _l_crawl(sk):           # 5 CRAWL: 這ったまま突っ伏す（腕は前へ投げ出し、頭は横）
+    p = body(prone_base(sk, False, 0.0), P(neck=(30, 0, 0), head=(26, -70, 0), jaw=(20, 0, 0)),
+             _arm("r", -120, 0, 30, -40, 0, 0), _arm("l", -160, 0, 12, -10, 0, 0),
+             _leg("r", 0, 0, 6, PRONE_SHIN, PRONE_FOOT, 12), _leg("l", 0, 0, 10, PRONE_SHIN + 8, PRONE_FOOT, 12))
+    return _pro_limbs(sk, p)
+
+
+def _l_half(sk):            # 6 HALF: 上半身だけ仰向けに（腕は頭の上へ）、腸がこぼれる
+    p = body(SUP, P(head=(-8, -40, 0), jaw=(30, 0, 0), guts=(40, 0, 80)),
+             _arm("r", -175, 0, 24, -30, 0, 0), _arm("l", 0, 0, 72, -50, 0, 0))
+    p = _trunk(sk, p, half=True)
+    p = settle(sk, p, ["arm_r"], 0, -30, 30, ["arm_r", "forearm_r", "hand_r"], clear=0.15)
+    return settle(sk, p, ["arm_l"], 0, -40, 70, ["arm_l", "forearm_l", "hand_l"], clear=0.15)
+
+
+def _l_blown(sk):           # 7 BLOWN: 大の字
+    p = body(SUP, P(head=(-6, -20, 10), jaw=(34, 0, 0)),
+             _arm("r", 0, 0, 84, -8, 0, 0), _arm("l", 0, 0, 78, -14, 0, 0),
+             _leg("r", 0, 0, 24, 4, 20, 20), _leg("l", 0, 0, 30, 10, 20, 26))
+    return _sup_limbs(sk, p)
+
+
+def _l_down(sk):            # 倒れて（生きて）仰向け: 片膝を立て、腕は胸の横
+    p = body(SUP, P(head=(14, 16, 0), neck=(10, 0, 0), jaw=(10, 0, 0)),
+             _arm("r", 0, 0, 30, -60, 10, 0), _arm("l", 0, 0, 22, -30, 0, 0),
+             _leg("r", -50, 0, 6, 80, 20, 0), _leg("l", 0, 0, 10, 10, 10, 18))
+    return _sup_limbs(sk, p)
+
+
+def _l_half_prone(sk):      # 上半身だけで這っていて死ぬ（うつ伏せのまま）
+    p = body(prone_base(sk, True, 0.0), P(neck=(30, 0, 0), head=(24, 70, 0), jaw=(24, 0, 0), guts=(-30, 10, 20)),
+             _arm("r", -160, 0, 24, -30, 0, 0), _arm("l", 10, 0, 30, -40, 0, 0))
+    p = _trunk(sk, p, half=True)
+    p = settle(sk, p, ["arm_r"], 0, -40, 40, ["arm_r", "forearm_r", "hand_r"], clear=0.15)
+    return settle(sk, p, ["arm_l"], 0, -30, 40, ["arm_l", "forearm_l", "hand_l"], clear=0.15)
+
+
+LYING_DEFS: Dict[str, Callable] = {
+    "back": _l_back, "front": _l_front, "left": _l_left, "right": _l_right, "crumple": _l_crumple,
+    "crawl": _l_crawl, "half": _l_half, "blown": _l_blown, "down": _l_down, "half_prone": _l_half_prone,
+}
+# 床合わせの変数（v.nr_gl_<名前>）。half / half_prone は骨盤・脚が無い（切れて消えている）ので数えない
+for _n in LYING_DEFS:
+    _skip = (("pelvis",) + LEG_BONES) if _n.startswith("half") else ()
+    GROUND_FITS[f"v.nr_gl_{_n}"] = ((lambda sk, n=_n: lying(n, sk)), _skip)
+DEAD_POSES = ("back", "front", "left", "right", "crumple", "crawl", "half", "blown")   # nr:pose 0..7
+
+
+# ===========================================================================
+#  14. 倒れる・死ぬ・起き上がる（dead_0..7・dead_half・dead_down・st_down・st_rise）
+# ===========================================================================
+_HALF_SKIP = ("pelvis",) + LEG_BONES
+
+
+def _final(name: str, add: float = 0.0, pose_add: Optional[dict] = None) -> dict:
+    """寝た姿勢の最終形（root の y = 種類ごとの v.nr_gl_<名前>）。"""
+    p = lying(name, design_skel())
+    if pose_add:
+        p = padd(p, pose_add)
+    return lift_to(p, f"v.nr_gl_{name}" + (f" + {fmt(add)}" if add else ""))
+
+
+def _mid(name: str, w: float, flavor: Optional[dict] = None, start: Optional[dict] = None) -> dict:
+    """倒れる途中: start（既定は立ち姿 = 0）と最終形を w で混ぜ、flavor を足して床に置く。"""
+    sk = design_skel()
+    fin = lift_to(lying(name, sk), 0.0)
+    p = pscale(fin, w)
+    if start:
+        p = padd(p, pscale(lift_to(start, 0.0), 1.0 - w))
+    if flavor:
+        p = padd(p, flavor)
+    return grounded(sk, p, skip=_HALF_SKIP if name.startswith("half") else ())
+
+
+def densify(keys, n: int = 2, skip=(), upto: Optional[float] = None) -> list:
+    """キーの間に「床に置き直した中間の姿勢」を n 個ずつ挟む（catmull-rom の行き過ぎで床に潜らないように。
+    挟んだ区間は線形補間）。upto より後の区間はそのまま。"""
+    sk = design_skel()
+    out = []
+    for (t0, p0), (t1, p1) in zip(keys[:-1], keys[1:]):
+        out.append((t0, p0, "linear"))
+        if upto is not None and t1 > upto + 1e-6:
+            continue
+        for k in range(1, n + 1):
+            f = k / (n + 1)
+            out.append((t0 + (t1 - t0) * f, grounded(sk, padd(pscale(p0, 1 - f), pscale(p1, f)), skip=skip), "linear"))
+    out.append((keys[-1][0], keys[-1][1], "linear"))
+    return out
+
+
+def fall_clip(name: str, final: str, steps, impact: float, length: float, start: Optional[dict] = None,
+              bounce: float = 0.55, note: str = "") -> Clip:
+    """立ち姿（か start）から寝た姿勢へ倒れて止まる（hold_on_last_frame）。
+    steps = [(時刻, 混ぜ具合 w, 足すポーズ)]。impact で床に当たり、小さく跳ねて落ち着く。"""
+    keys = [(0.0, start if start is not None else {})]
+    for t, w, fl in steps:
+        keys.append((t, _mid(final, w, fl, start)))
+    keys.append((impact, _final(final)))
+    tail = [(impact + 0.09, _final(final, bounce), "linear"), (impact + 0.22, _final(final), "linear"),
+            (length, _final(final), "linear")]
+    skip = _HALF_SKIP if final.startswith("half") else ()
+    return keyed(name, length, densify(keys, 2, skip) + tail, loop="hold_on_last_frame", note=note)
+
+
+def _both_legs(rx=0.0, kx=0.0, rz=0.0, fx=0.0) -> dict:
+    return padd(_leg("r", rx, 0, rz, kx, fx), _leg("l", rx, 0, rz, kx, fx))
+
+
+def _both_arms(rx=0.0, rz=0.0, fx=0.0, ry=0.0) -> dict:
+    return padd(_arm("r", rx, ry, rz, fx), _arm("l", rx, ry, rz, fx))
+
+
+def crawl_stance(skel: Skel, legs: str = "trail") -> dict:
+    """這いの止まった姿（手を床についたうつ伏せ）。死ぬ・倒れる時の始まりの姿勢。"""
+    Q = crawl_quad(skel, "walk", legs)
+    Qi = Quad(**{**Q.__dict__})
+    Qi.stride, Qi.lift = 0.0, 0.0
+    return quad_pose(Qi, skel, 0.0)
+
+
+def build_falls() -> List[Clip]:
+    sk = design_skel()
+    react_back = padd(P(head=(-25, 0, 0), chest=(-12, 0, 0), neck=(-10, 0, 0), jaw=(30, 0, 0)),
+                      _both_arms(-50, 30, -20), _both_legs(-6, 14))
+    react_front = padd(P(head=(22, 0, 0), chest=(16, 0, 0), torso=(8, 0, 0), jaw=(26, 0, 0)),
+                       _both_arms(30, 16, -10), _both_legs(4, 18))
+    react_left = padd(P(head=(0, 0, -18), chest=(0, 0, 10), torso=(0, 0, 8), jaw=(28, 0, 0)),
+                      _arm("r", -40, 0, 64, -30), _arm("l", -20, 0, 24, -10), _both_legs(0, 16))
+    out = [
+        fall_clip("dead_0", "back", [(0.10, 0.0, react_back),
+                                     (0.32, 0.28, padd(_both_arms(-110, 20, -30), _both_legs(-10, 26))),
+                                     (0.56, 0.74, padd(_both_arms(-140, 40, -20), P(head=(20, 0, 0))))],
+                  impact=0.72, length=1.3, note="仰向けに倒れる（前から打たれた）"),
+        fall_clip("dead_1", "front", [(0.10, 0.0, react_front),
+                                      (0.34, 0.30, padd(_both_arms(-70, 20, -30), _both_legs(-4, 36))),
+                                      (0.55, 0.76, padd(_both_arms(-110, 30, -20), P(head=(-10, 30, 0))))],
+                  impact=0.70, length=1.3, note="うつ伏せに倒れる（後ろから打たれた）"),
+        fall_clip("dead_2", "left", [(0.10, 0.0, react_left),
+                                     (0.34, 0.32, padd(_arm("r", -90, 0, 80, -40), _both_legs(-6, 24))),
+                                     (0.55, 0.75, _arm("r", -110, 0, 60, -30))],
+                  impact=0.72, length=1.3, note="左へ倒れる"),
+        fall_clip("dead_3", "right", [(0.10, 0.0, pmirror(react_left)),
+                                      (0.34, 0.32, pmirror(padd(_arm("r", -90, 0, 80, -40), _both_legs(-6, 24)))),
+                                      (0.55, 0.75, pmirror(_arm("r", -110, 0, 60, -30)))],
+                  impact=0.72, length=1.3, note="右へ倒れる"),
+        fall_clip("dead_4", "crumple", [(0.14, 0.0, padd(_both_legs(-24, 64), _both_arms(10, 6), P(torso=(14, 0, 0), chest=(8, 0, 0)))),
+                                        (0.40, 0.12, padd(_both_legs(-8, 112, 0, 30), _both_arms(14, 8), P(torso=(24, 0, 0), chest=(14, 0, 0)))),
+                                        (0.68, 0.55, padd(_both_legs(-30, 90), _both_arms(-30, 30)))],
+                  impact=0.88, length=1.5, note="膝から崩れ落ちる（首・頭を失った）"),
+        fall_clip("dead_5", "crawl", [(0.22, 0.45, P(neck=(14, 0, 0), head=(10, -30, 0))),
+                                      (0.42, 0.85, None)],
+                  impact=0.55, length=1.0, start=crawl_stance(sk), bounce=0.25, note="這ったまま突っ伏す"),
+        fall_clip("dead_6", "half", [(0.08, 0.0, padd(_both_arms(-130, 40, -20), P(head=(-20, 0, 0), jaw=(40, 0, 0)))),
+                                     (0.30, 0.35, padd(_arm("r", -160, 0, 30, -40), _arm("l", -60, 0, 80, -20)))],
+                  impact=0.55, length=1.2, note="上半身だけ落ちて仰向けに（胴が真っ二つ）"),
+        fall_clip("dead_7", "blown", [(0.08, 0.0, padd(P(torso=(26, 0, 0), chest=(16, 0, 0), head=(20, 0, 0), jaw=(36, 0, 0)),
+                                                       _both_arms(-80, 20, -20), _both_legs(-36, 22))),
+                                      (0.24, 0.25, padd(_both_arms(-150, 60), _both_legs(-50, 10, 20), P(chest=(-14, 0, 0)))),
+                                      (0.44, 0.70, padd(_both_arms(-40, 80), _both_legs(-20, 0, 26)))],
+                  impact=0.60, length=1.2, bounce=0.8, note="大の字に吹き飛ぶ（爆発・オーバーキル）"),
+        fall_clip("dead_half", "half_prone", [(0.25, 0.5, P(neck=(10, 0, 0)))], impact=0.5, length=0.9,
+                  start=crawl_stance(sk, "half"), bounce=0.2, note="上半身だけで這っていて死ぬ"),
+        fall_clip("st_down", "down", [(0.10, 0.0, react_back),
+                                      (0.30, 0.30, padd(_both_arms(-100, 30, -30), _both_legs(-10, 30))),
+                                      (0.50, 0.75, _both_arms(-120, 40, -30))],
+                  impact=0.64, length=0.95, note="倒れる（nr:state down の間このまま）"),
+    ]
+    # dead_down: 倒れていたまま死ぬ（体が一度引きつって力が抜ける）
+    out.append(keyed("dead_down", 1.0, [
+        (0.0, _final("down")),
+        (0.14, _final("down", 0.2, padd(P(chest=(-8, 0, 0), head=(-12, 0, 0), jaw=(30, 0, 0)), _both_arms(-20, 10, -20)))),
+        (0.45, _final("down", 0.0, P(head=(-10, 34, 0), jaw=(20, 0, 0)))),
+        (1.0, _final("down", 0.0, P(head=(-14, 40, 0), jaw=(24, 0, 0))))], loop="hold_on_last_frame",
+        note="倒れていたまま死ぬ"))
+    out.append(build_rise("st_rise", 1.25))
+    return out
+
+
+def build_rise(name: str, length: float, from_name: str = "down") -> Clip:
+    """仰向けから起き上がる（体を起こす → 片膝 → 立つ）。最後は 0（立ち姿）。"""
+    sk = design_skel()
+    k = length / 1.25
+    sit = padd(P(root=(-48, 0, 0), torso=(26, 0, 0), chest=(14, 0, 0), head=(16, 0, 0)),
+               _both_arms(46, 18, -30), _leg("r", -70, 0, 6, 96, 20), _leg("l", -40, 0, 10, 60, 10))
+    kneel = padd(P(torso=(28, 0, 0), chest=(10, 0, 0), head=(-14, 0, 0)),
+                 _leg("r", -4, 0, 4, 100, 34), _leg("l", -86, 0, 8, 88, -8),
+                 _arm("r", -40, 0, 14, -30), _arm("l", -60, 0, 10, -60))
+    crouch = padd(P(torso=(22, 0, 0), chest=(6, 0, 0), head=(-12, 0, 0)),
+                  _leg("r", -40, 0, 4, 60, -10), _leg("l", -50, 0, 6, 70, -14), _both_arms(-30, 12, -20))
+    return keyed(name, length, densify([
+        (0.0, _final(from_name)),
+        (0.30 * k, grounded(sk, sit)),
+        (0.62 * k, grounded(sk, kneel)),
+        (0.92 * k, grounded(sk, crouch)),
+        (length, {})], 2), note="仰向けから起き上がる")
+
+
+# ===========================================================================
+#  15. 体の状態のクリップ（片脚が折れた歩き・片脚の這い・上半身だけ・壁登り・よろめき）
+# ===========================================================================
+STATE_CYCLES: Dict[str, float] = {}     # 状態 -> 位相 1 あたりのブロック（基準の身長。v.nr_s 倍で使う）
+
+
+def build_states() -> List[Clip]:
+    ensure_cycles()
+    sk = design_skel()
+    gaits = loco_gaits()
+    out: List[Clip] = []
+    # --- gimp: 片脚が折れて（broken）引きずる歩き。v.nr_gimpl = 左脚が折れている
+    lw = gaits["limp"]["walk"]
+    a = gait_clip("st_gimp_r", lw["r"], sk)
+    b = gait_clip("st_gimp_l", lw["l"], sk)
+    out.append(_phase_clip(select_clip("st_gimp", a, b, "v.nr_gimpl")))
+    broken = {s: padd(_leg(s, -16, 0, 6, 36, 6, 14), P(waist=(0, 0, (4 if s == "r" else -4)))) for s in "rl"}
+    ia = idle_gait_clip("limp", lw["r"], sk, "st_gimp_idle_r", extra=broken["r"])
+    ib = idle_gait_clip("limp", lw["l"], sk, "st_gimp_idle_l", extra=broken["l"])
+    out.append(select_clip("st_gimp_idle", ia, ib, "v.nr_gimpl"))
+    # --- crawl1: 片脚だけ使える這い（v.nr_c1l = 使える脚が左）
+    qr, ql = crawl_quad(sk, "walk", "one_r"), crawl_quad(sk, "walk", "one_l")
+    out.append(_phase_clip(select_clip("st_crawl1", quad_clip("st_crawl1_r", qr, sk), quad_clip("st_crawl1_l", ql, sk),
+                                       "v.nr_c1l")))
+    # --- drag: 胴が真っ二つ（上半身だけ）。腸を引きずる
+    qh = crawl_quad(sk, "walk", "half")
+    out.append(_phase_clip(quad_clip("st_drag", qh, sk)))
+    di = idle_quad_clip("crawl", qh, sk)
+    di.name = "st_drag_idle"
+    out.append(di)
+    # --- stagger: その場でよろめく（nr:state stagger。足は床に固定したまま小さく踏み替える）
+    g = Gait(**{**gaits["stagger"]["walk"].__dict__})
+    g.stride, g.keys = 0.10, 16
+    st = gait_clip("st_stagger", g, sk)
+    st = timed(st, 2.4)
+    st.loop = True
+    out.append(padd_clip(st, lambda t: padd(_both_arms(-24 * _smooth(t / 0.3), 34 * _smooth(t / 0.3), -20),
+                                            P(head=(8 * _sin(t / 2.4 * 3), 10 * _sin(t / 2.4 * 2), 0)))))
+    # --- 壁登り（nr:state climb）: ab_wall_climb（能力。素早い）と st_climb（不器用な汎用）
+    out.append(climb_clip("ab_wall_climb", 0.8, agile=True))
+    out.append(climb_clip("st_climb", 1.3, agile=False))
+    return out
+
+
+def padd_clip(c: Clip, fn: Callable) -> Clip:
+    """各キーに fn(時刻) のポーズを足す（ただし最初と最後で 0 にならない足し方は呼ぶ側の責任）。"""
+    c.keys = [(t, padd(p, fn(t)), l) for t, p, l in c.keys]
+    return c
+
+
+def climb_clip(name: str, length: float, agile: bool) -> Clip:
+    """壁に向かって登る（両手を交互に上へ伸ばし、反対の膝を引き上げて蹴る）。ループ。"""
+    lean = P(torso=(10, 0, 0), chest=(6, 0, 0), neck=(-14, 0, 0), head=(-26, 0, 0), jaw=(10, 0, 0))
+    reach = padd(_arm("r", -168, 0, 12, -12, -20), _arm("l", -112, 0, 18, -76, -10),
+                 _leg("r", -12, 0, 6, 22, 20), _leg("l", -78, 0, 10, 98, -12), P(root_pos=(0.0, 0.0, 0.0)))
+    pull = padd(_arm("r", -140, 0, 16, -60, -10), _arm("l", -150, 0, 14, -40, -20),
+                _leg("r", -40, 0, 8, 60, 6), _leg("l", -40, 0, 8, 60, 6), P(root_pos=(0.0, 0.8, 0.0)))
+    sway = 1.0 if agile else 2.2
+    k0 = padd(lean, reach, P(waist=(0, 6 * sway, 3 * sway), head=(0, -8 * sway, 0)))
+    k1 = padd(lean, pull, P(waist=(0, 0, 0), chest=(4, 0, 0)))
+    k2 = padd(lean, pmirror(reach), P(waist=(0, -6 * sway, -3 * sway), head=(0, 8 * sway, 0)))
+    keys = [(0.0, k0), (0.25 * length, k1), (0.5 * length, k2), (0.75 * length, pmirror(k1) if agile else padd(k1, P(head=(6, 12, 0)))),
+            (length, k0)]
+    return keyed(name, length, keys, loop=True, note="壁登り" + ("（素早い）" if agile else "（不器用）"))
+
+
+# ===========================================================================
+#  16. 重ね（生きている揺れ・見る・被弾・燃える・感電・折れた腕・腸）と演出だけのクリップ
+# ===========================================================================
+_LT = "(q.life_time + v.nr_seed * 13.0)"
+
+
+def _pulse(freq: float, phase: float, sharp: int) -> str:
+    """ときどき鋭く立ち上がるパルス（0..1。sin の山を sharp 乗して尖らせる。度の単位）。"""
+    return f"math.pow(math.max(0.0, math.sin({_LT} * {fmt(freq)} + {fmt(phase)})), {sharp})"
+
+
+def _jit(freq: float, amp: float, phase: float = 0.0) -> str:
+    return f"{fmt(amp)} * math.sin(q.life_time * {fmt(freq)} + {fmt(phase)})"
+
+
+def expr_clip(name: str, chans: Dict[str, Dict[str, list]], length: float = 1.0, weight_arms: bool = True,
+              note: str = "") -> Clip:
+    """式だけのクリップ（キー無し。毎フレーム評価）。chans = {bone: {"rot": [..], "pos": [..]}}。"""
+    c = Clip(name, length, loop=True, weight_arms=weight_arms, note=note)
+    c.expr = copy.deepcopy(chans)
+    return c
+
+
+def fx_clip(name: str, length: float, effects: List[dict], note: str = "") -> Clip:
+    """パーティクルを出すだけのループ（各周回の頭で 1 回）。"""
+    c = Clip(name, length, loop=True, note=note)
+    c.particles = {0.0: list(effects)}
+    return c
+
+
+def build_overlays() -> List[Clip]:
+    out: List[Clip] = []
+    # --- 生きている揺れ: 顎のカチカチ・ときどき首がかくっと引きつる・肩の痙攣・指の握り・呼吸
+    out.append(expr_clip("ov_alive", {
+        "jaw": {"rot": [f"3.0 * math.sin({_LT} * 60) + 7.0 * {_pulse(47, 0, 6)} * math.abs(math.sin({_LT} * 1400))", 0, 0]},
+        "head": {"rot": [f"5 * {_pulse(41, 60, 40)}", f"7 * {_pulse(23, 200, 40)}",
+                         f"10 * {_pulse(33, 0, 40)} - 8 * {_pulse(29, 120, 40)}"]},
+        "neck": {"rot": [0, 0, f"4 * {_pulse(33, 0, 40)}"]},
+        "chest": {"rot": [f"1.4 * math.sin({_LT} * 80)", 0, 0]},
+        "arm_r": {"rot": [0, 0, f"6 * {_pulse(17, 40, 60)}"]},
+        "arm_l": {"rot": [0, 0, f"-6 * {_pulse(19, 220, 60)}"]},
+        "hand_r": {"rot": [f"14 * {_pulse(53, 10, 20)}", 0, 0]},
+        "hand_l": {"rot": [f"14 * {_pulse(49, 160, 20)}", 0, 0]},
+    }, note="生きている揺れ（顎・首の引きつり・指）"))
+    # --- 標的を見る（首と頭で分け合う）
+    tx = "math.clamp(q.target_x_rotation, -40, 40)"
+    ty = "math.clamp(q.target_y_rotation, -70, 70)"
+    out.append(expr_clip("ov_look", {"neck": {"rot": [f"{tx} * 0.3", f"{ty} * 0.3", 0]},
+                                     "head": {"rot": [f"{tx} * 0.5", f"{ty} * 0.5", 0]}}, note="標的を見る"))
+    # --- 被弾ののけぞり（q.hurt_time。スクリプトを待たない）
+    f = "math.sin(math.clamp(q.hurt_time / 10, 0, 1) * 180)"
+    out.append(expr_clip("ov_hurt", {
+        "torso": {"rot": [f"-7 * {f}", 0, 0]}, "chest": {"rot": [f"-6 * {f}", f"5 * {f}", 0]},
+        "head": {"rot": [f"-14 * {f}", 0, f"6 * {f}"]}, "jaw": {"rot": [f"16 * {f}", 0, 0]},
+        "arm_r": {"rot": [f"-18 * {f}", 0, f"12 * {f}"]}, "arm_l": {"rot": [f"-18 * {f}", 0, f"-12 * {f}"]},
+    }, note="被弾ののけぞり"))
+    # --- 燃えてもがく（q.is_on_fire の間ループ）
+    k0 = padd(_arm("r", -130, 0, 40, -60, 10), _arm("l", -60, 0, 30, -90, -20),
+              P(head=(10, 25, 0), torso=(4, 15, 0), chest=(0, 10, 0), jaw=(36, 0, 0)))
+    k1 = padd(_arm("r", -70, 0, 60, -100, -10), _arm("l", -150, 0, 30, -40, 20),
+              P(head=(-16, -20, 10), torso=(-4, -15, 0), chest=(-6, -10, 0), jaw=(44, 0, 0)))
+    k2 = padd(pmirror(k0), P(jaw=(30, 0, 0)))
+    k3 = padd(pmirror(k1), P(head=(4, 0, -12)))
+    out.append(keyed("ov_burning", 1.2, [(0.0, k0), (0.3, k1), (0.6, k2), (0.9, k3), (1.2, k0)], loop=True,
+                     note="燃えてもがく"))
+    # --- 感電の震え（nr:shock = 1）: 体を反らせて硬直し、全身が細かく震える
+    out.append(expr_clip("ov_shock", {
+        "root": {"pos": [_jit(8300, 0.18), _jit(9100, 0.12, 40), 0]},
+        "torso": {"rot": [f"-6 + {_jit(7700, 3)}", _jit(8900, 3, 10), _jit(9500, 3, 70)]},
+        "chest": {"rot": [f"-10 + {_jit(7900, 4)}", _jit(8700, 3, 30), _jit(9300, 3)]},
+        "head": {"rot": [f"-22 + {_jit(8100, 7)}", _jit(7300, 6, 50), _jit(9700, 6)]},
+        "jaw": {"rot": [f"26 + {_jit(8800, 12)}", 0, 0]},
+        "arm_r": {"rot": [f"-30 + {_jit(7700, 8)}", 0, f"40 + {_jit(8500, 6, 20)}"]},
+        "arm_l": {"rot": [f"-30 + {_jit(8100, 8, 90)}", 0, f"-40 + {_jit(8300, 6)}"]},
+        "forearm_r": {"rot": [f"-20 + {_jit(9100, 10)}", 0, 0]},
+        "forearm_l": {"rot": [f"-20 + {_jit(8900, 10, 33)}", 0, 0]},
+        "hand_r": {"rot": [f"-50 + {_jit(8300, 12)}", 0, 0]},
+        "hand_l": {"rot": [f"-50 + {_jit(8700, 12, 21)}", 0, 0]},
+        "leg_r": {"rot": [_jit(7900, 3), 0, _jit(8700, 2)]},
+        "leg_l": {"rot": [_jit(8300, 3, 50), 0, _jit(9100, 2)]},
+    }, note="感電の震え"))
+    # --- 折れた腕がぶら下がる（腕の動きは v.nr_aw* = 0.3 に落とし、これが垂れ下がりと振り子を足す）
+    swing = "math.sin(v.nr_ph * 720) * v.nr_mv"
+    for s, sgn in (("r", 1.0), ("l", -1.0)):
+        out.append(expr_clip(f"ov_arm_{s}_broken", {
+            f"arm_{s}": {"rot": [f"10 + 14 * {swing}", 0, fmt(-6 * sgn)]},
+            f"forearm_{s}": {"rot": [f"6 + 10 * {swing}", fmt(48 * sgn), 0]},
+            f"hand_{s}": {"rot": [f"46 + 8 * {swing}", 0, fmt(24 * sgn)]},
+        }, weight_arms=False, note="折れた腕がぶら下がる"))
+    # --- 裂けた腹から垂れた腸が揺れる（nr:torso = gutted）
+    out.append(expr_clip("ov_guts", {"guts": {"rot": [
+        f"6 * math.sin(q.life_time * 140) + 12 * math.sin(v.nr_ph * 720) * v.nr_mv", 0,
+        "8 * math.sin(q.life_time * 95)"]}}, note="腸が揺れる"))
+    # --- 這う体が血の跡を残す（下半身に断面がある時。0.45 秒ごと）
+    out.append(fx_clip("fx_trail", 0.45, [{"effect": "trail", "locator": "loc_waist"}], note="這った跡の血"))
+    return out
+
+
+# ===========================================================================
+#  17. 攻撃 atk_<攻撃>（ATTACK_VOCAB の全部。windup / active / recover の tick に合わせる）
+# ===========================================================================
+#  スクリプト（zombies/ai.js）は windup の始まりに playAnimation する。加算・最初と最後のキーが 0（P3）。
+#  体を前へ運ぶ攻撃（lunge / charge / tackle / pounce）の移動はスクリプトが applyImpulse で行い、
+#  アニメは姿勢だけ（root の位置の変化は小さく、最後は 0 に戻す）。
+ATTACK_META: Dict[str, dict] = {}
+
+
+def _crouch(depth: float = 1.0) -> dict:
+    """足を床に残したまま膝を曲げて沈む（depth 1 = 深いしゃがみ）。root の y は grounded で決める。"""
+    return padd(_both_legs(-38 * depth, 70 * depth, 4, -30 * depth), P(torso=(16 * depth, 0, 0)))
+
+
+def _g(pose: dict, extra: float = 0.0) -> dict:
+    """足が床に着いた姿勢に（しゃがみ・踏み込みの root の y を自動で）。"""
+    return grounded(design_skel(), pose, extra)
+
+
+def attack(name: str, w: int, a: int, r: int, keys, note: str = "", hits: Optional[List[float]] = None) -> Clip:
+    """keys = [(時刻(秒), ポーズ)]。0 と最後（windup + active + recover）の 0 のキーは自動で足す。"""
+    L = (w + a + r) * TK
+    ks = [(0.0, {})] + [(t, p) for t, p in keys if 0.0 < t < L - 1e-6] + [(L, {})]
+    c = keyed(f"atk_{name}", L, ks, kind="attack", oneshot=True, note=note)
+    ATTACK_META[f"atk_{name}"] = {"length": round(L, 3), "controller": "nr.z.atk", "blend": 0.1,
+                                  "windup": round(w * TK, 3), "active": round(a * TK, 3), "recover": round(r * TK, 3),
+                                  "hits": hits or [round(w * TK, 3)]}
+    return c
+
+
+def _swing_r(rx, rz, fx=-20.0, ry=0.0, hx=0.0) -> dict:
+    return _arm("r", rx, ry, rz, fx, hx)
+
+
+def build_attacks() -> List[Clip]:
+    A = SPEC.ATTACK_VOCAB
+    out: Dict[str, Clip] = {}
+
+    def T(k):
+        return (A[k]["windup"], A[k]["active"], A[k]["recover"])
+
+    # swipe: 右腕を高く振りかぶり、体をひねって横に振り抜く
+    w, a, r = T("swipe")
+    tw, ta = w * TK, (w + a) * TK
+    out["swipe"] = attack("swipe", w, a, r, [
+        (tw * 0.6, padd(_swing_r(-110, 60, -60), P(torso=(0, 14, 0), chest=(0, 10, 0), head=(-6, 8, 0), jaw=(12, 0, 0)))),
+        (tw, padd(_swing_r(-140, 70, -40, 0, -20), P(torso=(-4, 22, 0), chest=(0, 14, 0), jaw=(26, 0, 0)))),
+        (tw + (ta - tw) * 0.5, padd(_swing_r(-80, 10, -20, 0, -10), P(torso=(10, -10, 0), chest=(0, -16, 0)))),
+        (ta, padd(_swing_r(-40, -30, -30), P(torso=(12, -24, 0), chest=(4, -20, 0), jaw=(30, 0, 0)))),
+        (ta + 0.25, padd(_swing_r(-20, -10, -20), P(torso=(6, -10, 0), jaw=(14, 0, 0))))], "片腕の引っかき")
+    # double_swipe: 両腕を頭上へ上げ、右・左と交互に振り下ろす
+    w, a, r = T("double_swipe")
+    tw, ta = w * TK, (w + a) * TK
+    up2 = padd(_both_arms(-160, 20, -50), P(torso=(-8, 0, 0), jaw=(20, 0, 0), head=(-8, 0, 0)))
+    out["double_swipe"] = attack("double_swipe", w, a, r, [
+        (tw * 0.6, padd(_both_arms(-120, 24, -60), P(torso=(-4, 0, 0)))), (tw, up2),
+        (tw + 0.12, padd(_arm("r", -30, 0, 0, -10), _arm("l", -150, 0, 20, -50), P(torso=(14, -10, 0), jaw=(34, 0, 0)))),
+        (tw + 0.26, padd(_arm("r", -100, 0, 20, -50), _arm("l", -30, 0, 0, -10), P(torso=(14, 10, 0), jaw=(30, 0, 0)))),
+        (ta, padd(_both_arms(-34, 4, -14), P(torso=(16, 0, 0), chest=(6, 0, 0)))),
+        (ta + 0.3, padd(_both_arms(-16, 6, -14), P(torso=(6, 0, 0))))], "両腕で二度振り下ろす",
+        hits=[round(tw + 0.12, 3), round(tw + 0.26, 3)])
+    # grab_bite: 両手で掴んで引き寄せ、何度も首に噛みつく
+    w, a, r = T("grab_bite")
+    tw, ta = w * TK, (w + a) * TK
+    reach = padd(_both_arms(-95, 10, -10, 0), P(torso=(14, 0, 0), head=(-6, 0, 0), jaw=(30, 0, 0)))
+    hold = padd(_both_arms(-70, -4, -95), P(torso=(10, 0, 0)))
+    keys = [(tw * 0.6, padd(_both_arms(-70, 14, -20), P(torso=(8, 0, 0), jaw=(20, 0, 0)))), (tw, reach),
+            (tw + 0.15, padd(_both_arms(-80, -6, -60), P(torso=(12, 0, 0), jaw=(30, 0, 0))))]
+    t = tw + 0.4
+    while t < ta - 0.1:
+        keys.append((t, padd(hold, P(neck=(-6, 0, 0), head=(-10, 0, 0), jaw=(42, 0, 0)))))
+        keys.append((t + 0.15, padd(hold, P(neck=(22, 0, 0), head=(18, 12, 0), jaw=(2, 0, 0)))))
+        t += 0.4
+    keys += [(ta, padd(hold, P(jaw=(20, 0, 0)))), (ta + 0.3, padd(_both_arms(-40, 6, -40), P(torso=(6, 0, 0))))]
+    out["grab_bite"] = attack("grab_bite", w, a, r, keys, "掴んで引き寄せ噛みつく")
+    # bite: 頭を引いてから突き出して噛む
+    w, a, r = T("bite")
+    tw, ta = w * TK, (w + a) * TK
+    out["bite"] = attack("bite", w, a, r, [
+        (tw, padd(P(neck=(-18, 0, 0), head=(-20, 0, 0), jaw=(40, 0, 0), torso=(-6, 0, 0)), _both_arms(10, 10, -10))),
+        (tw + (ta - tw) * 0.5, P(neck=(26, 0, 0), head=(20, 0, 0), torso=(14, 0, 0), jaw=(42, 0, 0))),
+        (ta, P(neck=(28, 0, 0), head=(22, 0, 0), torso=(14, 0, 0), jaw=(0, 0, 0))),
+        (ta + 0.15, P(neck=(24, 0, 0), head=(18, 14, 0), torso=(12, 0, 0), jaw=(4, 0, 0))),
+        (ta + 0.3, P(neck=(16, 0, 0), head=(12, -12, 0), torso=(8, 0, 0), jaw=(6, 0, 0)))], "噛みつく")
+    # bite_low: 這ったまま頭を突き出して足首に噛みつく（這いの姿勢に加算）
+    w, a, r = T("bite_low")
+    tw, ta = w * TK, (w + a) * TK
+    out["bite_low"] = attack("bite_low", w, a, r, [
+        (tw, P(neck=(-14, 0, 0), head=(-8, 0, 0), jaw=(42, 0, 0), root_pos=(0, 0.3, 1.0))),
+        (tw + (ta - tw) * 0.5, P(neck=(22, 0, 0), head=(14, 0, 0), jaw=(42, 0, 0), root_pos=(0, 0, -1.6))),
+        (ta, P(neck=(22, 0, 0), head=(14, 0, 0), jaw=(0, 0, 0), root_pos=(0, 0, -1.6))),
+        (ta + 0.2, P(neck=(18, 0, 0), head=(10, 16, 0), jaw=(4, 0, 0), root_pos=(0, 0, -1.2))),
+        (ta + 0.4, P(neck=(14, 0, 0), head=(8, -14, 0), jaw=(6, 0, 0), root_pos=(0, 0, -0.6)))], "這ったまま足首に噛む")
+    # lunge: 身をかがめてから一気に飛びかかる
+    w, a, r = T("lunge")
+    tw, ta = w * TK, (w + a) * TK
+    out["lunge"] = attack("lunge", w, a, r, [
+        (tw, _g(padd(_crouch(0.8), _both_arms(30, 20, -30), P(torso=(24, 0, 0), head=(-20, 0, 0), jaw=(20, 0, 0))))),
+        (tw + (ta - tw) * 0.5, padd(_both_legs(20, 16, 0, 20), _both_arms(-100, 15, -10),
+                                   P(torso=(26, 0, 0), head=(-10, 0, 0), jaw=(42, 0, 0), root_pos=(0, 1.0, -2.0)))),
+        (ta, padd(_both_arms(-80, -5, -40), P(torso=(20, 0, 0), jaw=(30, 0, 0), root_pos=(0, 0, -1.0)))),
+        (ta + 0.35, padd(_both_arms(-40, 4, -30), P(torso=(10, 0, 0))))], "飛びかかる")
+    # slam: 両手を組んで頭上から叩き下ろす
+    w, a, r = T("slam")
+    tw, ta = w * TK, (w + a) * TK
+    out["slam"] = attack("slam", w, a, r, [
+        (tw * 0.6, padd(_both_arms(-130, -10, -40), P(torso=(-6, 0, 0)))),
+        (tw, padd(_both_arms(-175, -18, -30), P(torso=(-14, 0, 0), chest=(-6, 0, 0), head=(-10, 0, 0), jaw=(30, 0, 0),
+                                                 root_pos=(0, 0.3, 0)))),
+        (tw + (ta - tw) * 0.6, _g(padd(_both_arms(-60, -10, -10), _crouch(0.5),
+                                       P(torso=(30, 0, 0), chest=(14, 0, 0), head=(14, 0, 0), jaw=(40, 0, 0))))),
+        (ta + 0.1, _g(padd(_both_arms(-50, -6, -10), _crouch(0.5), P(torso=(32, 0, 0), chest=(14, 0, 0))))),
+        (ta + 0.5, _g(padd(_both_arms(-30, 4, -20), _crouch(0.2), P(torso=(14, 0, 0)))))], "両手を組んで叩き下ろす")
+    # headbutt: 頭を反らしてから額を叩きつける
+    w, a, r = T("headbutt")
+    tw, ta = w * TK, (w + a) * TK
+    out["headbutt"] = attack("headbutt", w, a, r, [
+        (tw, padd(P(neck=(-20, 0, 0), head=(-22, 0, 0), torso=(-10, 0, 0), chest=(-8, 0, 0), jaw=(8, 0, 0)),
+                  _both_arms(20, 20, -20))),
+        (tw + (ta - tw) * 0.6, P(torso=(22, 0, 0), chest=(14, 0, 0), neck=(20, 0, 0), head=(24, 0, 0), root_pos=(0, 0, -1.0))),
+        (ta + 0.1, P(torso=(18, 0, 0), chest=(10, 0, 0), neck=(16, 0, 0), head=(18, 0, 0), root_pos=(0, 0, -0.8))),
+        (ta + 0.35, P(torso=(6, 0, 0), head=(-6, 10, 6)))], "頭突き")
+    # claw_flurry: 爪で四連続の引っかき（右・左・右・左）
+    w, a, r = T("claw_flurry")
+    tw, ta = w * TK, (w + a) * TK
+    up = padd(_both_arms(-130, 50, -60), P(torso=(10, 0, 0), jaw=(30, 0, 0)))
+    keys, hits = [(tw, up)], []
+    for i in range(4):
+        ti = tw + (ta - tw) * (i + 0.6) / 4.0
+        s = "r" if i % 2 == 0 else "l"
+        o = "l" if s == "r" else "r"
+        tw_ = 18.0 if s == "r" else -18.0
+        keys.append((ti, padd(_arm(s, -50, 0, -20, -20), _arm(o, -140, 0, 55, -60),
+                              P(torso=(14, -tw_, 0), chest=(4, -tw_ * 0.6, 0), jaw=(36 + 4 * i, 0, 0)))))
+        hits.append(round(ti, 3))
+    keys.append((ta + 0.3, padd(_both_arms(-40, 10, -30), P(torso=(8, 0, 0)))))
+    out["claw_flurry"] = attack("claw_flurry", w, a, r, keys, "四連続の引っかき", hits=hits)
+    # spit: 胸を膨らませて反り、前へ吐く
+    w, a, r = T("spit")
+    tw, ta = w * TK, (w + a) * TK
+    out["spit"] = attack("spit", w, a, r, [
+        (tw * 0.6, padd(P(chest=(-12, 0, 0), head=(-26, 0, 0), neck=(-16, 0, 0), jaw=(10, 0, 0)), _both_arms(10, 25, -10))),
+        (tw, padd(P(torso=(-10, 0, 0), chest=(-16, 0, 0), head=(-30, 0, 0), neck=(-16, 0, 0), jaw=(4, 0, 0),
+                    throat_sac_scl=(1.6, 1.6, 1.6)), _both_arms(20, 28, -10))),
+        (tw + 0.06, P(torso=(16, 0, 0), chest=(12, 0, 0), neck=(18, 0, 0), head=(16, 0, 0), jaw=(52, 0, 0))),
+        (ta + 0.1, P(torso=(14, 0, 0), chest=(10, 0, 0), neck=(16, 0, 0), head=(14, 0, 0), jaw=(48, 0, 0))),
+        (ta + 0.4, P(torso=(6, 0, 0), jaw=(26, 0, 0)))], "酸を吐く")
+    # explode: 体を震わせて膨れ上がる（最後の瞬間に爆発。スクリプトが消す）
+    w, a, r = T("explode")
+    L = (w + a + r) * TK
+    keys = []
+    n = int(L / 0.075)
+    for i in range(1, n):
+        t = i * 0.075
+        k = min(1.0, t / (w * TK))
+        j = (1 if i % 2 else -1) * (2 + 6 * k)
+        keys.append((t, padd(_both_arms(-30 * k + j, 40 * k, -20 * k), _both_legs(0, 8 * k),
+                             P(torso=(j * 0.5, j, j * 0.4), chest=(-10 * k + j, -j, 0), head=(-24 * k + j, j * 2, j),
+                               jaw=(40 * k + abs(j), 0, 0), torso_scl=(1 + 0.22 * k, 1 + 0.08 * k, 1 + 0.25 * k),
+                               chest_scl=(1 + 0.18 * k, 1 + 0.06 * k, 1 + 0.2 * k), root_pos=(j * 0.05, 0, 0)))))
+    out["explode"] = attack("explode", w, a, r, keys, "震えて膨れ、自爆する", hits=[round(w * TK, 3)])
+    out["explode"].keys = [(t, p, "linear") for t, p, _l in out["explode"].keys]
+    # scream: 息を吸って反り、前へ金切り声
+    w, a, r = T("scream")
+    tw, ta = w * TK, (w + a) * TK
+    sc = padd(P(torso=(14, 0, 0), chest=(8, 0, 0), neck=(16, 0, 0), head=(6, 0, 0), jaw=(56, 0, 0)),
+              _both_arms(40, 45, -10), P(hand_r=(-30, 0, 0), hand_l=(-30, 0, 0)))
+    keys = [(tw * 0.6, padd(P(chest=(-10, 0, 0), head=(-20, 0, 0), jaw=(8, 0, 0)), _both_arms(10, 20, 0))),
+            (tw, padd(P(chest=(-14, 0, 0), head=(-26, 0, 0), jaw=(6, 0, 0)), _both_arms(30, 30, 0))),
+            (tw + 0.1, sc)]
+    t, i = tw + 0.2, 0
+    while t < ta:
+        keys.append((t, padd(sc, P(head=(0, 0, 3 if i % 2 else -3), jaw=(2 if i % 2 else -2, 0, 0)))))
+        t += 0.1
+        i += 1
+    keys.append((ta + 0.4, padd(pscale(sc, 0.4))))
+    out["scream"] = attack("scream", w, a, r, keys, "金切り声")
+    # charge: 吠えてから頭を下げ、肩を前に突進の構えを保つ（脚の走りは移動のアニメ）
+    w, a, r = T("charge")
+    tw, ta = w * TK, (w + a) * TK
+    ram = padd(P(neck=(30, 0, 0), head=(20, 0, 0), torso=(28, 0, 0), chest=(14, 0, 0), jaw=(30, 0, 0)), _both_arms(30, 18, -30))
+    keys = [(tw * 0.4, padd(P(head=(-20, 0, 0), jaw=(44, 0, 0), chest=(-10, 0, 0)), _both_arms(20, 40, -20))),
+            (tw, ram)]
+    t, i = tw + 0.3, 0
+    while t < ta - 0.1:
+        keys.append((t, padd(ram, P(head=(0, 4 if i % 2 else -4, 0), chest=(0, 3 if i % 2 else -3, 0)))))
+        t += 0.3
+        i += 1
+    keys.append((ta + 0.5, pscale(ram, 0.3)))
+    out["charge"] = attack("charge", w, a, r, keys, "頭を下げて突進")
+    # throw: 瓦礫を頭の後ろへ振りかぶって投げる
+    w, a, r = T("throw")
+    tw, ta = w * TK, (w + a) * TK
+    out["throw"] = attack("throw", w, a, r, [
+        (tw * 0.4, _g(padd(_crouch(0.7), _both_arms(-40, 10, -20), P(torso=(40, 0, 0))))),
+        (tw * 0.75, padd(_both_arms(-150, 12, -40), P(torso=(-6, 0, 0)))),
+        (tw, padd(_both_arms(-185, 15, -60), P(torso=(-16, 0, 0), chest=(-12, 0, 0), head=(-6, 0, 0), jaw=(24, 0, 0)))),
+        (tw + (ta - tw) * 0.7, padd(_both_arms(-60, 8, -10), P(torso=(26, 0, 0), chest=(16, 0, 0), jaw=(34, 0, 0),
+                                                                root_pos=(0, 0, -0.8)))),
+        (ta + 0.4, padd(_both_arms(-30, 6, -10), P(torso=(10, 0, 0))))], "瓦礫を投げる")
+    # ground_pound: 両拳を高く上げ、深くしゃがんで地面を叩く
+    w, a, r = T("ground_pound")
+    tw, ta = w * TK, (w + a) * TK
+    low = _g(padd(_crouch(1.0), _both_arms(-40, 10, -10), P(torso=(46, 0, 0), chest=(18, 0, 0), head=(18, 0, 0), jaw=(40, 0, 0))))
+    out["ground_pound"] = attack("ground_pound", w, a, r, [
+        (tw * 0.5, padd(_both_arms(-150, 30, -70), P(torso=(-10, 0, 0), root_pos=(0, 0.3, 0)))),
+        (tw, padd(_both_arms(-185, 20, -40), P(torso=(-16, 0, 0), head=(-10, 0, 0), jaw=(30, 0, 0)))),
+        (tw + (ta - tw) * 0.7, low), (ta + 0.1, low),
+        (ta + 0.7, _g(padd(_crouch(0.6), _both_arms(-30, 10, -10), P(torso=(30, 0, 0))))),
+        (ta + 1.1, _g(padd(_crouch(0.2), P(torso=(10, 0, 0)))))], "地面を叩く")
+    # pounce: しゃがんで跳びかかり、押し倒す
+    w, a, r = T("pounce")
+    tw, ta = w * TK, (w + a) * TK
+    out["pounce"] = attack("pounce", w, a, r, [
+        (tw, _g(padd(_crouch(1.0), _both_arms(40, 20, -20), P(torso=(30, 0, 0), head=(-20, 0, 0), jaw=(20, 0, 0))))),
+        (tw + (ta - tw) * 0.35, padd(_both_legs(-60, 80, 6, -10), _both_arms(-120, 25, -20),
+                                     P(torso=(20, 0, 0), head=(-10, 0, 0), jaw=(44, 0, 0), root_pos=(0, 2.0, -1.0)))),
+        (tw + (ta - tw) * 0.8, _g(padd(_crouch(0.6), _both_arms(-80, 14, -30), P(torso=(30, 0, 0), jaw=(30, 0, 0))))),
+        (ta + 0.4, _g(padd(_crouch(0.3), _both_arms(-40, 10, -20), P(torso=(14, 0, 0)))))], "跳びかかって押し倒す")
+    # tool_swing: 持った道具（右手）を頭上から振り下ろす
+    w, a, r = T("tool_swing")
+    tw, ta = w * TK, (w + a) * TK
+    out["tool_swing"] = attack("tool_swing", w, a, r, [
+        (tw * 0.6, padd(_swing_r(-140, 20, -90), _arm("l", -30, 0, 10, -20), P(torso=(-4, 12, 0)))),
+        (tw, padd(_swing_r(-178, 10, -70), _arm("l", -40, 0, 14, -20), P(torso=(-8, 18, 0), chest=(-4, 6, 0), jaw=(20, 0, 0)))),
+        (tw + (ta - tw) * 0.6, padd(_swing_r(-40, -5, -10), _arm("l", -10, 0, 10, -10),
+                                     P(torso=(20, -10, 0), chest=(6, -6, 0), jaw=(30, 0, 0)))),
+        (ta + 0.1, padd(_swing_r(-30, -5, -10), P(torso=(20, -12, 0)))),
+        (ta + 0.45, padd(_swing_r(-20, 0, -20), P(torso=(8, -4, 0))))], "道具を振り下ろす")
+    # shield_bash: 左腕の盾を引いてから押し出す
+    w, a, r = T("shield_bash")
+    tw, ta = w * TK, (w + a) * TK
+    out["shield_bash"] = attack("shield_bash", w, a, r, [
+        (tw, padd(_arm("l", -50, 0, 24, -90), P(torso=(-4, -18, 0), chest=(0, -10, 0)), _leg("l", -10, 0, 0, 10))),
+        (tw + (ta - tw) * 0.6, padd(_arm("l", -82, 0, 6, -70), P(torso=(14, 20, 0), chest=(4, 10, 0), root_pos=(0, 0, -1.0),
+                                                                  jaw=(24, 0, 0)))),
+        (ta + 0.1, padd(_arm("l", -80, 0, 6, -70), P(torso=(12, 18, 0), root_pos=(0, 0, -0.8)))),
+        (ta + 0.4, padd(_arm("l", -50, 0, 10, -60), P(torso=(4, 6, 0))))], "盾で殴る")
+    # tackle: 肩を落として体当たり
+    w, a, r = T("tackle")
+    tw, ta = w * TK, (w + a) * TK
+    out["tackle"] = attack("tackle", w, a, r, [
+        (tw, _g(padd(_crouch(0.5), _both_arms(30, 10, -100), P(torso=(30, -24, 0), chest=(10, -10, 0), head=(-10, 0, 0))))),
+        (tw + (ta - tw) * 0.5, padd(_both_legs(18, 10), _both_arms(30, 10, -100),
+                                     P(torso=(40, -26, 0), chest=(12, -10, 0), root_pos=(0, 0, -2.0), jaw=(30, 0, 0)))),
+        (ta, padd(_both_arms(10, 20, -60), P(torso=(30, -20, 0), root_pos=(0, 0, -1.4)))),
+        (ta + 0.45, padd(_both_arms(-10, 10, -30), P(torso=(12, -6, 0))))], "体当たり")
+    # grab_throw: 掴んで持ち上げ、横へ振りかぶって投げ飛ばす
+    w, a, r = T("grab_throw")
+    tw, ta = w * TK, (w + a) * TK
+    out["grab_throw"] = attack("grab_throw", w, a, r, [
+        (tw, padd(_both_arms(-80, 15, -10), P(torso=(20, 0, 0), jaw=(20, 0, 0)))),
+        (tw + 0.25, padd(_both_arms(-90, 6, -50), P(torso=(16, 0, 0)))),
+        (tw + 0.6, padd(_both_arms(-170, 10, -30), P(torso=(-12, 0, 0), chest=(-6, 0, 0), root_pos=(0, 0.5, 0), jaw=(30, 0, 0)))),
+        (ta - 0.2, padd(_both_arms(-150, 40, -40), P(torso=(-6, 30, 0), chest=(0, 14, 0)))),
+        (ta, padd(_both_arms(-60, -20, -10), P(torso=(14, -30, 0), chest=(6, -14, 0), jaw=(40, 0, 0)))),
+        (ta + 0.5, padd(_both_arms(-30, 0, -20), P(torso=(6, -10, 0))))], "掴んで投げ飛ばす")
+    # blade_slash: 前腕の骨の刃で素早く斬る
+    w, a, r = T("blade_slash")
+    tw, ta = w * TK, (w + a) * TK
+    out["blade_slash"] = attack("blade_slash", w, a, r, [
+        (tw, padd(_swing_r(-100, 70, -10, 0, -10), P(torso=(8, 20, 0), chest=(0, 10, 0), jaw=(16, 0, 0)))),
+        (tw + (ta - tw) * 0.5, padd(_swing_r(-90, -30, -6), P(torso=(10, -26, 0), chest=(0, -14, 0), jaw=(30, 0, 0)))),
+        (ta, padd(_swing_r(-70, -45, -10), P(torso=(10, -30, 0), chest=(2, -16, 0)))),
+        (ta + 0.25, padd(_swing_r(-30, -10, -20), P(torso=(4, -10, 0))))], "刃で斬る")
+    # vomit: 体を折って吐き気をこらえ、前へ吐き続ける
+    w, a, r = T("vomit")
+    tw, ta = w * TK, (w + a) * TK
+    sp = padd(P(torso=(24, 0, 0), chest=(14, 0, 0), neck=(20, 0, 0), head=(10, 0, 0), jaw=(50, 0, 0)), _both_arms(-20, 10, -20))
+    keys = [(tw * 0.35, P(torso=(20, 0, 0), chest=(14, 0, 0), head=(10, 0, 0), jaw=(10, 0, 0))),
+            (tw * 0.75, P(torso=(-6, 0, 0), chest=(-12, 0, 0), head=(-16, 0, 0), jaw=(6, 0, 0))), (tw, sp)]
+    t, i = tw + 0.3, 0
+    while t < ta:
+        keys.append((t, padd(sp, P(torso=(4 if i % 2 else -2, 0, 0), jaw=(4 if i % 2 else -4, 0, 0)))))
+        t += 0.3
+        i += 1
+    keys.append((ta + 0.5, pscale(sp, 0.3)))
+    out["vomit"] = attack("vomit", w, a, r, keys, "吐瀉物を浴びせる")
+    # stomp: 右膝を高く上げて踏み鳴らす
+    w, a, r = T("stomp")
+    tw, ta = w * TK, (w + a) * TK
+    out["stomp"] = attack("stomp", w, a, r, [
+        (tw, padd(_leg("r", -80, 0, 6, 90, -10), _both_arms(-20, 30, -20), P(torso=(-6, 0, 0), root_pos=(0, 0.3, 0)))),
+        (tw + (ta - tw) * 0.6, _g(padd(_crouch(0.3), _both_arms(-10, 26, -20), P(torso=(18, 0, 0), jaw=(30, 0, 0))))),
+        (ta + 0.1, _g(padd(_crouch(0.35), P(torso=(18, 0, 0))))),
+        (ta + 0.45, _g(padd(_crouch(0.1), P(torso=(6, 0, 0)))))], "踏み鳴らす")
+    # long_grab: 長い右腕を前へ伸ばして掴み、引き寄せる
+    w, a, r = T("long_grab")
+    tw, ta = w * TK, (w + a) * TK
+    out["long_grab"] = attack("long_grab", w, a, r, [
+        (tw * 0.6, padd(_swing_r(-60, 20, -60), P(torso=(-4, 10, 0)))),
+        (tw, padd(_swing_r(-95, 10, 0, 0, -10), P(torso=(16, -16, 0), chest=(4, -10, 0), jaw=(30, 0, 0)))),
+        (tw + 0.15, padd(_swing_r(-95, 8, 0, 0, 24), P(torso=(16, -16, 0), jaw=(36, 0, 0)))),
+        (tw + 0.8, padd(_swing_r(-80, 6, -40, 0, 24), P(torso=(4, -8, 0), root_pos=(0, 0, 0.4)))),
+        (ta, padd(_swing_r(-70, 4, -80, 0, 24), P(torso=(-6, 0, 0), jaw=(40, 0, 0), root_pos=(0, 0, 0.6)))),
+        (ta + 0.5, padd(_swing_r(-30, 4, -40), P(torso=(0, 0, 0))))], "長い腕で掴んで引き寄せる")
+    missing = sorted(set(A) - set(out))
+    if missing:
+        raise ValueError(f"attack animations missing: {missing}")
+    return [out[k] for k in A]
+
+
+# ===========================================================================
+#  18. 一発もの（nr_registry.ZOMBIE_ONESHOTS。加算・最初と最後のキーが 0。controller "nr.z.os"）
+# ===========================================================================
+ONESHOT_META: Dict[str, dict] = {}
+
+
+def oneshot(name: str, length: float, keys, note: str = "", blend: float = 0.15, lerp: str = "catmullrom") -> Clip:
+    ks = [(0.0, {})] + [(t, p) for t, p in keys if 0.0 < t < length - 1e-6] + [(length, {})]
+    c = keyed(name, length, ks, kind="oneshot", oneshot=True, note=note, lerp=lerp)
+    ONESHOT_META[name] = {"length": round(length, 3), "controller": "nr.z.os", "blend": blend}
+    return c
+
+
+def build_oneshots() -> List[Clip]:
+    out: Dict[str, Clip] = {}
+    out["none"] = keyed("none", 0.05, [(0.0, {})], kind="oneshot", oneshot=True, note="何もしない（止める）")
+    ONESHOT_META["none"] = {"length": 0.05, "controller": "nr.z.os", "blend": 0.0}
+    out["react_head"] = oneshot("react_head", 0.5, [
+        (0.06, P(head=(-28, 6, 8), neck=(-12, 0, 0), chest=(-8, 0, 0), jaw=(30, 0, 0))),
+        (0.2, P(head=(-10, 4, 4), neck=(-4, 0, 0), chest=(-3, 0, 0), jaw=(18, 0, 0))),
+        (0.32, P(head=(4, 0, 0), jaw=(8, 0, 0)))], "頭に当たって仰け反る")
+    out["react_torso"] = oneshot("react_torso", 0.6, [
+        (0.07, padd(P(torso=(18, 0, 0), chest=(10, 0, 0), head=(8, 0, 0), jaw=(26, 0, 0), root_pos=(0, 0, 0.8)),
+                    _both_arms(-30, 10, -20))),
+        (0.25, padd(P(torso=(8, 0, 0), chest=(4, 0, 0), root_pos=(0, 0, 0.6)), _both_arms(-10, 6, -10))),
+        (0.42, P(torso=(-3, 0, 0)))], "胴に当たってよろめく")
+    rar = padd(_arm("r", 40, 0, 30, 10, 20), P(torso=(0, 18, 0), chest=(-4, 10, 0), head=(0, -10, 0)))
+    out["react_arm_r"] = oneshot("react_arm_r", 0.45, [(0.06, rar), (0.22, pscale(rar, 0.35))], "右腕を弾かれる")
+    out["react_arm_l"] = oneshot("react_arm_l", 0.45, [(0.06, pmirror(rar)), (0.22, pscale(pmirror(rar), 0.35))],
+                                 "左腕を弾かれる")
+    rlr = _g(padd(_leg("r", -20, 0, 0, 64, -20), _leg("l", -10, 0, 0, 16, -8), _both_arms(-30, 30, -20),
+                  P(torso=(12, 0, 6), head=(-10, 0, 0), jaw=(20, 0, 0))))
+    out["react_leg_r"] = oneshot("react_leg_r", 0.7, [(0.1, rlr), (0.35, rlr), (0.55, pscale(rlr, 0.3))],
+                                 "右脚を払われて膝が落ちる")
+    out["react_leg_l"] = oneshot("react_leg_l", 0.7, [(0.1, pmirror(rlr)), (0.35, pmirror(rlr)),
+                                                       (0.55, pscale(pmirror(rlr), 0.3))], "左脚を払われて膝が落ちる")
+    rh = padd(P(torso=(-20, 0, 0), chest=(-14, 0, 0), head=(-20, 0, 0), jaw=(36, 0, 0), root_pos=(0, 0, 2.0)),
+              _both_arms(-70, 40, -30), _leg("r", 20, 0, 0, 10), _leg("l", -20, 0, 0, 24))
+    out["react_heavy"] = oneshot("react_heavy", 0.9, [
+        (0.08, rh), (0.3, padd(pscale(rh, 0.7), P(torso=(8, 0, 0)))), (0.55, pscale(rh, 0.25))],
+        "重い一撃で大きく後ろへよろける")
+    # knockdown / getup は nr:state down の倒れ（st_down）・起き上がり（st_rise）と同時に流れる「手応え」
+    out["knockdown"] = oneshot("knockdown", 0.9, [
+        (0.12, padd(_both_arms(-40, 30, -20), P(head=(-12, 0, 0), jaw=(30, 0, 0)))),
+        (0.5, _both_arms(-20, 10, -10)),
+        (0.66, padd(_both_arms(10, 10, 10), P(head=(-14, 0, 0), jaw=(24, 0, 0), root_pos=(0, 0.4, 0)))),
+        (0.78, P(head=(4, 0, 0)))], "倒れる（st_down と同時に流れる手応え）")
+    out["getup"] = oneshot("getup", 1.25, [
+        (0.3, P(head=(0, 15, 0), jaw=(10, 0, 0))), (0.6, P(head=(0, -15, 0), jaw=(24, 0, 0))),
+        (0.9, P(chest=(0, 0, 6), head=(6, 0, -6))), (1.1, P(head=(-4, 0, 0)))], "起き上がる（st_rise と同時）")
+    out["grab"] = oneshot("grab", 1.0, [
+        (0.2, padd(_both_arms(-95, 12, -10), P(torso=(12, 0, 0), jaw=(30, 0, 0)))),
+        (0.4, padd(_both_arms(-80, -4, -70), P(torso=(10, 0, 0), jaw=(20, 0, 0)))),
+        (0.75, padd(_both_arms(-60, 0, -80), P(torso=(6, 0, 0))))], "組みつく")
+    out["bite"] = oneshot("bite", 0.8, [
+        (0.15, P(neck=(-16, 0, 0), head=(-16, 0, 0), jaw=(40, 0, 0))),
+        (0.3, P(neck=(24, 0, 0), head=(18, 0, 0), torso=(10, 0, 0), jaw=(0, 0, 0))),
+        (0.45, P(neck=(20, 0, 0), head=(14, 14, 0), torso=(8, 0, 0), jaw=(4, 0, 0))),
+        (0.6, P(neck=(10, 0, 0), head=(6, -10, 0), jaw=(10, 0, 0)))], "噛む")
+    sh = padd(P(torso=(-14, 0, 0), chest=(-8, 0, 0), head=(10, 0, 0), root_pos=(0, 0, 1.5), jaw=(20, 0, 0)),
+              _both_arms(-60, 30, -20), _leg("l", 16, 0, 0, 10))
+    out["shoved"] = oneshot("shoved", 0.6, [(0.08, sh), (0.3, pscale(sh, 0.5))], "押しのけられる")
+    out["climb_up"] = oneshot("climb_up", 1.0, [
+        (0.2, padd(_both_arms(-170, 10, -20), _leg("r", -80, 0, 6, 90, -10), P(head=(-20, 0, 0)))),
+        (0.5, padd(_both_arms(-30, 20, -90), _leg("r", -60, 0, 6, 80), P(torso=(40, 0, 0), chest=(10, 0, 0)))),
+        (0.75, padd(_both_arms(-10, 14, -30), _leg("l", -70, 0, 6, 90), P(torso=(24, 0, 0))))], "縁へよじ登る")
+    st = padd(P(head=(10, 0, 18), neck=(6, 0, 6), torso=(8, 0, -6), jaw=(20, 0, 0)), _both_arms(14, 4, 4),
+              _both_legs(-8, 18))
+    out["stunned"] = oneshot("stunned", 1.2, [
+        (0.15, _g(st)), (0.45, _g(padd(st, P(head=(0, 0, -30), torso=(0, 0, 10))))),
+        (0.75, _g(padd(st, P(head=(-6, 10, 10))))), (1.0, pscale(st, 0.3))], "感電・気絶")
+    b0 = padd(_arm("r", -150, 0, 40, -60), _arm("l", -60, 0, 50, -90), P(head=(14, 30, 0), torso=(6, 20, 0), jaw=(46, 0, 0)))
+    b1 = padd(_arm("r", -60, 0, 60, -100), _arm("l", -160, 0, 30, -40), P(head=(-20, -30, 10), torso=(-6, -20, 0), jaw=(50, 0, 0)))
+    out["burn_flail"] = oneshot("burn_flail", 1.4, [(0.15, b0), (0.4, b1), (0.65, pmirror(b0)), (0.9, pmirror(b1)),
+                                                    (1.15, pscale(b0, 0.3))], "燃えてもがく")
+    uv = padd(_both_arms(-120, -20, -110), P(head=(14, 40, 0), neck=(6, 10, 0), torso=(-10, 14, 0), root_pos=(0, 0, 1.0),
+                                             jaw=(30, 0, 0)))
+    out["uv_recoil"] = oneshot("uv_recoil", 0.9, [(0.1, uv), (0.5, padd(uv, P(head=(0, -10, 0)))), (0.75, pscale(uv, 0.3))],
+                               "UV にひるむ")
+    out["alert"] = oneshot("alert", 0.8, [
+        (0.15, P(head=(-15, 30, 0), neck=(-6, 10, 0), jaw=(30, 0, 0))),
+        (0.4, padd(P(head=(-10, 0, 0), chest=(-8, 0, 0), jaw=(44, 0, 0)), _both_arms(-30, 20, -20))),
+        (0.62, P(head=(-4, 0, 0), jaw=(16, 0, 0)))], "気づいて振り向く")
+    sv = padd(P(torso=(-16, 0, 0), chest=(-12, 0, 0), head=(-24, 0, 10), jaw=(44, 0, 0), root_pos=(0, 0, 0.6)),
+              _arm("r", -60, 0, 60, -20), _arm("l", -30, 0, 40, -30))
+    out["sever_recoil"] = oneshot("sever_recoil", 0.8, [(0.06, sv), (0.2, padd(pscale(sv, 0.8), P(head=(0, 0, -16)))),
+                                                        (0.45, pscale(sv, 0.3))], "部位を失ってのけぞる")
+    kk = padd(P(torso=(30, 0, 0), chest=(16, 0, 0), head=(10, 0, 0), jaw=(30, 0, 0), root_pos=(0, 0.6, 2.5)),
+              _both_arms(-60, 20, -20), _both_legs(20, 20))
+    out["kicked"] = oneshot("kicked", 0.9, [(0.08, kk), (0.35, padd(pscale(kk, 0.6), P(torso=(-10, 0, 0)))),
+                                            (0.65, pscale(kk, 0.2))], "蹴り飛ばされる")
+    missing = sorted(set(REG.ZOMBIE_ONESHOTS) - set(out))
+    if missing:
+        raise ValueError(f"one-shot animations missing: {missing}")
+    return [out[k] for k in REG.ZOMBIE_ONESHOTS]
+
+
+# ===========================================================================
+#  19. 能力の段階 ab_<能力>_<段階>（nr:ability がその値の間だけ流れる）と ab_<能力>（anim=True）
+# ===========================================================================
+#  「体ごと」の段階（AB_FULL）は全身の姿勢を自分で持つ: その間、移動のコントローラは空の状態（owned）へ
+#  移って足し算が二重にならない（pre_animation の v.nr_abfull）。それ以外は今の動きに足す上半身の重ね。
+AB_FULL = {"ankle_grab.lurk", "ankle_grab.grab", "pounce_pin.pin", "ceiling_ambush.hang", "ceiling_ambush.drop",
+           "dodge.dodge", "parkour_chase.vault", "play_dead.feign", "play_dead.rise", "debris_throw.lift",
+           "long_leap.crouch", "long_leap.air", "hive_summon.birth", "boss_phases.roar", "blade_dash.crouch",
+           "blade_dash.dash"}
+
+
+def _alt(a: dict, b: dict, length: float, n: int = 2) -> list:
+    """a と b を交互に並べたループのキー（n 往復、最後は a）。"""
+    keys = []
+    for i in range(2 * n + 1):
+        keys.append((length * i / (2 * n), a if i % 2 == 0 else b))
+    return keys
+
+
+def build_abilities() -> List[Clip]:
+    sk = design_skel()
+    H = float(sk.L.t) / skel_scale(sk)
+    out: Dict[str, Clip] = {}
+
+    def ab(key: str, length: float, keys, loop=True, note: str = "", lerp: str = "catmullrom"):
+        out[key] = keyed(f"ab_{key}", length, keys, loop=loop, kind="ability", note=note, lerp=lerp)
+
+    # --- 盾: 弾かれて下がった左腕（普段の構えは ov_shield_guard が ability の none 状態で出す）
+    low = padd(_arm("l", 18, 0, 10, -6, 20), P(torso=(0, -6, 0), head=(0, -6, 0)))
+    ab("shield_block_lowered", 1.0, [(0.0, low), (0.5, padd(low, P(torso=(2, -4, 0)))), (1.0, low)], note="盾が下がる")
+    # --- 足首掴み: 伏せて待つ / 腕を伸ばして掴み噛む（這いの全身）
+    lurk = _final("crawl", 0.0, P(head=(0, 40, 0), neck=(-6, 0, 0)))
+    ab("ankle_grab_lurk", 3.0, [(0.0, lurk), (1.5, _final("crawl", 0.05, P(head=(0, 40, 0), neck=(-6, 0, 0), chest=(1.5, 0, 0)))),
+                                (3.0, lurk)], note="伏せて待つ")
+    cs = crawl_stance(sk)
+    grab_arm = {"arm_r": {"rot": [-176.0, 0.0, 10.0]}, "forearm_r": {"rot": [-6.0, 0.0, 0.0]}, "hand_r": {"rot": [24.0, 0.0, 0.0]}}
+    g0 = {**copy.deepcopy(cs), **grab_arm}
+    g0 = padd(g0, P(neck=(-12, 0, 0), head=(-10, 0, 0), jaw=(40, 0, 0)))
+    g1 = padd(g0, P(neck=(16, 0, 0), head=(12, 0, 0), jaw=(-38, 0, 0), root_pos=(0, 0, -0.8)))
+    ab("ankle_grab_grab", 0.6, _alt(g0, g1, 0.6, 1), note="足首を掴んで噛む")
+    # --- 押さえ込み: 覆いかぶさって噛む
+    pin = _g(padd(_crouch(1.1), P(torso=(50, 0, 0), chest=(10, 0, 0)), _both_arms(-50, 16, -20)))
+    ab("pounce_pin_pin", 0.5, _alt(padd(pin, P(neck=(0, 0, 0), head=(-10, 0, 0), jaw=(40, 0, 0))),
+                                   padd(pin, P(neck=(30, 0, 0), head=(20, 10, 0), jaw=(0, 0, 0))), 0.5, 1), note="押さえ込んで噛む")
+    # --- 天井に逆さに張り付く / 落ちてくる
+    hang = padd(P(root=(0, 0, 180), root_pos=(0, H, 0), head=(-40, 0, 0), neck=(-14, 0, 0), jaw=(24, 0, 0)),
+                _both_arms(-168, 18, -30, 0), _both_legs(-40, 80, 10, -20))
+    ab("ceiling_ambush_hang", 2.0, [(0.0, hang), (0.7, padd(hang, P(root=(0, 0, 4), head=(0, 16, 0)))),
+                                    (1.4, padd(hang, P(root=(0, 0, -4), head=(0, -16, 0), jaw=(10, 0, 0)))), (2.0, hang)],
+       note="天井に逆さに張り付いて待つ")
+    land = _g(padd(_crouch(1.0), _both_arms(-60, 30, -30), P(torso=(30, 0, 0), jaw=(40, 0, 0))))
+    ab("ceiling_ambush_drop", 0.8, [(0.0, hang),
+                                    (0.2, padd(P(root=(0, 0, 90), root_pos=(0, H * 0.6, 0), jaw=(44, 0, 0)),
+                                               _both_arms(-120, 60, -20), _both_legs(-40, 60))),
+                                    (0.42, land), (0.8, {})], loop="hold_on_last_frame", note="落ちて襲う")
+    # --- 横跳びで避ける
+    ab("dodge_dodge", 0.55, [(0.0, {}), (0.08, _g(padd(_crouch(0.6), P(torso=(10, 0, -10))))),
+                             (0.22, padd(P(root=(0, 0, 25), root_pos=(0, 2.5, 0), torso=(14, 0, 0)),
+                                         _both_legs(-50, 70), _both_arms(-30, 50, -20))),
+                             (0.38, _g(padd(_crouch(0.8), _both_arms(-20, 30, -20)))), (0.55, {})],
+       loop="hold_on_last_frame", note="横跳び")
+    # --- 障害物を乗り越える
+    ab("parkour_chase_vault", 0.8, [(0.0, {}), (0.15, _g(padd(_crouch(0.5), _both_arms(-70, 10, -10), P(torso=(40, 0, 0))))),
+                                    (0.35, padd(P(root_pos=(0, 5.0, 0), torso=(30, 0, 0)), _both_arms(-30, 10, 0),
+                                                _leg("r", -80, 0, 30, 100), _leg("l", -70, 0, 20, 110))),
+                                    (0.55, _g(padd(_crouch(0.6), _both_arms(-40, 20, -20)))), (0.8, {})],
+       loop="hold_on_last_frame", note="乗り越え")
+    # --- 狂乱: 腕を振り回し頭を振る
+    f0 = padd(_arm("r", -150, 0, 40, -40), _arm("l", -60, 0, 30, -70), P(head=(0, 20, 10), jaw=(50, 0, 0), torso=(10, 10, 0)))
+    f1 = padd(_arm("r", -50, 0, 20, -80), _arm("l", -140, 0, 40, -30), P(head=(6, -20, -10), jaw=(12, 0, 0), torso=(12, -10, 0)))
+    ab("frenzy_frenzy", 0.6, [(0.0, f0), (0.15, f1), (0.3, pmirror(f0)), (0.45, pmirror(f1)), (0.6, f0)], note="狂乱")
+    # --- 死んだふり / 跳ね起き
+    ab("play_dead_feign", 1.0, [(0.0, _final("back"))], note="死体のふり")
+    rise = build_rise("ab_play_dead_rise", 0.75, from_name="back")
+    rise.kind, rise.loop = "ability", "hold_on_last_frame"
+    out["play_dead_rise"] = rise
+    # --- 喉の袋を膨らませて遠吠え
+    inf = padd(P(head=(-30, 0, 0), neck=(-14, 0, 0), chest=(-10, 0, 0), jaw=(4, 0, 0)), _both_arms(10, 20, -10))
+    ab("howl_alarm_inflate", 1.0, [(0.0, {}), (0.5, padd(pscale(inf, 0.6), P(throat_sac_scl=(1.5, 1.5, 1.5)))),
+                                   (1.0, padd(inf, P(throat_sac_scl=(2.2, 2.2, 2.2))))], loop="hold_on_last_frame",
+       note="喉の袋が膨らむ")
+    howl = padd(P(head=(-40, 0, 0), neck=(-20, 0, 0), jaw=(62, 0, 0), chest=(-12, 0, 0)), _both_arms(30, 40, -10))
+    ab("howl_alarm_howl", 0.8, _alt(padd(howl, P(throat_sac_scl=(2.0, 2.0, 2.0))),
+                                    padd(howl, P(throat_sac_scl=(2.4, 2.4, 2.4), jaw=(4, 0, 0), head=(0, 0, 4))), 0.8, 2),
+       note="遠吠え")
+    # --- 瓦礫をもぎ取って頭上へ
+    ab("debris_throw_lift", 1.2, [(0.0, {}), (0.4, _g(padd(_crouch(1.0), _both_arms(-40, 10, -10), P(torso=(40, 0, 0))))),
+                                  (0.8, _g(padd(_crouch(0.3), _both_arms(-120, 12, -30)))),
+                                  (1.2, padd(_both_arms(-180, 14, -50), P(torso=(-12, 0, 0), chest=(-8, 0, 0), jaw=(20, 0, 0))))],
+       loop="hold_on_last_frame", note="瓦礫を掲げる")
+    # --- 起爆までの震え（式の細かい震え）
+    out["detonate_fuse"] = expr_clip("ab_detonate_fuse", {
+        "torso": {"rot": [_jit(7300, 4), _jit(8100, 5, 20), _jit(9100, 4)],
+                  "scl": [f"1 + 0.05 * math.abs(math.sin(q.life_time * 1600))", 1.0, f"1 + 0.05 * math.abs(math.sin(q.life_time * 1600))"]},
+        "chest": {"rot": [f"-8 + {_jit(8800, 4)}", _jit(7700, 4), _jit(8300, 3, 60)]},
+        "head": {"rot": [f"-20 + {_jit(9300, 6)}", _jit(8700, 8, 30), _jit(7900, 6)]},
+        "jaw": {"rot": [f"30 + {_jit(9900, 10)}", 0, 0]},
+        "arm_r": {"rot": [f"-20 + {_jit(8100, 6)}", 0, f"40 + {_jit(7700, 6)}"]},
+        "arm_l": {"rot": [f"-20 + {_jit(8500, 6, 45)}", 0, f"-40 + {_jit(9300, 6)}"]},
+    }, note="起爆までの震え")
+    out["detonate_fuse"].kind = "ability"
+    # --- 大跳躍: しゃがみ / 空中
+    ab("long_leap_crouch", 0.5, [(0.0, {}), (0.5, _g(padd(_crouch(1.1), _both_arms(40, 20, -20),
+                                                          P(torso=(34, 0, 0), head=(-24, 0, 0), jaw=(20, 0, 0)))))],
+       loop="hold_on_last_frame", note="踏み切りのしゃがみ")
+    air = padd(_both_arms(-110, 70, -20), _both_legs(20, 40), P(torso=(20, 0, 0), head=(-16, 0, 0), jaw=(40, 0, 0)))
+    ab("long_leap_air", 1.0, [(0.0, air), (0.5, padd(air, _both_arms(-10, 6, 0))), (1.0, air)], note="空中")
+    # --- 詠唱: 両腕を広げて掲げる
+    ch = padd(_both_arms(-100, 80, -20), P(hand_r=(-30, 0, 0), hand_l=(-30, 0, 0), head=(-30, 0, 0), chest=(-8, 0, 0)))
+    ab("reanimate_chant", 2.0, [(0.0, padd(ch, P(jaw=(10, 0, 0), torso=(0, 0, 4)))), (0.5, padd(ch, P(jaw=(30, 0, 0)))),
+                                (1.0, padd(ch, P(jaw=(10, 0, 0), torso=(0, 0, -4)))), (1.5, padd(ch, P(jaw=(32, 0, 0)))),
+                                (2.0, padd(ch, P(jaw=(10, 0, 0), torso=(0, 0, 4))))], note="詠唱")
+    # --- 胞子を噴く（身震い）
+    v0 = padd(P(chest=(-8, 0, 3), jaw=(30, 0, 0), torso_scl=(1.06, 1.0, 1.06)), _both_arms(-10, 30, -10))
+    ab("spore_cloud_vent", 0.4, _alt(v0, padd(v0, P(chest=(0, 0, -6), torso=(3, 0, 0))), 0.4, 2), note="胞子を噴く")
+    # --- 激昂の咆哮（一度）
+    roar = padd(P(torso=(16, 0, 0), chest=(6, 0, 0), neck=(14, 0, 0), jaw=(64, 0, 0)), _both_arms(40, 30, -30))
+    ab("enrage_unarmored_roar", 1.6, [(0.0, {}), (0.3, padd(P(chest=(-12, 0, 0), head=(-20, 0, 0), jaw=(10, 0, 0)), _both_arms(10, 20, -10))),
+                                      (0.6, roar), (1.0, padd(roar, P(head=(0, 0, 5)))), (1.6, roar)],
+       loop="hold_on_last_frame", note="激昂の咆哮")
+    # --- 長い腕で引き寄せて噛む
+    dr = padd(_arm("r", -70, 0, 4, -90, 24), P(torso=(-6, -6, 0)))
+    ab("long_grab_drag_drag", 0.8, _alt(padd(dr, P(jaw=(40, 0, 0), neck=(0, 0, 0))),
+                                        padd(dr, P(jaw=(0, 0, 0), neck=(20, 0, 0), head=(12, 0, 0))), 0.8, 1), note="引き寄せて噛む")
+    # --- UV で焼ける: 腕で目を覆って身をよじる
+    uv = padd(_both_arms(-125, -25, -110), P(head=(20, 0, 0), jaw=(30, 0, 0)))
+    ab("uv_weak_burn", 0.8, _alt(padd(uv, P(head=(0, 25, 0), torso=(6, 15, 0))), padd(uv, P(head=(0, -25, 0), torso=(6, -15, 0))),
+                                 0.8, 1), note="腕で目を覆って身をよじる")
+    # --- 天を仰いで叫ぶ（夜の追跡の呼び声）
+    call = padd(P(head=(-42, 0, 0), neck=(-26, 0, 0), jaw=(70, 0, 0), chest=(-14, 0, 0)), _both_arms(30, 30, -10))
+    ab("chase_call_call", 1.0, _alt(call, padd(call, P(jaw=(-6, 0, 0), head=(0, 0, 3))), 1.0, 3), note="天を仰いで叫ぶ")
+    # --- 透明化中の忍び寄り
+    cl_ = padd(P(torso=(10, 0, 0), neck=(10, 0, 0), head=(-10, 0, 0)), _both_arms(-20, 10, -20))
+    ab("shadow_cloak_cloaked", 3.0, [(0.0, cl_), (1.5, padd(cl_, P(head=(0, 12, 0), torso=(0, 0, 2)))), (3.0, cl_)],
+       note="透明化中の忍び寄り")
+    # --- 背中の袋から産み落とす（身をかがめて波打つ）
+    birth = _g(padd(_crouch(1.0), P(torso=(60, 0, 0), chest=(10, 0, 0), head=(20, 0, 0), jaw=(30, 0, 0)), _both_arms(-60, 20, -10)))
+    ab("hive_summon_birth", 1.6, _alt(birth, padd(birth, P(chest=(-8, 0, 0), torso_scl=(1.08, 1.04, 1.1), jaw=(10, 0, 0))), 1.6, 1),
+       note="背中の袋が裂ける")
+    # --- ボスの段階移行の咆哮（足を開いて両腕を広げる）
+    br = _g(padd(_leg("r", -6, 0, 14, 10), _leg("l", -6, 0, 14, 10), _both_arms(-20, 60, -40),
+                 P(chest=(-14, 0, 0), head=(-16, 0, 0), jaw=(68, 0, 0))))
+    ab("boss_phases_roar", 1.0, _alt(br, padd(br, P(head=(0, 0, 4), chest=(0, 0, -3), jaw=(-6, 0, 0))), 1.0, 3), note="咆哮")
+    # --- 腫瘍の袋を振り落とす（身をよじる）
+    t0 = padd(P(torso=(0, 20, 0), chest=(0, 0, 10), jaw=(40, 0, 0)), _arm("r", -60, 0, 50, -40), _arm("l", -20, 0, 30, -20))
+    ab("tumor_spawn_drop", 0.8, [(0.0, t0), (0.4, pmirror(t0)), (0.8, t0)], note="腫瘍を振り落とす")
+    # --- 腕が生え戻る身震い
+    rg = padd(P(chest=(-14, 0, 0), head=(-20, 0, 0), jaw=(40, 0, 0)), _both_arms(-10, 50, -10))
+    ab("regenerate_regrow", 1.0, [(0.0, {}), (0.2, rg), (0.35, padd(rg, P(head=(0, 0, 6)))), (0.5, rg),
+                                  (1.0, pscale(rg, 0.2))], loop="hold_on_last_frame", note="生え戻る身震い")
+    # --- 刃の突進: かがむ / 駆け抜け（脚の走りも自分で持つ）
+    ab("blade_dash_crouch", 0.4, [(0.0, {}), (0.4, _g(padd(_crouch(1.0), _both_arms(50, 20, -10), P(torso=(40, 0, 0), head=(-24, 0, 0)))))],
+       loop="hold_on_last_frame", note="刃を構えてかがむ")
+    g = Gait(**{**loco_gaits()["sprint"]["run"].__dict__})
+    g.upper = make_upper(dict(arms=dict(rx=50, A=6, lag=0.06, rz=24, fore=-10, foreA=4, hand=-10, cancel=0.0),
+                              head=dict(keep=0.95, nod=3, loll=2, neck=-8), jaw=(30, 6, 2)))
+    g.lean = 34
+    dash = timed(gait_clip("ab_blade_dash_dash", g, sk), 0.36)
+    dash.loop, dash.kind = True, "ability"
+    out["blade_dash_dash"] = dash
+    # --- UV を砕く叫び
+    sh = padd(P(chest=(-20, 0, 0), head=(-35, 0, 0), jaw=(70, 0, 0)), _both_arms(30, 40, -10), P(hand_r=(-40, 0, 0), hand_l=(-40, 0, 0)))
+    ab("uv_shatter_shriek", 1.0, _alt(sh, padd(sh, P(head=(0, 0, 4), jaw=(-6, 0, 0))), 1.0, 3), note="胸を反らして叫ぶ")
+    # --- 遠吠えで呼ぶ
+    sv = padd(_both_arms(-150, 40, -30), P(head=(-40, 0, 0), neck=(-20, 0, 0), jaw=(66, 0, 0), chest=(-16, 0, 0)))
+    ab("summon_volatiles_call", 1.2, _alt(sv, padd(sv, P(jaw=(-8, 0, 0), head=(0, 0, 4))), 1.2, 2), note="遠吠えで呼ぶ")
+    # 名前の検査（zombie_animations が使う全段階 + ab_wall_climb は build_states が作る）
+    need = {f"{k}_{ph}" for k, a in SPEC.ABILITY_VOCAB.items() for ph in a["phases"]}
+    missing = sorted(need - set(out))
+    if missing:
+        raise ValueError(f"ability phase animations missing: {missing}")
+    return [out[k] for k in sorted(out)]
+
+
+def build_guard() -> Clip:
+    """盾持ち（shield_block）の普段の構え: 左の前腕の盾を胸の前へ（ability の none 状態で v.nr_guard 倍）。"""
+    return keyed("ov_shield_guard", 1.0, [(0.0, padd(_arm("l", -64, 0, 14, -84, 10), P(torso=(0, -4, 0))))], loop=True,
+                 note="盾を構える")
+
+
+# ===========================================================================
+#  20. ちぎれた部位 nr:gib（空中の回転 nr:spin・寝姿 nr:rest・裏返し nr:side・動く間の血の尾）
+# ===========================================================================
+#  ジオメトリ（nr_rig.extract_gibs）は p_* の各ボーンの pivot が部位の重心 (0,0,0)。エンティティの原点は
+#  当たり箱の底（床）なので、寝姿は「回したあとのいちばん低い点が床に来る」高さへ持ち上げる。
+#  持ち上げ量は基準の体で部位・寝姿・裏表ごとに計算し、種類の大きさの倍率 v.gs（nr:ztype から）を掛ける
+#  （汎用の肉片 p_guts.. は種類に依らないので倍率なし）。
+GIB_SPINS = {1: (720, 0, 0), 2: (0, 0, 720), 3: (540, 360, 0), 4: (0, 420, 600), 5: (300, 0, 200),
+             6: (900, 600, 300), 7: (200, 800, 100)}          # nr:spin -> 度/秒（x, y, z）
+GIB_RESTS = {0: (8.0, 0.0, 90.0), 1: (-6.0, 0.0, -90.0), 2: (90.0, 20.0, 0.0), 3: (-90.0, -30.0, 0.0)}
+_GIB_GEO: Dict[str, object] = {}
+
+
+def _gib_models(build: dict, key: str):
+    if key not in _GIB_GEO:
+        m, _r = bare_rig("gib_" + key, build)
+        if not m.tex_w:                    # 形だけ欲しいので大きなアトラスに詰める（大きな体は 512 に入らない）
+            m.pack(size=(2048, 2048))
+        _GIB_GEO[key] = RIG.extract_gibs(m, key, uv_check=False)
+    return _GIB_GEO[key]
+
+
+def _part_points(model, part: str) -> Optional[np.ndarray]:
+    for b in model.bones:
+        if b.name == part and b.cubes:
+            return np.concatenate([(RIG.cube_matrix(c) @ RIG.cube_corners(c).T).T[:, :3] for c in b.cubes])
+    return None
+
+
+def gib_lifts(model) -> Dict[str, dict]:
+    """{部位: {"r": 半径, (寝姿, 裏表): 持ち上げ量}}（単位）。"""
+    out = {}
+    for part in [b.name for b in model.bones]:
+        pts = _part_points(model, part)
+        if pts is None:
+            continue
+        d = {"r": float(np.linalg.norm(pts, axis=1).max())}
+        for rest, (rx, ry, rz) in GIB_RESTS.items():
+            for side in (0, 1):
+                R = rot(rx, ry + 180.0 * side, rz)
+                d[(rest, side)] = float(-(pts @ R.T)[:, 1].min())
+        out[part] = d
+    return out
+
+
+def gib_scales() -> Dict[int, float]:
+    """nr:ztype -> 部位の大きさの倍率（基準の体に対する持ち上げ量の比の中央値）。"""
+    ref = gib_lifts(_gib_models(REF_BUILD, "ref"))
+    out = {}
+    for z in SPEC.ZOMBIES:
+        lz = gib_lifts(_gib_models(rig_build(z), z["key"]))
+        ratios = [lz[p][k] / ref[p][k] for p in ref if p in lz for k in ref[p] if k != "r" and ref[p][k] > 0.3]
+        out[int(SPEC.ztype(z["key"]))] = round(float(np.median(ratios)) * 20) / 20 if ratios else 1.0
+    return out
+
+
+def _chain(var: str, table: Dict[int, float], default: float) -> str:
+    """{値: 結果} を 3 項演算の連鎖に（同じ結果の値はまとめる）。"""
+    groups: Dict[float, List[int]] = {}
+    for k, v in sorted(table.items()):
+        groups.setdefault(float(v), []).append(int(k))
+    expr = fmt(default)
+    for v, ks in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        if abs(v - default) < 1e-9:
+            continue
+        cond = " || ".join(f"{var} == {k}" for k in ks)
+        expr = f"(({cond}) ? {fmt(v)} : {expr})"
+    return expr
+
+
+def build_gibs() -> List[Clip]:
+    ref = gib_lifts(_gib_models(REF_BUILD, "ref"))
+    gen = gib_lifts(RIG.build_generic_gibs(paint=False))
+    parts = {**ref, **gen}
+    out: List[Clip] = []
+    # 空中: nr:spin の軸と速さで回る（重心のまわり）。少し持ち上げて床に潜りにくく
+    spin = Clip("spin", 1.0, loop=True, prefix=GP, kind="gib", weight_arms=False, scale_pos=False, note="空中で回る")
+    for p, d in parts.items():
+        k = "v.gs * " if p in ref else ""
+        spin.expr[p] = {"rot": ["math.mod(q.life_time * v.gsx, 360)", "math.mod(q.life_time * v.gsy, 360)",
+                                "math.mod(q.life_time * v.gsz, 360)"],
+                        "pos": [0, f"{k}{fmt(0.75 * d['r'])}", 0]}
+    out.append(spin)
+    # 寝姿 0..3（nr:side で裏返し = 長い軸のまわりに 180°）
+    for rest, (rx, ry, rz) in GIB_RESTS.items():
+        c = Clip(f"rest_{rest}", 1.0, loop=True, prefix=GP, kind="gib", weight_arms=False, scale_pos=False,
+                 note=f"寝姿 {rest}")
+        for p, d in parts.items():
+            k = "v.gs * " if p in ref else ""
+            l0, l1 = d[(rest, 0)], d[(rest, 1)]
+            c.expr[p] = {"rot": [rx, f"{fmt(ry)} + v.gside * 180", rz],
+                         "pos": [0, f"{k}(v.gside ? {fmt(l1)} : {fmt(l0)})", 0]}
+        out.append(c)
+    tr = fx_clip("trail", 0.12, [{"effect": "trail"}], note="動く間の血の尾")
+    tr.prefix, tr.kind = GP, "gib"
+    out.append(tr)
+    return out
+
+
+# ===========================================================================
+#  21. アニメーションコントローラ（全 50 体で共通。短い名前は client_animations(z) が種類ごとに写す）
+# ===========================================================================
+def _state(anims=None, trans=None, blend: Optional[float] = None, particles=None, shortest: bool = True) -> dict:
+    st: Dict[str, object] = {}
+    if anims:
+        st["animations"] = anims
+    if particles:
+        st["particle_effects"] = particles
+    st["transitions"] = [{k: v} for k, v in (trans or [])]
+    if blend:
+        st["blend_transition"] = blend
+        if shortest:
+            st["blend_via_shortest_path"] = True
+    return st
+
+
+def ctrl_move() -> dict:
+    """移動と体の状態: stand / gimp / crawl / crawl1 / drag / climb / stagger / down / rise / owned / dead_*。"""
+    dead_by_pose = [(f"dead_{i}", f"v.nr_dead && v.nr_pose == {i}") for i in range(8)]
+    dead_any = dead_by_pose + [("dead_0", "v.nr_dead")]
+    dead_prone = [("dead_7", "v.nr_dead && v.nr_pose == 7"), ("dead_5", "v.nr_dead")]
+    common = [("owned", "v.nr_abfull"), ("down", "v.nr_down"), ("drag", "v.nr_half"),
+              ("crawl1", "v.nr_c1"), ("crawl", "v.nr_crawl"), ("climb", "v.nr_climb"),
+              ("stagger", "v.nr_stag"), ("gimp", "v.nr_gimp")]
+
+    def others(me, extra=()):
+        return [(k, c) for k, c in common if k != me] + list(extra)
+
+    stand_ok = ("stand", "!v.nr_abfull && !v.nr_down && !v.nr_crawl && !v.nr_climb && !v.nr_stag && !v.nr_gimp")
+    walk3 = [{"idle": "1.0 - v.nr_mv"}, {"walk": "v.nr_mv * (1.0 - v.nr_run)"}, {"run": "v.nr_mv * v.nr_run"}]
+    states = {
+        "stand": _state(walk3, dead_any + others("stand"), 0.3),
+        "gimp": _state([{"gimp_idle": "1.0 - v.nr_mv"}, {"gimp": "v.nr_mv"}], dead_any + others("gimp", [stand_ok]), 0.3),
+        "crawl": _state([{"crawl_idle": "1.0 - v.nr_mv"}, {"crawl_walk": "v.nr_mv * (1.0 - v.nr_run)"},
+                         {"crawl_run": "v.nr_mv * v.nr_run"}],
+                        dead_prone + others("crawl", [stand_ok]), 0.4),
+        "crawl1": _state([{"crawl_idle": "1.0 - v.nr_mv"}, {"crawl1": "v.nr_mv"}],
+                         dead_prone + [(k, c) for k, c in others("crawl1") if k != "crawl"]
+                         + [("crawl", "v.nr_crawl && !v.nr_c1"), stand_ok], 0.3),
+        "drag": _state([{"drag_idle": "1.0 - v.nr_mv"}, {"drag": "v.nr_mv"}],
+                       [("dead_half", "v.nr_dead"), ("owned", "v.nr_abfull"), ("crawl", "!v.nr_half && v.nr_crawl"),
+                        ("down", "!v.nr_half && v.nr_down"), ("stand", "!v.nr_half && !v.nr_crawl && !v.nr_down")], 0.3),
+        "climb": _state(["climb"], dead_any + others("climb", [stand_ok]), 0.25),
+        "stagger": _state(["stagger"], dead_any + others("stagger", [stand_ok]), 0.25),
+        "down": _state(["down"], [("dead_down", "v.nr_dead"), ("owned", "v.nr_abfull"), ("drag", "v.nr_half"),
+                                  ("crawl", "v.nr_crawl && !v.nr_down"), ("rise", "!v.nr_down")], 0.12),
+        "rise": _state(["rise"], dead_any + [("owned", "v.nr_abfull"), ("down", "v.nr_down"), ("drag", "v.nr_half"),
+                                             ("crawl", "v.nr_crawl"), ("stand", "q.all_animations_finished || q.state_time > 1.6")],
+                       0.1),
+        "owned": _state(None, dead_any + [("down", "!v.nr_abfull && v.nr_down"), ("drag", "!v.nr_abfull && v.nr_half"),
+                                          ("crawl", "!v.nr_abfull && v.nr_crawl"),
+                                          ("stand", "!v.nr_abfull && !v.nr_down && !v.nr_crawl")], 0.2),
+    }
+    revive = [("stand", "!v.nr_dead")]
+    for i in range(8):
+        states[f"dead_{i}"] = _state([f"dead_{i}"], revive, 0.2)
+        states[f"held_{i}"] = _state([f"dead_{i}"], revive)
+    states["dead_half"] = _state(["dead_half"], revive, 0.2)
+    states["dead_down"] = _state(["dead_down"], revive, 0.15)
+    held = [(f"held_{i}", f"v.nr_dead && v.nr_pose == {i}") for i in range(8)] + [("held_0", "v.nr_dead")]
+    states = {"init": _state(None, held + common + [("stand", "1.0")]), **states}
+    return {"initial_state": "init", "states": states}
+
+
+def ctrl_alive() -> dict:
+    """生きている揺れ・標的を見る・被弾ののけぞり（死体・体ごとの能力の間は止める）。"""
+    return {"initial_state": "live", "states": {
+        "live": _state(["alive", {"look": "v.nr_look"}, "hurt"], [("still", "v.nr_dead || v.nr_abfull")], 0.2),
+        "still": _state(None, [("live", "!v.nr_dead && !v.nr_abfull")], 0.3),
+    }}
+
+
+def ctrl_fx() -> dict:
+    """燃えてもがく（q.is_on_fire）・感電（nr:shock。体のまわりの放電）。"""
+    arcs = [{"effect": "arcs", "locator": "loc_chest"}]
+    return {"initial_state": "calm", "states": {
+        "calm": _state(None, [("shock", "v.nr_shock"), ("burning", "v.nr_fire")], 0.2),
+        "shock": _state(["shock"], [("burning", "!v.nr_shock && v.nr_fire"), ("calm", "!v.nr_shock")], 0.1,
+                        particles=arcs),
+        "burning": _state([{"burning": "v.nr_upright ? 1.0 : 0.35"}], [("shock", "v.nr_shock"), ("calm", "!v.nr_fire")], 0.25),
+    }}
+
+
+FOUNTAIN_SCRIPT = {"up": "v.dx = 0; v.dy = 1; v.dz = 0; v.life = 1.4; v.size = 0.9; v.gore = 1;",
+                   "down": "v.dx = 0; v.dy = -0.5; v.dz = -0.5; v.life = 1.2; v.size = 0.7; v.gore = 1;"}
+
+
+def ctrl_part(part: str, levels, broken_anim: Optional[str] = None) -> dict:
+    """部位の状態: 断面から滴る（bleed_stump）、切れた直後の数秒は噴水（blood_fountain）、折れた腕はぶら下がる。
+    levels = [(状態名, 条件, ロケータ, 噴く向き or None)]（強い順）。読み込み直後（v.nr_age）と死体・炭化（v.nr_dry）は
+    噴水を出さない。"""
+    states: Dict[str, dict] = {}
+    order = []
+    for name, cond, loc, fdir in levels:
+        bleed = [{"effect": "bleed", "locator": loc}]
+        if fdir:
+            order.append((f"{name}_new", f"{cond} && !v.nr_dry && !v.nr_dead && v.nr_age > 1.5", bleed +
+                          [{"effect": "fountain", "locator": loc, "pre_effect_script": FOUNTAIN_SCRIPT[fdir]}], name))
+        order.append((name, f"{cond} && !v.nr_dry", bleed, None))
+        order.append((f"{name}_dry", f"{cond} && v.nr_dry", None, None))
+    if broken_anim:
+        order.append(("broken", f"v.nr_brk_{part}", None, None))
+    any_cut = " || ".join(f"({c})" for _n, c, _l, _f in levels)
+    order.append(("intact", f"!({any_cut})" + (f" && !v.nr_brk_{part}" if broken_anim else ""), None, None))
+    for name, _cond, parts, settles_to in order:
+        trans = []
+        for other, ocond, _p, _s in order:
+            if other == name:
+                continue
+            if settles_to is None and other.endswith("_new") and other[:-4] == name:
+                continue                        # 落ち着いた断面から「切れた直後」へは戻らない
+            if settles_to is not None and other == settles_to:
+                trans.append((other, "q.state_time > 1.6"))
+                continue
+            if name.endswith("_new") is False and other.endswith("_new"):
+                base = other[:-4]
+                if name == base or name == f"{base}_dry":
+                    continue
+            trans.append((other, ocond))
+        anims = [broken_anim] if (name == "broken" and broken_anim) else None
+        states[name] = _state(anims, trans, 0.2, particles=parts)
+    return {"initial_state": "intact", "states": states}
+
+
+def ctrl_torso_extra() -> dict:
+    """腹を裂かれて垂れた腸が揺れて滴る（nr:torso = gutted）。"""
+    return {"initial_state": "closed", "states": {
+        "closed": _state(None, [("gutted", "v.nr_gutted")], 0.3),
+        "gutted": _state(["guts"], [("closed", "!v.nr_gutted")], 0.3,
+                         particles=[{"effect": "drip", "locator": "loc_belly"}]),
+    }}
+
+
+def ctrl_trail() -> dict:
+    """下半身に断面のある体が這うと血の跡を残す。"""
+    return {"initial_state": "off", "states": {
+        "off": _state(None, [("on", "v.nr_lowstump && v.nr_mv > 0.2 && !v.nr_dry && !v.nr_dead")]),
+        "on": _state(["trail"], [("off", "!v.nr_lowstump || v.nr_mv <= 0.2 || v.nr_dry || v.nr_dead")]),
+    }}
+
+
+MAX_AB = 7
+
+
+def ctrl_ability() -> dict:
+    """nr:ability 1..7 → ab_1..ab_7（種類ごとに ability_states(z) の段階のアニメへ写す）。0 = 盾の構えなど普段の重ね。"""
+    states = {"none": _state([{"guard": "v.nr_guard"}], [(f"ab_{i}", f"v.nr_ab == {i}") for i in range(1, MAX_AB + 1)], 0.2)}
+    for i in range(1, MAX_AB + 1):
+        tr = [("none", f"v.nr_ab != {i} && v.nr_ab == 0")] + [(f"ab_{j}", f"v.nr_ab == {j}") for j in range(1, MAX_AB + 1) if j != i]
+        states[f"ab_{i}"] = _state([f"ab_{i}"], tr, 0.2)
+    return {"initial_state": "none", "states": states}
+
+
+ZCTRLS = {
+    "move": ctrl_move, "alive": ctrl_alive, "fx": ctrl_fx,
+    "arm_r": lambda: ctrl_part("ar", [("up", "v.nr_cut_ar_up", "loc_shoulder_r", "up"),
+                                      ("lo", "v.nr_cut_ar_lo", "loc_elbow_r", "down")], "arm_r_broken"),
+    "arm_l": lambda: ctrl_part("al", [("up", "v.nr_cut_al_up", "loc_shoulder_l", "up"),
+                                      ("lo", "v.nr_cut_al_lo", "loc_elbow_l", "down")], "arm_l_broken"),
+    "leg_r": lambda: ctrl_part("lr", [("up", "v.nr_cut_lr_up", "loc_hip_r", "down"),
+                                      ("lo", "v.nr_cut_lr_lo", "loc_knee_r", "down")]),
+    "leg_l": lambda: ctrl_part("ll", [("up", "v.nr_cut_ll_up", "loc_hip_l", "down"),
+                                      ("lo", "v.nr_cut_ll_lo", "loc_knee_l", "down")]),
+    "head": lambda: ctrl_part("hd", [("neck", "v.nr_neck", "loc_neck", "up"),
+                                     ("skull", "v.nr_cracked", "loc_head", None),
+                                     ("jaw", "v.nr_jawless", "loc_mouth", None)]),
+    "torso": lambda: ctrl_part("to", [("half", "v.nr_half", "loc_waist", "down")]),
+    "guts": ctrl_torso_extra, "trail": ctrl_trail, "ability": ctrl_ability,
+}
+
+
+def gib_controllers() -> dict:
+    rests = [(f"rest_{i}", f"v.gspin == 0 && v.grest == {i}") for i in range(4)]
+    states = {"fly": _state(["spin"], rests, 0.0)}
+    for i in range(4):
+        states[f"rest_{i}"] = _state([f"rest_{i}"], [("fly", "v.gspin > 0")] + [r for r in rests if r[0] != f"rest_{i}"],
+                                     0.12)
+    move = {"initial_state": "fly", "states": states}
+    bleed = {"initial_state": "dry", "states": {
+        "dry": _state(None, [("trail", "v.gbleed && v.gspin > 0"), ("drip", "v.gbleed && v.gspin == 0")]),
+        "trail": _state(["trail"], [("dry", "!v.gbleed"), ("drip", "v.gspin == 0")]),
+        "drip": _state(None, [("dry", "!v.gbleed"), ("trail", "v.gspin > 0")], particles=[{"effect": "bleed"}]),
+    }}
+    return {CG + "move": move, CG + "bleed": bleed}
+
+
+# ===========================================================================
+#  22. gen_nr_entities へ渡す client entity の中身（種類ごと）
+# ===========================================================================
+PARTICLE_SHORT = {"bleed": "nr:bleed_stump", "fountain": "nr:blood_fountain", "trail": "nr:blood_trail",
+                  "drip": "nr:blood_drip", "arcs": "nr:shock_arcs"}
+GIB_PARTICLE_SHORT = {"trail": "nr:blood_trail", "bleed": "nr:bleed_stump"}
+CTRL_ORDER = ("move", "alive", "fx", "arm_r", "arm_l", "leg_r", "leg_l", "head", "torso", "guts", "trail", "ability")
+
+
+def _zkey(z) -> dict:
+    return z if isinstance(z, dict) else SPEC.zombie(z)
+
+
+def ability_phase_map(z) -> Dict[int, str]:
+    """nr:ability の値 -> そのアニメの完全な ID（ability_states(z) の順）。"""
+    z = _zkey(z)
+    out = {}
+    for name, v in SPEC.ability_states(z).items():
+        k, ph = name.split(".", 1)
+        out[int(v)] = f"{ZP}ab_{k}_{ph}"
+    return out
+
+
+def full_body_values(z) -> List[int]:
+    """「体ごと」の段階（AB_FULL）の nr:ability の値。"""
+    z = _zkey(z)
+    return sorted(int(v) for name, v in SPEC.ability_states(z).items() if name in AB_FULL)
+
+
+def has_ability(z, key: str) -> bool:
+    return key in SPEC.ability_keys(_zkey(z))
+
+
+def client_animations(z) -> Dict[str, str]:
+    """description.animations（短い名前 -> アニメ／コントローラの完全な ID）。共通のコントローラが使う
+    短い名前は全種類に必ずある（無い能力の段階・盾の構えは animation.nr.z.none に写す）。"""
+    z = _zkey(z)
+    loco = z["locomotion"]
+    out: Dict[str, str] = dict(SPEC.zombie_animations(z))
+    out.update({
+        "idle": f"{ZP}idle_{loco}", "walk": f"{ZP}walk_{loco}", "run": f"{ZP}run_{loco}",
+        "gimp": f"{ZP}st_gimp", "gimp_idle": f"{ZP}st_gimp_idle",
+        "crawl_idle": f"{ZP}idle_crawl", "crawl_walk": f"{ZP}walk_crawl", "crawl_run": f"{ZP}run_crawl",
+        "crawl1": f"{ZP}st_crawl1", "drag": f"{ZP}st_drag", "drag_idle": f"{ZP}st_drag_idle",
+        "climb": f"{ZP}ab_wall_climb" if has_ability(z, "wall_climb") else f"{ZP}st_climb",
+        "stagger": f"{ZP}st_stagger", "down": f"{ZP}st_down", "rise": f"{ZP}st_rise",
+        "dead_half": f"{ZP}dead_half", "dead_down": f"{ZP}dead_down",
+        "alive": f"{ZP}ov_alive", "look": f"{ZP}ov_look", "hurt": f"{ZP}ov_hurt", "burning": f"{ZP}ov_burning",
+        "shock": f"{ZP}ov_shock", "arm_r_broken": f"{ZP}ov_arm_r_broken", "arm_l_broken": f"{ZP}ov_arm_l_broken",
+        "guts": f"{ZP}ov_guts", "trail": f"{ZP}fx_trail",
+        "guard": f"{ZP}ov_shield_guard" if has_ability(z, "shield_block") else f"{ZP}none",
+    })
+    for i in range(8):
+        out[f"dead_{i}"] = f"{ZP}dead_{i}"
+    phases = ability_phase_map(z)
+    for i in range(1, MAX_AB + 1):
+        out[f"ab_{i}"] = phases.get(i, f"{ZP}none")
+    for k in CTRL_ORDER:
+        out[f"ctrl_{k}"] = CZ + k
+    return out
+
+
+def client_animate(z=None) -> List[str]:
+    """scripts.animate（コントローラだけ。順番は重ねる順）。"""
+    return [f"ctrl_{k}" for k in CTRL_ORDER]
+
+
+_ZCONST_CACHE: Dict[str, dict] = {}
+
+
+def _zconsts(z) -> dict:
+    """種類ごとの定数（身長の倍率・猫背・周期の距離・寝た姿勢の床合わせ）。"""
+    z = _zkey(z)
+    if z["key"] in _ZCONST_CACHE:
+        return _ZCONST_CACHE[z["key"]]
+    b = rig_build(z)
+    s = RIG.landmarks(b).t / REF_T
+    sk = ref_skel("z_" + z["key"], b)
+    ensure_vars(sk)
+    ensure_cycles()
+    cyc = LOCO_CYCLES[z["locomotion"]]
+    LL = leg_len(sk) / s                                   # 正規化した脚の長さ
+    k = LL / cyc["LL"]
+    c = {"v.nr_s": round(s, 4), "v.nr_hn": round(float(z["hunch"]), 2),
+         "v.nr_cw": round(cyc["walk"] * k * s, 4), "v.nr_cr": round(cyc["run"] * k * s, 4)}
+    for var in GROUND_FITS:
+        c[var] = sk.vars[var]
+    _ZCONST_CACHE[z["key"]] = c
+    return c
+
+
+def client_initialize(z) -> List[str]:
+    """scripts.initialize（Molang の行）。"""
+    c = _zconsts(z)
+    lines = [f"{k} = {fmt(v, 4)};" for k, v in c.items()]
+    lines += ["v.nr_seed = math.random(0.0, 1.0);", "v.nr_ph = 0.0;", "v.nr_run = 0.0;", "v.nr_mv = 0.0;", "v.nr_age = 0.0;"]
+    return lines
+
+
+def _prop_is(prop: str, *vals) -> str:
+    if len(vals) == 1:
+        return f"q.property('{prop}') == '{vals[0]}'"
+    return "(" + " || ".join(f"q.property('{prop}') == '{v}'" for v in vals) + ")"
+
+
+def client_pre_animation(z) -> List[str]:
+    """scripts.pre_animation（Molang の行）。プロパティを v.nr_* に落とす（rendering.md A2）。"""
+    z = _zkey(z)
+    full = full_body_values(z)
+    abfull = " || ".join(f"v.nr_ab == {v}" for v in full) if full else "0.0"
+    ensure_cycles()
+    sc = STATE_CYCLES
+    lines = [
+        "v.nr_age = (v.nr_age ?? 0.0) + q.delta_time;",
+        "v.nr_dead = " + _prop_is("nr:state", "dead") + ";",
+        "v.nr_bd = v.nr_bd ?? (v.nr_dead && v.nr_age < 0.3);",
+        "v.nr_pose = q.property('nr:pose');",
+        "v.nr_ab = v.nr_dead ? 0.0 : q.property('nr:ability');",
+        f"v.nr_abfull = !v.nr_dead && ({abfull});",
+        "v.nr_down = " + _prop_is("nr:state", "down") + ";",
+        "v.nr_climb = " + _prop_is("nr:state", "climb") + ";",
+        "v.nr_stag = " + _prop_is("nr:state", "stagger") + ";",
+        "v.nr_half = " + _prop_is("nr:torso", "halved") + ";",
+        "v.nr_gutted = " + _prop_is("nr:torso", "gutted") + ";",
+    ]
+    for p, s_ in (("leg_r", "lr"), ("leg_l", "ll"), ("arm_r", "ar"), ("arm_l", "al")):
+        lines += [f"v.nr_cut_{s_}_lo = " + _prop_is(f"nr:{p}", "cut_lower") + ";",
+                  f"v.nr_cut_{s_}_up = " + _prop_is(f"nr:{p}", "cut_upper") + ";",
+                  f"v.nr_brk_{s_} = " + _prop_is(f"nr:{p}", "broken") + ";",
+                  f"v.nr_ok_{s_} = " + _prop_is(f"nr:{p}", "intact", "wounded") + ";"]
+    lines += [
+        # 脚が切れた・両脚が使えない・胴が真っ二つ → 這う（倒れている間は倒れのまま）
+        "v.nr_crawl = !v.nr_dead && !v.nr_down && (" + _prop_is("nr:state", "crawl")
+        + " || v.nr_half || v.nr_cut_lr_lo || v.nr_cut_lr_up || v.nr_cut_ll_lo || v.nr_cut_ll_up || (!v.nr_ok_lr && !v.nr_ok_ll));",
+        "v.nr_c1 = v.nr_crawl && !v.nr_half && (v.nr_ok_lr != v.nr_ok_ll);",
+        "v.nr_c1l = v.nr_ok_ll;",
+        "v.nr_gimp = !v.nr_crawl && (v.nr_brk_lr || v.nr_brk_ll);",
+        "v.nr_gimpl = v.nr_brk_ll;",
+        "v.nr_lowstump = v.nr_half || v.nr_cut_lr_lo || v.nr_cut_lr_up || v.nr_cut_ll_lo || v.nr_cut_ll_up;",
+        "v.nr_neck = " + _prop_is("nr:head", "severed", "crushed") + ";",
+        "v.nr_jawless = " + _prop_is("nr:head", "jawless") + ";",
+        "v.nr_cracked = " + _prop_is("nr:head", "cracked") + ";",
+        "v.nr_dry = q.property('nr:burn') >= 3;",
+        "v.nr_shock = !v.nr_dead && q.property('nr:shock') > 0;",
+        "v.nr_fire = !v.nr_dead && q.is_on_fire;",
+        "v.nr_upright = !v.nr_dead && !v.nr_crawl && !v.nr_down && !v.nr_abfull;",
+        "v.nr_look = v.nr_upright || v.nr_crawl;",
+        "v.nr_guard = q.property('nr:armor') >= 1 && v.nr_ok_al;",
+        "v.nr_awr = v.nr_brk_ar ? 0.3 : 1.0;",
+        "v.nr_awl = v.nr_brk_al ? 0.3 : 1.0;",
+        "v.nr_limp = math.mod(q.property('nr:variant'), 2);",
+        "v.nr_reach = q.property('nr:variant') >= 2;",
+        "v.nr_tilt = q.property('nr:variant') == 1 ? 7.0 : (q.property('nr:variant') == 3 ? -6.0 : 0.0);",
+        # 追うと走る（0.4 秒でなめらかに）・動いている量
+        "v.nr_run = math.clamp((v.nr_run ?? 0.0) + (q.has_target ? 2.5 : -2.5) * q.delta_time, 0.0, 1.0);",
+        "v.nr_mv = math.lerp(v.nr_mv ?? 0.0, math.clamp(q.ground_speed / 0.6, 0.0, 1.0), math.min(1.0, q.delta_time * 8.0));",
+        # 歩みの位相（足が滑らないよう移動距離で進める。周期の距離は今の状態のもの）
+        "v.nr_dm = q.modified_distance_moved;",
+        "v.nr_dd = math.clamp(v.nr_dm - (v.nr_dm0 ?? v.nr_dm), 0.0, 0.6);",
+        "v.nr_dm0 = v.nr_dm;",
+        f"v.nr_cyc = v.nr_half ? {fmt(sc['drag'], 4)} * v.nr_s : (v.nr_c1 ? {fmt(sc['crawl1'], 4)} * v.nr_s : "
+        f"(v.nr_crawl ? math.lerp({fmt(sc['crawl_walk'], 4)}, {fmt(sc['crawl_run'], 4)}, v.nr_run) * v.nr_s : "
+        f"(v.nr_gimp ? {fmt(sc['gimp'], 4)} * v.nr_s : math.lerp(v.nr_cw, v.nr_cr, v.nr_run))));",
+        "v.nr_ph = math.mod((v.nr_ph ?? 0.0) + v.nr_dd / math.max(0.05, v.nr_cyc), 4.0);",
+    ]
+    return lines
+
+
+def client_particle_effects(z=None) -> Dict[str, str]:
+    return dict(PARTICLE_SHORT)
+
+
+def client_sound_effects(z=None) -> Dict[str, str]:
+    return {}
+
+
+def gib_client() -> dict:
+    """nr:gib の client entity の中身（animations / animate / initialize / pre_animation / particle_effects）。"""
+    sc = gib_scales()
+    sx = {k: v[0] for k, v in GIB_SPINS.items()}
+    sy = {k: v[1] for k, v in GIB_SPINS.items()}
+    sz = {k: v[2] for k, v in GIB_SPINS.items()}
+    anims = {"spin": GP + "spin", "trail": GP + "trail", "ctrl_move": CG + "move", "ctrl_bleed": CG + "bleed"}
+    for i in range(4):
+        anims[f"rest_{i}"] = f"{GP}rest_{i}"
+    return {
+        "animations": anims,
+        "animate": ["ctrl_move", "ctrl_bleed"],
+        "initialize": ["v.gs = 1.0;", "v.gst = -1.0;"],
+        "pre_animation": [
+            "v.gspin = q.property('nr:spin');",
+            "v.grest = q.property('nr:rest');",
+            "v.gside = q.property('nr:side');",
+            "v.gbleed = q.property('nr:bleed');",
+            f"v.gsx = {_chain('v.gspin', sx, 0.0)};",
+            f"v.gsy = {_chain('v.gspin', sy, 0.0)};",
+            f"v.gsz = {_chain('v.gspin', sz, 0.0)};",
+            # 種類の大きさの倍率（nr:ztype が変わった時だけ引き直す）
+            "v.gs = (v.gst == q.property('nr:ztype')) ? v.gs : " + _chain("q.property('nr:ztype')", sc, 1.0) + ";",
+            "v.gst = q.property('nr:ztype');",
+        ],
+        "particle_effects": dict(GIB_PARTICLE_SHORT),
+    }
+
+
+# ===========================================================================
+#  23. 組み立て・書き出し・検査
+# ===========================================================================
+DEAD_TIME = "v.nr_bd ? 10.0 : (q.anim_time + q.delta_time)"   # 死体で読み込まれたら最後の姿勢から
+
+
+def build_all() -> Dict[str, List[Clip]]:
+    """ファイル -> クリップ。順番が大事（移動の周期 → 状態 → …）。"""
+    loco = build_locomotion()
+    states = build_states()
+    falls = build_falls()
+    for c in falls:
+        if c.name.startswith("dead_"):
+            c.anim_time_update = DEAD_TIME
+    move = loco + [c for c in states if c.name != "ab_wall_climb"] + falls + build_overlays() + [build_guard()]
+    ability = [c for c in states if c.name == "ab_wall_climb"] + build_abilities()
+    return {"move": move, "attack": build_attacks(), "ability": ability, "oneshot": build_oneshots(),
+            "gib": build_gibs()}
+
+
+def anim_docs(files: Dict[str, List[Clip]]) -> Dict[str, dict]:
+    return {k: {"format_version": ANIM_FORMAT, "animations": {c.id: clip_json(c) for c in cl}} for k, cl in files.items()}
+
+
+def ctrl_docs() -> Dict[str, dict]:
+    z = {CZ + k: f() for k, f in ZCTRLS.items()}
+    return {"z": {"format_version": CTRL_FORMAT, "animation_controllers": z},
+            "gib": {"format_version": CTRL_FORMAT, "animation_controllers": gib_controllers()}}
+
+
+def _strings(obj, out: list, where: str = ""):
+    """JSON の中の文字列（Molang の候補）を全部集める。"""
+    if isinstance(obj, str):
+        out.append((where, obj))
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            _strings(v, out, f"{where}/{k}")
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            _strings(v, out, f"{where}[{i}]")
+
+
+def _balanced(s: str) -> bool:
+    d = 0
+    for ch in s:
+        if ch in "([{":
+            d += 1
+        elif ch in ")]}":
+            d -= 1
+            if d < 0:
+                return False
+    return d == 0 and s.count("'") % 2 == 0
+
+
+MOLANG_HINT = re.compile(r"\b(q|v|math|query|variable)\.|[()?:*/+<>=!&|]")
+
+
+def _molang_ok(s: str) -> Optional[str]:
+    """括弧の対応と nr_preview の構文解析で Molang を確かめる（エラーの説明 or None）。"""
+    import nr_preview as NP
+    if not _balanced(s):
+        return "unbalanced parentheses/quotes"
+    try:
+        for part in s.split(";"):
+            if part.strip():
+                NP._parse(part.strip())
+    except Exception as exc:  # noqa: BLE001
+        return f"parse: {exc}"
+    return None
+
+
+def validate(adocs: Dict[str, dict], cdocs: Dict[str, dict], files: Dict[str, List[Clip]]) -> Tuple[List[str], List[str]]:
+    """生成物の検査。(errors, notes) を返す。"""
+    errs: List[str] = []
+    notes: List[str] = []
+    anims: Dict[str, dict] = {}
+    for d in adocs.values():
+        for aid, a in d["animations"].items():
+            if aid in anims:
+                errs.append(f"duplicate animation id {aid}")
+            anims[aid] = a
+    ctrls: Dict[str, dict] = {}
+    for d in cdocs.values():
+        ctrls.update(d["animation_controllers"])
+    # 1) spec の全種類のアニメ・登録簿の一発もの
+    for z in SPEC.ZOMBIES:
+        for short, full in SPEC.zombie_animations(z).items():
+            if full not in anims:
+                errs.append(f"{z['key']}: zombie_animations {short} -> {full} not generated")
+    for n in REG.ZOMBIE_ONESHOTS:
+        if ZP + n not in anims:
+            errs.append(f"registry one-shot {n} not generated")
+    for n in REG.all_zombie_anim_names(SPEC):
+        if ZP + n not in anims:
+            errs.append(f"registry derived anim {n} not generated")
+    # 2) 一発もの・攻撃: 加算で最初と最後のキーが 0（P3）
+    for cl in (files["oneshot"], files["attack"]):
+        for c in cl:
+            ks = sorted(c.keys, key=lambda k: k[0])
+            for t, p, _l in (ks[0], ks[-1]):
+                for b, e in p.items():
+                    for ch, v in e.items():
+                        if not _is_zero(v, ch):
+                            errs.append(f"{c.id}: key at {t:.2f}s is not zero ({b}.{ch}={v})")
+            if c.loop:
+                errs.append(f"{c.id}: one-shot must not loop")
+    # 3) 種類ごとの短い名前: コントローラが使う名前が全部ある・指す先が全部ある
+    used_by_ctrl: Dict[str, set] = {}
+    for cid, c in ctrls.items():
+        names = set()
+        for st in c["states"].values():
+            for a in st.get("animations", []):
+                names.add(a if isinstance(a, str) else next(iter(a)))
+        used_by_ctrl[cid] = names
+    for z in SPEC.ZOMBIES:
+        ca = client_animations(z)
+        for short, full in ca.items():
+            if full.startswith("controller."):
+                if full not in ctrls:
+                    errs.append(f"{z['key']}: {short} -> controller {full} missing")
+            elif full not in anims:
+                errs.append(f"{z['key']}: {short} -> {full} not generated")
+        for cid in [ca[k] for k in client_animate(z)]:
+            for n in used_by_ctrl.get(cid, ()):
+                if n not in ca:
+                    errs.append(f"{z['key']}: {cid} uses '{n}' which is not in client_animations")
+        # nr:ability の値の割り当てとアニメの対応
+        for name, v in SPEC.ability_states(z).items():
+            k, ph = name.split(".", 1)
+            if ca.get(f"ab_{v}") != f"{ZP}ab_{k}_{ph}":
+                errs.append(f"{z['key']}: ab_{v} should map to ab_{k}_{ph}")
+        if len(SPEC.ability_states(z)) > MAX_AB:
+            errs.append(f"{z['key']}: more than {MAX_AB} ability phases")
+    gc = gib_client()
+    for cid in [gc["animations"][k] for k in gc["animate"]]:
+        for n in used_by_ctrl.get(cid, ()):
+            if n not in gc["animations"]:
+                errs.append(f"gib: {cid} uses '{n}' which is not in gib_client animations")
+    for short, full in gc["animations"].items():
+        if full not in anims and full not in ctrls:
+            errs.append(f"gib: {short} -> {full} missing")
+    # 4) パーティクル・ロケータ
+    reg_parts = set(REG.all_particle_ids())
+    for short, pid in {**PARTICLE_SHORT, **GIB_PARTICLE_SHORT}.items():
+        if pid not in reg_parts:
+            errs.append(f"particle {short} -> {pid} is not in nr_registry.PARTICLES")
+    for cid, c in ctrls.items():
+        shorts = GIB_PARTICLE_SHORT if cid.startswith(CG) else PARTICLE_SHORT
+        for sname, st in c["states"].items():
+            for pe in st.get("particle_effects", []):
+                if pe["effect"] not in shorts:
+                    errs.append(f"{cid}.{sname}: particle short name {pe['effect']} not registered")
+                loc = pe.get("locator")
+                if loc and loc not in RIG.LOCATOR_BONES:
+                    errs.append(f"{cid}.{sname}: locator {loc} is not an nr_rig locator")
+    for aid, a in anims.items():
+        shorts = GIB_PARTICLE_SHORT if aid.startswith(GP) else PARTICLE_SHORT
+        for t, pe in (a.get("particle_effects") or {}).items():
+            for e in (pe if isinstance(pe, list) else [pe]):
+                if e["effect"] not in shorts:
+                    errs.append(f"{aid}@{t}: particle short name {e['effect']} not registered")
+                if e.get("locator") and e["locator"] not in RIG.LOCATOR_BONES:
+                    errs.append(f"{aid}@{t}: locator {e['locator']} is not an nr_rig locator")
+    # 5) ボーン名（§3 の骨格 + 部品の子ボーン。ゾンビのアニメ）・gib のボーン
+    known = set(SPEC.RIG_BONES) | set(RIG.GORE_BONES) | {"throat_sac"}
+    gib_bones = set(RIG.GIB_PARTS)
+    for aid, a in anims.items():
+        ok = gib_bones if aid.startswith(GP) else known
+        bad = sorted(b for b in a.get("bones", {}) if b not in ok)
+        if bad:
+            errs.append(f"{aid}: unknown bones {bad}")
+    # 6) Molang（括弧・構文）
+    lines = []
+    for z in SPEC.ZOMBIES[:1] + [SPEC.zombie("subject_zero")]:
+        lines += [("pre_animation", s) for s in client_pre_animation(z)]
+        lines += [("initialize", s) for s in client_initialize(z)]
+    lines += [("gib.pre_animation", s) for s in gc["pre_animation"]]
+    strs: List[Tuple[str, str]] = []
+    _strings(anims, strs, "anims")
+    for cid, c in ctrls.items():
+        for sname, st in c["states"].items():
+            for tr in st.get("transitions", []):
+                for k, v in tr.items():
+                    strs.append((f"{cid}.{sname}->{k}", v))
+            for a in st.get("animations", []):
+                if isinstance(a, dict):
+                    for k, v in a.items():
+                        strs.append((f"{cid}.{sname}.{k}", v))
+            for pe in st.get("particle_effects", []):
+                if "pre_effect_script" in pe:
+                    strs.append((f"{cid}.{sname}.pre_effect_script", pe["pre_effect_script"]))
+    checked = 0
+    seen = set()
+    for where, s in lines + strs:
+        if where.endswith(("/effect", "/locator", "/lerp_mode")) or s in seen:
+            continue
+        if not MOLANG_HINT.search(s):
+            continue
+        seen.add(s)
+        checked += 1
+        why = _molang_ok(s)
+        if why:
+            errs.append(f"molang {where}: {why}: {s[:120]}")
+    notes.append(f"Molang strings checked: {checked}")
+    # 6b) アニメ・コントローラが読む変数は initialize / pre_animation で必ず作る（ゾンビ・gib）
+    var_re = re.compile(r"\bv(?:ariable)?\.([a-z_][a-z0-9_]*)")
+    q_re = re.compile(r"\bq(?:uery)?\.([a-z_][a-z0-9_]*)")
+    z_set = {m for s in client_initialize(SPEC.ZOMBIES[0]) + client_pre_animation(SPEC.ZOMBIES[0])
+             for m in re.findall(r"\bv\.([a-z_][a-z0-9_]*)\s*=(?!=)", s)}
+    g_set = {m for s in gc["initialize"] + gc["pre_animation"] for m in re.findall(r"\bv\.([a-z_][a-z0-9_]*)\s*=(?!=)", s)}
+    pre_fx = {"dx", "dy", "dz", "life", "size", "gore"}          # pre_effect_script がパーティクルへ渡す変数
+    used_q = set()
+    for where, s in strs + lines:
+        is_gib = where.startswith(("anims/" + GP, CG, "gib."))
+        have = g_set if is_gib else z_set
+        for m in var_re.findall(s):
+            if m not in have and m not in pre_fx:
+                errs.append(f"variable v.{m} used in {where} is never set by initialize/pre_animation")
+        used_q.update(q_re.findall(s))
+    qmeta = os.path.join(os.path.dirname(TOOLS), "build_preview", "nr_research", "bedrock-samples", "metadata",
+                         "molang_modules", "mojang-molang-queries.json")
+    if os.path.exists(qmeta):
+        known_q = set(re.findall(r'"query\.([a-z_0-9]+)"', open(qmeta, encoding="utf-8").read()))
+        for qn in sorted(used_q - known_q):
+            errs.append(f"unknown query q.{qn}")
+        notes.append(f"queries used: {', '.join(sorted(used_q))}")
+    # 7) 長さ・ループ
+    for aid, a in anims.items():
+        if a["animation_length"] <= 0:
+            errs.append(f"{aid}: animation_length <= 0")
+        if aid.startswith(ZP + "dead_") and a.get("loop") != "hold_on_last_frame":
+            errs.append(f"{aid}: death pose must hold_on_last_frame")
+    notes.append(f"animations {len(anims)} / controllers {len(ctrls)} / zombies {len(SPEC.ZOMBIES)}")
+    return errs, notes
+
+
+def floor_report(files: Dict[str, List[Clip]], lib: Dict[str, dict]) -> List[str]:
+    """移動・寝た姿勢の床との関係（数字で）。設計の骨格での値。"""
+    out = []
+    for c in files["move"]:
+        if not (c.name.startswith(("walk_", "run_", "idle_", "dead_", "st_"))):
+            continue
+        if c.name.startswith(("walk_", "run_", "idle_")):
+            loco = c.name.split("_", 1)[1]
+            sk = style_skel(loco)
+        else:
+            sk = design_skel()
+        v = dict(sk.vars)
+        v["v.nr_hn"] = sk.hunch
+        times = [c.length * i / 12 for i in range(13)] if c.loop is not True else [c.length * i / 12 for i in range(12)]
+        if c.name.startswith("dead_") or c.name in ("st_down",):
+            times = [c.length]
+        lows, feet = [], []
+        skip = _HALF_SKIP if c.name in ("dead_6", "dead_half", "st_drag", "st_drag_idle") else ()
+        for t in times:
+            W = sk.world(eval_pose(lib, c.id, t, v))
+            lows.append(sk.min_y(W, skip))
+            if not c.name.startswith(("dead_", "st_drag", "st_crawl1")) and "crawl" not in c.name:
+                feet.append(min(_bone_min_y(sk, W, "foot_r"), _bone_min_y(sk, W, "foot_l")))
+        msg = f"{c.name:16s} body_min {min(lows):6.2f} .. {max(lows):6.2f}"
+        if feet:
+            msg += f"  foot_min {min(feet):6.2f}"
+        out.append(msg)
+    return out
+
+
+def write_all(adocs: Dict[str, dict], cdocs: Dict[str, dict]) -> List[str]:
+    paths = []
+    for k, d in adocs.items():
+        pth = os.path.join(ANIM_DIR, ANIM_FILES[k])
+        write_json(pth, d)
+        paths.append(pth)
+    for k, d in cdocs.items():
+        pth = os.path.join(CTRL_DIR, CTRL_FILES[k])
+        write_json(pth, d)
+        paths.append(pth)
+    return paths
+
+
+# ===========================================================================
+#  24. 確認画像（書き出した JSON を nr_preview のアニメ評価器で素体のリグに当てて描く）
+# ===========================================================================
+QA_ROWS = ["walk_shamble", "run_shamble", "walk_limp", "walk_sprint", "run_sprint", "walk_brute", "walk_stalk",
+           "run_leap", "walk_waddle", "walk_lurch", "walk_scuttle", "walk_knuckle",
+           "atk_swipe", "atk_slam", "atk_pounce", "atk_claw_flurry",
+           "walk_crawl", "st_crawl1", "st_drag"]
+QA_DEATHS = [f"dead_{i}" for i in range(8)] + ["dead_half", "dead_down"]
+QA_PROPS = {"st_crawl1": {"nr:leg_l": "cut_upper"}, "st_drag": {"nr:torso": "halved"},
+            "dead_6": {"nr:torso": "halved"}, "dead_half": {"nr:torso": "halved"}, "dead_4": {"nr:head": "severed"},
+            "walk_crawl": {"nr:leg_r": "cut_lower", "nr:leg_l": "cut_upper"}}
+
+
+def _qa_build_for(name: str) -> Tuple[str, dict, Skel]:
+    loco = name.split("_", 1)[1] if name.startswith(("walk_", "run_", "idle_")) else ""
+    if loco in SPEC.LOCOMOTION_VOCAB:
+        return "style_" + loco, style_build(loco), style_skel(loco)
+    return "ref", dict(REF_BUILD), design_skel()
+
+
+def qa_sheet(lib: Dict[str, dict], out_path: str, cols: int = 5, size: int = 150) -> str:
+    """frame strips: 移動の型・攻撃 4 種・這い・死体の姿勢を 1 枚に。"""
+    import nr_preview as NP
+    items = []
+    for name in QA_ROWS:
+        aid = ZP + name
+        a = lib[aid]
+        L = float(a["animation_length"])
+        times = [L * i / cols for i in range(cols)] if a.get("loop") is True else [L * i / (cols - 1) for i in range(cols)]
+        key, build, sk = _qa_build_for(name)
+        var = dict(sk.vars)
+        items += qa_frames(lib, aid, times, key, build, views=("three_quarter",), size=size, variables=var,
+                           properties=QA_PROPS.get(name), label=name)
+    for name in QA_DEATHS:
+        aid = ZP + name
+        L = float(lib[aid]["animation_length"])
+        key, build, sk = _qa_build_for(name)
+        items += qa_frames(lib, aid, [L], key, build, views=("three_quarter",), size=size, variables=dict(sk.vars),
+                           properties=QA_PROPS.get(name), label=name)
+    img = NP.contact_sheet(items, cols=cols, title="NIGHT RUNNER zombie animations (QA)")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    img.save(out_path)
+    return out_path
+
+
+# ===========================================================================
+#  25. 入口
+# ===========================================================================
+def main(argv=None) -> int:
+    import time
+    ap = argparse.ArgumentParser(description="NIGHT RUNNER: ゾンビのアニメーションとアニメコントローラ")
+    ap.add_argument("--qa", action="store_true", help="確認画像を build_preview/nightrunner/zombie_anim/ に描く")
+    ap.add_argument("--floor", action="store_true", help="床との関係の数字の表を出す")
+    ap.add_argument("--no-write", action="store_true", help="書き出さずに検査だけ")
+    a = ap.parse_args(argv)
+    t0 = time.time()
+    files = build_all()
+    adocs = anim_docs(files)
+    cdocs = ctrl_docs()
+    errs, notes = validate(adocs, cdocs, files)
+    if not a.no_write:
+        for pth in write_all(adocs, cdocs):
+            print(f"  wrote {os.path.relpath(pth, os.path.dirname(TOOLS))} ({os.path.getsize(pth) // 1024} KB)")
+    counts = {k: len(v) for k, v in files.items()}
+    print(f"[{PRODUCER}] clips {counts} / {'; '.join(notes)} / {time.time() - t0:.1f}s")
+    lib = {aid: an for d in adocs.values() for aid, an in d["animations"].items()}
+    if a.floor:
+        print("\n".join(floor_report(files, lib)))
+    if a.qa or PREVIEW:
+        pth = qa_sheet(lib, os.path.join(QA_DIR, "zombie_anim_qa.png"))
+        print(f"  QA: {os.path.relpath(pth, os.path.dirname(TOOLS))}")
+    if errs:
+        print(f"[{PRODUCER}] {len(errs)} error(s):")
+        for e in errs[:80]:
+            print("  NG", e)
+        return 1
+    print(f"[{PRODUCER}] OK")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

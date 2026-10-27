@@ -1,0 +1,1004 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.gib.spin": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "p_arm_l": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 7.09)",
+            0.0
+          ]
+        },
+        "p_arm_r": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 7.1)",
+            0.0
+          ]
+        },
+        "p_bone": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(1.76)",
+            0.0
+          ]
+        },
+        "p_brain": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(1.75)",
+            0.0
+          ]
+        },
+        "p_chunk": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(1.31)",
+            0.0
+          ]
+        },
+        "p_eye": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(1.25)",
+            0.0
+          ]
+        },
+        "p_forearm_l": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 4.2)",
+            0.0
+          ]
+        },
+        "p_forearm_r": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 4.21)",
+            0.0
+          ]
+        },
+        "p_guts": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(2.26)",
+            0.0
+          ]
+        },
+        "p_head": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 2.3)",
+            0.0
+          ]
+        },
+        "p_jaw": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 1.64)",
+            0.0
+          ]
+        },
+        "p_leg_l": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 8.44)",
+            0.0
+          ]
+        },
+        "p_leg_r": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 8.44)",
+            0.0
+          ]
+        },
+        "p_lower": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 9.68)",
+            0.0
+          ]
+        },
+        "p_shin_l": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 4.42)",
+            0.0
+          ]
+        },
+        "p_shin_r": {
+          "rotation": [
+            "(math.mod(q.life_time * v.gsx, 360))",
+            "(math.mod(q.life_time * v.gsy, 360))",
+            "(math.mod(q.life_time * v.gsz, 360))"
+          ],
+          "position": [
+            0.0,
+            "(v.gs * 4.42)",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.gib.rest_0": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "p_arm_l": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.96 : 1.1))",
+            0.0
+          ]
+        },
+        "p_arm_r": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.1 : 0.97))",
+            0.0
+          ]
+        },
+        "p_bone": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 2.11 : 2.3))",
+            0.0
+          ]
+        },
+        "p_brain": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.45 : 1.45))",
+            0.0
+          ]
+        },
+        "p_chunk": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.1 : 1.72))",
+            0.0
+          ]
+        },
+        "p_eye": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 0.55 : 0.55))",
+            0.0
+          ]
+        },
+        "p_forearm_l": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.89 : 0.92))",
+            0.0
+          ]
+        },
+        "p_forearm_r": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.76 : 0.89))",
+            0.0
+          ]
+        },
+        "p_guts": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 2.44 : 2.9))",
+            0.0
+          ]
+        },
+        "p_head": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.75 : 1.75))",
+            0.0
+          ]
+        },
+        "p_jaw": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.37 : 1.37))",
+            0.0
+          ]
+        },
+        "p_leg_l": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.25 : 1.82))",
+            0.0
+          ]
+        },
+        "p_leg_r": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.68 : 1.25))",
+            0.0
+          ]
+        },
+        "p_lower": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 3.06 : 3.06))",
+            0.0
+          ]
+        },
+        "p_shin_l": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.95 : 0.95))",
+            0.0
+          ]
+        },
+        "p_shin_r": {
+          "rotation": [
+            8.0,
+            "(0 + v.gside * 180)",
+            90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.95 : 0.95))",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.gib.rest_1": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "p_arm_l": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.1 : 0.96))",
+            0.0
+          ]
+        },
+        "p_arm_r": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.97 : 1.1))",
+            0.0
+          ]
+        },
+        "p_bone": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 2.3 : 2.11))",
+            0.0
+          ]
+        },
+        "p_brain": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.45 : 1.45))",
+            0.0
+          ]
+        },
+        "p_chunk": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.72 : 1.1))",
+            0.0
+          ]
+        },
+        "p_eye": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 0.55 : 0.55))",
+            0.0
+          ]
+        },
+        "p_forearm_l": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.92 : 0.89))",
+            0.0
+          ]
+        },
+        "p_forearm_r": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.89 : 0.76))",
+            0.0
+          ]
+        },
+        "p_guts": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 2.9 : 2.44))",
+            0.0
+          ]
+        },
+        "p_head": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.75 : 1.75))",
+            0.0
+          ]
+        },
+        "p_jaw": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.37 : 1.37))",
+            0.0
+          ]
+        },
+        "p_leg_l": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.82 : 1.25))",
+            0.0
+          ]
+        },
+        "p_leg_r": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.25 : 1.68))",
+            0.0
+          ]
+        },
+        "p_lower": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 3.06 : 3.06))",
+            0.0
+          ]
+        },
+        "p_shin_l": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.95 : 0.95))",
+            0.0
+          ]
+        },
+        "p_shin_r": {
+          "rotation": [
+            -6.0,
+            "(0 + v.gside * 180)",
+            -90.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.95 : 0.95))",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.gib.rest_2": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "p_arm_l": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.32 : 1.32))",
+            0.0
+          ]
+        },
+        "p_arm_r": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.32 : 1.32))",
+            0.0
+          ]
+        },
+        "p_bone": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 0.45 : 0.45))",
+            0.0
+          ]
+        },
+        "p_brain": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.6 : 1.6))",
+            0.0
+          ]
+        },
+        "p_chunk": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 0.9 : 0.9))",
+            0.0
+          ]
+        },
+        "p_eye": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 0.55 : 0.55))",
+            0.0
+          ]
+        },
+        "p_forearm_l": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.25 : 1.25))",
+            0.0
+          ]
+        },
+        "p_forearm_r": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.25 : 1.25))",
+            0.0
+          ]
+        },
+        "p_guts": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.95 : 1.95))",
+            0.0
+          ]
+        },
+        "p_head": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 2 : 2))",
+            0.0
+          ]
+        },
+        "p_jaw": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.06 : 1.06))",
+            0.0
+          ]
+        },
+        "p_leg_l": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 3.6 : 3.6))",
+            0.0
+          ]
+        },
+        "p_leg_r": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 3.6 : 3.6))",
+            0.0
+          ]
+        },
+        "p_lower": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 3.72 : 3.72))",
+            0.0
+          ]
+        },
+        "p_shin_l": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 3.52 : 3.52))",
+            0.0
+          ]
+        },
+        "p_shin_r": {
+          "rotation": [
+            90.0,
+            "(20 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 3.52 : 3.52))",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.gib.rest_3": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "p_arm_l": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1 : 1))",
+            0.0
+          ]
+        },
+        "p_arm_r": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1 : 1))",
+            0.0
+          ]
+        },
+        "p_bone": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 0.45 : 0.45))",
+            0.0
+          ]
+        },
+        "p_brain": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.8 : 1.8))",
+            0.0
+          ]
+        },
+        "p_chunk": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 0.9 : 0.9))",
+            0.0
+          ]
+        },
+        "p_eye": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 1.64 : 1.64))",
+            0.0
+          ]
+        },
+        "p_forearm_l": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.84 : 0.84))",
+            0.0
+          ]
+        },
+        "p_forearm_r": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 0.84 : 0.84))",
+            0.0
+          ]
+        },
+        "p_guts": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "((v.gside ? 2.4 : 2.4))",
+            0.0
+          ]
+        },
+        "p_head": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 2.22 : 2.22))",
+            0.0
+          ]
+        },
+        "p_jaw": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.36 : 1.36))",
+            0.0
+          ]
+        },
+        "p_leg_l": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.62 : 1.62))",
+            0.0
+          ]
+        },
+        "p_leg_r": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.62 : 1.62))",
+            0.0
+          ]
+        },
+        "p_lower": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 2.32 : 2.32))",
+            0.0
+          ]
+        },
+        "p_shin_l": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.48 : 1.48))",
+            0.0
+          ]
+        },
+        "p_shin_r": {
+          "rotation": [
+            -90.0,
+            "(-30 + v.gside * 180)",
+            0.0
+          ],
+          "position": [
+            0.0,
+            "(v.gs * (v.gside ? 1.48 : 1.48))",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.gib.trail": {
+      "loop": true,
+      "animation_length": 0.12,
+      "particle_effects": {
+        "0.0": {
+          "effect": "trail"
+        }
+      }
+    }
+  }
+}

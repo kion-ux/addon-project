@@ -16,6 +16,7 @@
 | `crafting.js` | `CRAFTING`、`CRAFT_CATEGORIES` |
 | `settings.js` | `SETTINGS_DEFAULTS`、`SETTINGS_SCHEMA`、`PARKOUR_TUNING`、`COMBAT_TUNING`、`GORE_TUNING`、`DIFFICULTY`、`GORE_COMBOS`、`STARTER_KIT`、`LOOT_TABLES`、`DTYPE_OUTCOMES`、`ABILITY_STATES`、`CITY` |
 | `fx.js` | `PARTICLES`（名前の配列）、`SOUNDS`（ID の配列）、`PLAYER_ANIMS`（{名前: 長さ秒}）、`ZOMBIE_ONESHOTS`（{名前: 長さ秒 or null}）、`ZOMBIE_ANIMATIONS`（{key: zombie_animations(z)}）、`VOICE_EVENTS` |
+| `components.js` | `BLOCK_COMPONENTS` / `ITEM_COMPONENTS`（BP のブロック・アイテムの JSON が使うカスタムコンポーネントの名前。名前順）、`BLOCK_COMPONENT_USERS` / `ITEM_COMPONENT_USERS`（{名前: [使うブロック・アイテムの ID…]}）、`UNTICKED_BLOCKS`（{名前: [`minecraft:tick` の無いブロックの ID…]}。そこへ onTick を登録すると実機はコンテンツエラー）。core/components.js が startup で全部登録する |
 
 約束:
 
@@ -49,7 +50,7 @@ import sys
 import types
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from nr_common import DATA_JS, HERE, RP, load_json, read_frags, write_text  # noqa: E402
+from nr_common import BP, DATA_JS, HERE, RP, load_json, read_frags, write_text  # noqa: E402
 import nr_registry as REG  # noqa: E402
 
 PRODUCER = "gen_nr_data_js"
@@ -57,7 +58,7 @@ HEADER = "// このファイルは生成物です（tools/nightrunner/gen_nr_dat
 # 見た目だけの部品（モデラー向け）。スクリプトは使わないので出さない
 VISUAL_ONLY = ("model", "wing_model")
 FILES = ("zombies", "weapons", "items", "mods", "traps", "blocks", "props", "skills", "crafting",
-         "settings", "fx")
+         "settings", "fx", "components")
 
 
 # ---------------------------------------------------------------------------
@@ -221,6 +222,46 @@ def produced_animations() -> dict:
     return out
 
 
+def _custom_names(comps) -> set:
+    """Custom Components V2: 名前空間付き（minecraft: / tag: 以外）のキー。古い minecraft:custom_components の並びも数える。"""
+    if not isinstance(comps, dict):
+        return set()
+    out = {k for k in comps if isinstance(k, str) and ":" in k and not k.startswith(("minecraft:", "tag:"))}
+    legacy = comps.get("minecraft:custom_components")
+    if isinstance(legacy, list):
+        out.update(n for n in legacy if isinstance(n, str))
+    return out
+
+
+def custom_components() -> dict:
+    """BP の blocks/ と items/ の JSON を走査して、使われているカスタムコンポーネントを集める（permutation も）。"""
+    users = {"block": {}, "item": {}}
+    unticked = {}
+    for kind, folder, root in (("block", "blocks", "minecraft:block"), ("item", "items", "minecraft:item")):
+        for p in _json_files(os.path.join(BP, folder)):
+            doc = _safe_load(p)
+            body = doc.get(root) if isinstance(doc, dict) else None
+            if not isinstance(body, dict):
+                continue
+            ident = (body.get("description") or {}).get("identifier")
+            if not isinstance(ident, str):
+                continue
+            base = body.get("components") or {}
+            perms = [pm.get("components") or {} for pm in body.get("permutations") or [] if isinstance(pm, dict)]
+            names = set()
+            for comps in [base] + perms:
+                names |= _custom_names(comps)
+            ticks = any(isinstance(c, dict) and "minecraft:tick" in c for c in [base] + perms)
+            for n in names:
+                users[kind].setdefault(n, set()).add(ident)
+                if kind == "block" and not ticks:
+                    unticked.setdefault(n, set()).add(ident)
+    srt = lambda d: {k: sorted(d[k]) for k in sorted(d)}  # noqa: E731
+    return dict(BLOCK_COMPONENTS=sorted(users["block"]), ITEM_COMPONENTS=sorted(users["item"]),
+                BLOCK_COMPONENT_USERS=srt(users["block"]), ITEM_COMPONENT_USERS=srt(users["item"]),
+                UNTICKED_BLOCKS=srt(unticked))
+
+
 # ---------------------------------------------------------------------------
 #  表を組む
 # ---------------------------------------------------------------------------
@@ -358,6 +399,10 @@ def build(S) -> dict:
         ABILITY_STATES=ability_states,
         CITY=S.CITY,
     ), "ABILITY_STATES[key] = {\"能力.段階\": nr:ability の値}（zombies.js と同じ）")
+    mods["components"] = (custom_components(),
+                          "BP（blocks/ items/）の JSON を走査した結果。core/components.js が system.beforeEvents.startup で全部を登録し、\n"
+                          "各モジュールが onBlockComponent / onItemComponent で足したフックへ配る。UNTICKED_BLOCKS は minecraft:tick の無いブロック\n"
+                          "（そこで使う名前に onTick を登録すると実機はコンテンツエラー）")
     fx, n_extra = fx_tables(S)
     mods["fx"] = (fx, "PARTICLES は名前（ID は nr:<名前>）。登録簿（nr_registry）の ID の後に、作る側が増やした ID を名前順に足す\n"
                       "PLAYER_ANIMS / ZOMBIE_ONESHOTS は {名前: 長さ秒}（animation.nr.p.<名前> / animation.nr.z.<名前>）。"

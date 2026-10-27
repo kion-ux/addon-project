@@ -1,0 +1,501 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.nr.zombie": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "pelvis": "q.property('nr:torso') != 'halved'"
+        },
+        {
+          "leg_r": "q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "shin_r": "q.property('nr:leg_r') != 'cut_lower' && q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "foot_r": "q.property('nr:leg_r') != 'cut_lower' && q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_r_lower": "q.property('nr:leg_r') == 'cut_lower' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_r_upper": "q.property('nr:leg_r') == 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "leg_l": "q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "shin_l": "q.property('nr:leg_l') != 'cut_lower' && q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "foot_l": "q.property('nr:leg_l') != 'cut_lower' && q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_l_lower": "q.property('nr:leg_l') == 'cut_lower' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_l_upper": "q.property('nr:leg_l') == 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "torso_wound": "q.property('nr:torso') != 'intact'"
+        },
+        {
+          "guts": "(q.property('nr:torso') == 'gutted' || q.property('nr:torso') == 'halved')"
+        },
+        {
+          "stump_torso": "q.property('nr:torso') == 'halved'"
+        },
+        {
+          "head": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed'"
+        },
+        {
+          "jaw": "(q.property('nr:head') == 'intact' || q.property('nr:head') == 'wounded' || q.property('nr:head') == 'cracked')"
+        },
+        {
+          "head_wound": "(q.property('nr:head') == 'wounded' || q.property('nr:head') == 'jawless' || q.property('nr:head') == 'cracked')"
+        },
+        {
+          "skull_open": "q.property('nr:head') == 'cracked'"
+        },
+        {
+          "stump_neck": "(q.property('nr:head') == 'severed' || q.property('nr:head') == 'crushed')"
+        },
+        {
+          "arm_r": "q.property('nr:arm_r') != 'cut_upper'"
+        },
+        {
+          "forearm_r": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper'"
+        },
+        {
+          "hand_r": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper'"
+        },
+        {
+          "arm_r_wound": "(q.property('nr:arm_r') == 'wounded' || q.property('nr:arm_r') == 'broken')"
+        },
+        {
+          "stump_arm_r_lower": "q.property('nr:arm_r') == 'cut_lower'"
+        },
+        {
+          "stump_arm_r_upper": "q.property('nr:arm_r') == 'cut_upper'"
+        },
+        {
+          "arm_l": "q.property('nr:arm_l') != 'cut_upper'"
+        },
+        {
+          "forearm_l": "q.property('nr:arm_l') != 'cut_lower' && q.property('nr:arm_l') != 'cut_upper'"
+        },
+        {
+          "hand_l": "q.property('nr:arm_l') != 'cut_lower' && q.property('nr:arm_l') != 'cut_upper'"
+        },
+        {
+          "arm_l_wound": "(q.property('nr:arm_l') == 'wounded' || q.property('nr:arm_l') == 'broken')"
+        },
+        {
+          "stump_arm_l_lower": "q.property('nr:arm_l') == 'cut_lower'"
+        },
+        {
+          "stump_arm_l_upper": "q.property('nr:arm_l') == 'cut_upper'"
+        },
+        {
+          "armor_head": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed' && q.property('nr:armor') >= 1"
+        },
+        {
+          "hat": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed'"
+        },
+        {
+          "armor_chest_2": "q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_belly_2": "q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_arm_r_3": "q.property('nr:arm_r') != 'cut_upper' && q.property('nr:armor') >= 3"
+        },
+        {
+          "armor_forearm_r_3": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper' && q.property('nr:armor') >= 3"
+        },
+        {
+          "armor_leg_r_3": "q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 3"
+        },
+        {
+          "armor_shin_r_3": "q.property('nr:leg_r') != 'cut_lower' && q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 3"
+        },
+        {
+          "armor_arm_l_3": "q.property('nr:arm_l') != 'cut_upper' && q.property('nr:armor') >= 3"
+        },
+        {
+          "armor_forearm_l_3": "q.property('nr:arm_l') != 'cut_lower' && q.property('nr:arm_l') != 'cut_upper' && q.property('nr:armor') >= 3"
+        },
+        {
+          "armor_leg_l_3": "q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 3"
+        },
+        {
+          "armor_shin_l_3": "q.property('nr:leg_l') != 'cut_lower' && q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 3"
+        },
+        {
+          "gear_shield": "q.property('nr:arm_l') != 'cut_lower' && q.property('nr:arm_l') != 'cut_upper' && q.property('nr:armor') >= 1"
+        },
+        {
+          "gear_tank": "q.property('nr:armor') >= 1"
+        },
+        {
+          "held_tool": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper'"
+        },
+        {
+          "gear_flashlight": "q.property('nr:armor') >= 1"
+        },
+        {
+          "glow_head_p30a1": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed' && (math.mod(q.life_time * 3.00, 1.0) < 0.5) && (q.property('nr:ability') == 1)"
+        },
+        {
+          "glow_neck_p30a1": "(math.mod(q.life_time * 3.00, 1.0) < 0.5) && (q.property('nr:ability') == 1)"
+        },
+        {
+          "throat_sac": "q.property('nr:armor') >= 1"
+        },
+        {
+          "acid_sac_neck": "q.property('nr:armor') >= 1"
+        },
+        {
+          "acid_sac_cheeks": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed' && q.property('nr:armor') >= 1"
+        },
+        {
+          "armor_arm_r_2": "q.property('nr:arm_r') != 'cut_upper' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_forearm_r_2": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_arm_l_2": "q.property('nr:arm_l') != 'cut_upper' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_forearm_l_2": "q.property('nr:arm_l') != 'cut_lower' && q.property('nr:arm_l') != 'cut_upper' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_chest": "q.property('nr:armor') >= 1"
+        },
+        {
+          "held_debris": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper' && (q.property('nr:ability') == 1)"
+        },
+        {
+          "glow_chest_p15": "(math.mod(q.life_time * 1.50, 1.0) < 0.5)"
+        },
+        {
+          "glow_torso_p15": "(math.mod(q.life_time * 1.50, 1.0) < 0.5)"
+        },
+        {
+          "glow_neck_p15": "(math.mod(q.life_time * 1.50, 1.0) < 0.5)"
+        },
+        {
+          "glow_head_p15": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed' && (math.mod(q.life_time * 1.50, 1.0) < 0.5)"
+        },
+        {
+          "glow_chest_p15f1x60": "(math.mod(q.life_time * (q.property('nr:ability') == 1 ? 6.00 : 1.50), 1.0) < 0.5)"
+        },
+        {
+          "glow_torso_p15f1x60": "(math.mod(q.life_time * (q.property('nr:ability') == 1 ? 6.00 : 1.50), 1.0) < 0.5)"
+        },
+        {
+          "glow_neck_p15f1x60": "(math.mod(q.life_time * (q.property('nr:ability') == 1 ? 6.00 : 1.50), 1.0) < 0.5)"
+        },
+        {
+          "glow_arm_r_p15f1x60": "q.property('nr:arm_r') != 'cut_upper' && (math.mod(q.life_time * (q.property('nr:ability') == 1 ? 6.00 : 1.50), 1.0) < 0.5)"
+        },
+        {
+          "glow_arm_l_p15f1x60": "q.property('nr:arm_l') != 'cut_upper' && (math.mod(q.life_time * (q.property('nr:ability') == 1 ? 6.00 : 1.50), 1.0) < 0.5)"
+        },
+        {
+          "glow_forearm_r_p15f1x60": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper' && (math.mod(q.life_time * (q.property('nr:ability') == 1 ? 6.00 : 1.50), 1.0) < 0.5)"
+        },
+        {
+          "glow_neck_p5": "(math.mod(q.life_time * 0.50, 1.0) < 0.5)"
+        },
+        {
+          "tendrils_mouth": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed'"
+        },
+        {
+          "armor_leg_r_2": "q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_shin_r_2": "q.property('nr:leg_r') != 'cut_lower' && q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_leg_l_2": "q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_shin_l_2": "q.property('nr:leg_l') != 'cut_lower' && q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 2"
+        },
+        {
+          "armor_pelvis": "q.property('nr:torso') != 'halved' && q.property('nr:armor') >= 1"
+        },
+        {
+          "armor_belly": "q.property('nr:armor') >= 1"
+        },
+        {
+          "glow_head_p20": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed' && (math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_neck_p20": "(math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_chest_p20": "(math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_torso_p20": "(math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_arm_r_p20": "q.property('nr:arm_r') != 'cut_upper' && (math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_arm_l_p20": "q.property('nr:arm_l') != 'cut_upper' && (math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_leg_r_p20": "q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved' && (math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_leg_l_p20": "q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved' && (math.mod(q.life_time * 2.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_chest_p6a1": "(math.mod(q.life_time * 0.60, 1.0) < 0.5) && (q.property('nr:ability') == 1)"
+        },
+        {
+          "extra_head_1": "q.property('nr:armor') >= 1"
+        },
+        {
+          "extra_head_2": "q.property('nr:armor') >= 2"
+        },
+        {
+          "extra_head_3": "q.property('nr:armor') >= 3"
+        },
+        {
+          "spawn_sac": "(q.property('nr:ability') != 2)"
+        },
+        {
+          "glow_head_p10": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed' && (math.mod(q.life_time * 1.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_neck_p10": "(math.mod(q.life_time * 1.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_chest_p10": "(math.mod(q.life_time * 1.00, 1.0) < 0.5)"
+        },
+        {
+          "glow_neck_p12": "(math.mod(q.life_time * 1.20, 1.0) < 0.5)"
+        },
+        {
+          "glow_chest_p12": "(math.mod(q.life_time * 1.20, 1.0) < 0.5)"
+        },
+        {
+          "glow_torso_p12": "(math.mod(q.life_time * 1.20, 1.0) < 0.5)"
+        },
+        {
+          "glow_arm_r_p12": "q.property('nr:arm_r') != 'cut_upper' && (math.mod(q.life_time * 1.20, 1.0) < 0.5)"
+        },
+        {
+          "glow_arm_l_p12": "q.property('nr:arm_l') != 'cut_upper' && (math.mod(q.life_time * 1.20, 1.0) < 0.5)"
+        },
+        {
+          "glow_neck_p60a2": "(math.mod(q.life_time * 6.00, 1.0) < 0.5) && (q.property('nr:ability') == 2)"
+        }
+      ],
+      "overlay_color": {
+        "r": "q.property('nr:shock') > 0 ? 0.62 : (q.property('nr:burn') > 0 ? 0.06 : this)",
+        "g": "q.property('nr:shock') > 0 ? 0.82 : (q.property('nr:burn') > 0 ? 0.05 : this)",
+        "b": "q.property('nr:shock') > 0 ? 1.0 : (q.property('nr:burn') > 0 ? 0.04 : this)",
+        "a": "q.property('nr:shock') > 0 ? (math.sin(q.life_time * 2400.0) > 0.0 ? 0.55 : 0.12) : (q.property('nr:burn') > 0 ? q.property('nr:burn') * 0.22 : this)"
+      },
+      "is_hurt_color": {
+        "r": 0.72,
+        "g": 0.04,
+        "b": 0.03,
+        "a": 0.55
+      }
+    },
+    "controller.render.nr.gib": {
+      "arrays": {
+        "geometries": {
+          "Array.geos": [
+            "Geometry.z_office_worker",
+            "Geometry.z_office_clerk",
+            "Geometry.z_construction_worker",
+            "Geometry.z_nurse",
+            "Geometry.z_patient",
+            "Geometry.z_police_officer",
+            "Geometry.z_riot_police",
+            "Geometry.z_firefighter",
+            "Geometry.z_hazmat_worker",
+            "Geometry.z_soldier",
+            "Geometry.z_line_cook",
+            "Geometry.z_mechanic",
+            "Geometry.z_jogger",
+            "Geometry.z_drifter",
+            "Geometry.z_bride",
+            "Geometry.z_convict",
+            "Geometry.z_security_guard",
+            "Geometry.z_surgeon",
+            "Geometry.z_punk",
+            "Geometry.z_elder",
+            "Geometry.z_charred",
+            "Geometry.z_drowned",
+            "Geometry.z_crawler",
+            "Geometry.z_delivery_rider",
+            "Geometry.z_sprinter",
+            "Geometry.z_leaper",
+            "Geometry.z_wallcrawler",
+            "Geometry.z_brawler",
+            "Geometry.z_rooftop_runner",
+            "Geometry.z_berserker",
+            "Geometry.z_deadfaker",
+            "Geometry.z_skitter",
+            "Geometry.z_klaxon",
+            "Geometry.z_spewer",
+            "Geometry.z_bruiser",
+            "Geometry.z_wrecker",
+            "Geometry.z_gasbag",
+            "Geometry.z_ticker",
+            "Geometry.z_rammer",
+            "Geometry.z_keener",
+            "Geometry.z_reanimator",
+            "Geometry.z_juggernaut",
+            "Geometry.z_longarm",
+            "Geometry.z_volatile",
+            "Geometry.z_shade_stalker",
+            "Geometry.z_cinder_hunter",
+            "Geometry.z_hive_warden",
+            "Geometry.z_flesh_colossus",
+            "Geometry.z_subject_zero",
+            "Geometry.z_night_apex"
+          ]
+        },
+        "textures": {
+          "Array.skins": [
+            "Texture.z_office_worker",
+            "Texture.z_office_clerk",
+            "Texture.z_construction_worker",
+            "Texture.z_nurse",
+            "Texture.z_patient",
+            "Texture.z_police_officer",
+            "Texture.z_riot_police",
+            "Texture.z_firefighter",
+            "Texture.z_hazmat_worker",
+            "Texture.z_soldier",
+            "Texture.z_line_cook",
+            "Texture.z_mechanic",
+            "Texture.z_jogger",
+            "Texture.z_drifter",
+            "Texture.z_bride",
+            "Texture.z_convict",
+            "Texture.z_security_guard",
+            "Texture.z_surgeon",
+            "Texture.z_punk",
+            "Texture.z_elder",
+            "Texture.z_charred",
+            "Texture.z_drowned",
+            "Texture.z_crawler",
+            "Texture.z_delivery_rider",
+            "Texture.z_sprinter",
+            "Texture.z_leaper",
+            "Texture.z_wallcrawler",
+            "Texture.z_brawler",
+            "Texture.z_rooftop_runner",
+            "Texture.z_berserker",
+            "Texture.z_deadfaker",
+            "Texture.z_skitter",
+            "Texture.z_klaxon",
+            "Texture.z_spewer",
+            "Texture.z_bruiser",
+            "Texture.z_wrecker",
+            "Texture.z_gasbag",
+            "Texture.z_ticker",
+            "Texture.z_rammer",
+            "Texture.z_keener",
+            "Texture.z_reanimator",
+            "Texture.z_juggernaut",
+            "Texture.z_longarm",
+            "Texture.z_volatile",
+            "Texture.z_shade_stalker",
+            "Texture.z_cinder_hunter",
+            "Texture.z_hive_warden",
+            "Texture.z_flesh_colossus",
+            "Texture.z_subject_zero",
+            "Texture.z_night_apex"
+          ]
+        }
+      },
+      "geometry": "(q.property('nr:part') > 10 || q.property('nr:ztype') >= 50) ? Geometry.generic : Array.geos[q.property('nr:ztype')]",
+      "materials": [
+        {
+          "*": "(q.property('nr:part') > 10 || q.property('nr:ztype') >= 50) ? Material.generic : Material.default"
+        }
+      ],
+      "textures": [
+        "(q.property('nr:part') > 10 || q.property('nr:ztype') >= 50) ? Texture.generic : Array.skins[q.property('nr:ztype')]"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "p_head": "q.property('nr:part') == 0"
+        },
+        {
+          "p_jaw": "q.property('nr:part') == 1"
+        },
+        {
+          "p_arm_r": "q.property('nr:part') == 2"
+        },
+        {
+          "p_arm_l": "q.property('nr:part') == 3"
+        },
+        {
+          "p_forearm_r": "q.property('nr:part') == 4"
+        },
+        {
+          "p_forearm_l": "q.property('nr:part') == 5"
+        },
+        {
+          "p_leg_r": "q.property('nr:part') == 6"
+        },
+        {
+          "p_leg_l": "q.property('nr:part') == 7"
+        },
+        {
+          "p_shin_r": "q.property('nr:part') == 8"
+        },
+        {
+          "p_shin_l": "q.property('nr:part') == 9"
+        },
+        {
+          "p_lower": "q.property('nr:part') == 10"
+        },
+        {
+          "p_guts": "q.property('nr:part') == 11"
+        },
+        {
+          "p_brain": "q.property('nr:part') == 12"
+        },
+        {
+          "p_chunk": "q.property('nr:part') == 13"
+        },
+        {
+          "p_bone": "q.property('nr:part') == 14"
+        },
+        {
+          "p_eye": "q.property('nr:part') == 15"
+        }
+      ]
+    }
+  }
+}

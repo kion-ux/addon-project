@@ -25,7 +25,9 @@
 * `gen_nr_entities`: ゾンビ・gib・小道具のジオメトリとアニメ ID（zombies / zombie_anim / props）と、
   飛び道具・パーティクル（weapons / items / particles）を参照するので、それらの後
 * `gen_nr_data_js`: `gen_nr_zombies` の当たり箱（zombie_shapes.js）と同じリグ寸法を使うので zombies の後、
-  エンティティの ID 表を作るので entities の後
+  エンティティの ID 表を作るので entities の後。BP のブロック・アイテムの JSON を走査して `components.js`
+  （カスタムコンポーネントの名前）を、RP の演出を走査して `fx.js` を書くので blocks / weapons / items /
+  sounds / player_anim / zombie_anim / particles の後
 * `gen_nr_packs`: 全部の断片をまとめるので**全部の後**
 """
 from __future__ import annotations
@@ -62,7 +64,10 @@ STEPS = [
 DEPENDS = {
     "gen_nr_entities.py": ["gen_nr_zombies.py", "gen_nr_zombie_anim.py", "gen_nr_props.py",
                            "gen_nr_weapons.py", "gen_nr_items.py", "gen_nr_particles.py"],
-    "gen_nr_data_js.py": ["gen_nr_zombies.py", "gen_nr_entities.py"],
+    # data_js は BP のブロック・アイテム（components.js のカスタムコンポーネント）と RP の演出（fx.js）も走査する
+    "gen_nr_data_js.py": ["gen_nr_zombies.py", "gen_nr_entities.py", "gen_nr_blocks.py", "gen_nr_weapons.py",
+                          "gen_nr_items.py", "gen_nr_sounds.py", "gen_nr_player_anim.py", "gen_nr_zombie_anim.py",
+                          "gen_nr_particles.py"],
     "gen_nr_packs.py": [s for s in STEPS if s != "gen_nr_packs.py"],
 }
 VERIFY = ["test_nr.py", "check_nr_types.py", "validate_nr.py"]

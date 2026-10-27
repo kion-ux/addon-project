@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:proj_throwing_knife",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/nr/proj/throwing_knife"
+      },
+      "geometry": {
+        "default": "geometry.nr.proj.throwing_knife"
+      },
+      "animations": {
+        "fly": "animation.nr.proj.throwing_knife"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.nr_mv = (q.ground_speed + math.abs(q.vertical_speed)) > 0.3;",
+          "t.dx = q.movement_direction(0);",
+          "t.dy = q.movement_direction(1);",
+          "t.dz = q.movement_direction(2);",
+          "v.nr_yaw = (v.nr_mv && (t.dx * t.dx + t.dz * t.dz) > 0.0001) ? math.atan2(-t.dx, t.dz) : (v.nr_yaw ?? q.body_y_rotation);",
+          "v.nr_pitch = v.nr_mv ? -math.asin(math.clamp(t.dy, -1.0, 1.0)) : (v.nr_pitch ?? 0.0);",
+          "v.nr_spin = v.nr_mv ? math.mod((v.nr_spin ?? 0.0) + q.delta_time * 1080, 360.0) : 0.0;"
+        ],
+        "animate": [
+          "fly"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.proj"
+      ]
+    }
+  }
+}

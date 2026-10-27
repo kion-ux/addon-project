@@ -1,0 +1,190 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.proj.arrow": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.bolt": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.throwing_knife": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            "v.nr_spin",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.throwing_star": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            0.0,
+            "v.nr_spin",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.molotov": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            "v.nr_spin",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.pipe_bomb": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            "v.nr_spin",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.firecracker": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            "v.nr_spin",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.uv_flare": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            "v.nr_spin",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.spit": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            "v.nr_spin",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.debris": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "v.nr_pitch",
+            "q.body_y_rotation - v.nr_yaw",
+            0.0
+          ]
+        },
+        "root": {
+          "rotation": [
+            "v.nr_spin",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.nr.proj.trail": {
+      "loop": true,
+      "animation_length": 0.1,
+      "particle_effects": {
+        "0.0": {
+          "effect": "trail"
+        }
+      }
+    }
+  }
+}

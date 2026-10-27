@@ -25,6 +25,19 @@
 "guts" "brain" "blood" "blood_dry" "eye" "hair" "nail" だけを使う。顔は頭の顔板（face plate）の north 面に
 "face" デカール。顎が別ボーンなので顔板は「生え際〜上唇」までで、目・鼻・口の位置を正規化座標
 （eye_v / eye_dx / brow_v / nose_v / mouth_v、v は上端 0 → 下端 1、u は左端 0 → 右端 1）で渡す。
+
+* 目は顔デカールが描く（3D の目玉キューブは体に置かない）。顔の裂傷（head_wound）の眼窩と、視神経で
+  垂れた目玉は、顔デカールの左目の位置（eye_gap / eye_v）から計算して描いた目を覆うので、目が 2 つ
+  重なって見えることはない。目の無い種類（eyes = none）は眼窩だけ。"eye" のスタイルは顔と同じ種類で塗る
+  （zombie_styles(..., eyes=build["eyes"])。光る目なら垂れた目玉も光る）。
+* 断面（手足・首・胴の切り口の円板）は cut_flesh に nr_paint の "section" デカールを面ごとに付ける:
+  手足は骨 1 本、首は頸椎（背中側）・気管（前）、胴は腰椎（背中側）と腸の輪切り。ファイル座標の面の
+  向き（up の v は -Z へ、down の v は +Z へ）で背中側を決める。gib の切り口は stump の矩形を上下入れ替えて
+  借りるので、v を反転（負の uv_size）して前後を保つ。
+* 体の血は少なめ（zombie_styles の既定）。血は傷・断面・口元に任せる（無傷の体が血のそばかすに見えない）。
+* 自己検査（python3 tools/nightrunner/nr_rig.py）: ジオメトリは nr_common.write_geometry（1.16.0）で書き、
+  確認画像は nr_preview（統合版と同じ面の対応）で描く。最後に build_preview/nightrunner/foundation_check.png
+  （2 体 × 6 状態と gib）を作る。--foundation でそれだけ、--no-render で画像なし。
 """
 from __future__ import annotations
 
@@ -196,7 +209,7 @@ UV_HAND = 5.0
 UV_HEAD = 7.0
 UV_FACE = 12.0
 UV_GORE = 3.6
-UV_CAP = 5.5
+UV_CAP = 8.0            # 断面（首・胴・手足の切り口）は輪切りの絵が読めるよう細かく
 UV_FINE = 6.0            # 爪などの細かい部品
 REF_T = 176 * PX_PER_CM  # 基準の身長（単位）
 CAP_DEPTH = 0.30         # 断面の円板が切り口から外へ出る厚み（側面に裂けた肉の輪が見える）
@@ -204,6 +217,14 @@ ARM_ABDUCT = 5.0         # 腕の休みの外転（度）
 # 手足の断面ボーンの休みの回転: 切り口（下向き）を前へ 14° 向け、正面の目の高さから見える
 # ようにする（負の rx で下面が前を向く）。切り株の箱は逆に回して元の位置に残す
 STUMP_TILT = (-14.0, 0, 0)
+
+
+
+def section_decal(faces=("down",), **params) -> Dict[str, dict]:
+    """断面デカール（nr_paint の "section"）を面ごとに置く辞書。nr_paint.section_decal と同じ形
+    （nr_rig を nr_paint 無しでも読めるように、ここにも同じものを置く）。"""
+    return {f: dict(params, name="section") for f in faces}
+
 
 # ---------------------------------------------------------------------------
 # 回転の数学（hd_space.py と同じ規則。依存を増やさないためここに置く）
@@ -719,8 +740,11 @@ class ZombieRig:
         jaw_face = {k: face[k] for k in ("eyes", "mouth", "decay", "gore") if k in face}
         jaw_face.update({"name": "face", "region": "jaw", "mouth_v": -0.03})
         self.jaw_decal = jaw_face
-        self.box("head", -0.40 * w, bot, -0.50 * d, 0.40 * w, top, -0.18 * d, "skin",
-                 uv=self.U["face"], decals={"north": face}, seg="face")
+        plate = self.box("head", -0.40 * w, bot, -0.50 * d, 0.40 * w, top, -0.18 * d, "skin",
+                         uv=self.U["face"], decals={"north": face}, seg="face")
+        # 顔板の寸法（目の位置を 3D の部品 = 顔の裂傷の眼窩と目玉 に合わせるため）
+        self.face_plate = dict(x0=-0.40 * w, x1=0.40 * w, bot=bot, top=top, z=-0.50 * d,
+                               scale=float(plate.uv_scale or self.U["face"]))
         # 頬骨・咬筋・眉弓
         for sgn in (-1, 1):
             self.box("head", sgn * 0.30 * w, c + 0.385 * H, -0.53 * d, sgn * 0.47 * w,
@@ -987,13 +1011,15 @@ class ZombieRig:
         U = self.U
         # 断面の円板（下へ少し出す。下面が見える面）
         th = CAP_DEPTH
-        self.box(bone, cx - rx * 1.01, cy - th, cz - rz * 1.01, cx + rx * 1.01, cy + 0.12,
-                 cz + rz * 1.01, "cut_flesh", uv=U["cap"], role="cap")
-        # 骨（上腕骨・大腿骨）: 断面に描かれた骨の位置（中心）から突き出す
         br = min(rx, rz) * 0.30
+        # 下面（見える切り口）に皮膚の縁・脂肪・筋肉・骨の輪切り（nr_paint の section デカール）
+        sec = section_decal(("down",), kind="limb", bone_at=(0.5, 0.5), bone_r=round(br / (min(rx, rz) * 1.01), 3))
+        self.box(bone, cx - rx * 1.01, cy - th, cz - rz * 1.01, cx + rx * 1.01, cy + 0.12,
+                 cz + rz * 1.01, "cut_flesh", uv=U["cap"], role="cap", decals=sec)
+        # 骨（上腕骨・大腿骨）: 断面に描かれた骨の位置（中心）から突き出す
         bl = 0.22 + min(rx, rz) * 0.50
         self.box(bone, cx - br, cy - th - bl, cz - br, cx + br, cy - 0.02, cz + br, "bone",
-                 uv=U["cap"], role="bone")
+                 uv=U["gore"], role="bone")
         # めくれた皮（外側）
         flen = 0.35 + min(rx, rz) * 0.5
         self.beam(bone, (cx + out * rx * 0.92, cy + 0.02, cz - rz * 0.1),
@@ -1029,14 +1055,23 @@ class ZombieRig:
         U = self.U
         rx, rz = nw / 2, nd / 2
         top = y + CAP_DEPTH * 0.8
-        self.box(b, -rx * 1.01, y - 0.12, nz - rz * 1.01, rx * 1.01, top, nz + rz * 1.01,
-                 "cut_flesh", uv=U["cap"], role="cap")
+        # 上面（見える切り口）: up 面の v は -Z へ増える（v=0 が背中側）。頸椎は後ろ、気管は前
+        z0, z1 = nz - rz * 1.01, nz + rz * 1.01
+
+        def v_up(z):
+            return round((z1 - z) / (z1 - z0), 3)
+
+        sec = section_decal(("up",), kind="neck", bone_at=(0.5, v_up(nz + 0.26 * nd)),
+                            trachea_at=(0.5, v_up(nz - 0.33 * nd)),
+                            bone_r=round(0.15 * nw / (min(rx, rz) * 1.01), 3))
+        self.box(b, -rx * 1.01, y - 0.12, z0, rx * 1.01, top, z1,
+                 "cut_flesh", uv=U["cap"], role="cap", decals=sec)
         # 頸椎（後ろ寄りに突き出す）
         self.box(b, -0.16 * nw, y - 0.05, nz + 0.12 * nd, 0.16 * nw, top + 0.36, nz + 0.40 * nd,
-                 "bone", uv=U["cap"], role="bone")
+                 "bone", uv=U["gore"], role="bone")
         # 気管（前。軟骨の輪＝歯茎色の管）
         self.box(b, -0.15 * nw, y - 0.05, nz - 0.46 * nd, 0.15 * nw, top + 0.18, nz - 0.20 * nd,
-                 "gums", uv=U["cap"], role="chunk")
+                 "gums", uv=U["gore"], role="chunk")
         # めくれた皮（左右へ）
         for sgn in ((-1, 1) if self.detail >= 2 else (-1,)):
             self.beam(b, (sgn * rx * 0.92, y + 0.06, nz - rz * 0.1),
@@ -1050,8 +1085,8 @@ class ZombieRig:
             xo = xx if k == 0 else nw / 2 + 0.03
             self.box(b, xo - 0.07, y - ln, zf - 0.06, xo + 0.07, y + 0.02, zf + 0.06, "blood",
                      uv=U["gore"], role="drip")
-        # 血だまり（断面の上の薄い膜）
-        self.box(b, -rx * 0.6, top, nz - rz * 0.55, rx * 0.5, top + 0.04, nz + rz * 0.1,
+        # 血だまり（断面の前の縁に溜まった薄い膜。断面の絵＝筋肉・気管を隠さない小ささ）
+        self.box(b, -rx * 0.55, top, nz - rz * 0.98, rx * 0.1, top + 0.04, nz - rz * 0.62,
                  "blood", uv=U["gore"], role="pool")
         self.cuts[b] = dict(part="head", centre=(0, y, nz), rx=rx, rz=rz, facing=1, stub=None)
 
@@ -1069,16 +1104,29 @@ class ZombieRig:
                  "teeth", uv=U["face"], role="teeth")
         self.beam(b, (-0.42 * w, c + 0.24 * H, -0.545 * d), (-0.47 * w, c + 0.06 * H, -0.58 * d),
                   0.09 * w, 0.04 * d, "cut_flesh", uv=U["head"], role="flap")
-        # 空っぽの左の眼窩と、視神経でぶら下がる目玉（顔デカールの目の位置）
-        ex, ey = 0.20 * w, c + 0.52 * H
-        self.box(b, ex - 0.09 * w, ey - 0.045 * H, -0.505 * d, ex + 0.09 * w, ey + 0.045 * H,
-                 -0.45 * d, "blood_dry", uv=U["face"], role="socket")
-        eb = 0.065 * w
-        eyc = np.array([ex + 0.02 * w, c + 0.35 * H, -0.60 * d])
-        self.beam(b, (ex, ey - 0.02 * H, -0.52 * d), eyc + np.array([0, eb, 0]), 0.03 * w,
-                  0.03 * w, "flesh", uv=U["head"], role="nerve")
-        self.box(b, eyc[0] - eb, eyc[1] - eb, eyc[2] - eb, eyc[0] + eb, eyc[1] + eb,
-                 eyc[2] + eb, "eye", uv=U["face"], role="eyeball")
+        # 空っぽの左の眼窩と、視神経でぶら下がる目玉。位置は顔デカールの左目（u = 0.5 + eye_gap、
+        # v = eye_v）から計算するので、顔の部品の位置を変えても「描いた目」と「眼窩」がずれて
+        # 目が 2 つ見えることはない。眼窩は描いた目（＋瞼）より一回り大きく、顔板から少し浮かせる。
+        # 目の無い種類（eyes = none）は眼窩だけ（ぶら下がる目玉は無い）
+        fd, fp = self.face_decal, self.face_plate
+        pw, ph = fp["x1"] - fp["x0"], fp["top"] - fp["bot"]
+        gap = float(fd.get("eye_gap", fd.get("eye_dx", 0.25)))
+        ex = fp["x0"] + (0.5 + gap) * pw
+        ey = fp["top"] - float(fd.get("eye_v", 0.52)) * ph
+        sc = fp["scale"]
+        glow = str(fd.get("eyes", "clouded")).startswith("glowing")
+        ehw = max(1.6, pw * sc * (0.064 if glow else 0.075)) / sc      # nr_paint の目の半幅（単位）
+        ehh = max(0.7, ph * sc * 0.03) / sc
+        sx_, sy_ = max(0.09 * w, ehw * 1.45 + 1.0 / sc), max(0.045 * H, ehh * 2.6 + 1.0 / sc)
+        self.box(b, ex - sx_, ey - sy_, fp["z"] - 0.012 * d, ex + sx_, ey + sy_, fp["z"] + 0.05 * d,
+                 "blood_dry", uv=U["face"], role="socket")
+        if fd.get("eyes", "clouded") != "none":
+            eb = 0.065 * w
+            eyc = np.array([ex + 0.02 * w, ey - 0.17 * H, -0.60 * d])
+            self.beam(b, (ex, ey - 0.02 * H, fp["z"] - 0.02 * d), eyc + np.array([0, eb, 0]),
+                      0.03 * w, 0.03 * w, "flesh", uv=U["head"], role="nerve")
+            self.box(b, eyc[0] - eb, eyc[1] - eb, eyc[2] - eb, eyc[0] + eb, eyc[1] + eb,
+                     eyc[2] + eb, "eye", uv=U["face"], role="eyeball")
         # 上顎から垂れた肉（顎があると下顎の中に隠れる）
         strips = ((-0.15 * w, 0.17), (0.17 * w, 0.15)) if self.detail >= 2 else ((0.0, 0.15),)
         for xx, ln in strips:
@@ -1117,7 +1165,8 @@ class ZombieRig:
                      -0.495 * d, "blood", uv=U["head"], role="drip")
 
     def _arm_wound(self, s: str) -> None:
-        """腕の傷: 上腕外側の噛み傷（抉れた肉）・肘の上の開放骨折の骨・流れる血。"""
+        """腕の傷（wounded / broken で表示）: 上腕外側の噛みちぎられた穴（皮膚の縁・脂肪・筋肉の
+        断面の絵）・肘の上の開放骨折（前の裂けた穴から突き出た上腕骨と骨片）・肘へ流れる血。"""
         L = self.L
         sgn = -1 if s == "r" else 1
         ax, at = sgn * L.arm_x, L.arm_t
@@ -1125,14 +1174,30 @@ class ZombieRig:
         ul = sy - ey
         b = f"arm_{s}_wound"
         U = self.U
+        # 体の外側の面: ファイル座標では右腕（-X）の外は east、左腕（+X）の外は west（DESIGN §13）
+        out_face = "east" if sgn < 0 else "west"
         x_out = ax + sgn * 0.46 * at
-        self.box(b, x_out - sgn * 0.06, ey + 0.35 * ul, -0.36 * at, x_out + sgn * 0.08,
-                 ey + 0.62 * ul, 0.22 * at, "cut_flesh", uv=U["gore"], role="cap")
-        self.beam(b, (ax, ey + 0.10 * at, -0.15 * at),
-                  (ax + sgn * 0.12 * at, ey + 0.65 * at, -0.80 * at), 0.20 * at, 0.20 * at,
-                  "bone", uv=U["gore"], role="bone")
+        self.box(b, x_out - sgn * 0.05, ey + 0.30 * ul, -0.34 * at, x_out + sgn * 0.06,
+                 ey + 0.66 * ul, 0.26 * at, "cut_flesh", uv=U["cap"], role="cap",
+                 decals=section_decal((out_face,), kind="plain", fat=0.68, skin=0.84))
+        # 開放骨折: 力こぶの前の面に裂けた穴（断面の絵）、そこから折れた骨が前下へ突き出す
+        zf = -0.58 * at
+        hy = ey + 0.68 * at
+        self.box(b, ax - 0.30 * at, hy - 0.28 * at, zf - 0.04, ax + 0.30 * at, hy + 0.28 * at,
+                 zf + 0.10, "cut_flesh", uv=U["cap"], role="hole",
+                 decals=section_decal(("north",), kind="plain", fat=0.64, skin=0.82))
+        self.beam(b, (ax, ey + 0.35 * at, -0.10 * at), (ax + sgn * 0.10 * at, ey + 0.98 * at, -1.02 * at),
+                  0.24 * at, 0.22 * at, "bone", uv=U["gore"], role="bone")
+        if self.detail >= 2:
+            # 縦に割れた骨片
+            self.beam(b, (ax + sgn * 0.05 * at, hy - 0.10 * at, -0.50 * at),
+                      (ax - sgn * 0.14 * at, hy + 0.30 * at, -0.92 * at), 0.10 * at, 0.09 * at,
+                      "bone", uv=U["gore"], role="shard")
+        # 流れる血（外側の穴から肘へ・前の穴から下へ）
         self.box(b, x_out - 0.05, ey + 0.05 * ul, -0.20 * at - 0.05, x_out + 0.05 + sgn * 0.02,
                  ey + 0.36 * ul, -0.20 * at + 0.05, "blood", uv=U["gore"], role="drip")
+        self.box(b, ax - 0.05 * at - 0.05, ey + 0.10 * at, zf - 0.06, ax - 0.05 * at + 0.05,
+                 hy - 0.20 * at, zf + 0.02, "blood", uv=U["gore"], role="drip")
 
     def _belly_front(self) -> float:
         L = self.L
@@ -1209,12 +1274,16 @@ class ZombieRig:
         b = "stump_torso"
         U = self.U
         rx, rz = 0.5 * ww, 0.5 * wd
+        # 下面（見える切り口）: down 面の v は +Z へ増える（v=1 が背中側）。腰椎は後ろ、前は腸
+        sec = section_decal(("down",), kind="torso",
+                            bone_at=(0.5, round((0.35 * wd + rz * 1.01) / (2.02 * rz), 3)),
+                            bone_r=round(0.085 * ww / (min(rx, rz) * 1.01), 3))
         self.box(b, -rx * 1.01, ab - CAP_DEPTH, -rz * 1.01, rx * 1.01, ab + 0.12, rz * 1.01,
-                 "cut_flesh", uv=U["cap"], role="cap")
+                 "cut_flesh", uv=U["cap"], role="cap", decals=sec)
         self.box(b, -0.08 * ww, ab - 0.030 * t, 0.26 * wd, 0.08 * ww, ab - 0.05, 0.44 * wd,
-                 "bone", uv=U["cap"], role="bone")
+                 "bone", uv=U["gore"], role="bone")
         self.box(b, -0.06 * ww, ab - 0.050 * t, 0.29 * wd, 0.06 * ww, ab - 0.028 * t, 0.41 * wd,
-                 "bone", uv=U["cap"], role="bone2")
+                 "bone", uv=U["gore"], role="bone2")
         g = 0.030 * t
         chain = [(-0.18 * ww, ab - 0.05, -0.15 * wd), (-0.22 * ww, ab - 0.06 * t, -0.25 * wd),
                  (-0.10 * ww, ab - 0.10 * t, -0.10 * wd)]
@@ -1616,16 +1685,36 @@ def _shift(cube: Cube, d) -> None:
         cube.pivot = [round(cube.pivot[i] + float(d[i]), 3) + 0.0 for i in range(3)]
 
 
+def _flip_v(r):
+    """面の矩形 (u, v, du, dv) の上下を反転（負の uv_size）。"""
+    u, v, du, dv = r
+    return (u, v + dv, du, -dv)
+
+
+def rect_key(r):
+    """反転した矩形も元の矩形と同じものとして比べるための正規形。"""
+    u, v, du, dv = r
+    if du < 0:
+        u, du = u + du, -du
+    if dv < 0:
+        v, dv = v + dv, -dv
+    return (u, v, du, dv)
+
+
 def _fixed_cube(origin, size, src: Cube, style: Optional[str] = None,
                 swap_ud: bool = False, rotation=None, pivot=None) -> Cube:
-    """src の UV（各面の矩形）を借りた新しいキューブ。swap_ud で上面と下面の矩形を入れ替える。"""
+    """src の UV（各面の矩形）を借りた新しいキューブ。swap_ud で上面と下面の矩形を入れ替える。
+
+    入れ替えた矩形は v を反転する（負の uv_size）: up 面の v は -Z へ、down 面の v は +Z へ増えるので、
+    そのまま貼ると前後が逆になる（首の断面の頸椎が gib の頭では前に来てしまう）。反転すると
+    断面の絵の前後（背骨は背中側）がモデル空間で元と同じ向きに保たれる。"""
     c = Cube(origin, size, style or src.style, uv_scale=src.uv_scale, rotation=rotation,
              pivot=pivot)
     c.fixed = True
     c.uv = list(src.uv) if src.uv else [0, 0]
     c.rects = dict(src.rects)
     if swap_ud:
-        c.rects["up"], c.rects["down"] = src.rects["down"], src.rects["up"]
+        c.rects["up"], c.rects["down"] = _flip_v(src.rects["down"]), _flip_v(src.rects["up"])
     c._scale = src._scale
     return c
 
@@ -1757,7 +1846,8 @@ def extract_gibs(model: Model, key: str, uv_check: bool = True) -> Model:
       （中のボーンの回転はキューブの回転に合成する）。
     * 部位の重心（体積の重み付き）が原点に来るように平行移動する。p_* の pivot は (0,0,0)。
     * 切り口に断面（円板・骨・髄・皮・血）を足す。UV は対応する stump のキューブから借りるので、
-      テクスチャはゾンビと同じアトラス。全キューブの面ごとの UV は元のまま保つ。
+      テクスチャはゾンビと同じアトラス。全キューブの面ごとの UV は元のまま保つ（切り口の向きが stump と
+      逆のときだけ、上下の面の矩形を入れ替えて v を反転する = 断面の背骨が背中側に来る。rect_key で比べる）。
     * 返すモデルの `gib_info[p] = {"half": [x,y,z] 単位, "src": [r,u,f] ブロック, "cubes": n}`。
       half は原点からの箱の半分の大きさ（寝姿で地面から浮かせる量）、src は本体での重心の位置
       （gib を出す場所）。
@@ -1955,14 +2045,17 @@ def _fallback_paint(model: Model, seed: int = 1):
     return Image.fromarray(img, "RGBA")
 
 
-def _paint(model: Model, build: dict, seed: int, blood: float = 0.4):
+def _paint(model: Model, build: dict, seed: int, blood: Optional[float] = None):
+    """自己検査用の塗り。体の血は zombie_styles の既定（少なめ）。血は傷・断面に任せる。
+    顔デカールの eyes と同じ目の種類で "eye"（垂れた目玉）を塗る。"""
     try:
         import nr_paint  # type: ignore
-        styles = nr_paint.zombie_styles(GENERIC_TONE, int(build.get("decay", 2)),
-                                        build.get("eyes", "clouded"), blood=blood)
-        return nr_paint.paint_model(model, styles, seed), "nr_paint"
     except ImportError:
         return _fallback_paint(model, seed), "fallback"
+    kw = {} if blood is None else {"blood": blood}
+    styles = nr_paint.zombie_styles(build.get("skin", GENERIC_TONE), int(build.get("decay", 2)),
+                                    build.get("eyes", "clouded"), **kw)
+    return nr_paint.paint_model(model, styles, seed), "nr_paint"
 
 
 SAMPLE_BUILDS = {
@@ -1986,6 +2079,7 @@ PREVIEW_STATES = [
 
 def _selftest(out_dir: str, render: bool = True) -> int:
     import json
+    import nr_common  # type: ignore  # 1.16.0 の書き出し（DESIGN §13）
     os.makedirs(out_dir, exist_ok=True)
     errors = []
     results = {}
@@ -1993,7 +2087,6 @@ def _selftest(out_dir: str, render: bool = True) -> int:
         model = new_model(f"rigtest_{name}")
         rig = ZombieRig(model, build)
         model.pack(size=(512, 512))
-        doc = {"format_version": "1.12.0", "minecraft:geometry": [model.to_json()]}
         names = [b.name for b in model.bones]
         # 名前・親・重複
         if len(names) != len(set(names)):
@@ -2049,7 +2142,7 @@ def _selftest(out_dir: str, render: bool = True) -> int:
                 errors.append(f"{name}: gib {p} empty")
         # gib のキューブが元の形（部分木の根から見た形）と UV をそのまま保っているか
         Wm = bone_world(model)
-        all_rects = {r for c in model.all_cubes() for r in c.rects.values()}
+        all_rects = {rect_key(r) for c in model.all_cubes() for r in c.rects.values()}
         worst = 0.0
         for gb in gib.bones:
             info = gib.gib_info[gb.name]
@@ -2058,7 +2151,7 @@ def _selftest(out_dir: str, render: bool = True) -> int:
             Winv = np.linalg.inv(Wm[info["root"]])
             cen = np.array(info["centroid"])
             for gc in gb.cubes:
-                if any(r not in all_rects for r in gc.rects.values()):
+                if any(rect_key(r) not in all_rects for r in gc.rects.values()):
                     errors.append(f"{name}: gib {gb.name} cube has foreign UV")
                     break
                 src = getattr(gc, "nr_src", None)
@@ -2081,13 +2174,14 @@ def _selftest(out_dir: str, render: bool = True) -> int:
         tex, painter = _paint(model, build, 7)
         geo_path = os.path.join(out_dir, f"{name}.geo.json")
         tex_path = os.path.join(out_dir, f"{name}.png")
-        with open(geo_path, "w", encoding="utf-8") as fh:
-            json.dump(doc, fh, indent=1)
+        nr_common.write_geometry(geo_path, model)
         tex.save(tex_path)
         gib_path = os.path.join(out_dir, f"{name}.gib.geo.json")
-        with open(gib_path, "w", encoding="utf-8") as fh:
-            json.dump({"format_version": "1.12.0", "minecraft:geometry": [gib.to_json()]}, fh,
-                      indent=1)
+        nr_common.write_geometry(gib_path, gib)
+        for pth in (geo_path, gib_path):
+            fv = nr_common.load_json(pth).get("format_version")
+            if fv != nr_common.GEOMETRY_FORMAT:
+                errors.append(f"{name}: {os.path.basename(pth)} format_version {fv}")
         with open(os.path.join(out_dir, f"{name}.hitboxes.json"), "w", encoding="utf-8") as fh:
             json.dump(hb, fh, indent=1)
         results[name] = dict(model=model, rig=rig, geo=geo_path, tex=tex_path, gib=gib_path,
@@ -2137,9 +2231,7 @@ def _selftest(out_dir: str, render: bool = True) -> int:
         if p not in [b.name for b in gen.bones]:
             errors.append(f"generic gib missing {p}")
     print(f"generic gib: {gen.stats()} painted={'yes' if gen.texture is not None else 'no'}")
-    with open(os.path.join(out_dir, "generic.gib.geo.json"), "w", encoding="utf-8") as fh:
-        json.dump({"format_version": "1.12.0", "minecraft:geometry": [gen.to_json()]}, fh,
-                  indent=1)
+    nr_common.write_geometry(os.path.join(out_dir, "generic.gib.geo.json"), gen)
     if gen.texture is None:
         gen.texture = _fallback_paint(gen, 3)
     gen.texture.save(os.path.join(out_dir, "generic.gib.png"))
@@ -2153,83 +2245,159 @@ def _selftest(out_dir: str, render: bool = True) -> int:
     return 1 if errors else 0
 
 
+def _hidden_for(model: Model, state: Optional[dict] = None, extra_hide: Iterable[str] = (),
+                extra_show: Iterable[str] = ()) -> List[str]:
+    """状態で見えないボーンの一覧（nr_preview の hidden に渡す。hide_mode="exact" で使う）。"""
+    vis = (visible_bones(model, state) | set(extra_show)) - set(extra_hide)
+    return [b.name for b in model.bones if b.name not in vis]
+
+
 def _render_previews(results: dict, out_dir: str) -> None:
-    import json
-    from PIL import Image, ImageDraw
-    try:
-        import nr_preview  # type: ignore  # noqa: F401
-        have_nr_preview = True
-    except Exception:  # noqa: BLE001
-        have_nr_preview = False
-    sys.path.insert(0, os.path.join(TOOLS, "hyperdim"))
-    import hd_scene  # type: ignore
-    size = (300, 420)
-
-    def shot(geo_path, tex_path, hide, yaw, pitch=-8, anim=None, centre=None, scale=None):
-        geo = json.load(open(geo_path, encoding="utf-8"))["minecraft:geometry"][0]
-        tex = Image.open(tex_path)
-        quads = hd_scene.weapon_quads(geo, tex, None, anim or {}, hide=hide)
-        if centre is None:
-            pts = np.array([p for q in quads for p in q[0]])
-            lo, hi = pts.min(axis=0), pts.max(axis=0)
-            centre = (lo + hi) / 2
-            span = max(hi[1] - lo[1], hi[0] - lo[0], hi[2] - lo[2]) or 1
-            scale = min(size) * 0.80 / span
-        proj = hd_scene.ortho(yaw, pitch, np.array(centre, float), scale, size)
-        return hd_scene.raster(quads, tex, size, proj, bg=(30, 32, 40))
-
+    """確認画像（nr_preview: 統合版と同じ面の対応で描く）。体の状態 / 顔 / 手 / gib。"""
+    import nr_preview as V  # type: ignore
+    tw, th = 300, 420
     for name, r in results.items():
-        model = r["model"]
-        tiles = []
+        model, L = r["model"], r["rig"].L
+        tex = V.load_texture(r["tex"])
         hb_h = hitboxes(model)["height"] * 16
-        centre = (0, hb_h / 2, 0)
-        scale = size[1] * 0.86 / (hb_h * 1.05)
+        full = dict(target=(0, hb_h / 2, 0), scale=th * 0.86 / (hb_h * 1.05))
+        tiles = []
         for label, st in PREVIEW_STATES:
-            vis = visible_bones(model, st)
-            hide = [b.name for b in model.bones if b.name not in vis]
-            for yaw in (20, 160):
-                im = shot(r["geo"], r["tex"], hide, yaw, centre=centre, scale=scale)
-                ImageDraw.Draw(im).text((6, 6), f"{label} y{yaw}", fill=(230, 230, 230))
-                tiles.append(im)
-        out = hd_scene.sheet(tiles, os.path.join(out_dir, f"preview_{name}.png"), cols=6)
-        print("wrote", out)
-        # 顔のアップ（顎を開いた姿）
-        L = r["rig"].L
-        fc = (0, L.chin + L.H * 0.5, 0)
-        sc = size[1] * 0.8 / (L.H * 1.6)
-        hide = [b.name for b in model.bones if b.name not in visible_bones(model, {})]
+            hide = _hidden_for(model, st)
+            for yaw in (30, 200):
+                cam = V.Camera(yaw=yaw, pitch=8, **full)
+                tiles.append((f"{label} y{yaw}", V.render(model, tex, camera=cam, size=(tw, th),
+                                                          hidden=hide, hide_mode="exact")))
+        V.contact_sheet(tiles, cols=6).save(os.path.join(out_dir, f"preview_{name}.png"))
+        # 顔のアップ（顎を開いた姿・横・顎なし・割れた頭）
+        head = dict(target=(0, L.chin + L.H * 0.5, -0.2 * L.head_d), scale=th * 0.8 / (L.H * 1.6))
+        hide = _hidden_for(model, {})
+        jaw_open = {"jaw": {"rotation": [22, 0, 0]}}
         faces = []
-        for yaw, anim in ((0, {}), (30, {"jaw": {"rotation": (22, 0, 0)}}), (90, {}),
-                          (0, {"jaw": {"rotation": (22, 0, 0)}})):
-            faces.append(shot(r["geo"], r["tex"], hide, yaw, pitch=-4, anim=anim, centre=fc,
-                              scale=sc))
-        vis = visible_bones(model, {"nr:head": "jawless"})
-        hide_j = [b.name for b in model.bones if b.name not in vis]
-        faces.append(shot(r["geo"], r["tex"], hide_j, 25, pitch=-4, centre=fc, scale=sc))
-        vis = visible_bones(model, {"nr:head": "cracked"})
-        hide_c = [b.name for b in model.bones if b.name not in vis]
-        faces.append(shot(r["geo"], r["tex"], hide_c, 25, pitch=-25, centre=fc, scale=sc))
-        hd_scene.sheet(faces, os.path.join(out_dir, f"face_{name}.png"), cols=6)
+        for lab, yaw, pitch, pose, st in (("front", 0, 4, None, {}), ("jaw open", 30, 4, jaw_open, {}),
+                                          ("side", 90, 4, None, {}), ("wounded", 0, 4, None, {"nr:head": "wounded"}),
+                                          ("jawless", 25, 4, None, {"nr:head": "jawless"}),
+                                          ("cracked", 25, 25, None, {"nr:head": "cracked"})):
+            cam = V.Camera(yaw=yaw, pitch=pitch, **head)
+            faces.append((lab, V.render(model, tex, camera=cam, size=(tw, th), pose=pose,
+                                        hidden=_hidden_for(model, st), hide_mode="exact")))
+        V.contact_sheet(faces, cols=6).save(os.path.join(out_dir, f"face_{name}.png"))
         # 手のアップ
-        hy = (L.wrist_y - L.palm_l)
-        hc = (-L.arm_x, hy, 0)
-        sch = size[1] * 0.8 / (L.hand_l * 2.2)
-        hands = [shot(r["geo"], r["tex"], hide, yaw, pitch=-5, centre=hc, scale=sch)
+        hc = (-L.arm_x, L.wrist_y - L.palm_l, 0)
+        hands = [(f"y{yaw}", V.render(model, tex, camera=V.Camera(yaw=yaw, pitch=5, target=hc,
+                                                                  scale=th * 0.8 / (L.hand_l * 2.2)),
+                                      size=(tw, th), hidden=hide, hide_mode="exact"))
                  for yaw in (0, 90, 180, 270)]
-        hd_scene.sheet(hands, os.path.join(out_dir, f"hand_{name}.png"), cols=4)
-        # gib
+        V.contact_sheet(hands, cols=4).save(os.path.join(out_dir, f"hand_{name}.png"))
+        # gib（部位ごと。同じテクスチャ）
         gtiles = []
-        for p in GIB_TYPE_PARTS:
-            hide_g = [q for q in GIB_TYPE_PARTS if q != p]
-            im = shot(r["gib"], r["tex"], hide_g, 35, pitch=-20)
-            ImageDraw.Draw(im).text((6, 6), p, fill=(230, 230, 230))
-            gtiles.append(im)
-        hd_scene.sheet(gtiles, os.path.join(out_dir, f"gib_{name}.png"), cols=6)
-    if have_nr_preview:
-        print("nr_preview.py is available (previews above use hd_scene)")
+        for p_ in GIB_TYPE_PARTS:
+            hide_g = [q for q in GIB_TYPE_PARTS if q != p_]
+            gtiles.append((p_, V.render(r["gib"], tex, view=(35, 20), size=(tw, tw), hidden=hide_g,
+                                        hide_mode="exact")))
+        V.contact_sheet(gtiles, cols=6).save(os.path.join(out_dir, f"gib_{name}.png"))
+        print("wrote previews for", name)
+
+
+# 統合の確認画像（foundation_check.png）: 2 体 × 6 状態（全身と見どころのアップ）＋ gib
+FOUNDATION_BODIES = (
+    ("average / grey_green / clouded",
+     dict(SAMPLE_BUILDS["average"], eyes="clouded", decay=2, mouth="snarl"), "grey_green"),
+    ("brute / jaundiced / glowing_yellow",
+     dict(SAMPLE_BUILDS["brute"], eyes="glowing_yellow", decay=3, mouth="gaping"), "jaundiced"),
+)
+# (ラベル, 状態, さらに隠すボーン, アップの見どころ)
+FOUNDATION_STATES = (
+    ("intact", {}, (), "face"),
+    ("arm_r cut_upper + head severed", {"nr:arm_r": "cut_upper", "nr:head": "severed"}, (), "neck"),
+    ("legs cut_lower", {"nr:leg_r": "cut_lower", "nr:leg_l": "cut_lower"}, (), "knees"),
+    ("torso halved", {"nr:torso": "halved"}, (), "waist"),
+    ("head cracked + jawless", {"nr:head": "cracked"}, ("jaw",), "head"),     # 2 つの見た目を重ねる
+    ("arm_l broken + gutted", {"nr:arm_l": "broken", "nr:torso": "gutted"}, (), "belly"),
+)
+
+
+def foundation_check(path: str, seed: int = 7) -> str:
+    """painter と rig の統合確認画像（DESIGN の断面: 皮膚の縁・脂肪の輪・赤い筋肉・白い骨、腸）。"""
+    import nr_paint  # type: ignore
+    import nr_preview as V  # type: ignore
+    from PIL import Image
+    tw, th = 236, 320
+    sheets = []
+    first = None
+    for title, build, skin in FOUNDATION_BODIES:
+        key = "fc_" + title.split(" ")[0]
+        model = new_model(key)
+        rig = ZombieRig(model, build)
+        model.pack(size=(512, 512))
+        styles = nr_paint.zombie_styles(skin, build["decay"], build["eyes"])
+        tex = nr_paint.paint_model(model, styles, seed)
+        L = rig.L
+        hb_h = hitboxes(model)["height"] * 16
+        full = dict(target=(0, hb_h / 2, 0), scale=th * 0.88 / (hb_h * 1.04))
+        near = {
+            "face": dict(view=(14, 4), target=(0, L.chin + 0.5 * L.H, -0.3 * L.head_d), span=1.5 * L.H),
+            "neck": dict(view=(-35, 38), target=(0, L.shoulder_y, 0), span=0.42 * L.t),
+            "knees": dict(view=(24, -14), target=(0, L.knee_y, 0), span=0.38 * L.t),
+            "waist": dict(view=(25, -42), target=(0, L.abdomen_bot, 0), span=0.42 * L.t),
+            "head": dict(view=(28, 22), target=(0, L.chin + 0.6 * L.H, 0), span=1.9 * L.H),
+            "belly": dict(view=(-38, 6), target=(0.3 * L.arm_x, (L.abdomen_bot + L.chest_bot) / 2 - 0.05 * L.t, 0),
+                          span=0.55 * L.t),
+        }
+        tiles, details = [], []
+        for label, st, extra, focus in FOUNDATION_STATES:
+            hide = _hidden_for(model, st, extra_hide=extra)
+            cam = V.Camera(yaw=30, pitch=10, **full)
+            tiles.append((label, V.render(model, tex, camera=cam, size=(tw, th), hidden=hide,
+                                          hide_mode="exact")))
+            nz = near[focus]
+            cam = V.Camera(yaw=nz["view"][0], pitch=nz["view"][1], target=nz["target"],
+                           scale=th * 0.8 / nz["span"])
+            details.append((f"{focus} (yaw {nz['view'][0]}, pitch {nz['view'][1]})",
+                            V.render(model, tex, camera=cam, size=(tw, th), hidden=hide,
+                                     hide_mode="exact")))
+        sheets.append(V.contact_sheet(tiles + details, cols=6, title=title))
+        if first is None:
+            first = (model, tex, key)
+    # gib: 1 体目の部位（同じアトラス）＋汎用の肉片
+    model, tex, key = first
+    gib = extract_gibs(model, key)
+    gtiles = []
+    for p_ in GIB_TYPE_PARTS:
+        hide_g = [q for q in GIB_TYPE_PARTS if q != p_]
+        gtiles.append((p_, V.render(gib, tex, view=(35, 22), size=(170, 170), hidden=hide_g,
+                                    hide_mode="exact")))
+        if p_ in ("p_head", "p_lower"):
+            # 断面の向きの確認（首は背骨が後ろ、胴は腰椎が後ろ）: 切り口の正面から
+            pitch = -70 if p_ == "p_head" else 70
+            gtiles.append((p_ + " cut", V.render(gib, tex, view=(0, pitch), size=(170, 170),
+                                                 hidden=hide_g, hide_mode="exact")))
+    gen = build_generic_gibs()
+    gtex = gen.texture if gen.texture is not None else _fallback_paint(gen, 3)
+    for p_ in GIB_GENERIC_PARTS:
+        hide_g = [q for q in GIB_GENERIC_PARTS if q != p_]
+        gtiles.append((p_, V.render(gen, gtex, view=(35, 22), size=(170, 170), hidden=hide_g,
+                                    hide_mode="exact")))
+    sheets.append(V.contact_sheet(gtiles, cols=9, title="gib parts (body 1) + generic"))
+    W_ = max(sh.size[0] for sh in sheets)
+    H_ = sum(sh.size[1] for sh in sheets)
+    out = Image.new("RGB", (W_, H_), (16, 17, 21))
+    y = 0
+    for sh in sheets:
+        out.paste(sh, (0, y))
+        y += sh.size[1]
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    out.save(path)
+    return path
 
 
 if __name__ == "__main__":
-    out = os.path.join(os.environ.get("NR_SCRATCH", os.path.join(
-        os.path.dirname(TOOLS), "build_preview", "nightrunner")), "rig")
-    sys.exit(_selftest(out, render="--no-render" not in sys.argv))
+    _base = os.environ.get("NR_SCRATCH", os.path.join(os.path.dirname(TOOLS), "build_preview",
+                                                      "nightrunner"))
+    if "--foundation" in sys.argv:
+        print("wrote", foundation_check(os.path.join(_base, "foundation_check.png")))
+        sys.exit(0)
+    rc = _selftest(os.path.join(_base, "rig"), render="--no-render" not in sys.argv)
+    if "--no-render" not in sys.argv:
+        print("wrote", foundation_check(os.path.join(_base, "foundation_check.png")))
+    sys.exit(rc)

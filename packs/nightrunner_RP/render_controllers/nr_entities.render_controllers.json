@@ -1,0 +1,137 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.nr.zombie_cloak": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "v.nr_cloak ? Texture.cloak : Texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "pelvis": "q.property('nr:torso') != 'halved'"
+        },
+        {
+          "leg_r": "q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "shin_r": "q.property('nr:leg_r') != 'cut_lower' && q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "foot_r": "q.property('nr:leg_r') != 'cut_lower' && q.property('nr:leg_r') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_r_lower": "q.property('nr:leg_r') == 'cut_lower' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_r_upper": "q.property('nr:leg_r') == 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "leg_l": "q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "shin_l": "q.property('nr:leg_l') != 'cut_lower' && q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "foot_l": "q.property('nr:leg_l') != 'cut_lower' && q.property('nr:leg_l') != 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_l_lower": "q.property('nr:leg_l') == 'cut_lower' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "stump_leg_l_upper": "q.property('nr:leg_l') == 'cut_upper' && q.property('nr:torso') != 'halved'"
+        },
+        {
+          "torso_wound": "q.property('nr:torso') != 'intact'"
+        },
+        {
+          "guts": "(q.property('nr:torso') == 'gutted' || q.property('nr:torso') == 'halved')"
+        },
+        {
+          "stump_torso": "q.property('nr:torso') == 'halved'"
+        },
+        {
+          "head": "q.property('nr:head') != 'severed' && q.property('nr:head') != 'crushed'"
+        },
+        {
+          "jaw": "(q.property('nr:head') == 'intact' || q.property('nr:head') == 'wounded' || q.property('nr:head') == 'cracked')"
+        },
+        {
+          "head_wound": "(q.property('nr:head') == 'wounded' || q.property('nr:head') == 'jawless' || q.property('nr:head') == 'cracked')"
+        },
+        {
+          "skull_open": "q.property('nr:head') == 'cracked'"
+        },
+        {
+          "stump_neck": "(q.property('nr:head') == 'severed' || q.property('nr:head') == 'crushed')"
+        },
+        {
+          "arm_r": "q.property('nr:arm_r') != 'cut_upper'"
+        },
+        {
+          "forearm_r": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper'"
+        },
+        {
+          "hand_r": "q.property('nr:arm_r') != 'cut_lower' && q.property('nr:arm_r') != 'cut_upper'"
+        },
+        {
+          "arm_r_wound": "(q.property('nr:arm_r') == 'wounded' || q.property('nr:arm_r') == 'broken')"
+        },
+        {
+          "stump_arm_r_lower": "q.property('nr:arm_r') == 'cut_lower'"
+        },
+        {
+          "stump_arm_r_upper": "q.property('nr:arm_r') == 'cut_upper'"
+        },
+        {
+          "arm_l": "q.property('nr:arm_l') != 'cut_upper'"
+        },
+        {
+          "forearm_l": "q.property('nr:arm_l') != 'cut_lower' && q.property('nr:arm_l') != 'cut_upper'"
+        },
+        {
+          "hand_l": "q.property('nr:arm_l') != 'cut_lower' && q.property('nr:arm_l') != 'cut_upper'"
+        },
+        {
+          "arm_l_wound": "(q.property('nr:arm_l') == 'wounded' || q.property('nr:arm_l') == 'broken')"
+        },
+        {
+          "stump_arm_l_lower": "q.property('nr:arm_l') == 'cut_lower'"
+        },
+        {
+          "stump_arm_l_upper": "q.property('nr:arm_l') == 'cut_upper'"
+        }
+      ],
+      "overlay_color": {
+        "r": "q.property('nr:shock') > 0 ? 0.62 : (q.property('nr:burn') > 0 ? 0.06 : this)",
+        "g": "q.property('nr:shock') > 0 ? 0.82 : (q.property('nr:burn') > 0 ? 0.05 : this)",
+        "b": "q.property('nr:shock') > 0 ? 1.0 : (q.property('nr:burn') > 0 ? 0.04 : this)",
+        "a": "q.property('nr:shock') > 0 ? (math.sin(q.life_time * 2400.0) > 0.0 ? 0.55 : 0.12) : (q.property('nr:burn') > 0 ? q.property('nr:burn') * 0.22 : this)"
+      }
+    },
+    "controller.render.nr.proj": {
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "is_hurt_color": {
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 0.0
+      }
+    }
+  }
+}

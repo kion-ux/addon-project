@@ -1,0 +1,57 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "nr:swing_trail",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/nr/particle/nr_fx"
+      }
+    },
+    "components": {
+      "minecraft:emitter_lifetime_once": {},
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 1
+      },
+      "minecraft:emitter_shape_point": {},
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": 0.14
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "1.4",
+          "0.7"
+        ],
+        "facing_camera_mode": "lookat_direction",
+        "direction": {
+          "mode": "custom",
+          "custom_direction": [
+            "(v.dx ?? 1)",
+            "(v.dy ?? 0)",
+            "(v.dz ?? 0)"
+          ]
+        },
+        "uv": {
+          "texture_width": 1024,
+          "texture_height": 512,
+          "uv": [
+            256,
+            384
+          ],
+          "uv_size": [
+            64,
+            32
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "math.clamp((v.cr ?? 1), 0, 1)",
+          "math.clamp((v.cg ?? 1), 0, 1)",
+          "math.clamp((v.cb ?? 1), 0, 1)",
+          "0.85 * math.clamp((1.0 - (v.particle_age / v.particle_lifetime)) * 1.2, 0.0, 1.0)"
+        ]
+      }
+    }
+  }
+}
