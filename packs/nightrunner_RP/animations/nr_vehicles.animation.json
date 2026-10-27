@@ -1,0 +1,206 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.nr.veh.beater_sedan.drive": {
+      "loop": true,
+      "bones": {
+        "wheel_fl": {
+          "rotation": [
+            "v.nr_roll0",
+            "v.nr_steer",
+            0
+          ]
+        },
+        "wheel_fr": {
+          "rotation": [
+            "v.nr_roll0",
+            "v.nr_steer",
+            0
+          ]
+        },
+        "wheel_rl": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "wheel_rr": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "steering_wheel": {
+          "rotation": [
+            0,
+            0,
+            "-v.nr_steer * 2.6"
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            "v.nr_bob",
+            0
+          ],
+          "rotation": [
+            "v.nr_pitch",
+            0,
+            "v.nr_lean"
+          ]
+        }
+      }
+    },
+    "animation.nr.veh.dirt_bike.drive": {
+      "loop": true,
+      "bones": {
+        "wheel_f": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "wheel_r": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "fork": {
+          "rotation": [
+            0,
+            "v.nr_steer * 0.8",
+            0
+          ]
+        },
+        "root": {
+          "rotation": [
+            0,
+            0,
+            "v.nr_lean"
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            "v.nr_bob * 0.7",
+            0
+          ],
+          "rotation": [
+            "v.nr_pitch * 0.6",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.nr.veh.pickup_truck.drive": {
+      "loop": true,
+      "bones": {
+        "wheel_fl": {
+          "rotation": [
+            "v.nr_roll0",
+            "v.nr_steer",
+            0
+          ]
+        },
+        "wheel_fr": {
+          "rotation": [
+            "v.nr_roll0",
+            "v.nr_steer",
+            0
+          ]
+        },
+        "wheel_rl": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "wheel_rr": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "steering_wheel": {
+          "rotation": [
+            0,
+            0,
+            "-v.nr_steer * 2.6"
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            "v.nr_bob",
+            0
+          ],
+          "rotation": [
+            "v.nr_pitch",
+            0,
+            "v.nr_lean"
+          ]
+        }
+      }
+    },
+    "animation.nr.veh.survivor_buggy.drive": {
+      "loop": true,
+      "bones": {
+        "wheel_fl": {
+          "rotation": [
+            "v.nr_roll0",
+            "v.nr_steer",
+            0
+          ]
+        },
+        "wheel_fr": {
+          "rotation": [
+            "v.nr_roll0",
+            "v.nr_steer",
+            0
+          ]
+        },
+        "wheel_rl": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "wheel_rr": {
+          "rotation": [
+            "v.nr_roll0",
+            0,
+            0
+          ]
+        },
+        "steering_wheel": {
+          "rotation": [
+            0,
+            0,
+            "-v.nr_steer * 2.6"
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            "v.nr_bob",
+            0
+          ],
+          "rotation": [
+            "v.nr_pitch",
+            0,
+            "v.nr_lean"
+          ]
+        }
+      }
+    }
+  }
+}

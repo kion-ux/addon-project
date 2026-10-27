@@ -1,0 +1,269 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.nr.veh.beater_sedan": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.b1",
+            "Texture.b2",
+            "Texture.b3"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "textures": [
+        "Array.skins[q.property('nr:blood')]"
+      ],
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_fr": false
+        },
+        {
+          "glass_rl": false
+        },
+        {
+          "glass_rr": false
+        },
+        {
+          "glass_smash": "0.0 == 1"
+        },
+        {
+          "smash_fl": "0.0 == 1"
+        },
+        {
+          "smash_fr": "0.0 == 1"
+        },
+        {
+          "smash_rl": "0.0 == 1"
+        },
+        {
+          "smash_rr": "0.0 == 1"
+        },
+        {
+          "lights_hazard": "(0.0) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((0.0) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || v.nr_brake > 0.5"
+        }
+      ]
+    },
+    "controller.render.nr.veh.beater_sedan.glass": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.b1",
+            "Texture.b2",
+            "Texture.b3"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "textures": [
+        "Array.skins[q.property('nr:blood')]"
+      ],
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "0.0 == 0"
+        },
+        {
+          "glass_fl": "0.0 == 0"
+        },
+        {
+          "glass_fr": "0.0 == 0"
+        },
+        {
+          "glass_rl": "0.0 == 0"
+        },
+        {
+          "glass_rr": "0.0 == 0"
+        }
+      ]
+    },
+    "controller.render.nr.veh.dirt_bike": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.b1",
+            "Texture.b2",
+            "Texture.b3"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "textures": [
+        "Array.skins[q.property('nr:blood')]"
+      ],
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((0.0) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || v.nr_brake > 0.5"
+        }
+      ]
+    },
+    "controller.render.nr.veh.pickup_truck": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.b1",
+            "Texture.b2",
+            "Texture.b3"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "textures": [
+        "Array.skins[q.property('nr:blood')]"
+      ],
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glass": false
+        },
+        {
+          "glass_fl": false
+        },
+        {
+          "glass_fr": false
+        },
+        {
+          "glass_smash": "0.0 == 1"
+        },
+        {
+          "smash_fl": "0.0 == 1"
+        },
+        {
+          "smash_fr": "0.0 == 1"
+        },
+        {
+          "lights_extra": "q.property('nr:lights') == 1"
+        },
+        {
+          "lights_hazard": "(0.0) && math.mod(q.life_time, 0.8) < 0.4"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((0.0) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || v.nr_brake > 0.5"
+        }
+      ]
+    },
+    "controller.render.nr.veh.pickup_truck.glass": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.b1",
+            "Texture.b2",
+            "Texture.b3"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "textures": [
+        "Array.skins[q.property('nr:blood')]"
+      ],
+      "materials": [
+        {
+          "*": "Material.glass"
+        }
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glass": "0.0 == 0"
+        },
+        {
+          "glass_fl": "0.0 == 0"
+        },
+        {
+          "glass_fr": "0.0 == 0"
+        }
+      ]
+    },
+    "controller.render.nr.veh.survivor_buggy": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.b1",
+            "Texture.b2",
+            "Texture.b3"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "textures": [
+        "Array.skins[q.property('nr:blood')]"
+      ],
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "lights_extra": "q.property('nr:lights') == 1"
+        },
+        {
+          "lights_head": "(q.property('nr:lights') == 1) || ((0.0) && math.mod(q.life_time, 0.5) < 0.25)"
+        },
+        {
+          "lights_tail": "(q.property('nr:lights') == 1) || v.nr_brake > 0.5"
+        }
+      ]
+    }
+  }
+}

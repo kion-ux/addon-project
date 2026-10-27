@@ -20,7 +20,7 @@
    zip の中の並びと時刻を固定して、同じ入力から同じバイト列）
 
 生成器どうしの依存（`-j` の並べ方。DEPENDS に書く）:
-* 独立（並列で走ってよい）: zombies / zombie_anim / player_anim / weapons / weapons_ranged / props / blocks /
+* 独立（並列で走ってよい）: zombies / zombie_anim / player_anim / weapons / weapons_ranged / props / vehicles / blocks /
   structures / particles / sounds / ui / items — 互いのファイルを読まない（ID は DESIGN.md・nr_registry・nr_spec で決まっている）
 * `gen_nr_entities`: ゾンビ・gib・小道具のジオメトリとアニメ ID（zombies / zombie_anim / props）と、
   飛び道具・パーティクル（weapons / weapons_ranged / items / particles）を参照するので、それらの後
@@ -51,6 +51,7 @@ STEPS = [
     "gen_nr_weapons.py",
     "gen_nr_weapons_ranged.py",   # 飛び道具（銃・弓・クロスボウ・投げ物）。置き場所は近接と同じ
     "gen_nr_props.py",
+    "gen_nr_vehicles.py",    # 乗れる乗り物（車体は nr_vehicle_models を gen_nr_props と共有）。scripts/data/vehicles.js も
     "gen_nr_blocks.py",
     "gen_nr_structures.py",
     "gen_nr_particles.py",

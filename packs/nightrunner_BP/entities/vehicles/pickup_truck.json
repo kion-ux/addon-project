@@ -1,0 +1,183 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "nr:veh_pickup_truck",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "properties": {
+        "nr:blood": {
+          "type": "int",
+          "range": [
+            0,
+            3
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "nr:lights": {
+          "type": "int",
+          "range": [
+            0,
+            1
+          ],
+          "default": 0,
+          "client_sync": true
+        }
+      }
+    },
+    "component_groups": {
+      "nr:despawn": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "nr_vehicle",
+          "nr_drivable",
+          "inanimate"
+        ]
+      },
+      "minecraft:health": {
+        "value": 220,
+        "max": 220
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "contact",
+            "deals_damage": "no"
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              }
+            },
+            "cause": "entity_attack",
+            "deals_damage": "yes",
+            "damage_multiplier": 0.5
+          }
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 2.1,
+        "height": 1.9
+      },
+      "minecraft:custom_hit_test": {
+        "hitboxes": [
+          {
+            "width": 2.8,
+            "height": 1.9,
+            "pivot": [
+              0,
+              0.95,
+              0
+            ]
+          }
+        ]
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:movement": {
+        "value": 0.31
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:input_ground_controlled": {},
+      "minecraft:variable_max_auto_step": {
+        "base_value": 0.5625,
+        "controlled_value": 1.0625,
+        "jump_prevented_value": 0.5625
+      },
+      "minecraft:rideable": {
+        "seat_count": 4,
+        "controlling_seat": 0,
+        "crouching_skip_interact": true,
+        "family_types": [
+          "player"
+        ],
+        "interact_text": "action.interact.nr.drive",
+        "pull_in_entities": false,
+        "seats": [
+          {
+            "position": [
+              -0.446,
+              0.918,
+              0.094
+            ],
+            "min_rider_count": 0,
+            "max_rider_count": 4
+          },
+          {
+            "position": [
+              0.383,
+              0.918,
+              0.094
+            ],
+            "min_rider_count": 1,
+            "max_rider_count": 4
+          },
+          {
+            "position": [
+              0.438,
+              1.042,
+              -1.875
+            ],
+            "min_rider_count": 2,
+            "max_rider_count": 4
+          },
+          {
+            "position": [
+              -0.531,
+              0.83,
+              -1.5
+            ],
+            "min_rider_count": 3,
+            "max_rider_count": 4
+          }
+        ]
+      },
+      "minecraft:persistent": {}
+    },
+    "events": {
+      "nr:despawn": {
+        "add": {
+          "component_groups": [
+            "nr:despawn"
+          ]
+        }
+      },
+      "nr:lights_on": {
+        "set_property": {
+          "nr:lights": 1
+        }
+      },
+      "nr:lights_off": {
+        "set_property": {
+          "nr:lights": 0
+        }
+      }
+    }
+  }
+}

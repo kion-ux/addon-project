@@ -1,0 +1,56 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nr:veh_pickup_truck",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "glass": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/nr/vehicles/pickup_truck",
+        "b1": "textures/nr/vehicles/pickup_truck_b1",
+        "b2": "textures/nr/vehicles/pickup_truck_b2",
+        "b3": "textures/nr/vehicles/pickup_truck_b3"
+      },
+      "geometry": {
+        "default": "geometry.nr.veh.pickup_truck"
+      },
+      "animations": {
+        "drive": "animation.nr.veh.pickup_truck.drive"
+      },
+      "scripts": {
+        "initialize": [
+          "v.nr_roll0 = 0.0; v.nr_steer = 0.0; v.nr_acc = 0.0; v.nr_pgs = 0.0; v.nr_brake = 0.0; v.nr_pyaw = q.body_y_rotation;"
+        ],
+        "pre_animation": [
+          "v.nr_dir = q.movement_direction(0) * -math.sin(q.body_y_rotation) + q.movement_direction(2) * math.cos(q.body_y_rotation);",
+          "v.nr_gs = q.ground_speed * (v.nr_dir < -0.25 ? -1.0 : 1.0);",
+          "v.nr_dt = math.clamp(q.delta_time, 0.0, 0.1);",
+          "v.nr_roll0 = math.mod(v.nr_roll0 + v.nr_gs * v.nr_dt * 130.962 + 360.0, 360.0);",
+          "v.nr_dyaw = math.mod(q.body_y_rotation - v.nr_pyaw + 540.0, 360.0) - 180.0;",
+          "v.nr_pyaw = q.body_y_rotation;",
+          "v.nr_steer = math.lerp(v.nr_steer, math.clamp(v.nr_dyaw / math.max(v.nr_dt, 0.005) * 0.12 * (v.nr_gs < -0.3 ? -1.0 : 1.0) * (q.ground_speed > 0.4 ? 1.0 : 0.3), -30.0, 30.0), math.clamp(v.nr_dt * 5.0, 0.0, 1.0));",
+          "v.nr_acc = math.lerp(v.nr_acc, (v.nr_gs - v.nr_pgs) / math.max(v.nr_dt, 0.005), math.clamp(v.nr_dt * 3.0, 0.0, 1.0));",
+          "v.nr_pgs = v.nr_gs;",
+          "v.nr_brake = (v.nr_acc < -5.0 && q.ground_speed > 1.0) ? 1.0 : 0.0;",
+          "v.nr_spd01 = math.clamp(q.ground_speed / 12.0, 0.0, 1.0);",
+          "v.nr_bob = (q.has_rider ? 0.07 * math.sin(q.life_time * 2200.0) : 0.0) + v.nr_spd01 * (0.32 * math.sin(q.life_time * 410.0 + 30.0) + 0.16 * math.sin(q.life_time * 977.0));",
+          "v.nr_pitch = math.clamp(-v.nr_acc * 0.3, -2.5, 2.5) + v.nr_spd01 * 0.35 * math.sin(q.life_time * 530.0);",
+          "v.nr_lean = math.clamp(v.nr_steer * 0.06 * v.nr_spd01, -2.0, 2.0);"
+        ],
+        "animate": [
+          "drive"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nr.veh.pickup_truck",
+        "controller.render.nr.veh.pickup_truck.glass"
+      ],
+      "spawn_egg": {
+        "base_color": "#8e1e1c",
+        "overlay_color": "#d6d6ce"
+      }
+    }
+  }
+}
