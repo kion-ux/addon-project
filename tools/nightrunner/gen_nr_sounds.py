@@ -1745,6 +1745,1678 @@ def r_mod_impact(v):
     return room(sat(out, 2.0), 0.6, 0.2)
 
 
+# =====================================================================
+#  レシピの下請け（ループ・火・噴気・怪物の声）
+# =====================================================================
+def _looped(d, xf, gen):
+    """ループ用: gen(d + xf) を作り、末尾 xf 秒を頭に重ねて継ぎ目の無い d 秒の輪にする（不規則な成分用）。
+    周期 d の成分（唸り・モーター）は重ねると +3 dB の山になるので、呼ぶ側で輪にした後に足す。"""
+    return loopify(gen(d + xf), xf)
+
+
+def _fwoom(d=0.5, lo=250.0, hi=3500.0, a=0.1):
+    """火が回る「ぼっ」: 暗い所から明るく開く雑音（低域通過の掃引）。"""
+    cut = np.geomspace(lo, hi, ns(d))
+    w = tvf(pink(d), lambda tc, f: g_lp(at(cut, tc), 2)(f)) * env_pts(d, [(0, 0), (a, 1), (d, 0)], "cos")
+    return nrm(w)
+
+
+def _hiss(d, fc=4000.0, q=1.0, lo=1200.0, hi=11000.0, turb=0.25, rate=18.0):
+    """噴き出すガス・湯気: 帯域で整えた雑音を乱流で揺らす（包絡は呼ぶ側で掛ける）。"""
+    return nrm(filt(white(d), g_hp(lo), g_pk(fc, q, 8.0), g_lp(hi)) * (1.0 - turb + turb * lfn(d, rate)))
+
+
+def _sweep(d, lo, hi, q=1.2, src=None):
+    """帯域の中心が lo → hi へ滑る雑音（上がる・下がる気配、風）。"""
+    c = np.geomspace(lo, hi, ns(d))
+    return nrm(tvf(pink(d) if src is None else src, lambda tc, f: g_bp(at(c, tc), q)(f)))
+
+
+def _burst(d=0.02, T=0.0015, fc=60.0):
+    """破裂・発射の圧の山（Friedlander 波の高域だけ）。"""
+    return nrm(hp(friedlander(d, T, 1.3), fc))
+
+
+# 怪物の声の型（VOICE_VOCAB と同じ形。能力・ボスの音で使う）
+MONSTER = {
+    "growl": dict(f0=(70.0, 230.0), vowel="a", noise=0.5, rough=0.6, extra=()),
+    "screech": dict(f0=(480.0, 1500.0), vowel="scream", noise=0.35, rough=0.5, extra=()),
+    "howl": dict(f0=(220.0, 750.0), vowel="o", noise=0.2, rough=0.35, extra=("sac_resonance",)),
+    "giant": dict(f0=(42.0, 140.0), vowel="a", noise=0.45, rough=0.85, extra=("subbass",)),
+    "chant": dict(f0=(62.0, 100.0), vowel="o", noise=0.25, rough=0.3, extra=("tremolo",)),
+}
+
+
+def _cry(kind, d, u, vowels, amp=None, **kw):
+    """怪物の声 1 回（MONSTER の型で utter を呼ぶ短縮）。amp を省くと速く立ち上がってゆっくり消える。"""
+    amp = amp or [(0, 0), (0.06 * d, 1), (0.7 * d, 0.8), (d, 0)]
+    return nrm(utter(MONSTER[kind], d, u, vowels, amp, **kw))
+
+
+# =====================================================================
+#  爆発・属性（nr.fx.*）
+# =====================================================================
+def r_explosion(v):
+    """爆発: 圧の山・重低音・暗くなっていく轟音・降る瓦礫（変種ごとに ガラス / 金属 / 火 の多さを変える）。"""
+    glass, metal_amt, fire = ((0.2, 0.0, 0.5), (1.0, 0.0, 0.4), (0.2, 1.0, 0.9))[v % 3]
+    return explosion(4.0, 1.0 + 0.08 * v, 1.0, glass, fire, metal_amt)
+
+
+def r_explosion_big(v):
+    """大爆発（プロパンボンベ）: ボンベが裂ける一瞬の噴出 → 巨大な爆発 → 火の玉の轟き → 長い残響と瓦礫の雨。"""
+    d = 6.0
+    out = silence(d)
+    pre = 0.09 + 0.03 * v
+    put(out, _hiss(pre, 4200, 2.0, 1800) * env_pts(pre, [(0, 0), (0.01, 0.6), (pre, 1.0)]), 0.0, 0.35)
+    put(out, metal(0.5, 380 + 60 * v, "pipe", 0.2, 0.6, 1.5), pre - 0.01, 0.3)
+    put(out, explosion(d - pre, 1.6, 1.4, 0.6, 1.0, 1.0), pre, 1.0)
+    rd = 3.0
+    put(out, nrm(lp(brown(rd), 300.0)) * env_pts(rd, [(0, 0), (0.2, 1), (1.4, 0.6), (rd, 0)], "cos"), pre + 0.1, 0.45)
+    put(out, fire_bed(rd, 0.8, 0.0, 0.2) * env_pts(rd, [(0, 0), (0.3, 1), (rd, 0)]), pre + 0.3, 0.25)
+    return out
+
+
+def r_fire_ignite(v):
+    """着火: ガスに火が回る「ぼっ」（暗い所から明るく開く雑音と低い胴）→ はぜながら落ち着く炎。"""
+    d = 1.3
+    out = silence(d)
+    a = 0.1 + 0.03 * v
+    put(out, _fwoom(0.5, 250, 3500, a), 0.0, 1.0)
+    put(out, thud(0.4, 70, 38, 0.12, click=0.0, body=0.7, nf=250), a * 0.6, 0.7)
+    fd = d - 0.12
+    put(out, fire_bed(fd, 0.9, 0.7, 0.3) * env_pts(fd, [(0, 0), (0.15, 1), (fd, 0)]), 0.12, 0.45)
+    return out
+
+
+def r_fire_loop(v):
+    """燃え続ける炎（ループ 2.05 秒。スクリプトが 2 秒ごとに鳴らし直すので少し重なる）。"""
+    return _looped(2.05, 0.25, lambda d: fire_bed(d, 0.7 + 0.2 * v, 1.0, 0.3))
+
+
+def r_electric_zap(v):
+    """放電: 空気が裂ける鋭い「バチッ」+ 乱れたパルス列のジジジ + オゾンのしゅー。"""
+    d = 0.35 + 0.08 * v
+    out = silence(d + 0.05)
+    put(out, nrm(hp(white(0.012), 1500) * perc(0.012, 0.0001, 0.0025)), 0.0, 1.0)
+    put(out, arc(d, 80 + 20 * v, 1200, 0.9, 1.5) * perc(d, 0.002, d * 0.35, 1.5), 0.002, 0.8)
+    put(out, nrm(hp(white(d), 4000)) * perc(d, 0.01, d * 0.5), 0.0, 0.15)
+    return sat(out, 1.8)
+
+
+def r_electric_buzz(v):
+    """通電の唸り（ループ 2 秒）: 60 Hz の唸りと磁歪のビリつき（周期的）+ 時々走る小さな放電。"""
+    d = 2.0
+    h = hum(d, 60.0, 30, 0.9, 0.6, 0.15)
+    sp = _looped(d, 0.2, lambda dd: arc(dd, 70, 700, -0.35 + 0.15 * v, 0.8))
+    return nrm(h) + 0.3 * sp
+
+
+def r_toxic_hiss(v):
+    """毒ガスの噴出: 高圧のしゅーっ（乱流で揺れる明るい雑音）+ 噴き出しの湿った頭 + 弱まっていく尾。"""
+    d = 1.6 + 0.2 * v
+    out = _hiss(d, 3800 + 500 * v, 1.2, 1200, 9000) * env_pts(d, [(0, 0), (0.015, 1), (0.25, 0.75), (d, 0)], "cos")
+    put(out, nrm(bubbles(0.3, 70, 300, 1400)) * perc(0.3, 0.005, 0.08), 0.0, 0.35)
+    put(out, nrm(lp(pink(0.25), 500)) * perc(0.25, 0.004, 0.06), 0.0, 0.5)
+    return out
+
+
+def r_acid_sizzle(v):
+    """酸で溶ける: 細かくはぜる泡（揚げ物のような密なパチパチ）+ しゅー + 泡の破裂。"""
+    d = 1.8
+    e = env_pts(d, [(0, 0), (0.05, 1), (0.6, 0.8), (d, 0)], "cos")
+    cr = crackles(d, 900 * e + 20, 2500, 9500, 0.9, 0.0008)
+    hs = filt(white(d), g_hp(3000), g_lp(11000)) * e * (0.7 + 0.3 * lfn(d, 9.0))
+    b = bubbles(d, 120, 900, 3500, 0.7) * e
+    return nrm(cr) + 0.35 * nrm(hs) + 0.4 * nrm(b)
+
+
+def r_uv_hum(v):
+    """UV ライトの唸り（ループ 3.05 秒。スクリプトが 3 秒ごとに鳴らし直す）: 安定器の 120 Hz の唸り
+    + 管の高いうなり（周期的）+ かすかなチリチリ（輪にする）。"""
+    d = 3.05
+    h = nrm(hum(d, 60.0, 36, 0.7, 0.3, 0.1)) + 0.05 * sine(d, 7200.0 + 120.0 * v)
+    fz = _looped(d, 0.25, lambda dd: crackles(dd, 18, 4000, 10000, 0.7, 0.001))
+    return nrm(h) + 0.12 * fz
+
+
+def r_uv_burn(v):
+    """UV で焼ける: 肉が焼けるじゅっ（密なはぜ）+ 湯気のしゅー + 皮膚がはじける小さなパチッ + 光の唸り。"""
+    d = 1.2
+    e = env_pts(d, [(0, 0), (0.02, 1), (0.35, 0.7), (d, 0)], "cos")
+    cr = crackles(d, 1400 * e + 30, 2000, 9000, 1.0, 0.0006)
+    pops = crackles(d, 25 * e + 2, 600, 2500, 0.8, 0.003)
+    st = _hiss(d, 5500, 1.0, 2500) * e
+    h = hum(d, 60, 20, 0.8, 0.4) * env_pts(d, [(0, 0), (0.03, 1), (d, 0)])
+    return nrm(cr) + 0.5 * nrm(pops) + 0.4 * st + 0.25 * nrm(h)
+
+
+def r_glass_break(v):
+    """ガラスが割れる: 割れの鋭い破裂（高域の破断の群れ）→ 大小の破片の鳴り（ガラスのモード）が散らばって落ちる。"""
+    d = 1.4
+    out = silence(d)
+    put(out, crack(0.12, 12, 0.012, 2500, 9000, 0.15), 0.0, 1.0)
+    put(out, metal(0.6, R.uniform(1800, 2600), "glass", 0.25, 0.6, 2.0, n=6), 0.0, 0.5)
+    for _ in range(26 + 4 * v):
+        t = R.exponential(0.25)
+        if t < d - 0.2:
+            put(out, metal(0.3, R.uniform(2500, 7000), "glass", R.uniform(0.03, 0.1), 0.7, 2.0, n=4, contact=0.5),
+                t, R.uniform(0.05, 0.3) * np.exp(-t / 0.6))
+    put(out, grit(0.4, 2500, 3000, 12000) * perc(0.4, 0.005, 0.15), 0.01, 0.25)
+    return out
+
+
+def r_metal_clang(v):
+    """金属が鳴る: 重い金属の板・管・棒を叩いた響き（うなりのあるモード）+ 当たりの低い胴。"""
+    kind = ("plate", "pipe", "bar", "plate")[v % 4]
+    f0 = (310, 520, 410, 240)[v % 4]
+    out = metal(1.6, f0, kind, 0.7, 0.55, 1.2)
+    put(out, thud(0.2, 160, 90, 0.03, click=0.3, body=0.5, nf=1500), 0.0, 0.4)
+    return out
+
+
+def r_gas_hiss(v):
+    """ボンベ・ガス管から漏れるガスの噴出（ループ 2 秒）: 細い穴の高い噴流 + 笛のような細い成分 + 乱流のゆらぎ。"""
+    def gen(d):
+        jet = _hiss(d, 5200 + 700 * v, 1.5, 1500, 12000, 0.2, 15.0)
+        wh = filt(white(d), g_bp(2900 + 400 * v, 25.0)) * (0.6 + 0.4 * lfn(d, 3.0))
+        return jet + 0.25 * nrm(wh)
+    return _looped(2.0, 0.25, gen)
+
+
+# =====================================================================
+#  罠・世界（nr.trap.* / nr.world.*）
+# =====================================================================
+def r_trap_spike(v):
+    """スパイク: 掛け金が外れる「かちっ」→ ばねで突き出す金属の擦れ → 杭が止まる硬い金属の当たり。"""
+    out = silence(0.7)
+    put(out, mclick(0.05, 2400, 0.008, 1.3), 0.0, 0.5)
+    put(out, mslide(0.07, 1500, 7000, 0.8, 0.3), 0.02, 0.6)
+    put(out, metal(0.5, R.uniform(700, 900), "bar", 0.18, 0.5, 1.6), 0.085, 0.8)
+    put(out, thud(0.2, 170, 80, 0.03, click=0.5, body=0.6, nf=1800), 0.085, 0.6)
+    for j in range(3):
+        put(out, metal(0.25, R.uniform(1500, 2600), "bar", 0.07, 0.5, 1.4, n=4), 0.09 + 0.006 * j, 0.25)
+    return out
+
+
+def r_trap_beartrap(v):
+    """トラバサミ: 強いばねが弾けるきしみ → 顎がかみ合う重い金属の「がしゃん」→ 鎖のじゃらつき。"""
+    out = silence(0.9)
+    put(out, mclick(0.04, 1800, 0.01, 1.5), 0.0, 0.4)
+    put(out, _stickslip(0.03, 900, 3000, (1200, 4000)), 0.0, 0.2)
+    put(out, metal(0.7, R.uniform(480, 620), "bar", 0.25, 0.55, 1.8), 0.025, 1.0)
+    put(out, thud(0.25, 140, 70, 0.04, click=0.6, body=0.7, nf=2000), 0.025, 0.7)
+    for _ in range(8):
+        put(out, mclick(0.06, R.uniform(2200, 4200), 0.012, 1.0), 0.06 + R.exponential(0.12), R.uniform(0.1, 0.3))
+    return out
+
+
+def r_trap_electric(v):
+    """電気トラップ: 変圧器が唸り上がる → 大きな放電の連続（バチバチ）→ 唸りが落ちる。"""
+    d = 1.3
+    e = env_pts(d, [(0, 0), (0.06, 1), (0.8, 0.8), (d, 0)], "cos")
+    out = 0.4 * nrm(hum(d, 60, 30, 1.0, 0.7, 0.1) * e)
+    put(out, arc(d - 0.05, 60, 1500, 0.9, 2.0) * e[:ns(d - 0.05)], 0.05, 1.0)
+    put(out, nrm(hp(white(0.015), 1200) * perc(0.015, 0.0001, 0.003)), 0.05, 1.0)
+    return sat(out, 2.0)
+
+
+def r_trap_alarm(v):
+    """車のアラーム（ループ 2 秒）: 小さなスピーカーの矩形寄りの音。0 = 上がる掃引の繰り返し、1 = 高低 2 音の交互。
+    1 周期を並べて作るので継ぎ目は周期の境目と同じ（輪にする重ねは要らない）。"""
+    seg_d, n = (0.5, 4) if v == 0 else (0.25, 8)
+    t = tax(seg_d)
+    if v == 0:
+        f = 900.0 * 2.0 ** (1.1 * t / seg_d)
+    else:
+        f = np.where(t < seg_d / 2, 1450.0, 1080.0)
+    edge = np.clip(np.minimum(t, seg_d - t) / 0.003, 0, 1)
+    if v:
+        edge = edge * np.clip(np.abs(t - seg_d / 2) / 0.003, 0, 1)
+    seg = osc(seg_d, f, 9, 1.0, odd=True) * edge
+    # 前後に 2 周期ずつ余分に並べて、スピーカーと屋外の響きを掛けてから真ん中の n 周期を取る（定常の輪）
+    x = np.tile(seg, n + 4)
+    x = asat(filt(x, g_pk(2800, 2.0, 10), g_hp(600), g_lp(6500)), 2.0, 0.1)
+    x = room(x, 0.45, 0.15, damp=1.5)
+    k = len(seg)
+    return x[2 * k: (2 + n) * k]
+
+
+def r_trap_click(v):
+    """仕掛けの作動音: 掛け金が外れる「かちっ」と、ばねが張る小さな金属音。"""
+    out = silence(0.18)
+    put(out, mclick(0.05, 2600 + 300 * v, 0.006, 1.3), 0.0, 1.0)
+    put(out, mclick(0.06, 1700 + 200 * v, 0.012, 1.0), 0.035 + 0.01 * v, 0.6)
+    put(out, nrm(bp(white(0.03), 3500, 2) * perc(0.03, 0.0005, 0.006)), 0.034, 0.2)
+    return out
+
+
+def r_trap_gas_burst(v):
+    """ガス管が裂けて火を噴く: 金属の裂ける破裂 → 高圧の噴出 → 引火の「ぼわっ」→ 噴き続ける炎の轟き。"""
+    d = 2.4
+    out = silence(d)
+    put(out, _burst(0.03, 0.002, 80), 0.0, 0.8)
+    put(out, metal(0.6, 260 + 40 * v, "pipe", 0.25, 0.5, 1.4), 0.0, 0.5)
+    put(out, tear(0.12, 2500, 400, 1500, 7000, 0.2, 2.0, 0.0), 0.0, 0.5)
+    jd = d - 0.05
+    put(out, _hiss(jd, 3000, 1.0, 900, 9000, 0.2, 20) * env_pts(jd, [(0, 0), (0.01, 1), (jd, 0.3)]), 0.03, 0.45)
+    ig = 0.18 + 0.05 * v
+    fd = d - ig
+    put(out, _fwoom(0.4, 250, 3000, 0.08), ig, 0.9)
+    put(out, thud(0.4, 75, 40, 0.1, click=0.0, body=0.7, nf=250), ig, 0.6)
+    fe = env_pts(fd, [(0, 0), (0.1, 1), (fd, 0)])
+    put(out, nrm(lp(brown(fd), 600) * (0.7 + 0.3 * lfn(fd, 8))) * fe, ig, 0.6)
+    put(out, fire_bed(fd, 0.9, 0.4, 0.4) * fe, ig, 0.35)
+    return sat(out, 1.6)
+
+
+def r_trap_uv_burst(v):
+    """UV トラップが一斉に点く: 継電器の「がちゃん」の連なり → 安定器の点灯 → 立ち上がる強い唸りと管のうなり。"""
+    d = 1.6
+    out = silence(d)
+    t = 0.02
+    for _ in range(4):
+        put(out, mclick(0.06, R.uniform(1200, 1900), 0.01, 1.2), t, 0.6)
+        put(out, thud(0.08, 220, 120, 0.01, click=0.3, body=0.4, nf=2000), t, 0.3)
+        t += R.uniform(0.03, 0.06)
+    hd = d - 0.2
+    e = env_pts(hd, [(0, 0), (0.15, 1.2), (0.4, 1.0), (hd, 0)], "cos")
+    put(out, nrm(hum(hd, 60, 36, 0.7, 0.5, 0.1)) * e, 0.18, 0.6)
+    put(out, sine(hd, 7200.0) * e, 0.18, 0.04)
+    put(out, crackles(0.6, 300, 3000, 10000, 0.8, 0.0005) * perc(0.6, 0.01, 0.2), 0.2, 0.3)
+    return out
+
+
+def r_trap_rope_snap(v):
+    """吊り縄が切れる: 張った縄のきしみ → 繊維が一気にちぎれる → 鋭い破断と、縄の端が鞭のように走る風切り。"""
+    out = silence(0.8)
+    put(out, _stickslip(0.18, 60, 140, (250, 900)) * env_pts(0.18, [(0, 0), (0.12, 1), (0.18, 0.6)]), 0.0, 0.4)
+    put(out, tear(0.12, 2600, 400, 400, 3500, 0.5, 1.5, 0.0), 0.15, 0.8)
+    put(out, nrm(hp(white(0.02), 1200) * perc(0.02, 0.0002, 0.004)), 0.26, 1.0)
+    put(out, thud(0.15, 200, 110, 0.02, click=0.5, body=0.4, nf=2500), 0.26, 0.4)
+    put(out, whoosh(0.35, 500, 3500, 0.25, 1.4, 2.0), 0.27, 0.5)
+    return out
+
+
+def r_trap_wire(v):
+    """有刺鉄線が服と肉を引っかく: 棘が布を裂く粒 + 鉄線の擦れ + ばねのように揺れる鉄線の鳴り。"""
+    out = silence(0.6)
+    put(out, tear(0.3, 1800, 200, 1500, 7000, 0.4, 2.0, 0.3), 0.0, 0.6)
+    put(out, mslide(0.25, 2500, 9000, 0.9, 0.35), 0.0, 0.4)
+    put(out, metal(0.5, R.uniform(900, 1300), "bar", 0.15, 0.4, 0.8, contact=0.0), 0.03, 0.35)
+    put(out, cloth(0.25, 400, 1200, 7000, 0.4), 0.02, 0.4)
+    return out
+
+
+def r_barricade_hit(v):
+    """バリケードを叩く: 板の低い木の鳴り + 板・釘のがたつき + 落ちる埃。"""
+    out = silence(0.8)
+    put(out, wood(0.4, R.uniform(95, 140), 0.06, 0.4, 0.8), 0.0, 1.0)
+    put(out, thud(0.35, 120, 55, 0.05, click=0.4, body=0.8, nf=900), 0.0, 0.8)
+    for _ in range(5):
+        put(out, wood(0.12, R.uniform(300, 600), 0.015, 0.5, 0.5), 0.015 + R.exponential(0.05), R.uniform(0.1, 0.25))
+    put(out, mclick(0.05, R.uniform(1800, 2600), 0.01, 0.8), 0.01, 0.15)
+    put(out, grit(0.25, 700, 2500, 9000) * perc(0.25, 0.02, 0.1), 0.04, 0.12)
+    return sat(out, 1.5)
+
+
+def r_door(v):
+    """扉: 取っ手の掛け金 + 蝶番のきしみ（摩擦の引っかかりの列）+ 閉まる時の木の胴鳴り（変種 1 は開けるだけ）。"""
+    out = silence(1.1)
+    put(out, mclick(0.06, 1500 + 200 * v, 0.012, 1.0), 0.0, 0.5)
+    put(out, _stickslip(0.6, 35 + 10 * v, 160 + 30 * v, (500, 1600), 0.3) * bell(0.6, 0.5, 1.5), 0.06, 0.5)
+    if v != 1:
+        put(out, wood(0.5, 85 + 10 * v, 0.08, 0.35, 0.7), 0.7, 0.9)
+        put(out, thud(0.4, 110, 50, 0.06, click=0.3, body=0.8, nf=800), 0.7, 0.7)
+        put(out, mclick(0.05, 2000, 0.01, 1.2), 0.71, 0.4)
+    return room(out, 0.5, 0.2)
+
+
+# =====================================================================
+#  パルクール（nr.pk.*）
+# =====================================================================
+def r_step_run(v):
+    """走る足音（舗装。変種で擦れと砂利の多さを変える）。"""
+    return footstep(1.0, 0.35 + 0.1 * (v % 2), 0.2 + 0.12 * v, True)
+
+
+def r_jump(v):
+    """跳ぶ: 踏み切りの靴底の擦れ・砂利 + 衣擦れの風 + 短い息み声（変種 2 は声なし）。"""
+    out = silence(0.45)
+    put(out, footstep(0.9, 0.8, 0.3, False), 0.0, 0.8)
+    put(out, cloth(0.25, 350, 900, 6000, 0.35), 0.02, 0.4)
+    put(out, whoosh(0.3, 300, 1800, 0.4, 1.2, 2.0), 0.03, 0.25)
+    if v != 2:
+        put(out, effort(0.2, "hup"), 0.03, 0.45)
+    return out
+
+
+def r_land_soft(v):
+    """軽い着地: 両足がほぼ同時に着く 2 打 + 靴底の擦れ + 衣擦れ。"""
+    out = silence(0.4)
+    put(out, footstep(1.1, 0.5, 0.3, False), 0.0, 1.0)
+    put(out, footstep(1.0, 0.3, 0.2, True), R.uniform(0.02, 0.04), 0.7)
+    put(out, cloth(0.2, 300, 900, 5000, 0.3), 0.0, 0.25)
+    return out
+
+
+def r_land_hard(v):
+    """重い着地: 体重の乗った低い当たり + 両足の平手 + 散る砂利 + 衣擦れ + 「うっ」。"""
+    out = silence(0.7)
+    put(out, thud(0.45, 120, 42, 0.07, drop=0.02, click=0.5, body=1.0, nf=900), 0.0, 1.0)
+    put(out, footstep(1.6, 0.8, 0.6, False), 0.0, 0.8)
+    put(out, footstep(1.4, 0.5, 0.4, True), 0.018, 0.6)
+    put(out, grit(0.3, 1200, 1500, 8000) * perc(0.3, 0.005, 0.12), 0.01, 0.35)
+    put(out, cloth(0.3, 400, 700, 5000, 0.2), 0.0, 0.3)
+    put(out, effort(0.28, "ugh"), 0.03, 0.5)
+    return sat(out, 1.4)
+
+
+def r_roll(v):
+    """受け身: 肩 → 背中 → 腰と順に転がる鈍い当たり + 長い衣擦れ + 足で立ち上がる。"""
+    out = silence(0.85)
+    put(out, cloth(0.6, 500, 500, 5000, 0.45), 0.02, 0.7)
+    for j, (t, w) in enumerate(((0.0, 1.0), (0.14, 0.8), (0.27, 0.7))):
+        put(out, thud(0.2, 140 - 15 * j, 60, 0.03, click=0.2, body=0.8, nf=800), t + R.uniform(0.0, 0.015), w)
+    put(out, grit(0.4, 600, 1500, 7000) * bell(0.4, 0.4), 0.05, 0.25)
+    put(out, footstep(1.0, 0.6, 0.3, True), 0.5 + 0.03 * v, 0.7)
+    if v == 1:
+        put(out, effort(0.18, "hup", 0.4), 0.0, 0.3)
+    return out
+
+
+def r_vault(v):
+    """乗り越え: 手のひらが縁を叩く平手 + 体が越える衣擦れの風 + 向こう側への着地。"""
+    out = silence(0.65)
+    put(out, slap(0.06, 1400, 0.8, 0.01), 0.0, 0.9)
+    put(out, thud(0.15, 200, 110, 0.02, click=0.3, body=0.5, nf=1500), 0.0, 0.5)
+    put(out, grit(0.1, 900, 2000, 8000), 0.005, 0.2)
+    put(out, whoosh(0.3, 250, 1600, 0.5, 1.2, 2.0), 0.05, 0.4)
+    put(out, cloth(0.25, 300, 900, 6000, 0.5), 0.06, 0.4)
+    put(out, footstep(1.1, 0.5, 0.3, True), 0.36 + 0.03 * v, 0.8)
+    return out
+
+
+def r_grab(v):
+    """縁をつかむ: 両手が縁を叩いて握る平手 2 つ + 指のじゃり + 体重が掛かる衣擦れと小さな息み。"""
+    out = silence(0.4)
+    put(out, slap(0.05, 1500, 0.8, 0.009), 0.0, 1.0)
+    put(out, slap(0.05, 1300, 0.8, 0.009), R.uniform(0.015, 0.035), 0.8)
+    put(out, thud(0.12, 210, 120, 0.015, click=0.2, body=0.4, nf=1500), 0.0, 0.4)
+    put(out, grit(0.12, 700, 2500, 9000), 0.01, 0.3)
+    put(out, cloth(0.2, 300, 900, 5000, 0.3), 0.03, 0.35)
+    put(out, effort(0.15, "ugh", 0.5), 0.04, 0.25)
+    return out
+
+
+def r_climb(v):
+    """よじ登る: 手の平手 + 靴が壁を擦り上げる + 体を引き上げる衣擦れと息み + 縁に足を掛ける。"""
+    out = silence(0.75)
+    put(out, slap(0.05, 1400, 0.8, 0.01), 0.0, 0.7)
+    sc = filt(white(0.3), g_bp(1800, 0.7)) * bell(0.3, 0.3) * (0.6 + 0.4 * lfn(0.3, 40))
+    put(out, nrm(sc), 0.05, 0.45)
+    put(out, grit(0.3, 500, 1500, 7000) * bell(0.3, 0.3), 0.05, 0.25)
+    put(out, cloth(0.45, 350, 800, 5500, 0.5), 0.1, 0.5)
+    put(out, effort(0.3, "hup", 0.6), 0.12, 0.4)
+    put(out, footstep(0.9, 0.4, 0.2, False), 0.55, 0.6)
+    return out
+
+
+def r_wallrun(v):
+    """壁を走る: 壁を蹴る速い 3 歩（擦れの多い靴底）+ 体の風切り。"""
+    out = silence(0.6)
+    t = 0.0
+    for j in range(3):
+        put(out, footstep(0.9, 0.9, 0.25, False), t, 0.9 - 0.1 * j)
+        t += R.uniform(0.13, 0.16)
+    put(out, whoosh(0.55, 300, 2000, 0.5, 1.2, 1.5), 0.0, 0.35)
+    return out
+
+
+def r_slide(v):
+    """スライディング: 腰が着く当たり → 布と靴底がコンクリートを擦る長いざらつき（摩擦で弱まる）。"""
+    out = silence(1.0)
+    put(out, thud(0.2, 130, 60, 0.03, click=0.3, body=0.8, nf=900), 0.0, 0.7)
+    sd = 0.9
+    e = env_pts(sd, [(0, 0), (0.02, 1), (0.5, 0.65), (sd, 0)], "cos")
+    src = white(sd) * (0.7 + 0.3 * lfn(sd, 60)) + impulses(sd, 1500 * e + 20, 0.6)
+    put(out, nrm(filt(src, g_bp(1500 + 200 * v, 0.6), g_lp(7000)) * e), 0.01, 0.75)
+    put(out, grit(0.7, 1200, 1500, 8000) * e[:ns(0.7)], 0.01, 0.35)
+    put(out, cloth(0.8, 500, 600, 5000, 0.2), 0.0, 0.4)
+    return out
+
+
+def r_dropkick(v):
+    """ドロップキック: 「はっ」の気合 + 体ごと飛ぶ風切り → 両足が当たる重い打撃（胴鳴り + 平手 2 つ）。"""
+    out = silence(0.8)
+    put(out, effort(0.25, "hah"), 0.0, 0.6)
+    put(out, whoosh(0.3, 250, 2200, 0.7, 1.3, 2.0), 0.0, 0.55)
+    t = 0.2
+    put(out, thud(0.4, 110, 45, 0.06, click=0.6, body=1.0, nf=1200), t, 1.0)
+    put(out, slap(0.07, 1200, 0.7, 0.012), t, 0.8)
+    put(out, slap(0.07, 1000, 0.7, 0.012), t + 0.012, 0.6)
+    return sat(out, 1.6)
+
+
+def r_grapple_fire(v):
+    """フックの発射: 圧縮ガスの「ぱしゅっ」+ 繰り出されるワイヤーの唸りとがたつき + 遠くでフックが刺さる金属音。"""
+    out = silence(0.75)
+    put(out, _burst(0.02, 0.0012, 300), 0.0, 0.7)
+    put(out, _hiss(0.15, 5000, 1.2, 2000) * perc(0.15, 0.002, 0.04), 0.0, 0.6)
+    wd = 0.4
+    f = 900 * np.geomspace(1.3, 0.8, ns(wd))
+    wire = 0.5 * nrm(osc(wd, f, 8, 1.2)) + nrm(filt(white(wd) + impulses(wd, 150, 0.5), g_bp(3000, 1.0)))
+    put(out, nrm(wire) * env_pts(wd, [(0, 0), (0.02, 1), (wd, 0)]), 0.02, 0.35)
+    th = 0.42 + 0.03 * v
+    put(out, metal(0.3, R.uniform(1400, 1900), "bar", 0.08, 0.5, 1.5), th, 0.4)
+    put(out, thud(0.1, 250, 150, 0.01, click=0.4, body=0.4, nf=2000), th, 0.3)
+    return out
+
+
+def r_grapple_reel(v):
+    """巻き取り（ループ 1 秒）: モーターの唸り（倍音の多い一定の音）と爪車のカリカリ（周期的）+ ワイヤーの擦れ（輪にする）。"""
+    d = 1.0
+    f = 220.0 + 40.0 * v                        # f·d が整数なので 1 秒で位相が戻る
+    mot = filt(osc(d, f, 14, 1.0), g_pk(1800, 1.5, 6), g_lp(5000))
+    clk = silence(d)
+    for j in range(30):                          # 30 回/秒の爪（最後の尾も 1 秒の中で消える）
+        put(clk, mclick(0.02, 3200 + R.uniform(-200, 200), 0.003, 1.0), j / 30.0, R.uniform(0.6, 1.0))
+    wire = _looped(d, 0.2, lambda dd: filt(white(dd), g_bp(2500, 0.8)) * (0.7 + 0.3 * lfn(dd, 20)))
+    return nrm(mot) * 0.6 + 0.5 * nrm(clk) + 0.3 * nrm(wire)
+
+
+def r_glider_open(v):
+    """グライダーを開く: 骨組みが伸びる金属の「しゃきん」+ 布が風をはらむ「ばさっ」+ はためき。"""
+    out = silence(0.8)
+    put(out, mslide(0.1, 1800, 7000, 0.7, 0.4), 0.0, 0.4)
+    put(out, mclick(0.05, 2400, 0.008, 1.2), 0.1, 0.5)
+    put(out, nrm(filt(pink(0.25), g_bp(350, 0.8), g_lp(2500)) * perc(0.25, 0.006, 0.05)), 0.11, 1.0)
+    put(out, cloth(0.3, 600, 400, 5000, 0.2), 0.11, 0.5)
+    fl = filt(pink(0.5), g_bp(500, 0.7)) * np.sin(np.pi * (12 + 2 * v) * tax(0.5)) ** 2 * env_pts(0.5, [(0, 1), (0.5, 0)])
+    put(out, nrm(fl), 0.2, 0.35)
+    return out
+
+
+def r_glider_wind(v):
+    """滑空の風（ループ 2.5 秒）: 体と布を過ぎる風（ゆっくり揺れる帯域の雑音）+ 布のはためき。"""
+    def gen(d):
+        c = 650.0 * (1.0 + 0.35 * lfn(d, 0.7)) * (1.0 + 0.1 * v)
+        w = tvf(pink(d), lambda tc, f: g_bp(at(c, tc), 0.7)(f), win=512) * (0.7 + 0.3 * lfn(d, 1.3))
+        fl = filt(white(d), g_bp(320, 1.0)) * (0.5 + 0.5 * lfn(d, 14.0)) ** 2
+        return nrm(w) + 0.25 * nrm(fl) + 0.2 * nrm(lp(brown(d), 160))
+    return _looped(2.5, 0.3, gen)
+
+
+def r_breath(v):
+    """息切れ: 荒い吸う・吐くの繰り返し（だんだん落ち着く）。"""
+    return pant(2.4, 2.3 + 0.2 * v, 1.0 + 0.04 * v)
+
+
+# =====================================================================
+#  ゾンビの足音（nr.zstep.<種類>。sounds.json の step が使う）
+# =====================================================================
+def r_zstep(kind, v):
+    """ゾンビの足音: shuffle 引きずる擦り足 / run 裸足まじりの速い一歩 / heavy 重い一歩 / giant 地響き /
+    crawl 手と膝 / claw 爪がコンクリートを叩く / stalk 忍び足。"""
+    out = silence(0.9 if kind == "giant" else 0.45)
+    if kind == "shuffle":
+        sd = 0.28
+        put(out, nrm(filt(white(sd) * (0.6 + 0.4 * lfn(sd, 50)), g_bp(1300, 0.6)) * bell(sd, 0.6, 1.5)), 0.0, 0.5)
+        put(out, grit(sd, 400, 1500, 7000) * bell(sd, 0.6), 0.0, 0.3)
+        put(out, footstep(0.9, 0.2, 0.2, False), sd * 0.75, 0.8)
+    elif kind == "run":
+        put(out, footstep(1.1, 0.4, 0.3, True), 0.0, 1.0)
+        put(out, slap(0.05, 1100, 0.8, 0.01), 0.002, 0.5)
+    elif kind == "heavy":
+        put(out, thud(0.35, 95, 40, 0.07, drop=0.02, click=0.4, body=1.0, nf=800), 0.0, 1.0)
+        put(out, footstep(2.0, 0.4, 0.5, False), 0.0, 0.6)
+    elif kind == "giant":
+        put(out, thud(0.8, 62, 26, 0.18, drop=0.04, click=0.3, body=1.0, nf=400), 0.0, 1.0)
+        put(out, grit(0.4, 1500, 1000, 7000), 0.01, 0.35)
+        for _ in range(4):
+            put(out, thud(0.1, R.uniform(250, 400), 150, 0.012, click=0.5, body=0.4, nf=2500), 0.05 + R.exponential(0.12),
+                R.uniform(0.05, 0.15))
+        out = room(sat(out, 1.8), 0.9, 0.25, damp=2.0, fd=1000)
+    elif kind == "crawl":
+        put(out, slap(0.06, 1000, 0.8, 0.012), 0.0, 0.8)
+        put(out, thud(0.2, 140, 70, 0.03, click=0.2, body=0.7), 0.05, 0.6)
+        put(out, cloth(0.3, 400, 500, 4500, 0.5), 0.0, 0.5)
+        put(out, grit(0.25, 400, 1500, 7000) * bell(0.25, 0.5), 0.02, 0.3)
+    elif kind == "claw":
+        for j in range(3):
+            put(out, tongue_click(R.uniform(2600, 4200), 6.0), 0.012 * j + R.uniform(0, 0.006), 0.8 - 0.15 * j)
+        put(out, thud(0.12, 180, 100, 0.02, click=0.1, body=0.5, nf=1200), 0.005, 0.5)
+    else:  # stalk
+        put(out, lp(footstep(0.8, 0.2, 0.1, False), 1800), 0.0, 1.0)
+        put(out, cloth(0.2, 200, 700, 4000, 0.4), 0.0, 0.3)
+    return out
+
+
+# =====================================================================
+#  プレイヤーの状態（nr.pl.*）
+# =====================================================================
+def r_heartbeat(v):
+    """心音（免疫低下）: 「どくん」= 胸の中のこもった低い 2 拍（lub は強く dub は短く）。飽和で倍音を足し
+    小さなスピーカーでも聞こえるようにする。"""
+    out = silence(0.75)
+    put(out, thud(0.25, 62, 38, 0.06, drop=0.01, click=0.0, body=1.0, nf=150), 0.0, 1.0)
+    put(out, thud(0.2, 75, 45, 0.045, drop=0.01, click=0.0, body=1.0, nf=180), 0.24 + 0.02 * v, 0.7)
+    return sat(lp(out, 260, 2), 2.5)
+
+
+def r_immunity_warn(v):
+    """免疫の警告: 低い不協和の脈打つ音（短二度でぶつかる 2 音のうなり）+ 耳鳴り + 心音の一打。"""
+    d = 1.4
+    t = tax(d)
+    e = env_pts(d, [(0, 0), (0.05, 1), (0.9, 0.7), (d, 0)], "cos")
+    a = osc(d, 110.0 * (1 + 0.06 * v), 16, 1.2) + osc(d, 116.5 * (1 + 0.06 * v), 16, 1.2)
+    pulse = 0.55 + 0.45 * np.cos(np.pi * 4.0 * t) ** 2
+    out = nrm(lp(a, 1200) * e * pulse)
+    put(out, sine(d, 3100.0 + 300 * v) * env_pts(d, [(0, 0), (0.3, 1), (d, 0)]), 0.0, 0.08)
+    put(out, thud(0.3, 60, 35, 0.07, click=0.0, body=1.0, nf=150), 0.0, 0.8)
+    return out
+
+
+def r_immunity_restore(v):
+    """免疫の回復: 上がっていく明るい鐘の分散和音 + 吸い込む息のような上がる風 + ほっとする柔らかな和音。"""
+    d = 1.6
+    out = silence(d)
+    notes = (523.25, 659.25, 783.99, 1046.5) if v == 0 else (587.33, 739.99, 880.0, 1174.66)
+    for j, f in enumerate(notes):
+        put(out, fmbell(1.0, f, 2.0, 1.2, 0.5), 0.08 * j, 0.35)
+    put(out, _sweep(1.0, 400, 4000, 1.2) * bell(1.0, 0.7), 0.0, 0.25)
+    pad = sum(osc(d, ff / 2, 6, 1.5) for ff in notes[:3])
+    put(out, nrm(lp(pad, 2000)) * env_pts(d, [(0, 0), (0.3, 1), (d, 0)], "cos"), 0.0, 0.25)
+    return out
+
+
+def r_pl_hurt(v):
+    """被弾: 体に入る鈍い当たり + 「うっ」「ぐっ」と詰まる声。"""
+    out = silence(0.5)
+    put(out, thud(0.25, 130, 60, 0.04, click=0.3, body=0.8, nf=900), 0.0, 0.6)
+    put(out, slap(0.05, 1200, 0.7, 0.01), 0.0, 0.3)
+    put(out, effort(0.22 + 0.04 * v, "ugh"), 0.01, 1.0)
+    return out
+
+
+def r_heal(v):
+    """回復: 柔らかく上がる鐘の 2 音 + 安堵の吐息。"""
+    out = silence(1.1)
+    put(out, fmbell(0.8, 660 + 40 * v, 2.0, 1.0, 0.4), 0.0, 0.4)
+    put(out, fmbell(0.8, 990 + 60 * v, 2.0, 1.0, 0.4), 0.12, 0.35)
+    put(out, whisper(0.6, [(0, "a"), (0.6, "schwa")], [(0, 0), (0.1, 1), (0.6, 0)], 1.0, 1.6), 0.15, 0.4)
+    return out
+
+
+def r_levelup(v):
+    """スキルポイント獲得: 明るく駆け上がる分散和音（鐘 + 金管）+ きらめき + 低い支え。"""
+    out = silence(1.8)
+    base = 392.0 if v == 0 else 440.0
+    for j, r in enumerate((1.0, 1.25, 1.5, 2.0)):
+        put(out, fmbell(1.2, base * r, 3.0, 1.5, 0.6), 0.09 * j, 0.3)
+        put(out, horn(0.9, base * r / 2, 18, 1.0) * perc(0.9, 0.01, 0.4), 0.09 * j, 0.06)
+    put(out, crackles(1.2, 40, 4000, 10000, 0.6, 0.004) * env_pts(1.2, [(0, 0), (0.2, 1), (1.2, 0)]), 0.3, 0.15)
+    put(out, thud(0.6, 70, 50, 0.2, click=0.0, body=0.6, nf=200), 0.27, 0.3)
+    return room(out, 1.0, 0.25)
+
+
+def r_grabbed(v):
+    """掴まれた: 腕を掴む湿った平手と服が引かれる衣擦れ + 息をのむ声と詰まる声 + 心臓が跳ねる低音。"""
+    out = silence(0.8)
+    put(out, slap(0.06, 1100, 0.8, 0.012), 0.0, 0.9)
+    put(out, cloth(0.3, 600, 500, 5000, 0.2), 0.0, 0.6)
+    put(out, whisper(0.3, [(0, "a"), (0.3, "o")], [(0, 0), (0.05, 1), (0.3, 0)], 1.0, 1.5), 0.04, 0.5)
+    put(out, effort(0.25, "ugh", 0.8), 0.1, 0.5)
+    put(out, thud(0.4, 70, 38, 0.1, click=0.0, body=1.0, nf=200), 0.0, 0.6)
+    return out
+
+
+# =====================================================================
+#  夜と追跡（nr.chase.* / nr.night.start / nr.day.start）
+# =====================================================================
+def r_chase_start(v):
+    """追跡開始: 重低音の一撃 + ぶつかり合う金管の不協和音（強く入って長く残る）+ 金属を弓で擦る高い軋み + 残響。"""
+    d = 3.0
+    out = silence(d)
+    put(out, thud(1.2, 70, 30, 0.35, click=0.0, body=1.0, nf=200), 0.0, 1.0)
+    root = 98.0 * (1.06 if v else 1.0)
+    hd = 2.2
+    he = env_pts(hd, [(0, 0.001), (0.02, 1), (0.4, 0.55), (hd, 0.001)], "db")
+    br = sum(horn(hd, root * r, 26, 1.0, 0.003) for r in (1.0, 1.06, 1.414, 1.5, 2.12))
+    put(out, nrm(br) * he, 0.0, 0.8)
+    sq = _stickslip(1.4, 900, 1250, (2500, 6000), 0.15) * env_pts(1.4, [(0, 0), (0.1, 1), (1.4, 0)], "cos")
+    put(out, sq, 0.05, 0.25)
+    return fit(room(sat(out, 1.6), 1.8, 0.35, damp=1.8, fd=1500), d)
+
+
+def r_chase_level_up(v):
+    """追跡レベル上昇: 速く駆け上がる上昇音（金管のグリッサンド + 雑音の掃引）→ 強い一撃。"""
+    d = 1.6
+    out = silence(d)
+    rd = 0.6
+    f = np.geomspace(150, 600, ns(rd)) * (1.0 + 0.06 * v)
+    re = env_pts(rd, [(0, 0.02), (rd, 1)], "db")
+    put(out, nrm(lp(osc(rd, f, 20, 1.0), 4000)) * re, 0.0, 0.45)
+    put(out, _sweep(rd, 300, 5000, 1.0) * re, 0.0, 0.4)
+    put(out, thud(0.8, 75, 32, 0.25, click=0.2, body=1.0, nf=300), rd, 1.0)
+    hd = 0.9
+    br = sum(horn(hd, 196.0 * (1.0 + 0.06 * v) * r, 26, 1.0, 0.003) for r in (1.0, 1.06, 1.5))
+    put(out, nrm(br) * perc(hd, 0.01, 0.35), rd, 0.7)
+    return fit(room(sat(out, 1.6), 1.2, 0.3), d)
+
+
+def r_chase_end(v):
+    """追跡を振り切った: 張り詰めた不協和がほどけて下がり、柔らかな長三和音へ落ち着く + 静かに引いていく風。"""
+    d = 2.6
+    out = silence(d)
+    root = 130.81 if v == 0 else 146.83
+    e1 = env_pts(1.0, [(0, 0), (0.05, 1), (1.0, 0)], "cos")
+    put(out, nrm(lp(osc(1.0, root * 1.06, 10, 1.4) + osc(1.0, root * 1.414, 10, 1.4), 2500)) * e1, 0.0, 0.4)
+    e2 = env_pts(d - 0.5, [(0, 0), (0.4, 1), (d - 0.5, 0)], "cos")
+    pad = sum(osc(d - 0.5, root * r, 10, 1.6) for r in (1.0, 1.26, 1.5, 2.0))
+    put(out, nrm(lp(pad, 1800)) * e2, 0.5, 0.5)
+    put(out, _sweep(d, 3000, 300, 1.0) * env_pts(d, [(0, 0), (0.3, 1), (d, 0)], "cos"), 0.0, 0.2)
+    return room(out, 1.4, 0.3)
+
+
+def r_night_start(v):
+    """夜が来る: 街に響く巨大な号笛（低い金管の 2 音。ゆっくり立ち上がり、少し持ち上がって、下がりながら消える）
+    + 建物のはね返り。"""
+    d, hd = 7.0, 5.0
+    scoop = env_pts(hd, [(0, 0.94), (0.6, 1.0), (3.8, 1.0), (hd, 0.9)], "cos")
+    e = env_pts(hd, [(0, 0), (0.7, 1), (3.6, 0.9), (hd, 0)], "cos")
+    f1, f2 = (110.0, 138.6) if v == 0 else (98.0, 123.5)
+    y = nrm(horn(hd, f1 * scoop, 30, 0.9, 0.003) + 0.8 * horn(hd, f2 * scoop, 30, 0.9, 0.003)) * e
+    y = y + 0.25 * nrm(lp(brown(hd), 120)) * e
+    out = silence(d)
+    put(out, y, 0.0, 1.0)
+    out = echoes(room(out, 2.5, 0.4, damp=2.0, fd=1500), [(0.35, 0.35), (0.8, 0.22), (1.4, 0.12)], 1500)
+    return fit(out, d)
+
+
+def r_day_start(v):
+    """夜明け: 遠くで鳴る鐘 2 打（長く残る部分音）+ 明るい長和音の柔らかな広がり + 澄んだ風。"""
+    d = 5.0
+    out = silence(d)
+    f0 = 220.0 + 30.0 * v
+    put(out, metal(3.5, f0, "bell", 1.8, 0.4, 0.8), 0.0, 0.6)
+    put(out, metal(3.5, f0, "bell", 1.8, 0.4, 0.8), 1.3, 0.5)
+    pad = sum(osc(d, f0 * r, 8, 1.6) for r in (1.0, 1.26, 1.5))
+    put(out, nrm(lp(pad, 1600)) * env_pts(d, [(0, 0), (1.2, 1), (d, 0)], "cos"), 0.0, 0.3)
+    put(out, _sweep(d, 600, 2500, 0.8) * env_pts(d, [(0, 0), (1.5, 1), (d, 0)], "cos"), 0.0, 0.12)
+    return fit(room(out, 2.2, 0.35, damp=1.5), d)
+
+
+# =====================================================================
+#  UI・道具（nr.ui.*）
+# =====================================================================
+def r_ui_click(v):
+    """クリック: 小さく硬い機械の「かちっ」+ ごく短い電子音。"""
+    out = silence(0.08)
+    put(out, mclick(0.04, 3200 + 400 * v, 0.004, 1.2), 0.0, 1.0)
+    put(out, beep(0.03, 1800 + 200 * v, 0.001, 0.02, 0.2), 0.0, 0.25)
+    return out
+
+
+def r_ui_open(v):
+    """端末を開く: 上がる起動音 2 つ + ブラウン管のような低い唸りの立ち上がり + 静電気のさざめき。"""
+    out = silence(0.6)
+    put(out, beep(0.07, 880 * (1 + 0.12 * v), 0.002, 0.03), 0.0, 0.5)
+    put(out, beep(0.09, 1320 * (1 + 0.12 * v), 0.002, 0.04), 0.07, 0.5)
+    put(out, nrm(hum(0.5, 60, 20, 0.6, 0.3, 0.0)) * env_pts(0.5, [(0, 0), (0.05, 1), (0.5, 0)]), 0.0, 0.25)
+    put(out, nrm(hp(white(0.3), 3000)) * perc(0.3, 0.005, 0.08), 0.0, 0.15)
+    return out
+
+
+def r_ui_craft(v):
+    """クラフト: 部品を組む金属の 2 打 + ねじのラチェット + できあがりの明るい「きん」。"""
+    out = silence(0.95)
+    put(out, metal(0.2, R.uniform(900, 1300), "bar", 0.06, 0.5, 1.5), 0.0, 0.6)
+    put(out, metal(0.2, R.uniform(1100, 1500), "bar", 0.06, 0.5, 1.5), 0.12, 0.5)
+    for j in range(5):
+        put(out, mclick(0.02, 3000, 0.003, 1.0), 0.25 + 0.03 * j, 0.35)
+    put(out, fmbell(0.5, 1568.0 + 100 * v, 2.0, 1.5, 0.3), 0.45, 0.5)
+    return out
+
+
+def r_ui_error(v):
+    """エラー: 低いブザーの下がる 2 音。"""
+    out = silence(0.4)
+    for j, f in enumerate((220.0, 185.0)):
+        bd = 0.13
+        e = np.minimum(np.clip(tax(bd) / 0.003, 0, 1), np.clip((bd - tax(bd)) / 0.02, 0, 1))
+        put(out, nrm(lp(osc(bd, f * (1 + 0.05 * v), 12, 1.0, True), 3000)) * e, 0.16 * j, 0.8)
+    return out
+
+
+def r_ui_combo(v):
+    """ゴアコンボ: 低い一撃 + 段（変種）ごとに上がる金属の「ぴん」+ ざらつき。"""
+    out = silence(0.6)
+    put(out, thud(0.3, 90, 45, 0.06, click=0.3, body=0.9, nf=600), 0.0, 0.8)
+    f = 880.0 * 2 ** (v * 4 / 12)
+    put(out, fmbell(0.5, f, 3.0, 2.0, 0.25), 0.0, 0.5)
+    put(out, fmbell(0.4, f * 1.5, 3.0, 2.0, 0.2), 0.05, 0.3)
+    return sat(out, 1.5)
+
+
+def r_ui_headshot(v):
+    """ヘッドショット: 鋭く高い金属の「きん」+ 短い低音 + 骨のぱきっ。"""
+    out = silence(0.6)
+    put(out, metal(0.5, 2300 + 200 * v, "bell", 0.25, 0.6, 1.8), 0.0, 0.6)
+    put(out, thud(0.2, 100, 50, 0.04, click=0.4, body=0.8, nf=800), 0.0, 0.6)
+    put(out, crack(0.1, 4, 0.008, 1500, 6000, 0.2), 0.0, 0.4)
+    return out
+
+
+def r_ui_kill(v):
+    """撃破: 重く短い低音 + 下がる短い音 + ざらついた砕け。"""
+    out = silence(0.6)
+    put(out, thud(0.4, 85, 38, 0.08, click=0.5, body=1.0, nf=500), 0.0, 1.0)
+    f = np.geomspace(700 + 80 * v, 260, ns(0.25))
+    put(out, nrm(osc(0.25, f, 10, 1.3)) * perc(0.25, 0.003, 0.09), 0.0, 0.35)
+    put(out, crack(0.15, 6, 0.02, 800, 4000, 0.3), 0.0, 0.3)
+    return sat(out, 1.6)
+
+
+def r_ui_bandage(v):
+    """包帯を巻く: 腕に巻きつける衣擦れの繰り返し + 最後に端をちぎる。"""
+    out = silence(1.5)
+    for j in range(3):
+        put(out, cloth(0.3, 300, 900, 6000, 0.5), 0.05 + 0.33 * j + R.uniform(-0.02, 0.02), 0.7)
+    put(out, tear(0.18, 1800, 300, 1200, 7000, 0.3, 1.8, 0.0), 1.12, 0.6)
+    return out
+
+
+def r_ui_medkit(v):
+    """救急キット: 掛け金 2 つの「ぱちん」+ 蓋が開くプラスチックの響き + 中身をあさる音 + 包帯の衣擦れ。"""
+    out = silence(1.6)
+    put(out, mclick(0.05, 2100, 0.008, 1.3), 0.0, 0.7)
+    put(out, mclick(0.05, 2000, 0.008, 1.3), 0.11, 0.7)
+    put(out, wood(0.15, 420, 0.02, 0.6, 0.4), 0.22, 0.4)
+    for _ in range(6):
+        put(out, mclick(0.04, R.uniform(1500, 3500), 0.004, 0.6), 0.35 + R.uniform(0, 0.5), R.uniform(0.15, 0.3))
+    put(out, cloth(0.4, 300, 900, 6000, 0.5), 0.6, 0.6)
+    put(out, cloth(0.35, 300, 900, 6000, 0.5), 1.05, 0.5)
+    return out
+
+
+def r_ui_inject(v):
+    """注射を打つ: キャップを外す「ぽん」+ 押し当てて作動する「かしゅっ」（空気の抜ける鋭い音）+ 小さく吸う息。"""
+    out = silence(0.9)
+    put(out, nrm(bp(white(0.03), 900, 2.0) * perc(0.03, 0.001, 0.008)), 0.0, 0.4)
+    put(out, mclick(0.05, 2600, 0.006, 1.4), 0.25, 0.7)
+    put(out, _hiss(0.35, 6000, 1.5, 2500) * env_pts(0.35, [(0, 0), (0.005, 1), (0.08, 0.6), (0.35, 0)]), 0.255, 0.8)
+    put(out, whisper(0.35, [(0, "i"), (0.35, "a")], [(0, 0), (0.25, 1), (0.35, 0)], 1.0, 2.0, fric=0.3), 0.45, 0.3)
+    return out
+
+
+def r_ui_eat(v):
+    """食べる: かじる「ぱり」+ 噛むたびの湿った音とくぐもった砕け（3 回）+ 飲み込む。"""
+    out = silence(1.2)
+    put(out, crack(0.1, 6, 0.015, 1500, 6000, 0.3), 0.0, 0.6)
+    for j in range(3):
+        t = 0.2 + 0.24 * j + R.uniform(-0.02, 0.02)
+        put(out, lp(crack(0.08, 4, 0.02, 600, 2500, 0.4), 2500), t, 0.45)
+        put(out, nrm(squelch(0.12, 300, 1200, 4, 15, 0.3, 3)) * perc(0.12, 0.004, 0.04), t + 0.01, 0.3)
+    put(out, thud(0.15, 160, 90, 0.03, click=0.0, body=0.5, nf=400), 0.98, 0.35)
+    return out
+
+
+def r_ui_drink(v):
+    """缶を開けて飲む: プルタブの「かしゅっ」と炭酸のしゅわ → ごくっごくっ（喉の詰まり + 液の泡）。"""
+    out = silence(1.6)
+    put(out, mclick(0.03, 2200, 0.005, 1.2), 0.0, 0.5)
+    put(out, nrm(filt(white(0.4), g_hp(3000))) * env_pts(0.4, [(0, 0), (0.003, 1), (0.05, 0.4), (0.4, 0)]), 0.01, 0.6)
+    put(out, bubbles(0.5, 200, 2500, 7000, 0.5) * perc(0.5, 0.01, 0.2), 0.03, 0.3)
+    for j in range(2 + v % 2):
+        t = 0.6 + 0.3 * j
+        put(out, thud(0.18, 180, 110, 0.035, click=0.1, body=0.7, nf=500), t, 0.5)
+        put(out, bubbles(0.15, 60, 250, 800, 0.4), t, 0.4)
+    return out
+
+
+def r_ui_pills(v):
+    """錠剤の瓶を振る: プラスチックの瓶の中で錠剤がぶつかる細かい硬い粒（振るたびの塊）。"""
+    out = silence(0.8)
+    for j in range(2 + v % 2):
+        t0 = 0.05 + 0.22 * j
+        for _ in range(25):
+            put(out, mclick(0.015, R.uniform(2500, 6000), 0.0015, 0.8, 3), t0 + abs(R.normal(0.04, 0.025)),
+                R.uniform(0.1, 0.6))
+        put(out, wood(0.06, 600, 0.01, 0.6, 0.3), t0, 0.15)
+    return out
+
+
+def r_ui_repair(v):
+    """テープを巻いて武器を直す: ダクトテープを引き出すバリバリ（粘着がはがれる密な粒）× 2 + 巻きつける擦れ + ちぎる。"""
+    out = silence(1.4)
+    for j in range(2):
+        t = 0.05 + 0.5 * j
+        tp = impulses(0.35, 1800 * bell(0.35, 0.4) + 50, 0.7)
+        put(out, nrm(filt(tp, g_bp(2500, 0.6), g_hp(600))), t, 0.7)
+        put(out, cloth(0.25, 300, 900, 5000, 0.5), t + 0.3, 0.4)
+    put(out, tear(0.12, 2500, 300, 1500, 7000, 0.2, 1.5, 0.0), 1.15, 0.6)
+    return out
+
+
+def r_ui_lockpick(v):
+    """鍵穴を探るピック: 細い金属の擦れ + ピンが跳ねる小さな「ちっ」の不規則な列。"""
+    d = 0.55
+    out = silence(d)
+    put(out, mslide(0.4, 3000, 10000, 0.5, 0.4), 0.0, 0.2)
+    t = 0.03
+    while t < d - 0.05:
+        put(out, mclick(0.03, R.uniform(3500, 6000), 0.003, 1.0, 4), t, R.uniform(0.3, 0.8))
+        t += R.uniform(0.05, 0.12)
+    return out
+
+
+def r_ui_uv_on(v):
+    """UV ライトが点く: スイッチの「かちっ」+ 安定器が上がる高い唸り（掃引）+ 唸りの立ち上がり。"""
+    out = silence(0.7)
+    put(out, mclick(0.04, 2300, 0.006, 1.2), 0.0, 0.8)
+    f = np.geomspace(1800, 6500 + 400 * v, ns(0.4))
+    put(out, sine(0.4, f) * env_pts(0.4, [(0, 0), (0.05, 1), (0.4, 0.2)]), 0.02, 0.12)
+    put(out, nrm(hum(0.6, 60, 30, 0.7, 0.4, 0.0)) * env_pts(0.6, [(0, 0), (0.08, 1), (0.6, 0)]), 0.03, 0.5)
+    return out
+
+
+def r_ui_zoom(v):
+    """双眼鏡のピント: 細かく刻んだつまみの歯車のカリカリ（間隔が少しずつ開く）+ 筒が擦れる小さな音。"""
+    out = silence(0.5)
+    for j in range(9 + v):
+        put(out, mclick(0.02, R.uniform(3800, 4400), 0.002, 0.8, 3), 0.02 + j * (0.03 + 0.002 * j), 0.6)
+    put(out, mslide(0.35, 1500, 6000, 0.3, 0.5), 0.02, 0.2)
+    return out
+
+
+# =====================================================================
+#  ボス（nr.boss.*。22.05 kHz）
+# =====================================================================
+def r_boss_intro(v):
+    """ボスの出現: 暗く膨らむ低音の気配（雑音と金管の和音のクレッシェンド）→ 地響きの一撃 → 巨体の咆哮 → 長い残響。"""
+    d = 5.0
+    out = silence(d)
+    sw = 1.3
+    se = env_pts(sw, [(0, 0.01), (sw, 1)], "db")
+    put(out, _sweep(sw, 120, 1500, 0.8, brown(sw) + 0.3 * pink(sw)) * se, 0.0, 0.5)
+    ch = sum(horn(sw, f * (1 + 0.05 * v), 20, 1.1, 0.002) for f in (55.0, 58.3, 82.4))
+    put(out, nrm(ch) * se, 0.0, 0.4)
+    put(out, thud(1.5, 60, 26, 0.4, click=0.2, body=1.0, nf=200), sw, 1.0)
+    put(out, _burst(0.05, 0.004, 30), sw, 0.7)
+    rd = 2.6
+    put(out, _cry("giant", rd, [(0, 0.3), (0.3, 0.8), (1.6, 0.7), (rd, 0.2)], [(0, "growl"), (0.4, "a"), (rd, "o")],
+                  [(0, 0), (0.15, 1), (1.8, 0.8), (rd, 0)], oq=0.45, drive=2.5, tilt=-4, growl=0.6, k=0.8), sw + 0.1, 0.9)
+    return fit(room(sat(out, 1.8), 2.4, 0.4, damp=2.0, fd=1200), d)
+
+
+def r_boss_phase(v):
+    """ボスの段階移行: 衝撃波（圧の山 + 下がる重低音 + 押し寄せる風）+ 怒りの咆哮 + 不協和の金管の一撃。"""
+    d = 3.2
+    out = silence(d)
+    put(out, _burst(0.05, 0.003, 30), 0.0, 0.8)
+    put(out, thud(1.0, 65, 28, 0.3, click=0.0, body=1.0, nf=200), 0.0, 1.0)
+    put(out, whoosh(0.9, 150, 1200, 0.15, 0.9, 1.5), 0.0, 0.6)
+    put(out, _cry("giant", 2.2, [(0, 0.5), (0.25, 1.0), (1.6, 0.8), (2.2, 0.3)], [(0, "growl"), (0.25, "a"), (2.2, "o")],
+                  oq=0.42, drive=3.0, tilt=-4, growl=0.7, k=0.8), 0.15, 0.9)
+    br = sum(horn(1.5, 73.4 * (1 + 0.06 * v) * r, 22, 1.0, 0.003) for r in (1.0, 1.06, 1.414))
+    put(out, nrm(br) * perc(1.5, 0.01, 0.5), 0.0, 0.4)
+    return fit(room(sat(out, 1.8), 2.0, 0.35, damp=2.0, fd=1300), d)
+
+
+def r_boss_death(v):
+    """ボス撃破: 下がっていく断末魔 → 巨体が崩れる重い地響きと破裂する肉 → 解決する低い和音と長い残響。"""
+    d = 5.5
+    out = silence(d)
+    put(out, _cry("giant", 2.0, [(0, 0.9), (0.4, 1.0), (2.0, -0.3)], [(0, "a"), (0.5, "o"), (2.0, "u")],
+                  [(0, 0), (0.1, 1), (1.4, 0.7), (2.0, 0)], oq=0.45, drive=2.5, tilt=-4, growl=0.5, k=0.8), 0.0, 0.9)
+    t = 1.8
+    put(out, thud(1.4, 55, 24, 0.4, drop=0.05, click=0.4, body=1.0, nf=300), t, 1.0)
+    put(out, nrm(squelch(0.6, 150, 900, 5, 10, 0.6, 10)) * perc(0.6, 0.01, 0.2), t, 0.5)
+    put(out, splatter(1.2, 20, 0.3, 1.3), t + 0.05, 0.35)
+    put(out, grit(0.8, 1500, 800, 6000), t, 0.3)
+    root = 65.4 * (1 + 0.06 * v)
+    pd = d - t - 0.3
+    pad = sum(osc(pd, root * r, 14, 1.4) for r in (1.0, 1.5, 2.0, 2.52))
+    put(out, nrm(lp(pad, 1500)) * env_pts(pd, [(0, 0), (0.8, 1), (pd, 0)], "cos"), t + 0.3, 0.4)
+    return fit(room(sat(out, 1.6), 2.5, 0.4, damp=2.0, fd=1200), d)
+
+
+# =====================================================================
+#  特殊能力（nr.ab.<ability>。spec の ABILITY_VOCAB の fx に合わせる。能力の発動時に鳴る）
+# =====================================================================
+# 能力の音の表の設定（build_table が使う）: 変種 3 つ / 22.05 kHz（声が主）/ 届く距離 / 音量の分類 / ループ
+AB_N3 = {"acid_spit", "ambush_strike", "ankle_grab", "armor_shed", "ash_puff", "blade_dash", "bone_plate",
+         "ceiling_ambush", "debris_throw", "dodge", "flee_bolt", "grab_throw_player", "ground_pound", "keep_distance",
+         "parkour_chase", "pounce_pin", "pustule_pop", "sac_rupture", "shield_block", "tool_wield", "uv_weak",
+         "wall_climb"}
+AB_22K = {"boss_phases", "chase_call", "enrage_unarmored", "frenzy", "howl_alarm", "keen_scream", "reanimate",
+          "summon_volatiles"}
+AB_DIST = {"chase_call": 96, "howl_alarm": 96, "summon_volatiles": 96, "keen_scream": 64, "boss_phases": 96,
+           "ground_pound": 64, "detonate": 48, "tank_burst": 64, "gas_cloud_death": 48, "rage_charge": 48,
+           "enrage_unarmored": 64, "pustule_pop": 16, "toxic_trail": 16, "keep_distance": 16, "dodge": 16}
+AB_CLS = {"ground_pound": "loud", "boss_phases": "loud", "chase_call": "loud", "howl_alarm": "loud",
+          "keen_scream": "loud", "tank_burst": "loud", "gas_cloud_death": "loud", "frenzy": "voice",
+          "enrage_unarmored": "voice", "reanimate": "voice", "summon_volatiles": "voice", "ember_aura": "loop",
+          "toxic_trail": "soft"}
+AB_LOOP = {"ember_aura"}
+
+
+def r_ab_acid_puddle(v):
+    """酸だまり: 泡立つ水たまり（大小の泡の破裂）+ じゅうじゅう溶けるはぜ + しゅー。"""
+    d = 1.8
+    e = env_pts(d, [(0, 0), (0.1, 1), (1.2, 0.8), (d, 0)], "cos")
+    out = nrm(bubbles(d, 45, 250, 1200, 0.6) * e)
+    out += 0.45 * nrm(crackles(d, 500 * e + 10, 2500, 9000, 0.9, 0.0008))
+    out += 0.25 * nrm(filt(white(d), g_hp(3500)) * e * (0.7 + 0.3 * lfn(d, 6)))
+    put(out, nrm(squelch(0.3, 200, 900, 4, 10)) * perc(0.3, 0.01, 0.1), 0.0, 0.4)
+    return out
+
+
+def r_ab_acid_spit(v):
+    """酸を吐く: 袋が膨らむごぼごぼ（上がっていく泡と喉）→ 「ぺっ」と吐く湿った破裂 + 飛んでいく液の風切り。"""
+    out = silence(1.0)
+    wd = 0.45
+    up = env_pts(wd, [(0, 0), (wd, 1)], "cos")
+    put(out, nrm(bubbles(wd, 60, 150, 600, 0.9)) * up, 0.0, 0.5)
+    put(out, _cry("growl", wd, [(0, 0.1), (wd, 0.5)], [(0, "u"), (wd, "o")], breath=0.8) * up, 0.0, 0.35)
+    put(out, nrm(squelch(0.15, 400, 2200, 5, 25, 0.6, 6)) * perc(0.15, 0.002, 0.04), wd, 1.0)
+    put(out, slap(0.05, 1800, 0.7, 0.008), wd, 0.6)
+    put(out, whoosh(0.35, 800, 3500, 0.3, 1.2, 2.0), wd + 0.02, 0.4)
+    put(out, splatter(0.3, 6, 0.06, 0.6), wd + 0.02, 0.25)
+    return out
+
+
+def r_ab_ambush_strike(v):
+    """透明からの不意打ち: 吸い込まれるように膨らむ気配 → 鋭い風切り → 噛みつくような唸り。"""
+    out = silence(0.8)
+    sw = 0.3
+    put(out, nrm(filt(pink(sw), g_bp(1500, 0.7))) * env_pts(sw, [(0, 0.01), (sw, 1)], "db"), 0.0, 0.45)
+    put(out, whoosh(0.18, 600, 5000, 0.6, 1.3, 2.0), sw - 0.04, 0.8)
+    put(out, _cry("growl", 0.4, [(0, 0.7), (0.4, 0.4)], [(0, "a"), (0.4, "growl")], oq=0.45, drive=2.0, growl=0.4), sw, 0.6)
+    return out
+
+
+def r_ab_ankle_grab(v):
+    """足首を掴む: 瓦礫の陰から伸びる腕の擦れ → 足首を握る湿った平手と服の引かれる音 → 低い唸り。"""
+    out = silence(0.8)
+    put(out, grit(0.12, 600, 1500, 7000), 0.0, 0.3)
+    put(out, cloth(0.15, 400, 800, 5000, 0.5), 0.0, 0.4)
+    put(out, slap(0.06, 1000, 0.8, 0.012), 0.1, 1.0)
+    put(out, nrm(squelch(0.12, 250, 900, 4, 12, 0.4, 2)) * perc(0.12, 0.003, 0.04), 0.1, 0.35)
+    put(out, cloth(0.25, 700, 600, 5000, 0.2), 0.11, 0.5)
+    put(out, _cry("growl", 0.5, [(0, 0.4), (0.5, 0.2)], [(0, "growl"), (0.5, "u")], oq=0.5, drive=1.5, growl=0.5), 0.14, 0.5)
+    return out
+
+
+def r_ab_armor_shed(v):
+    """装甲が外れる: 留め具がちぎれる金属のきしみと破断 + 火花 → 板が落ちて跳ねる金属音。"""
+    out = silence(1.2)
+    put(out, _stickslip(0.12, 400, 1500, (1500, 5000), 0.3), 0.0, 0.5)
+    put(out, nrm(hp(white(0.02), 1500) * perc(0.02, 0.0002, 0.004)), 0.12, 0.8)
+    put(out, crackles(0.25, 150, 3000, 10000, 1.0, 0.0006) * perc(0.25, 0.002, 0.07), 0.12, 0.4)
+    t, f0 = 0.35, R.uniform(320, 480)
+    for j in range(3):
+        put(out, metal(0.6, f0 * R.uniform(0.97, 1.03), "plate", 0.35 / (j + 1), 0.5, 1.2), t, 0.8 / (j + 1) ** 0.8)
+        t += 0.17 / (j + 1) ** 0.6
+    return out
+
+
+def r_ab_ash_puff(v):
+    """灰の雲: 乾いた体が崩れる砂のさらさらと乾いた破断 + 粉が吹き出す柔らかい「ぼふっ」。"""
+    out = silence(0.9)
+    put(out, nrm(filt(pink(0.35), g_bp(400, 0.6), g_lp(2500)) * perc(0.35, 0.01, 0.1)), 0.0, 0.9)
+    e = env_pts(0.7, [(0, 0), (0.05, 1), (0.7, 0)])
+    put(out, grit(0.7, 2500, 1500, 9000) * e, 0.0, 0.45)
+    put(out, nrm(filt(white(0.7), g_hp(2500))) * e, 0.02, 0.25)
+    put(out, crack(0.2, 8, 0.1, 1200, 5000, 0.1), 0.0, 0.3)
+    return out
+
+
+def r_ab_blade_dash(v):
+    """刃の突進: かがむ足の擦れ → 一直線に駆ける強い風切り + 刃の金属の鳴り + 通り過ぎる斬撃の風。"""
+    out = silence(0.9)
+    put(out, grit(0.12, 1000, 1500, 7000), 0.0, 0.4)
+    put(out, footstep(1.2, 0.9, 0.4, False), 0.0, 0.5)
+    put(out, whoosh(0.45, 400, 4500, 0.35, 1.3, 1.5, 0.15), 0.12, 0.9)
+    put(out, metal(0.6, R.uniform(1800, 2400), "blade", 0.25, 0.5, 1.0, contact=0.0), 0.15, 0.25)
+    put(out, whoosh(0.15, 1500, 7000, 0.7, 1.5, 2.0), 0.4, 0.6)
+    return out
+
+
+def r_ab_bone_plate(v):
+    """骨の兜が弾く: 硬く乾いた骨の当たり（短いモード + 破断の粒）+ 弾かれる刃の「きん」+ 飛ぶ骨片。"""
+    out = silence(0.5)
+    put(out, metal(0.25, R.uniform(700, 900), "wood", 0.04, 0.6, 1.5), 0.0, 1.0)
+    put(out, crack(0.12, 4, 0.008, 1500, 6000, 0.3), 0.0, 0.6)
+    put(out, metal(0.4, R.uniform(2600, 3200), "blade", 0.12, 0.5, 1.5, contact=0.0), 0.002, 0.25)
+    for _ in range(4):
+        put(out, wood(0.06, R.uniform(1500, 3000), 0.008, 0.6, 0.6), 0.05 + R.exponential(0.06), 0.15)
+    return out
+
+
+def r_ab_boss_phases(v):
+    """段階移行の咆哮: 衝撃波（圧の山 + 下がる重低音 + 押し寄せる風）+ 長い咆哮 + 残る耳鳴り。"""
+    d = 2.8
+    out = silence(d)
+    put(out, _burst(0.05, 0.003, 30), 0.0, 0.8)
+    put(out, thud(1.0, 65, 28, 0.3, click=0.0, body=1.0, nf=200), 0.0, 0.9)
+    put(out, whoosh(0.9, 150, 1200, 0.15, 0.9, 1.5), 0.0, 0.6)
+    put(out, _cry("giant", 2.4, [(0, 0.4), (0.3, 0.9), (1.8, 0.75), (2.4, 0.3)], [(0, "growl"), (0.3, "a"), (2.4, "o")],
+                  oq=0.45, drive=2.5, tilt=-4, growl=0.6), 0.1, 1.0)
+    put(out, sine(1.8, 3600.0) * env_pts(1.8, [(0, 0), (0.1, 1), (1.8, 0)]), 0.1, 0.03)
+    return fit(room(sat(out, 1.8), 1.8, 0.3, damp=2.0, fd=1400), d)
+
+
+def r_ab_ceiling_ambush(v):
+    """天井から落ちる: ぱらぱら降る砂ぼこり + かすれた息 → 落ちる風切り → 重い着地と唸り。"""
+    out = silence(1.2)
+    for _ in range(14):
+        put(out, grit(0.05, 900, 2500, 9000), R.uniform(0.0, 0.45), R.uniform(0.05, 0.2))
+    put(out, whisper(0.45, [(0, "a"), (0.45, "i")], [(0, 0), (0.2, 1), (0.45, 0)], 0.9, 2.2, rasp=0.5), 0.05, 0.35)
+    put(out, whoosh(0.3, 200, 1800, 0.7, 1.2, 2.0), 0.45, 0.5)
+    put(out, thud(0.45, 110, 45, 0.07, click=0.5, body=1.0, nf=900), 0.72, 1.0)
+    put(out, footstep(1.6, 0.6, 0.6, False), 0.72, 0.6)
+    put(out, _cry("growl", 0.45, [(0, 0.6), (0.45, 0.3)], [(0, "a"), (0.45, "growl")], oq=0.45, drive=2.2, growl=0.5),
+        0.75, 0.6)
+    return out
+
+
+def r_ab_chase_call(v):
+    """追跡を呼ぶ金切り声: 遠くまで届く長い叫び（大きく開いた口・ゆがみ）+ 街のはね返り。"""
+    d = 2.0
+    y = _cry("screech", d, [(0, 0.2), (0.25, 0.85), (1.2, 0.95), (d, 0.5)], [(0, "a"), (0.2, "scream"), (d, "scream")],
+             [(0, 0), (0.08, 1), (1.5, 0.85), (d, 0)], oq=0.42, drive=2.5, tilt=-3, k=1.15, fshift=1.0 - 0.08 * v)
+    return echoes(room(y, 1.4, 0.3, damp=1.8, fd=1800), [(0.3, 0.3), (0.65, 0.18), (1.1, 0.1)], 1800)
+
+
+def r_ab_debris_throw(v):
+    """瓦礫を投げる: 地面がもぎ取られる砕け（低い破断 + 砂利）+ 力む唸り → 重い風切り。"""
+    out = silence(1.6)
+    put(out, crack(0.5, 18, 0.3, 300, 2500, 0.8), 0.0, 0.9)
+    put(out, grit(0.6, 1500, 800, 7000), 0.02, 0.5)
+    put(out, thud(0.4, 90, 40, 0.08, click=0.3, body=0.8), 0.0, 0.6)
+    put(out, _cry("growl", 0.7, [(0, 0.3), (0.5, 0.7), (0.7, 0.9)], [(0, "growl"), (0.7, "a")], oq=0.45, drive=2.0, growl=0.5),
+        0.2, 0.6)
+    put(out, whoosh(0.5, 120, 1200, 0.45, 1.0, 1.5), 0.9, 0.9)
+    return out
+
+
+def r_ab_detonate(v):
+    """自爆の秒読み（fuse 1.5 秒）: 速まるビープ（高さも上がる）+ 膨らむ結節の泡立ちと高まる唸り。爆発は別の音。"""
+    d = 1.55
+    out = silence(d)
+    t = 0.0
+    while t < d - 0.05:
+        u = t / d
+        put(out, beep(0.05, 1400.0 * 2 ** (u * 0.8), 0.002, 0.015, 0.5), t, 0.4 + 0.3 * u)
+        t += 0.32 * (1.0 - 0.82 * u)
+    sw = env_pts(d, [(0, 0.05), (d, 1)], "db")
+    put(out, nrm(bubbles(d, 70, 150, 900, 0.8)) * sw, 0.0, 0.35)
+    put(out, nrm(lp(osc(d, np.geomspace(90, 260, ns(d)), 12, 1.0), 1500)) * sw, 0.0, 0.3)
+    put(out, nrm(squelch(d, 150, 700, 6, 8, 0.5, 0)) * sw, 0.0, 0.2)
+    return out
+
+
+def r_ab_dodge(v):
+    """横跳びで避ける: 素早い体の風切り + 足の擦れ + 着地。"""
+    out = silence(0.5)
+    put(out, whoosh(0.22, 300, 2600, 0.5, 1.3, 2.0), 0.0, 0.8)
+    put(out, footstep(1.0, 0.9, 0.4, False), 0.0, 0.5)
+    put(out, footstep(1.1, 0.6, 0.4, True), 0.24, 0.7)
+    put(out, cloth(0.2, 400, 900, 6000, 0.4), 0.02, 0.35)
+    return out
+
+
+def r_ab_ember_aura(v):
+    """火の粉をまとう（ループ 2 秒）: ちりちり燃える細かいはぜと小さな炎のゆらぎ。"""
+    return _looped(2.0, 0.25, lambda d: fire_bed(d, 1.3 + 0.2 * v, 0.35, 0.3))
+
+
+def r_ab_enrage_unarmored(v):
+    """怒り狂う: 胸を叩く低い連打 → 長い咆哮（ゆがみ）+ 体から噴く湯気のしゅー。"""
+    out = silence(2.4)
+    for j in range(3):
+        put(out, thud(0.25, 95, 50, 0.05, click=0.3, body=1.0, nf=700), 0.12 * j, 0.6)
+    put(out, _cry("giant", 1.9, [(0, 0.4), (0.25, 1.0), (1.4, 0.85), (1.9, 0.4)], [(0, "growl"), (0.25, "a"), (1.9, "o")],
+                  oq=0.42, drive=3.0, tilt=-4, growl=0.7, k=0.85), 0.35, 1.0)
+    put(out, _hiss(1.6, 5000, 1.0, 2500) * env_pts(1.6, [(0, 0), (0.2, 1), (1.6, 0)], "cos"), 0.6, 0.2)
+    return sat(out, 1.5)
+
+
+def r_ab_fire_trail(v):
+    """燃える足跡: 足元で次々に燃え上がる「ぼっ」の連なり + はぜる火。"""
+    d = 1.4
+    out = silence(d)
+    for j in range(3):
+        put(out, _fwoom(0.35, 300, 2500, 0.06), 0.3 * j + R.uniform(0, 0.05), 0.7 - 0.1 * j)
+    put(out, fire_bed(d, 1.0, 0.5, 0.3) * env_pts(d, [(0, 0), (0.1, 1), (d, 0)]), 0.0, 0.4)
+    return out
+
+
+def r_ab_flashlight_beam(v):
+    """懐中電灯が見つけた: 電灯の「かちっ」と電球の小さな唸り + 短い驚きの唸り声。"""
+    out = silence(0.9)
+    put(out, mclick(0.04, 2400, 0.006, 1.1), 0.0, 0.5)
+    put(out, nrm(hum(0.5, 60, 15, 0.6, 0.3, 0.0)) * perc(0.5, 0.01, 0.2), 0.0, 0.12)
+    put(out, _cry("growl", 0.55, [(0, 0.5), (0.15, 0.9), (0.55, 0.5)], [(0, "a"), (0.55, "growl")], oq=0.5, drive=1.6,
+                  growl=0.3), 0.05, 1.0)
+    return out
+
+
+def r_ab_flee_bolt(v):
+    """逃げ出す: 甲高く引きつった短い悲鳴 + 素早い軽い足音の連なり。"""
+    out = silence(0.9)
+    put(out, _cry("screech", 0.35, [(0, 0.3), (0.1, 0.6), (0.35, 0.2)], [(0, "i"), (0.35, "e")], oq=0.5, drive=1.2, k=1.2,
+                  fshift=0.8), 0.0, 0.7)
+    t = 0.1
+    for j in range(5):
+        put(out, footstep(0.8, 0.6, 0.3, j % 2 == 0), t, 0.5)
+        t += R.uniform(0.13, 0.16)
+    return out
+
+
+def r_ab_frenzy(v):
+    """狂乱: 速く荒い息（喉の擦れ）→ 引き裂くような叫び + 噴き出す湯気。"""
+    out = silence(2.1)
+    t = 0.0
+    for _ in range(4):
+        put(out, whisper(0.14, [(0, "a"), (0.14, "schwa")], [(0, 0), (0.02, 1), (0.14, 0)], 0.85, 1.8, rasp=0.8), t, 0.6)
+        t += 0.17
+    put(out, _cry("growl", 1.3, [(0, 0.6), (0.2, 1.1), (1.0, 1.0), (1.3, 0.5)], [(0, "a"), (0.2, "scream"), (1.3, "a")],
+                  oq=0.42, drive=3.0, tilt=-3.5, growl=0.4), 0.68, 1.0)
+    put(out, _hiss(1.2, 5000, 1.0, 2500) * env_pts(1.2, [(0, 0), (0.1, 1), (1.2, 0)], "cos"), 0.7, 0.15)
+    return out
+
+
+def r_ab_gas_cloud_death(v):
+    """毒袋の破裂: 水っぽい爆音（低い破裂 + ぐちゃっ + 泡）→ 濃いガスが噴き広がるしゅー。"""
+    d = 2.3
+    out = silence(d)
+    put(out, _burst(0.04, 0.003, 40), 0.0, 0.8)
+    put(out, thud(0.5, 85, 35, 0.12, click=0.3, body=1.0, nf=500), 0.0, 1.0)
+    put(out, nrm(squelch(0.4, 200, 1200, 5, 12, 0.6, 10)) * perc(0.4, 0.005, 0.12), 0.0, 0.8)
+    put(out, splatter(1.0, 18, 0.15, 1.0), 0.02, 0.4)
+    gd = d - 0.05
+    put(out, _hiss(gd, 2500, 0.8, 800, 8000, 0.25, 12) * env_pts(gd, [(0, 0), (0.05, 1), (0.6, 0.6), (gd, 0)], "cos"),
+        0.05, 0.5)
+    put(out, nrm(lp(brown(gd), 300)) * env_pts(gd, [(0, 0), (0.1, 1), (gd, 0)], "cos"), 0.03, 0.35)
+    return sat(out, 1.5)
+
+
+def r_ab_grab_throw_player(v):
+    """掴んで投げる: 掴む重い平手と服の引き → 持ち上げる力みの唸り → 投げ飛ばす大きな風切り。"""
+    out = silence(1.4)
+    put(out, slap(0.07, 900, 0.8, 0.015), 0.0, 1.0)
+    put(out, thud(0.25, 120, 60, 0.04, click=0.3, body=0.8), 0.0, 0.6)
+    put(out, cloth(0.35, 700, 600, 5000, 0.3), 0.0, 0.6)
+    put(out, _cry("giant", 0.8, [(0, 0.3), (0.6, 0.8), (0.8, 1.0)], [(0, "growl"), (0.8, "a")], oq=0.45, drive=2.0,
+                  growl=0.6), 0.2, 0.7)
+    put(out, whoosh(0.5, 150, 1500, 0.4, 1.0, 1.5), 0.85, 1.0)
+    return out
+
+
+def r_ab_ground_pound(v):
+    """地面を叩く衝撃波: 拳が地面を打つ巨大な低音（圧の山 + 下がる重低音）+ コンクリートの割れ + 跳ねる瓦礫 + 地鳴り。"""
+    d = 2.0
+    out = silence(d)
+    put(out, _burst(0.04, 0.003, 35), 0.0, 0.9)
+    put(out, thud(1.2, 70, 26, 0.3, drop=0.05, click=0.6, body=1.0, nf=600), 0.0, 1.0)
+    put(out, crack(0.4, 20, 0.12, 400, 3000, 0.8), 0.005, 0.7)
+    for _ in range(12):
+        t = 0.1 + R.exponential(0.3)
+        if t < d - 0.2:
+            put(out, thud(0.12, R.uniform(200, 350), 120, 0.015, click=0.5, body=0.5, nf=2500), t, R.uniform(0.05, 0.2))
+    put(out, grit(0.6, 2000, 1500, 8000), 0.02, 0.4)
+    put(out, nrm(lp(brown(1.6), 150)) * env_pts(1.6, [(0, 0), (0.05, 1), (1.6, 0)], "cos"), 0.0, 0.5)
+    return fit(room(sat(out, 2.2), 1.2, 0.3, damp=2.0, fd=1200), d)
+
+
+def r_ab_heavy_body(v):
+    """重い体が受け止める: 分厚い肉に吸われる鈍い「どむっ」+ 動じない低い鼻息。"""
+    out = silence(0.8)
+    put(out, thud(0.45, 95, 40, 0.09, click=0.2, body=1.0, nf=500), 0.0, 1.0)
+    put(out, nrm(squelch(0.2, 150, 700, 4, 8, 0.3, 0)) * perc(0.2, 0.004, 0.06), 0.0, 0.35)
+    put(out, whisper(0.4, [(0, "u"), (0.4, "schwa")], [(0, 0), (0.05, 1), (0.4, 0)], 0.75, 2.0, rasp=0.6), 0.12, 0.45)
+    return out
+
+
+def r_ab_hive_summon(v):
+    """胞子袋から産み落とす: 袋が裂ける湿った音（粘る裂け + ぐちゃっ）→ 粘液と一緒に落ちる体 + 吹き出す胞子。"""
+    out = silence(1.8)
+    put(out, tear(0.4, 900, 60, 300, 2500, 0.6, 3.0, 0.5), 0.0, 0.7)
+    put(out, nrm(squelch(0.6, 180, 1100, 6, 10, 0.5, 14)) * env_pts(0.6, [(0, 0), (0.1, 1), (0.6, 0)]), 0.1, 0.7)
+    put(out, thud(0.4, 110, 50, 0.06, click=0.2, body=0.9, nf=700), 0.55, 0.8)
+    put(out, splatter(0.8, 14, 0.12, 1.2), 0.55, 0.4)
+    put(out, _hiss(0.8, 4500, 1.0, 2000) * env_pts(0.8, [(0, 0), (0.05, 1), (0.8, 0)], "cos"), 0.15, 0.25)
+    return out
+
+
+def r_ab_howl_alarm(v):
+    """喉の袋の遠吠え: 袋が膨らむ低いごぼごぼ → サイレンのように上がる長い遠吠え（喉の袋の共鳴）→ 街のはね返り。"""
+    d = 4.6
+    out = silence(d)
+    inf = 0.8
+    put(out, nrm(bubbles(inf, 40, 120, 500, 0.9)) * env_pts(inf, [(0, 0), (inf, 1)], "cos"), 0.0, 0.4)
+    put(out, _cry("howl", inf, [(0, -0.2), (inf, 0.0)], [(0, "u"), (inf, "u")], [(0, 0), (inf, 0.5)], breath=0.8), 0.0, 0.4)
+    hd = 2.6
+    put(out, _cry("howl", hd, [(0, 0.0), (0.9, 0.85), (1.9, 1.0), (hd, 0.6)], [(0, "u"), (0.6, "o"), (1.6, "a"), (hd, "o")],
+                  [(0, 0), (0.25, 1), (2.0, 0.9), (hd, 0)], oq=0.55, drive=1.2, tilt=-4.5, fshift=1.0 + 0.07 * v), inf, 1.0)
+    return fit(echoes(room(out, 1.6, 0.3, damp=1.8, fd=1600), [(0.4, 0.3), (0.9, 0.18), (1.5, 0.1)], 1600), d)
+
+
+def r_ab_keen_scream(v):
+    """金切り声の衝撃: 突き刺す高い叫び（ゆがみ）+ 空気が揺れる低い圧 + 残る耳鳴り。"""
+    out = silence(2.0)
+    put(out, _cry("screech", 1.1, [(0, 0.5), (0.1, 1.05), (0.8, 1.0), (1.1, 0.6)], [(0, "e"), (0.1, "scream"), (1.1, "i")],
+                  oq=0.4, drive=3.0, tilt=-3, k=1.2, fshift=1.0 + 0.06 * v), 0.0, 1.0)
+    put(out, whoosh(0.8, 100, 900, 0.15, 0.8, 1.5), 0.0, 0.5)
+    put(out, sine(1.6, 4200.0) * env_pts(1.6, [(0, 0), (0.2, 1), (1.6, 0)], "cos"), 0.3, 0.06)
+    return out
+
+
+def r_ab_keep_distance(v):
+    """距離を取る: 後ずさる擦り足 2 歩 + 歯の間から漏れる威嚇の息。"""
+    out = silence(0.8)
+    put(out, footstep(0.8, 1.0, 0.4, False), 0.0, 0.5)
+    put(out, footstep(0.8, 1.0, 0.4, False), 0.26, 0.45)
+    put(out, whisper(0.55, [(0, "i"), (0.55, "i")], [(0, 0), (0.1, 1), (0.55, 0)], 1.0, 1.8, fric=0.8, fric_fc=4800,
+                     rasp=0.4), 0.05, 0.6)
+    return out
+
+
+def r_ab_long_grab_drag(v):
+    """長い腕で掴んで引きずる: 伸びる腕の筋のきしみと風切り → 掴む平手 → 体が地面を引きずられる長い擦れ。"""
+    out = silence(1.8)
+    put(out, _stickslip(0.3, 50, 120, (200, 700)) * bell(0.3, 0.6), 0.0, 0.3)
+    put(out, whoosh(0.3, 300, 2500, 0.6, 1.2, 2.0), 0.0, 0.5)
+    put(out, slap(0.07, 1000, 0.8, 0.014), 0.3, 1.0)
+    put(out, nrm(squelch(0.15, 250, 900, 4, 12, 0.4, 2)) * perc(0.15, 0.003, 0.05), 0.3, 0.3)
+    dd = 1.2
+    e = env_pts(dd, [(0, 0), (0.05, 1), (0.9, 0.7), (dd, 0)], "cos")
+    put(out, nrm(filt(white(dd) * (0.6 + 0.4 * lfn(dd, 25)), g_bp(900, 0.6), g_lp(5000)) * e), 0.4, 0.6)
+    put(out, grit(dd, 800, 1500, 7000) * e, 0.4, 0.3)
+    put(out, cloth(dd, 300, 600, 5000, 0.4), 0.4, 0.4)
+    return out
+
+
+def r_ab_long_leap(v):
+    """大跳躍: しゃがむ筋のきしみ → 踏み切りの重い当たりと土煙 → 長い風切り → 着地の衝撃。"""
+    out = silence(1.4)
+    put(out, _stickslip(0.2, 40, 90, (200, 600)), 0.0, 0.2)
+    put(out, thud(0.3, 110, 50, 0.05, click=0.5, body=0.9, nf=900), 0.2, 0.8)
+    put(out, grit(0.3, 1500, 1500, 8000), 0.2, 0.4)
+    put(out, whoosh(0.6, 200, 2200, 0.5, 1.0, 1.5), 0.25, 0.7)
+    put(out, thud(0.5, 95, 38, 0.09, click=0.6, body=1.0, nf=900), 0.9, 1.0)
+    put(out, grit(0.4, 1500, 1500, 8000), 0.9, 0.4)
+    return sat(out, 1.5)
+
+
+def r_ab_multi_head(v):
+    """余分な頭が潰れる: 湿った破裂（頭蓋の破断 + ぐちゃっ）→ 拍動して噴く血と脳 + 残った頭の苦しむ叫び。"""
+    out = silence(1.4)
+    put(out, crack(0.2, 10, 0.02, 800, 4500, 0.6), 0.0, 0.9)
+    put(out, nrm(squelch(0.35, 250, 1500, 5, 14, 0.6, 10)) * perc(0.35, 0.004, 0.1), 0.0, 0.9)
+    put(out, thud(0.3, 140, 60, 0.05, click=0.4, body=0.8), 0.0, 0.6)
+    sp = bp(white(0.9), 2200, 0.6) * (0.4 + 0.6 * np.abs(lfn(0.9, 25))) * (0.5 + 0.5 * np.cos(2 * np.pi * 3.0 * tax(0.9)) ** 8)
+    put(out, nrm(sp) * env_pts(0.9, [(0, 0), (0.03, 1), (0.9, 0)]), 0.05, 0.4)
+    put(out, splatter(1.2, 20, 0.2, 1.0), 0.03, 0.4)
+    put(out, _cry("growl", 0.9, [(0, 0.8), (0.2, 1.0), (0.9, 0.4)], [(0, "a"), (0.2, "scream"), (0.9, "o")], oq=0.45,
+                  drive=2.0), 0.15, 0.6)
+    return out
+
+
+def r_ab_pack_flank(v):
+    """群れの回り込み: 短く鋭い合図の吠え声が 3 方向から重なる（高さと間を変えて）。"""
+    out = silence(1.3)
+    for j in range(3):
+        y = _cry("growl", 0.28, [(0, 0.6), (0.06, 1.0), (0.28, 0.5)], [(0, "a"), (0.28, "o")], oq=0.45, drive=2.0,
+                 fshift=1.0 + 0.15 * j + 0.05 * v)
+        put(out, y, 0.28 * j + R.uniform(0.0, 0.05), 0.8 - 0.15 * j)
+    return room(out, 0.7, 0.25)
+
+
+def r_ab_parkour_chase(v):
+    """屋根まで追う乗り越え: 縁を叩く手 + 壁を蹴る足 + 力む唸り + 向こう側への着地。"""
+    out = silence(0.8)
+    put(out, slap(0.06, 1200, 0.8, 0.012), 0.0, 0.9)
+    put(out, footstep(1.2, 0.9, 0.3, False), 0.08, 0.6)
+    put(out, _cry("growl", 0.3, [(0, 0.5), (0.3, 0.7)], [(0, "growl"), (0.3, "a")], oq=0.5, drive=1.6), 0.05, 0.45)
+    put(out, whoosh(0.25, 300, 1800, 0.5, 1.2, 2.0), 0.15, 0.4)
+    put(out, thud(0.3, 120, 50, 0.04, click=0.4, body=0.9, nf=900), 0.42, 0.8)
+    return out
+
+
+def r_ab_play_dead(v):
+    """死んだふりから跳ね起きる: 鋭く吸い込む息 → 関節が鳴る骨の連打と服の擦れ → 不意打ちの唸り。"""
+    out = silence(1.5)
+    put(out, whisper(0.25, [(0, "a"), (0.25, "o")], [(0, 0), (0.18, 1), (0.25, 0)], 0.9, 2.0, fric=0.2, rasp=0.5), 0.0, 0.6)
+    for j in range(4):
+        put(out, crack(0.08, 3, 0.006, 1200, 5000, 0.3), 0.25 + 0.07 * j + R.uniform(0.0, 0.02), 0.5)
+    put(out, cloth(0.4, 500, 600, 5000, 0.3), 0.25, 0.5)
+    put(out, footstep(1.3, 0.6, 0.4, False), 0.55, 0.5)
+    put(out, _cry("growl", 0.7, [(0, 0.6), (0.1, 1.0), (0.7, 0.5)], [(0, "a"), (0.7, "growl")], oq=0.42, drive=2.5,
+                  growl=0.5), 0.6, 0.9)
+    return out
+
+
+def r_ab_pounce_pin(v):
+    """跳びかかって押し倒す: 跳ぶ風切り → 体ごとぶつかる重い当たり + 唸り → 噛みつく（骨の砕け + 湿った肉）。"""
+    out = silence(1.2)
+    put(out, whoosh(0.3, 250, 2200, 0.7, 1.2, 2.0), 0.0, 0.6)
+    put(out, thud(0.4, 100, 42, 0.07, click=0.5, body=1.0, nf=900), 0.28, 1.0)
+    put(out, cloth(0.3, 600, 600, 5000, 0.2), 0.28, 0.5)
+    put(out, _cry("growl", 0.6, [(0, 0.7), (0.6, 0.4)], [(0, "growl"), (0.6, "a")], oq=0.42, drive=2.5, growl=0.6), 0.3, 0.7)
+    put(out, crack(0.15, 5, 0.03, 900, 4000, 0.4), 0.75, 0.6)
+    put(out, nrm(squelch(0.25, 250, 1300, 5, 15, 0.5, 4)) * perc(0.25, 0.004, 0.08), 0.75, 0.6)
+    return out
+
+
+def r_ab_pustule_pop(v):
+    """膿疱が弾ける: 張った膜が破れる鋭い湿った「ぷちゅっ」+ 飛び散る膿。"""
+    out = silence(0.6)
+    put(out, nrm(hp(white(0.005), 1500) * perc(0.005, 0.0001, 0.001)), 0.0, 0.7)
+    put(out, nrm(squelch(0.18, 500, 2500, 6, 30, 0.5, 10)) * perc(0.18, 0.002, 0.05), 0.0, 1.0)
+    put(out, bubble(R.uniform(500, 900), 0.6), 0.01, 0.4)
+    put(out, splatter(0.4, 8, 0.05, 0.7), 0.02, 0.4)
+    return out
+
+
+def r_ab_rage_charge(v):
+    """突進: 吠える溜め → 速まる重い足音（地響き）+ 押しのける風。壁に当たる衝撃は別の音（gore / fx）。"""
+    d = 2.2
+    out = silence(d)
+    put(out, _cry("giant", 0.8, [(0, 0.4), (0.2, 0.9), (0.8, 0.6)], [(0, "growl"), (0.2, "a"), (0.8, "o")], oq=0.42,
+                  drive=2.5, growl=0.6), 0.0, 0.9)
+    t, per = 0.75, 0.32
+    while t < d - 0.3:
+        put(out, thud(0.35, 85, 36, 0.07, click=0.4, body=1.0, nf=600), t, 0.8)
+        put(out, grit(0.15, 900, 1500, 7000), t, 0.25)
+        t += per
+        per = max(0.17, per * 0.85)
+    put(out, whoosh(1.2, 120, 900, 0.7, 0.9, 1.0), 0.8, 0.4)
+    return sat(out, 1.6)
+
+
+def r_ab_reanimate(v):
+    """蘇らせる詠唱: 喉で低く響く唸りの詠唱（母音がゆっくり移る）+ 伸びる菌糸の湿ったきしみ + 漂う胞子のしゅー。"""
+    d = 3.2
+    out = silence(d)
+    put(out, _cry("chant", d, [(0, 0.3), (1.0, 0.5), (2.0, 0.4), (d, 0.2)],
+                  [(0, "u"), (0.8, "o"), (1.6, "a"), (2.4, "o"), (d, "u")], [(0, 0), (0.5, 1), (2.6, 0.9), (d, 0)],
+                  oq=0.6, rough=0.3, breath=0.35, tilt=-7, fshift=1.0 + 0.06 * v), 0.0, 0.9)
+    for j in range(4):
+        put(out, _stickslip(0.4, 40, 100, (200, 800)) * bell(0.4, 0.5), 0.4 + 0.6 * j, 0.25)
+        put(out, nrm(squelch(0.3, 200, 900, 5, 8, 0.4, 4)) * bell(0.3, 0.5), 0.5 + 0.6 * j, 0.25)
+    put(out, nrm(filt(white(d), g_hp(2500)) * env_pts(d, [(0, 0), (0.6, 1), (d, 0)], "cos") * (0.7 + 0.3 * lfn(d, 3))),
+        0.0, 0.12)
+    return room(out, 1.2, 0.3)
+
+
+def r_ab_regenerate(v):
+    """再生: 断面から伸びる肉の糸（粘る湿ったきしみと逆向きの裂け = 縫い合わさる）+ 泡立つ体液 + 骨が組み直る小さな鳴り。"""
+    d = 1.6
+    out = silence(d)
+    e = env_pts(d, [(0, 0), (0.3, 1), (1.2, 0.8), (d, 0)], "cos")
+    put(out, nrm(squelch(d, 150, 900, 6, 6, 0.5, 6) * e), 0.0, 0.7)
+    put(out, _stickslip(d, 30, 90, (150, 600), 0.4) * e, 0.0, 0.3)
+    put(out, tear(0.6, 500, 40, 400, 2500, 0.9, 2.5, 0.5)[::-1], 0.5, 0.5)
+    put(out, bubbles(d, 25, 200, 800, 0.6) * e, 0.0, 0.3)
+    for j in range(3):
+        put(out, crack(0.06, 2, 0.004, 1500, 5000, 0.2), 0.9 + 0.15 * j, 0.25)
+    return out
+
+
+def r_ab_sac_rupture(v):
+    """喉の袋の破裂: 張った袋がはじける湿った破裂（低い胴 + 鋭い膜の裂け）+ 液が噴いて飛び散る。"""
+    out = silence(0.9)
+    put(out, _burst(0.015, 0.0012, 150), 0.0, 0.8)
+    put(out, thud(0.3, 160, 70, 0.04, click=0.3, body=0.7, nf=1200), 0.0, 0.7)
+    put(out, nrm(squelch(0.3, 300, 1800, 5, 20, 0.6, 12)) * perc(0.3, 0.003, 0.08), 0.0, 0.9)
+    put(out, splatter(0.8, 16, 0.12, 0.9), 0.02, 0.5)
+    sp = bp(white(0.4), 2500, 0.6) * (0.4 + 0.6 * np.abs(lfn(0.4, 40))) * perc(0.4, 0.004, 0.12)
+    put(out, nrm(sp), 0.01, 0.4)
+    return out
+
+
+def r_ab_shadow_cloak(v):
+    """姿が消える: 閉じていく暗い風（下がる帯域）+ 低いささやき + かすかなきらめき。"""
+    d = 1.1
+    out = _sweep(d, 3000, 250, 1.3) * env_pts(d, [(0, 0), (0.15, 1), (d, 0)], "cos")
+    put(out, whisper(0.8, [(0, "a"), (0.8, "u")], [(0, 0), (0.2, 1), (0.8, 0)], 0.85, 2.2, rasp=0.3), 0.1, 0.4)
+    put(out, crackles(0.6, 30, 5000, 10000, 0.6, 0.003) * perc(0.6, 0.01, 0.2), 0.05, 0.12)
+    return out
+
+
+def r_ab_shield_block(v):
+    """盾で防ぐ: 厚い金属板の鈍い「ごん」（低いモード・短い響き）+ 弾ける火花。"""
+    out = silence(0.7)
+    put(out, metal(0.6, R.uniform(180, 240), "plate", 0.18, 0.35, 0.9), 0.0, 1.0)
+    put(out, thud(0.3, 140, 70, 0.04, click=0.5, body=0.7, nf=1500), 0.0, 0.7)
+    put(out, crackles(0.25, 200, 3000, 10000, 1.0, 0.0005) * perc(0.25, 0.001, 0.06), 0.0, 0.35)
+    return sat(out, 1.3)
+
+
+def r_ab_spore_cloud(v):
+    """胞子の雲: 袋がしぼんで噴き出す「ぶしゅー」（柔らかい破裂 + 長いしゅー）+ 漂う細かなはぜ。"""
+    out = silence(1.7)
+    put(out, nrm(filt(pink(0.3), g_bp(350, 0.7)) * perc(0.3, 0.008, 0.08)), 0.0, 0.8)
+    hd = 1.6
+    put(out, _hiss(hd, 3500, 0.8, 1500, 9000, 0.3, 10) * env_pts(hd, [(0, 0), (0.03, 1), (0.5, 0.6), (hd, 0)], "cos"),
+        0.02, 0.55)
+    put(out, crackles(hd, 25, 4000, 10000, 0.6, 0.002) * env_pts(hd, [(0, 1), (hd, 0)]), 0.05, 0.12)
+    return out
+
+
+def r_ab_summon_volatiles(v):
+    """遠吠えの応答: 遠くの屋上から次々に返ってくる金切り声（遠いほどこもって小さい）。"""
+    d = 3.4
+    out = silence(d)
+    for j in range(4):
+        yd = 0.9
+        y = _cry("screech", yd, [(0, 0.3), (0.2, 0.9), (yd, 0.4)], [(0, "a"), (0.2, "scream"), (yd, "a")], oq=0.45,
+                 drive=2.0, k=1.1, fshift=R.uniform(0.85, 1.1))
+        put(out, lp(y, 2500 - 400 * j), 0.15 + 0.6 * j + R.uniform(-0.1, 0.1), 0.8 * 0.75 ** j)
+    return fit(echoes(room(out, 2.0, 0.45, damp=2.0, fd=1400), [(0.5, 0.25), (1.1, 0.12)], 1400), d)
+
+
+def r_ab_tank_burst(v):
+    """背中のボンベの破裂: 鋭い破裂音（圧の山 + 裂ける金属）→ 高圧の白い噴気 + 散らばる金属片。"""
+    out = silence(1.8)
+    put(out, _burst(0.03, 0.0018, 60), 0.0, 1.0)
+    put(out, metal(0.6, R.uniform(300, 420), "pipe", 0.2, 0.6, 1.6), 0.0, 0.5)
+    put(out, thud(0.4, 100, 45, 0.07, click=0.5, body=0.9), 0.0, 0.7)
+    hd = 1.5
+    put(out, _hiss(hd, 4500, 1.2, 1500) * env_pts(hd, [(0, 0), (0.01, 1), (0.3, 0.6), (hd, 0)], "cos"), 0.01, 0.6)
+    for _ in range(6):
+        put(out, metal(0.2, R.uniform(1500, 4000), "bar", 0.05, 0.5, 1.5, n=4), 0.15 + R.exponential(0.2),
+            R.uniform(0.05, 0.15))
+    return sat(out, 2.0)
+
+
+def r_ab_tool_wield(v):
+    """道具が床に落ちる: 金属の道具が床で跳ねる（だんだん小さく速く）+ 転がる擦れ。"""
+    out = silence(0.9)
+    t, g = 0.0, 1.0
+    f0 = R.uniform(500, 800)
+    for j in range(4):
+        put(out, metal(0.4, f0 * R.uniform(0.97, 1.03), "bar", 0.15, 0.5, 1.4), t, g)
+        put(out, thud(0.1, 250, 140, 0.01, click=0.5, body=0.4, nf=2500), t, 0.4 * g)
+        t += 0.16 * 0.65 ** j
+        g *= 0.55
+    put(out, mslide(0.25, 1500, 6000, 0.7, 0.3), t, 0.15)
+    return out
+
+
+def r_ab_toxic_death_puff(v):
+    """防護服から噴くガス: ゴムの裂け目から空気が抜ける震え（ぶるぶる）+ しゅーっと長い噴き出し。"""
+    out = silence(1.7)
+    fd = 0.6
+    fl = filt(white(fd), g_bp(380, 1.2)) * (0.5 + 0.5 * sine(fd, 32 + 8 * lfn(fd, 4))) * env_pts(fd, [(0, 0), (0.03, 1), (fd, 0)])
+    put(out, nrm(fl), 0.0, 0.6)
+    hd = 1.5
+    put(out, _hiss(hd, 3200, 0.9, 1200, 9000, 0.3, 14) * env_pts(hd, [(0, 0), (0.05, 1), (0.6, 0.7), (hd, 0)], "cos"),
+        0.05, 0.7)
+    return out
+
+
+def r_ab_toxic_trail(v):
+    """毒のもや: 足元にふわっと広がる柔らかなしゅー（低めの帯域）+ かすかな泡。"""
+    d = 1.1
+    hs = filt(white(d), g_bp(2200, 0.8), g_hp(600)) * env_pts(d, [(0, 0), (0.15, 1), (d, 0)], "cos") * (0.7 + 0.3 * lfn(d, 7))
+    return nrm(hs) + 0.25 * nrm(bubbles(d, 20, 400, 1200)) * bell(d, 0.3)
+
+
+def r_ab_tumor_spawn(v):
+    """腫瘍の袋: 落ちて脈打つ湿った鼓動（速まる 3 拍）→ 裂けて粘液と一緒に這い出す。"""
+    out = silence(2.0)
+    put(out, thud(0.3, 130, 60, 0.04, click=0.2, body=0.8), 0.0, 0.7)
+    put(out, splatter(0.3, 6, 0.05, 1.0), 0.0, 0.3)
+    t = 0.35
+    for j in range(3):
+        put(out, thud(0.25, 70, 45, 0.06, click=0.0, body=1.0, nf=300), t, 0.6)
+        put(out, nrm(squelch(0.2, 150, 600, 5, 8, 0.4, 3)) * perc(0.2, 0.01, 0.06), t, 0.4)
+        t += 0.35 - 0.08 * j
+    put(out, tear(0.4, 1200, 80, 300, 2500, 0.6, 3.0, 0.5), t, 0.7)
+    put(out, nrm(squelch(0.5, 180, 1000, 6, 12, 0.5, 12)) * perc(0.5, 0.01, 0.15), t + 0.05, 0.7)
+    put(out, splatter(0.6, 10, 0.1, 1.2), t + 0.05, 0.35)
+    return out
+
+
+def r_ab_uv_shatter(v):
+    """UV を砕く叫び: 金切り声 → ランプのガラスが割れる + 弾ける火花 + 電源が落ちて下がる唸り。"""
+    out = silence(2.0)
+    put(out, _cry("screech", 1.0, [(0, 0.4), (0.12, 1.0), (1.0, 0.6)], [(0, "a"), (0.12, "scream"), (1.0, "e")], oq=0.4,
+                  drive=3.0, k=1.2), 0.0, 0.8)
+    for j in range(3):
+        t = 0.35 + 0.15 * j
+        put(out, crack(0.08, 8, 0.01, 2500, 9000, 0.1), t, 0.6)
+        for _ in range(6):
+            put(out, metal(0.2, R.uniform(3000, 7000), "glass", 0.05, 0.7, 2.0, n=4), t + R.exponential(0.1),
+                R.uniform(0.05, 0.2))
+        put(out, arc(0.12, 100, 1500, 0.9, 2.0) * perc(0.12, 0.001, 0.04), t, 0.4)
+    h = hum(1.0, 60, 30, 0.8, 0.4, 0.0) * env_pts(1.0, [(0, 1), (1.0, 0)])
+    put(out, nrm(varispeed(h, np.geomspace(1.0, 0.5, ns(1.0)))), 0.4, 0.2)
+    return out
+
+
+def r_ab_uv_weak(v):
+    """UV で焼かれる: 皮膚が焼けるじゅっ（密なはぜ + 湯気）+ 苦しむ引きつった唸り。"""
+    d = 1.2
+    e = env_pts(d, [(0, 0), (0.03, 1), (0.6, 0.7), (d, 0)], "cos")
+    out = 0.6 * nrm(crackles(d, 1200 * e + 20, 2000, 9000, 1.0, 0.0006)) + 0.3 * nrm(filt(white(d), g_hp(3000)) * e)
+    put(out, _cry("growl", 0.8, [(0, 0.6), (0.15, 1.0), (0.8, 0.5)], [(0, "a"), (0.15, "e"), (0.8, "a")], oq=0.45,
+                  drive=2.0, fshift=1.3), 0.05, 0.8)
+    return out
+
+
+def r_ab_wall_climb(v):
+    """壁を登る: 爪が壁を掻く高い擦れ + 体を引き上げる手足の当たり + 力む息。"""
+    out = silence(0.75)
+    for j in range(3):
+        t = 0.2 * j + R.uniform(0, 0.03)
+        sc = filt(white(0.12), g_bp(3500, 1.5)) * (0.5 + 0.5 * np.abs(lfn(0.12, 120))) * perc(0.12, 0.005, 0.05)
+        put(out, nrm(sc), t, 0.6)
+        put(out, slap(0.05, 1300, 0.8, 0.01), t + 0.02, 0.5)
+    put(out, grit(0.5, 600, 2000, 8000) * bell(0.5, 0.3), 0.0, 0.3)
+    put(out, whisper(0.5, [(0, "a"), (0.5, "schwa")], [(0, 0), (0.1, 1), (0.5, 0)], 0.85, 2.0, rasp=0.5), 0.1, 0.35)
+    return out
+
+
+# =====================================================================
+#  乗り物（nr.veh.*。登録簿に載った ID の名前から型を選ぶ: _veh_kind）
+# =====================================================================
+VEH_KINDS = (
+    ("horn", ("horn", "honk")),
+    ("crash", ("crash", "impact", "collide", "collision", "hit", "smash", "wreck")),
+    ("skid", ("skid", "brake", "tire", "tyre", "drift", "screech")),
+    ("start", ("start", "ignition", "crank")),
+    ("stop", ("stop", "off", "shutdown")),
+    ("door", ("door", "trunk", "hood")),
+    ("engine_high", ("rev", "high", "fast", "drive", "accel", "run", "loop_high")),
+    ("engine_idle", ("engine", "idle", "loop", "motor")),
+)
+
+
+def _veh_kind(sid) -> str:
+    name = sid.split(".", 2)[-1]
+    for kind, words in VEH_KINDS:
+        if any(w in name for w in words):
+            return kind
+    return "crash"
+
+
+def _engine(d, rpm, cyl=4, load=0.5):
+    """エンジン: 点火の脈（毎秒 rpm/60 × cyl/2 回、1 回ごとに強さと間隔が少し乱れる）を排気管の共鳴に通す
+    + 吸気の雑音 + 弁のカチカチ。"""
+    fire = rpm / 60.0 * cyl / 2.0
+    rate = fire * (1.0 + 0.015 * lfn(d, 3.0))
+    ph = np.cumsum(rate) / SR
+    pul = np.zeros(ns(d))
+    idx = np.nonzero(np.diff(np.floor(ph), prepend=0.0) > 0)[0]
+    pul[idx] = np.exp(R.normal(0.0, 0.18, len(idx))) * (1.0 + 0.3 * (np.arange(len(idx)) % cyl == 0))
+    k = 6
+    ir = modes(0.12, R.uniform(70, 420, k) * (1 + load * 0.3), R.uniform(0.008, 0.03, k), R.uniform(0.4, 1.0, k))
+    ex = conv(pul, ir)[:ns(d)]
+    intake = filt(white(d), g_bp(900 + 1500 * load, 0.8)) * (0.4 + 0.6 * load)
+    tick = filt(impulses(d, fire * 2.0, 0.3), g_bp(4500, 2.0))
+    return asat(nrm(ex) + 0.18 * nrm(intake) + 0.06 * nrm(tick), 1.5 + load, 0.1)
+
+
+def r_veh(kind, v):
+    """乗り物の音（kind = _veh_kind）。エンジンはループ（2 秒）。"""
+    if kind in ("engine_idle", "engine_high"):
+        rpm = (850.0 + 60.0 * v) if kind == "engine_idle" else (3200.0 + 300.0 * v)
+        return _looped(2.0, 0.25, lambda d: _engine(d, rpm, 4, 0.2 if kind == "engine_idle" else 0.8))
+    if kind == "horn":
+        d = 0.9
+        f1, f2 = (420.0, 500.0) if v % 2 == 0 else (390.0, 470.0)
+        y = osc(d, f1, 16, 1.0, odd=True) + osc(d, f2, 16, 1.0, odd=True)
+        y = asat(filt(y, g_pk(2200, 2.0, 8), g_hp(300), g_lp(5000)), 2.5, 0.1)
+        y = y * np.minimum(np.clip(tax(d) / 0.01, 0, 1), np.clip((d - tax(d)) / 0.03, 0, 1))
+        return room(y, 0.6, 0.2)
+    if kind == "start":
+        d = 2.2
+        out = silence(d)
+        cr = 1.1
+        crank = _engine(cr, 300 + 40 * v, 4, 0.1) * (0.6 + 0.4 * np.abs(np.sin(2 * np.pi * 3.5 * tax(cr))))
+        put(out, filt(osc(cr, 160.0, 10, 1.0), g_lp(2000)) * 0.15 + nrm(crank) * 0.8, 0.0, 0.8)
+        rpm = np.interp(tax(d - cr), [0, 0.25, d - cr], [600, 2400, 900])
+        put(out, _engine(d - cr, float(np.mean(rpm)), 4, 0.6) * env_pts(d - cr, [(0, 0), (0.05, 1), (d - cr, 0.8)]), cr, 1.0)
+        return out
+    if kind == "stop":
+        d = 1.2
+        y = _engine(d, 700, 4, 0.2) * env_pts(d, [(0, 1), (0.6, 0.4), (d, 0)], "cos")
+        y = varispeed(y, np.geomspace(1.0, 0.45, ns(d)))
+        return fit(y, d)
+    if kind == "skid":
+        d = 1.4
+        e = env_pts(d, [(0, 0), (0.05, 1), (1.0, 0.8), (d, 0)], "cos")
+        f = (1100.0 + 250.0 * v) * (1.0 + 0.05 * lfn(d, 7.0))
+        tonal = osc(d, f, 6, 1.2) * (0.7 + 0.3 * lfn(d, 30.0))
+        nz = filt(white(d), g_bp(1800, 1.0))
+        return nrm(nrm(tonal) + 0.6 * nrm(nz)) * e
+    if kind == "door":
+        out = silence(0.8)
+        put(out, mclick(0.05, 1800, 0.01, 1.2), 0.0, 0.6)
+        put(out, thud(0.4, 120, 55, 0.06, click=0.5, body=0.9, nf=900), 0.02, 1.0)
+        put(out, metal(0.5, R.uniform(250, 350), "plate", 0.15, 0.4, 1.0), 0.02, 0.35)
+        return room(out, 0.4, 0.15)
+    # crash: 板金の潰れ・ガラス・タイヤの擦れ・重い胴
+    d = 2.2
+    out = silence(d)
+    put(out, _burst(0.04, 0.003, 40), 0.0, 0.8)
+    put(out, thud(0.8, 80, 32, 0.2, click=0.6, body=1.0, nf=900), 0.0, 1.0)
+    for _ in range(6):
+        put(out, metal(0.8, R.uniform(150, 600), "plate", 0.4, 0.5, 1.2), R.exponential(0.08), R.uniform(0.2, 0.5))
+    put(out, crack(0.4, 30, 0.08, 400, 3000, 0.8), 0.0, 0.6)
+    put(out, mslide(0.8, 800, 6000, 0.9, 0.2), 0.05, 0.4)
+    for _ in range(14 + 4 * v):
+        t = R.exponential(0.25)
+        if t < d - 0.3:
+            put(out, metal(0.25, R.uniform(2500, 6500), "glass", 0.06, 0.7, 2.0, n=4), t, R.uniform(0.05, 0.25))
+    return fit(room(sat(out, 2.0), 1.0, 0.3, damp=1.8, fd=1500), d)
+
+
 #@@ TABLE
 # =====================================================================
 #  表（ID → レシピ・変種の数・標本化周波数・分類・距離・音量）
@@ -1789,6 +3461,134 @@ def build_table(S) -> None:
             snd(f"nr.z.{key}.{ev}", functools.partial(r_voice, key, ev, P), VOICE_N[ev], sr=22050,
                 dist=vdist[ev] * (2 if key in far and ev != "hurt" else 1), vol=0.85 if ev == "idle" else 1.0,
                 cls="voice")
+    # ---- 武器（プレイヤーが鳴らす。player）。銃は遠くまで届く
+    for sid, fn, n, kw in (
+            ("nr.w.swing_light", r_swing_light, 4, dict(dist=16)),
+            ("nr.w.swing_heavy", r_swing_heavy, 3, dict(dist=16)),
+            ("nr.w.hit_metal", r_hit_metal, 4, dict(dist=24)),
+            ("nr.w.hit_wood", r_hit_wood, 3, dict(dist=24)),
+            ("nr.w.break", r_break, 2, dict(dist=24)),
+            ("nr.w.bow_draw", r_bow_draw, 2, dict(dist=12, vol=0.7)),
+            ("nr.w.bow_release", r_bow_release, 3, dict(dist=24)),
+            ("nr.w.crossbow_shot", r_crossbow_shot, 3, dict(dist=32)),
+            ("nr.w.crossbow_reload", r_crossbow_reload, 2, dict(dist=12, vol=0.7)),
+            ("nr.w.pistol", r_pistol, 3, dict(dist=96, cls="loud")),
+            ("nr.w.revolver", r_revolver, 3, dict(dist=112, cls="loud")),
+            ("nr.w.shotgun", r_shotgun, 3, dict(dist=112, cls="loud")),
+            ("nr.w.rifle", r_rifle, 3, dict(dist=128, cls="loud")),
+            ("nr.w.smg", r_smg, 4, dict(dist=96, cls="loud")),
+            ("nr.w.reload", r_reload, 2, dict(dist=12, vol=0.7)),
+            ("nr.w.pump", r_pump, 2, dict(dist=12, vol=0.8)),
+            ("nr.w.empty_click", r_empty_click, 3, dict(dist=8, vol=0.6)),
+            ("nr.w.throw", r_throw, 3, dict(dist=16)),
+            ("nr.w.knife_stick", r_knife_stick, 3, dict(dist=16)),
+            ("nr.w.reload_revolver", r_reload_revolver, 2, dict(dist=12, vol=0.7)),
+            ("nr.w.reload_shell", r_reload_shell, 3, dict(dist=12, vol=0.7)),
+            ("nr.w.bolt_cycle", r_bolt_cycle, 2, dict(dist=12, vol=0.8)),
+            ("nr.w.mod_fire", r_mod_fire, 2, dict(dist=24)),
+            ("nr.w.mod_shock", r_mod_shock, 3, dict(dist=24)),
+            ("nr.w.mod_bleed", r_mod_bleed, 3, dict(dist=16)),
+            ("nr.w.mod_toxic", r_mod_toxic, 2, dict(dist=24)),
+            ("nr.w.mod_uv", r_mod_uv, 2, dict(dist=24)),
+            ("nr.w.mod_impact", r_mod_impact, 3, dict(dist=32))):
+        snd(sid, fn, n, cat="player", **kw)
+    # ---- 爆発・属性（世界の音。neutral）
+    for sid, fn, n, kw in (
+            ("nr.fx.explosion", r_explosion, 3, dict(dist=128, cls="loud")),
+            ("nr.fx.explosion_big", r_explosion_big, 2, dict(dist=160, cls="loud")),
+            ("nr.fx.fire_ignite", r_fire_ignite, 3, dict(dist=24)),
+            ("nr.fx.fire_loop", r_fire_loop, 2, dict(dist=20, loop=True, cls="loop")),
+            ("nr.fx.electric_zap", r_electric_zap, 4, dict(dist=24)),
+            ("nr.fx.electric_buzz", r_electric_buzz, 2, dict(dist=16, loop=True, cls="loop")),
+            ("nr.fx.toxic_hiss", r_toxic_hiss, 3, dict(dist=24)),
+            ("nr.fx.acid_sizzle", r_acid_sizzle, 3, dict(dist=16)),
+            ("nr.fx.uv_hum", r_uv_hum, 2, dict(dist=16, loop=True, cls="loop")),
+            ("nr.fx.uv_burn", r_uv_burn, 3, dict(dist=16)),
+            ("nr.fx.glass_break", r_glass_break, 4, dict(dist=32)),
+            ("nr.fx.metal_clang", r_metal_clang, 4, dict(dist=32)),
+            ("nr.fx.gas_hiss", r_gas_hiss, 2, dict(dist=16, loop=True, cls="loop"))):
+        snd(sid, fn, n, cat="neutral", **kw)
+    # ---- パルクール（プレイヤー自身。player）
+    for sid, fn, n, kw in (
+            ("nr.pk.step_run", r_step_run, 4, dict(dist=16, vol=0.5)),
+            ("nr.pk.jump", r_jump, 3, dict(dist=16, vol=0.7)),
+            ("nr.pk.land_soft", r_land_soft, 3, dict(dist=16, vol=0.6)),
+            ("nr.pk.land_hard", r_land_hard, 3, dict(dist=24)),
+            ("nr.pk.roll", r_roll, 3, dict(dist=16, vol=0.8)),
+            ("nr.pk.vault", r_vault, 3, dict(dist=16, vol=0.8)),
+            ("nr.pk.grab", r_grab, 3, dict(dist=16, vol=0.8)),
+            ("nr.pk.climb", r_climb, 3, dict(dist=16, vol=0.8)),
+            ("nr.pk.wallrun", r_wallrun, 3, dict(dist=16, vol=0.7)),
+            ("nr.pk.slide", r_slide, 3, dict(dist=16, vol=0.8)),
+            ("nr.pk.dropkick", r_dropkick, 3, dict(dist=24)),
+            ("nr.pk.grapple_fire", r_grapple_fire, 3, dict(dist=24)),
+            ("nr.pk.grapple_reel", r_grapple_reel, 2, dict(dist=16, loop=True, cls="loop")),
+            ("nr.pk.glider_open", r_glider_open, 3, dict(dist=16)),
+            ("nr.pk.glider_wind", r_glider_wind, 2, dict(dist=12, loop=True, cls="loop")),
+            ("nr.pk.breath", r_breath, 3, dict(sr=22050, dist=8, vol=0.6, cls="soft"))):
+        snd(sid, fn, n, cat="player", **kw)
+    # ---- 罠・世界（block）
+    for sid, fn, n, kw in (
+            ("nr.trap.spike", r_trap_spike, 3, dict(dist=24)),
+            ("nr.trap.beartrap", r_trap_beartrap, 3, dict(dist=24)),
+            ("nr.trap.electric", r_trap_electric, 3, dict(dist=24)),
+            ("nr.trap.alarm", r_trap_alarm, 2, dict(dist=64, loop=True)),
+            ("nr.trap.click", r_trap_click, 3, dict(dist=8, vol=0.7)),
+            ("nr.trap.gas_burst", r_trap_gas_burst, 2, dict(dist=48, cls="loud")),
+            ("nr.trap.uv_burst", r_trap_uv_burst, 2, dict(dist=24)),
+            ("nr.trap.rope_snap", r_trap_rope_snap, 3, dict(dist=24)),
+            ("nr.trap.wire", r_trap_wire, 3, dict(dist=16)),
+            ("nr.world.barricade_hit", r_barricade_hit, 4, dict(dist=32)),
+            ("nr.world.door", r_door, 3, dict(dist=16))):
+        snd(sid, fn, n, cat="block", **kw)
+    # ---- プレイヤーの状態（player。自分にだけ鳴らす）
+    for sid, fn, n, kw in (
+            ("nr.pl.heartbeat", r_heartbeat, 2, dict(dist=8)),
+            ("nr.pl.immunity_warn", r_immunity_warn, 2, dict(dist=8)),
+            ("nr.pl.immunity_restore", r_immunity_restore, 2, dict(dist=8)),
+            ("nr.pl.hurt", r_pl_hurt, 4, dict(sr=22050, dist=16)),
+            ("nr.pl.heal", r_heal, 3, dict(dist=8, vol=0.8)),
+            ("nr.pl.levelup", r_levelup, 2, dict(dist=8)),
+            ("nr.pl.grabbed", r_grabbed, 3, dict(dist=16))):
+        snd(sid, fn, n, cat="player", **kw)
+    # ---- 夜と追跡（警告音は ui = 距離で消えない。号笛と夜明けは ambient、低域だけなので 22.05 kHz）
+    snd("nr.chase.start", r_chase_start, 2, cat="ui", dist=16, cls="loud")
+    snd("nr.chase.level_up", r_chase_level_up, 2, cat="ui", dist=16)
+    snd("nr.chase.end", r_chase_end, 2, cat="ui", dist=16, cls="voice")
+    snd("nr.night.start", r_night_start, 2, sr=22050, cat="ambient", dist=64, cls="loud")
+    snd("nr.day.start", r_day_start, 2, sr=22050, cat="ambient", dist=64, cls="voice")
+    # ---- UI・道具（ui）
+    for sid, fn, n in (
+            ("nr.ui.click", r_ui_click, 3), ("nr.ui.open", r_ui_open, 2), ("nr.ui.craft", r_ui_craft, 3),
+            ("nr.ui.error", r_ui_error, 2), ("nr.ui.combo", r_ui_combo, 3), ("nr.ui.headshot", r_ui_headshot, 2),
+            ("nr.ui.kill", r_ui_kill, 3), ("nr.ui.bandage", r_ui_bandage, 3), ("nr.ui.medkit", r_ui_medkit, 2),
+            ("nr.ui.inject", r_ui_inject, 3), ("nr.ui.eat", r_ui_eat, 3), ("nr.ui.drink", r_ui_drink, 3),
+            ("nr.ui.pills", r_ui_pills, 3), ("nr.ui.repair", r_ui_repair, 3), ("nr.ui.lockpick", r_ui_lockpick, 4),
+            ("nr.ui.uv_on", r_ui_uv_on, 2), ("nr.ui.zoom", r_ui_zoom, 3)):
+        snd(sid, fn, n, cat="ui", dist=16, cls="ui")
+    # ---- ボス（hostile。咆哮が主なので 22.05 kHz）
+    snd("nr.boss.intro", r_boss_intro, 2, sr=22050, dist=128, cls="loud")
+    snd("nr.boss.phase", r_boss_phase, 2, sr=22050, dist=96, cls="loud")
+    snd("nr.boss.death", r_boss_death, 2, sr=22050, dist=128, cls="loud")
+    # ---- 特殊能力（spec の ABILITY_VOCAB から。レシピは r_ab_<能力>。声が主なものは 22.05 kHz）
+    for key in sorted(S.ABILITY_VOCAB):
+        fn = globals().get(f"r_ab_{key}")
+        if fn is None:
+            continue                     # main が「レシピの無い ID」として止める
+        snd(f"nr.ab.{key}", fn, 3 if key in AB_N3 else 2, sr=22050 if key in AB_22K else 44100,
+            dist=AB_DIST.get(key, 32), cls=AB_CLS.get(key, "fx"), loop=key in AB_LOOP)
+    # ---- ゾンビの足音（この生成器が足す ID。sounds.json の step が使う）
+    for kind in ZSTEP_VOL:
+        snd(f"nr.zstep.{kind}", functools.partial(r_zstep, kind), 3,
+            dist={"giant": 40, "heavy": 24}.get(kind, 16))
+    # ---- 乗り物（登録簿に nr.veh.* があれば、名前から型を選んで作る）
+    for sid in REG_IDS(S):
+        if sid.startswith("nr.veh.") and sid not in SND:
+            kind = _veh_kind(sid)
+            loop = kind.startswith("engine")
+            snd(sid, functools.partial(r_veh, kind), 2 if loop else 3, sr=22050 if loop else 44100, cat="neutral",
+                dist={"horn": 64, "crash": 64}.get(kind, 32), loop=loop,
+                cls="loop" if loop else ("loud" if kind in ("crash", "horn") else "fx"))
     # @@TABLE_END（ここより上に表を足す）
 
 
@@ -1816,16 +3616,39 @@ def _core_src() -> str:
         return fh.read().split("#@@ RECIPES", 1)[0]
 
 
-def _recipe_src(fn) -> str:
-    """キャッシュの鍵に入れるレシピのソース（partial なら引数も。呼んでいる別のレシピも）。"""
+def _code_names(code) -> set:
+    """関数が参照する大域名（中の lambda・内側の def も含める）。"""
+    names = set(code.co_names)
+    for c in code.co_consts:
+        if inspect.iscode(c):
+            names |= _code_names(c)
+    return names
+
+
+def _recipe_src(fn, seen=None) -> str:
+    """キャッシュの鍵に入れるレシピのソース。partial なら引数も。レシピが呼ぶこのファイルの下請け
+    （r_* と _* の関数。_plan・_cry・_stickslip など）と、参照する大文字の定数（MONSTER・VOICE_N など）も
+    再帰的に入れる（楽器の核は _core_src が受け持つ）。"""
+    seen = set() if seen is None else seen
     if isinstance(fn, functools.partial):
-        return _recipe_src(fn.func) + repr(fn.args) + repr(sorted(fn.keywords.items()))
+        return _recipe_src(fn.func, seen) + repr(fn.args) + repr(sorted(fn.keywords.items()))
+    if fn in seen:
+        return ""
+    seen.add(fn)
     src = inspect.getsource(fn)
-    for name in fn.__code__.co_names:
+    for name in sorted(_code_names(fn.__code__)):
         g = globals().get(name)
-        if callable(g) and getattr(g, "__name__", "").startswith("r_") and g is not fn:
-            src += inspect.getsource(g)
+        if inspect.isfunction(g) and g.__module__ == fn.__module__ and name.startswith(("r_", "_")):
+            src += _recipe_src(g, seen)
+        elif name.isupper() and name not in ("SND", "SR", "R") and isinstance(g, (dict, tuple, list, set, int, float, str)):
+            text = repr(sorted(g) if isinstance(g, set) else g)
+            if " at 0x" not in text and name not in seen:
+                seen.add(name)
+                src += f"\n{name} = {text}"
     return src
+
+
+_SRC_MEMO: dict = {}
 
 
 def _ffmpeg_version() -> str:
@@ -1838,8 +3661,10 @@ def _ffmpeg_version() -> str:
 
 def job_key(sid, v, core, ffv) -> str:
     e = SND[sid]
+    if sid not in _SRC_MEMO:
+        _SRC_MEMO[sid] = _recipe_src(e["fn"])
     h = hashlib.sha1()
-    for part in (core, _recipe_src(e["fn"]), sid, str(v), str(e["sr"]), str(e["loop"]), e["cls"],
+    for part in (core, _SRC_MEMO[sid], sid, str(v), str(e["sr"]), str(e["loop"]), e["cls"],
                  ENC_Q[e["sr"]], ffv):
         h.update(part.encode("utf-8"))
         h.update(b"\0")

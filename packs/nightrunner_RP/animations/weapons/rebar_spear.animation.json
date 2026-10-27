@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.rebar_spear.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -32.94,
+            1.87,
+            54.8
+          ],
+          "position": [
+            0.4,
+            22.51,
+            0.22
+          ],
+          "scale": [
+            0.85,
+            0.85,
+            0.85
+          ]
+        }
+      }
+    },
+    "animation.nr.w.rebar_spear.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            48.62,
+            58.19,
+            -77.59
+          ],
+          "position": [
+            -6.06,
+            31.82,
+            -1.36
+          ],
+          "scale": [
+            0.604,
+            0.604,
+            0.604
+          ]
+        }
+      }
+    },
+    "animation.nr.w.rebar_spear.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -32.94,
+            1.87,
+            54.8
+          ],
+          "position": [
+            -0.88,
+            21.51,
+            2.73
+          ],
+          "scale": [
+            0.85,
+            0.85,
+            0.85
+          ]
+        }
+      }
+    },
+    "animation.nr.w.rebar_spear.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            60.52,
+            59.63,
+            -70.44
+          ],
+          "position": [
+            -9.58,
+            33.13,
+            -0.24
+          ],
+          "scale": [
+            0.604,
+            0.604,
+            0.604
+          ]
+        }
+      }
+    }
+  }
+}

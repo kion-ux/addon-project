@@ -220,10 +220,13 @@ PLAYER_ANIMS = {
     "dodge_l": ("左へ跳んで回避", 0.35),
     "dodge_r": ("右へ跳んで回避", 0.35),
     "ground_pound": ("空中から両手打撃を地面へ叩きつける", 0.8),
-    # 近接（各型 3 振り + 溜め。nr_spec_catalog.ANIM_SETS の swings / heavy）
-    **{f"{s}_{n}": (f"{s} の振り {n}", 0.5)
-       for s in ("slash_1h", "slash_2h", "blunt_1h", "blunt_2h", "stab")
-       for n in ("1", "2", "3", "heavy")},
+    # 近接（各型 3 振り + 溜め。nr_spec_catalog.ANIM_SETS の swings / heavy）。長さ = ANIM_SETS の
+    # 終わりの tick × 0.05 秒（gen_nr_player_anim がクリップの長さと突き合わせる）
+    **{f"{s}_{n}": (f"{s} の振り {n}", sec)
+       for s, secs in (("slash_1h", (0.5, 0.5, 0.6, 1.1)), ("slash_2h", (0.85, 0.85, 1.0, 1.5)),
+                       ("blunt_1h", (0.6, 0.6, 0.7, 1.2)), ("blunt_2h", (1.0, 1.1, 1.1, 1.7)),
+                       ("stab", (0.55, 0.55, 0.7, 1.2)))
+       for n, sec in zip(("1", "2", "3", "heavy"), secs)},
     # 武器の構え・持って走る（層 nr.p.hold のループ。ANIM_SETS の idle / sprint）
     "hold_1h": ("片手武器の構え（ループ）", 1.0),
     "hold_2h": ("両手武器の構え（ループ）", 1.0),

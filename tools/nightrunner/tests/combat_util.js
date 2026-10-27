@@ -8,7 +8,7 @@ import { CEV, setSkillQuery, setStaminaQuery } from "../scripts/combat/index.js"
 export { setGore };
 
 /** バスの記録（テストごとに reset）。 */
-export const rec = { hits: [], kills: [], stamina: [], noise: [], state: [], finisher: [], immunity: [], lure: [], uv: [], fire: [] };
+export const rec = { hits: [], kills: [], stamina: [], noise: [], state: [], finisher: [], immunity: [], lure: [], uv: [], fire: [], notice: [] };
 on(EV.HIT, (r) => rec.hits.push(r));
 on(EV.KILL, (k) => rec.kills.push(k));
 on(CEV.STAMINA_COST, (d) => rec.stamina.push(d));
@@ -19,6 +19,7 @@ on(CEV.IMMUNITY, (d) => rec.immunity.push(d));
 on(CEV.LURE, (d) => rec.lure.push(d));
 on(CEV.UV_ZONE, (d) => rec.uv.push(d));
 on(CEV.FIRE_ZONE, (d) => rec.fire.push(d));
+on(CEV.NOTICE, (d) => rec.notice.push(d));
 export function reset() { for (const k of Object.keys(rec)) rec[k].length = 0; }
 
 /** そのゾンビへの applyHit の結果（記録から）。 @param {any} z @param {(r: any) => boolean} [f] */

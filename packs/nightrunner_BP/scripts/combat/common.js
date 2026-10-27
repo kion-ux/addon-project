@@ -11,7 +11,7 @@ import { WEAPON_BY_ID, ANIM_SETS, SFX_SETS, RARITY } from "../data/weapons.js";
 import { MOD_BY_KEY } from "../data/mods.js";
 import { SKILL_BY_KEY } from "../data/skills.js";
 import { PARKOUR_TUNING } from "../data/settings.js";
-import { emit, on } from "../core/bus.js";
+import { emit, on, listeners } from "../core/bus.js";
 import { zombieSpec } from "../core/hp.js";
 import { valid, now, add, scale, norm, safe, warnOnce, clamp } from "../core/util.js";
 
@@ -36,6 +36,7 @@ export const CEV = Object.freeze({
   UV_ZONE: "uv_zone",               // {dim, pos, radius, until, source}（UV 発煙筒の光の範囲）
   FIRE_ZONE: "fire_zone",           // {dim, pos, radius, until}（火炎瓶の火の範囲）
   LURE: "lure",                     // {dim, pos, radius, until, pull}（爆竹・パイプ爆弾の誘い）
+  NOTICE: "hud_notice",             // {player, text, ticks}（player/hud.js がアクションバーに出す。聞く者が無ければ直接出す）
 });
 
 // ---------------------------------------------------------------------------
@@ -235,6 +236,16 @@ export function spendStamina(p, amount, reason) {
 export function noise(dim, pos, radius, source, player) {
   if (!dim || !(radius > 0)) return;
   emit(CEV.NOISE, { pos: { x: pos.x, y: pos.y, z: pos.z }, radius, dim, source, player });
+}
+/**
+ * 短い知らせ（壊れた・弾が無い・付けた…）。HUD（バス "hud_notice" を聞く player/hud.js）があればそちらへ、
+ * 無ければアクションバーへ直接（HUD の毎 tick の表示と取り合わない）。
+ * @param {Player} p @param {string} text @param {number} [ticks]
+ */
+export function notify(p, text, ticks = 40) {
+  if (!valid(p)) return;
+  if (listeners(CEV.NOTICE) > 0) { emit(CEV.NOTICE, { player: p, text, ticks }); return; }
+  safe("actionbar", () => p.onScreenDisplay.setActionBar(text));
 }
 /** 夜か（13000〜22999）。 */
 export function isNight() {

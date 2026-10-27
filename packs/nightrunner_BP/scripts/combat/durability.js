@@ -17,7 +17,7 @@ import { onItemComponent } from "../core/components.js";
 import { sound, particle, playerSound, playerAnim, PRIO } from "../core/fx.js";
 import { difficulty } from "../core/settings.js";
 import { valid, chance, safe, clamp, now, add, warnOnce } from "../core/util.js";
-import { heldInfo, weaponOf, refreshLore, publishWeaponState, containerOf, takeItem, onPlayerTick } from "./common.js";
+import { heldInfo, weaponOf, refreshLore, publishWeaponState, containerOf, takeItem, onPlayerTick, notify } from "./common.js";
 
 /** @typedef {import("@minecraft/server").Player} Player */
 /** @typedef {import("@minecraft/server").ItemStack} ItemStack */
@@ -82,7 +82,7 @@ function markBroken(p, typeId) {
   const at = add(p.getHeadLocation(), { x: 0, y: -0.4, z: 0 });
   sound(p.dimension, "nr.w.break", at, { volume: 1.1, pitch: 0.95 });
   for (let i = 0; i < 3; i++) particle(p.dimension, "hit_spark", at, { dx: Math.random() - 0.5, dy: 0.6, dz: Math.random() - 0.5 }, PRIO.HIGH);
-  safe("actionbar", () => p.onScreenDisplay.setActionBar(`§c${h.w?.ja ?? "武器"}が壊れた（修理キットで直す）`));
+  notify(p, `§c${h.w?.ja ?? "武器"}が壊れた（修理キットで直す）`, 60);
   publishWeaponState(p, true);
 }
 /** 残りわずかの警告。 @param {Player} p @param {any} w */
@@ -92,7 +92,7 @@ function warnLow(p, w) {
   if (now() - (warnedAt.get(k) ?? -1e9) < 200) return;
   warnedAt.set(k, now());
   playerSound(p, "nr.ui.error", { volume: 0.7, pitch: 1.5 });
-  safe("actionbar", () => p.onScreenDisplay.setActionBar(`§e${w?.ja ?? "武器"}の耐久が残りわずか`));
+  notify(p, `§e${w?.ja ?? "武器"}の耐久が残りわずか`);
 }
 
 // 近接の命中（エンジンのすり減り）: 量を決め、壊れる手前で止める
@@ -169,7 +169,7 @@ export function repair(p, restore = 0.35, maxLoss = 0.05, slotIndex) {
   warnedAt.delete(`${p.id}:${w.id}`);
   sound(p.dimension, "nr.ui.repair", p.location, { volume: 0.9 });
   particle(p.dimension, "heal_sparkle", add(p.location, { x: 0, y: 1.1, z: 0 }), undefined, PRIO.LOW);
-  safe("actionbar", () => p.onScreenDisplay.setActionBar(`§a${w.ja}を直した`));
+  notify(p, `§a${w.ja}を直した`);
   publishWeaponState(p, true);
   return Math.max(0, before - nd);
 }
@@ -209,7 +209,7 @@ world.afterEvents.itemUse.subscribe((ev) => {
   if (!valid(p) || kits.has(p.id)) return;
   if (repairTarget(p) === undefined) {
     playerSound(p, "nr.ui.error", { volume: 0.7 });
-    safe("actionbar", () => p.onScreenDisplay.setActionBar("§7直す武器が無い"));
+    notify(p, "§7直す武器が無い");
     return;
   }
   kits.set(p.id, { until: now() + Math.max(1, Number(KIT_USE.use_ticks) || 30), index: p.selectedSlotIndex });

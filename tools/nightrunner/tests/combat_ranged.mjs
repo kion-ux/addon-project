@@ -5,6 +5,7 @@ import { arena, rec, hitsOn, stack, editHeld, count, heldDamage } from "./combat
 import { hitscan, magOf, isReloading } from "../scripts/combat/index.js";
 import { heldInfo, eyeRay } from "../scripts/combat/common.js";
 import { WEAPON_BY_ID } from "../scripts/data/weapons.js";
+import { initHp } from "../scripts/core/hp.js";
 
 const W = (/** @type {string} */ k) => WEAPON_BY_ID[`nr:w_${k}`];
 /** @param {any} p */
@@ -109,7 +110,7 @@ test("散弾: 1 本ずつレイを飛ばし、1 本ずつ部位を決める", as
 test("ライフル: 一列に並んだ 2 体を貫通する（overpenetrate）", async () => {
   const { p, z } = await arena({ item: "nr:w_hunting_rifle", at: { x: 0.5, y: 64, z: 4.0 }, hp: 200 });
   const z2 = spawnZombie("office_worker", { x: 0.5, y: 64, z: 6.0 });
-  initBig(z2);
+  initHp(z2, 200);
   await tick(1);
   aim(p, partPoint(z, "torso"));
   await use(p);
@@ -118,10 +119,6 @@ test("ライフル: 一列に並んだ 2 体を貫通する（overpenetrate）",
   expect(hitsOn(z2).length).toBe(1);
   expect(hitsOn(z2)[0].damage).toBeLessThan(hitsOn(z)[0].damage);
 });
-import { initHp } from "../scripts/core/hp.js";
-/** @param {any} z */
-function initBig(z) { initHp(z, 200); }
-
 test("短機関銃: 押している間撃ち続け、離すと止まる", async () => {
   const { p, z } = await arena({ item: "nr:w_scrap_smg", at: { x: 0.5, y: 64, z: 4.0 }, hp: 900 });
   aim(p, partPoint(z, "torso"));

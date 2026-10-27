@@ -11,7 +11,8 @@
 //    中のプレイヤーは燃える。バス "fire_zone"。
 //  * パイプ爆弾: fuse_ticks で爆発（跳ねてもよい）。導火線の間はビープで誘う（noise）。爆風は blast_radius、
 //    距離で falloff だけ弱まる。近いほど多くの部位に効き（parts）、手足が千切れ・胴が裂ける（gore.js の blast 表）。
-//    死体も吹き飛ぶ・千切れる、gib は飛ぶ、プレイヤーにもダメージと揺れ。
+//    死体も吹き飛ぶ・千切れる、gib は飛ぶ、プレイヤーにもダメージと揺れ。special.gib_burst なら爆心の近くの体から
+//    肉片（gibs.spawnChunks。数はゴアレベル G で減る）が飛び散る。
 //  * 爆竹: 落ちると lure_ticks の間はじけ続け、lure_radius の noise を出す（バス "lure" も）。
 //  * UV 発煙筒: 落ちると uv_ticks の間 uv_radius の UV の光。夜の種類（UV に弱い）は焼かれ（dtype uv）、
 //    初めて浴びた時に怯む。中のプレイヤーは免疫が戻る（バス "immunity_restore"）。バス "uv_zone"。
@@ -21,7 +22,7 @@ import { PROJECTILE_BY_ID } from "../data/weapons.js";
 import { COMBAT_TUNING } from "../data/settings.js";
 import { applyHit, stagger } from "../gore/gore.js";
 import { PARTS, partCenter } from "../gore/hitloc.js";
-import { GIB_ID } from "../gore/gibs.js";
+import { GIB_ID, spawnChunks } from "../gore/gibs.js";
 import { isCorpse } from "../gore/death.js";
 import { emit } from "../core/bus.js";
 import { particle, sound, playerAnim, zombieAnim, shake, PRIO } from "../core/fx.js";
@@ -284,6 +285,7 @@ export function explode(dim, pos, w, owner) {
         attacker: owner, source: "blast", dtype: "blast", weight: "heavy", damage: dmg * f, point: pos, parts, dir,
         power: 0.5 + 1.3 * near, gorePower: clamp((Number(w?.gore_power) || 1) * (0.45 + 0.75 * near), 0, 1.3), crit: false,
       });
+      if (s.gib_burst && near > 0.45 && valid(e)) safe("blast.chunks", () => spawnChunks(e, Math.round(2 + 3 * near), dir, 0.8 + 0.8 * near));
       n++;
     } else if (e.typeId === GIB_ID) {
       safe("blast.gib", () => e.applyImpulse({ x: dir.x * 0.9 * near, y: 0.45 + 0.45 * near, z: dir.z * 0.9 * near }));

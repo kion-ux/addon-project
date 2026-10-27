@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_kitchen_spear"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "  B",
+      " S ",
+      "S  "
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:blades"
+      }
+    ],
+    "result": {
+      "item": "nr:w_kitchen_spear",
+      "count": 1
+    }
+  }
+}

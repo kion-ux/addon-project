@@ -1,0 +1,49 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "nr:w_piston_hammer",
+      "materials": {
+        "default": "entity_emissive_alpha",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/nr/weapons/piston_hammer",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.nr.w.piston_hammer"
+      },
+      "animations": {
+        "tp": "animation.nr.w.piston_hammer.tp",
+        "fp": "animation.nr.w.piston_hammer.fp",
+        "tp_use": "animation.nr.w.piston_hammer.tp_use",
+        "fp_use": "animation.nr.w.piston_hammer.fp_use"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.nr_fp = c.is_first_person ? 1.0 : 0.0;",
+          "v.nr_use = q.is_using_item ? 1.0 : 0.0;",
+          "v.nr_usew = (v.nr_usew ?? 0.0) + (v.nr_use - (v.nr_usew ?? 0.0)) * math.min(1.0, q.delta_time * 10.0);"
+        ],
+        "animate": [
+          {
+            "tp": "(1.0 - v.nr_fp) * (1.0 - v.nr_usew)"
+          },
+          {
+            "tp_use": "(1.0 - v.nr_fp) * v.nr_usew"
+          },
+          {
+            "fp": "v.nr_fp * (1.0 - v.nr_usew)"
+          },
+          {
+            "fp_use": "v.nr_fp * v.nr_usew"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.item_default"
+      ]
+    }
+  }
+}

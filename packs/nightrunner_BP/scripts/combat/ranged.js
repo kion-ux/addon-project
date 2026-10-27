@@ -14,6 +14,9 @@
 //    gib は弾で蹴られる、ゾンビ以外の生き物はバニラのダメージ。
 //  * 演出: muzzle_flash・bullet_tracer・shell_casing・impact_dust、発射音・空撃ち・リロード・コッキング、
 //    発射の反動のモーション（ANIM_SETS の fire / cycle / reload）と揺れ、バス "noise" {pos, radius}。
+//  * 水平二連（special.both_barrels_on_heavy）: 2 発込めてスニーク＋使うと 2 発同時（ペレット 2 倍）。
+//    猟銃（special.scope_fov）: 手に持ってスニークを SCOPE_TICKS 続けるとスコープ（camera.setFov）。覗いている間の
+//    使うは撃つ（リロードにしない）。スコープの銃の手でのリロードは、スニークと同時に使う（覗く前）。
 //  弓・クロスボウ（kind = "bow" / "crossbow"）:
 //  * 弓は itemStartUse で引き、itemReleaseUse で放つ（charge_ticks で満タン。スキル marksman で速く）。
 //    クロスボウは装填（reload_ticks、ボルトを 1 本）→ 使うと撃つ。
@@ -34,9 +37,9 @@ import { particle, sound, playerSound, playerAnim, shake, PRIO } from "../core/f
 import { get as getSetting } from "../core/settings.js";
 import { valid, now, norm, add, sub, scale, dist, len, lenXZ, clamp, chance, isZombie, isPlayer, safe, later, despawn, warnOnce } from "../core/util.js";
 import {
-  heldInfo, weaponOf, animSetOf, sfxOf, rarityOf, countItem, takeItem, giveItem, heldDp, setHeldDp, skillEff,
+  heldInfo, weaponOf, animSetOf, sfxOf, rarityOf, countItem, takeItem, giveItem, heldDp, setHeldDp, skillEff, spendStamina,
   noise, eyeRay, handPos, rightOf, spreadDir, trackProjectile, projMeta, projectiles, reloading, publishWeaponState, onPlayerTick,
-  onWorldTick,
+  onWorldTick, notify,
 } from "./common.js";
 import { wear, brokenMult } from "./durability.js";
 import { effectiveMods, modDamageMult } from "./mods.js";
@@ -55,8 +58,10 @@ const WEIGHT_POWER = { light: 0.8, medium: 1.0, heavy: 1.3 };
 const RECOIL = { pistol: 0.18, revolver: 0.35, shotgun: 0.6, rifle: 0.5, smg: 0.1 };
 const SKIP_TYPES = new Set(["minecraft:item", "minecraft:xp_orb", "minecraft:arrow", "minecraft:snowball"]);
 
-/** @type {Map<string, {lastShot: number, useTick: number, auto?: {typeId: string, slot: number}}>} */
+/** @type {Map<string, {lastShot: number, useTick: number, auto?: {typeId: string, slot: number}, zoom?: boolean, aim?: number}>} */
 const guns = new Map();
+/** スニークをこの tick 続けるとスコープを覗く。 */
+const SCOPE_TICKS = 6;
 /** @param {Player} p */
 function gs(p) {
   let s = guns.get(p.id);
@@ -126,7 +131,12 @@ function gunTrigger(p, w, how) {
   const t = now();
   if (st.useTick === t) { if (how === "start" && w.special?.full_auto) st.auto = { typeId: w.id, slot: h.index }; return; }
   st.useTick = t;
-  if (p.isSneaking) { startReload(p, w); return; }
+  if (p.isSneaking && !st.zoom) {
+    // 水平二連の「強撃」: 2 発込めてあれば 2 発同時。それ以外のスニーク＋使うは手でリロード
+    if (w.special?.both_barrels_on_heavy && !reloading.has(p.id) && magOf(h, w) >= 2) { fireGun(p, w, 2); return; }
+    startReload(p, w);
+    return;
+  }
   const r = reloading.get(p.id);
   if (r) {
     if (r.perShell && magOf(h, w) > 0) cancelReload(p);
@@ -137,10 +147,10 @@ function gunTrigger(p, w, how) {
 }
 
 /**
- * 1 発撃つ（間隔・弾倉を見る）。撃てたら true。
- * @param {Player} p @param {any} w
+ * 1 発撃つ（間隔・弾倉を見る）。barrels = 2 は水平二連の 2 発同時。撃てたら true。
+ * @param {Player} p @param {any} w @param {number} [barrels]
  */
-export function fireGun(p, w) {
+export function fireGun(p, w, barrels = 1) {
   const h = heldInfo(p);
   if (!h?.item || h.item.typeId !== w.id) return false;
   const st = gs(p);
@@ -157,13 +167,15 @@ export function fireGun(p, w) {
     return false;
   }
   st.lastShot = t;
-  setMag(h, mag - 1);
+  const shots = clamp(Math.floor(barrels), 1, mag);
+  setMag(h, mag - shots);
   const { eye, dir } = eyeRay(p);
   let moving = false;
   try { moving = lenXZ(p.getVelocity()) > 0.08; } catch { moving = false; }
   const broken = brokenMult(h.item) < 1;
-  const spread = (Number(w.spread) || 0) * (p.isSneaking ? 0.6 : 1) * (moving ? 1.35 : 1) * (broken ? 2 : 1);
-  const res = hitscan(p, w, h.item, eye, dir, spread);
+  const steady = p.isSneaking && shots === 1;
+  const spread = (Number(w.spread) || 0) * (steady ? 0.6 : 1) * (moving ? 1.35 : 1) * (broken ? 2 : 1) * (shots > 1 ? 1.15 : 1);
+  const res = hitscan(p, w, h.item, eye, dir, spread, shots);
   // 演出
   const set = animSetOf(w);
   const muzzle = handPos(p, dir, 0.95);
@@ -172,19 +184,19 @@ export function fireGun(p, w) {
   for (const tr of res.tracers.slice(0, 2)) particle(p.dimension, w.fx?.tracer ?? "bullet_tracer", muzzle, { dx: tr.d.x, dy: tr.d.y, dz: tr.d.z, speed: 1 }, PRIO.NORMAL);
   for (const at of res.impacts.slice(0, 3)) particle(p.dimension, w.fx?.impact ?? "impact_dust", at, undefined, PRIO.LOW);
   if (w.fx?.shell) { const r = rightOf(dir); particle(p.dimension, w.fx.shell, add(muzzle, scale(dir, -0.4)), { dx: r.x, dy: 0.6, dz: r.z }, PRIO.LOW); }
-  sound(p.dimension, sfx.fire ?? "nr.w.pistol", muzzle, { volume: 3, pitch: 0.95 + Math.random() * 0.1 });
+  sound(p.dimension, sfx.fire ?? "nr.w.pistol", muzzle, { volume: shots > 1 ? 4 : 3, pitch: (0.95 + Math.random() * 0.1) * (shots > 1 ? 0.85 : 1) });
   playerAnim(p, String(set.fire ?? "pistol_fire"));
-  const rc = RECOIL[/** @type {"pistol"} */ (w.cls)] ?? 0.2;
+  const rc = (RECOIL[/** @type {"pistol"} */ (w.cls)] ?? 0.2) * (shots > 1 ? 1.6 : 1);
   if (w.cls !== "smg" || mag % 3 === 0) shake(p, rc, 0.12, "rotational");
-  if (set.cycle && mag - 1 > 0) {
+  if (set.cycle && mag - shots > 0) {
     later(5, () => {
       if (!valid(p) || heldInfo(p)?.item?.typeId !== w.id) return;
       playerAnim(p, String(set.cycle));
       if (sfx.cycle) sound(p.dimension, sfx.cycle, p.location, { volume: 0.9 });
     });
   }
-  noise(p.dimension, p.location, Number(w.noise) || GUN_NOISE, "gun", p);
-  wear(p, 1, "shot");
+  noise(p.dimension, p.location, (Number(w.noise) || GUN_NOISE) * (shots > 1 ? 1.25 : 1), "gun", p);
+  wear(p, shots, "shot");
   publishWeaponState(p);
   return true;
 }
@@ -200,14 +212,16 @@ export function fireGun(p, w) {
  * @property {number} dist
  */
 /**
- * ヒットスキャン（pellets 本）。当たったゾンビへ部位ごとにまとめて applyHit。
+ * ヒットスキャン（pellets 本 × shots 発）。当たったゾンビへ部位ごとにまとめて applyHit。
  * @param {Player} p @param {any} w @param {any} item @param {Vector3} eye @param {Vector3} dir @param {number} spread
+ * @param {number} [shots] 同時に撃つ数（水平二連の 2 発同時）
  * @returns {{tracers: {d: Vector3, len: number}[], impacts: Vector3[], hits: any[], pellets: {entity?: string, part?: string}[]}}
  */
-export function hitscan(p, w, item, eye, dir, spread) {
+export function hitscan(p, w, item, eye, dir, spread, shots = 1) {
   const dim = p.dimension;
   const range = Number(w.range) || 32;
-  const pellets = Math.max(1, Math.round(Number(w.pellets) || 1));
+  const perShot = Math.max(1, Math.round(Number(w.pellets) || 1));
+  const pellets = perShot * Math.max(1, Math.floor(shots));
   const pierce = Math.max(0, Number(w.special?.overpenetrate) || 0);
   const R = rarityOf(w, item);
   const per = (Number(w.damage) || 1) * (Number(R.stat_mult) || 1) * brokenMult(item);
@@ -299,7 +313,7 @@ export function hitscan(p, w, item, eye, dir, spread) {
     for (const pp of list) {
       if (!valid(z)) break;
       let gp = (Number(w.gore_power) || 0.5) + (near ? Number(w.special?.close_gore_bonus) || 0 : 0) + 0.05 * (pp.n - 1);
-      const crush = near && pellets > 1 && pp.part === "head" && pp.n >= 2;
+      const crush = near && perShot > 1 && pp.part === "head" && pp.n >= 2;
       const ms = skillEff(p, "marksman");
       let dmg = pp.dmg * modDamageMult(mods, z);
       if (pp.part === "head" && ms) dmg *= 1 + (Number(ms.ranged_headshot_add) || 0);
@@ -363,7 +377,7 @@ export function startReload(p, w) {
   const sfx = sfxOf(w);
   if (!w.ammo || countItem(p, w.ammo) < ammoPerShot(w)) {
     sound(p.dimension, sfx.empty ?? "nr.w.empty_click", p.location, { volume: 0.7, pitch: 0.8 });
-    safe("actionbar", () => p.onScreenDisplay.setActionBar("§7弾が無い"));
+    notify(p, "§7弾が無い", 30);
     return false;
   }
   const mult = Number(skillEff(p, "marksman")?.reload_mult) || 1;
@@ -426,6 +440,27 @@ onPlayerTick("fullAuto", 1, (p) => {
   fireGun(p, h.w);
 });
 
+// スコープ（special.scope_fov の銃を手に持ってスニーク）。外す時は setFov() を引数なしで（既定の視野へ）
+onPlayerTick("scope", 2, (p) => {
+  const st = guns.get(p.id);
+  if (!p.isSneaking && !st?.zoom && !st?.aim) return;
+  const h = heldInfo(p);
+  const fov = Number(h?.w?.special?.scope_fov) || 0;
+  const aiming = fov > 0 && p.isSneaking && !reloading.has(p.id);
+  const g = gs(p);
+  g.aim = aiming ? (g.aim ?? 0) + 2 : 0;
+  const want = aiming && g.aim >= SCOPE_TICKS;
+  if (want && !g.zoom) {
+    safe("scope.in", () => p.camera.setFov({ fov: clamp(fov, 30, 110), easeOptions: { easeTime: 0.15 } }));
+    g.zoom = true;
+  } else if (!want && g.zoom) {
+    safe("scope.out", () => p.camera.setFov());
+    g.zoom = false;
+  }
+});
+/** スコープを覗いているか（HUD・テスト用）。 @param {Player} p */
+export function isScoped(p) { return !!guns.get(p.id)?.zoom; }
+
 // ---------------------------------------------------------------------------
 //  弓・クロスボウ
 // ---------------------------------------------------------------------------
@@ -436,7 +471,7 @@ const draws = new Map();
 function bowDraw(p, w) {
   if (w.ammo && countItem(p, w.ammo) <= 0) {
     playerSound(p, "nr.w.empty_click", { volume: 0.6 });
-    safe("actionbar", () => p.onScreenDisplay.setActionBar("§7矢が無い"));
+    notify(p, "§7矢が無い", 30);
     return;
   }
   draws.set(p.id, { start: now(), typeId: w.id, slot: p.selectedSlotIndex });
@@ -509,6 +544,7 @@ export function fireProjectile(p, w, charge, fromMag) {
   const set = animSetOf(w);
   playerAnim(p, String(set.release ?? set.fire ?? "bow_release"));
   sound(p.dimension, sfxOf(w).fire ?? "nr.w.bow_release", p.location, { volume: 1 });
+  spendStamina(p, (Number(w.stamina_cost) || 0) * (0.5 + 0.5 * charge), w.kind);
   noise(p.dimension, p.location, Number(w.noise) || 4, w.kind, p);
   wear(p, 1, "shot");
   publishWeaponState(p);

@@ -22,7 +22,7 @@ import { particle, sound, playerSound, PRIO } from "../core/fx.js";
 import { valid, chance, clamp, now, dist, sub, norm, add, scale, isPlayer, isZombie, yawOf, yawForward, safe } from "../core/util.js";
 import {
   CEV, heldInfo, readMods, refreshLore, rarityOf, countItem, takeItem, publishWeaponState, zclass, roman,
-  onWorldTick, skillEff,
+  onWorldTick, skillEff, notify,
 } from "./common.js";
 
 /** @typedef {import("@minecraft/server").Player} Player */
@@ -132,7 +132,7 @@ export function applyMod(p, key, tier = 1, o) {
   playerSound(p, "nr.ui.craft", { volume: 0.8 });
   const rgb = m?.visual?.particle_rgb;
   if (m?.visual?.particle) particle(p.dimension, m.visual.particle, add(p.getHeadLocation(), scale(p.getViewDirection(), 0.8)), rgb ? { cr: rgb[0] / 255, cg: rgb[1] / 255, cb: rgb[2] / 255, size: 0.6, radius: 0.6, count: 6 } : undefined, PRIO.NORMAL);
-  safe("actionbar", () => p.onScreenDisplay.setActionBar(`§6${m?.ja ?? key} ${roman(tier)}§r を付けた`));
+  notify(p, `§6${m?.ja ?? key} ${roman(tier)}§r を付けた`);
   return { ...r, ok: true, reason: "ok", mods };
 }
 

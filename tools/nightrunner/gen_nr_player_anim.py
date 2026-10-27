@@ -199,18 +199,9 @@ def kabsch(src, dst, weights) -> np.ndarray:
     return U @ D @ Vt
 
 
-def look_rot(d, a0, twist=0.0, guess=None) -> np.ndarray:
-    """腕・脚の向き: 休みの向き a0（局所の単位ベクトル）を d へ向ける [rx, ry, twist]。ガウス・ニュートン。"""
-    d = np.asarray(d, float)
-    d = d / max(np.linalg.norm(d), 1e-9)
-    if guess is None:
-        rx0 = -math.degrees(math.acos(float(np.clip(-d[1], -1, 1))))
-        s = math.sin(math.radians(rx0))
-        ry0 = math.degrees(math.atan2(d[0] / s, d[2] / s)) if abs(s) > 1e-6 else 0.0
-        x = np.array([rx0, ry0])
-    else:
-        x = np.array([guess[0], guess[1]], float)
-    for _ in range(40):
+def _look_gn(d, a0, twist, x):
+    x = np.asarray(x, float).copy()
+    for _ in range(60):
         f = rot((x[0], x[1], twist)) @ a0 - d
         J = np.zeros((3, 2))
         for i in range(2):
@@ -221,7 +212,86 @@ def look_rot(d, a0, twist=0.0, guess=None) -> np.ndarray:
         x = x + np.clip(step, -40, 40)
         if np.linalg.norm(step) < 1e-5:
             break
+    return x, float(np.linalg.norm(rot((x[0], x[1], twist)) @ a0 - d))
+
+
+def _rot_angle(R) -> float:
+    return math.degrees(math.acos(float(np.clip((np.trace(R) - 1.0) / 2.0, -1.0, 1.0))))
+
+
+def look_rot(d, a0, twist=0.0, guess=None) -> np.ndarray:
+    """腕・脚の向き: 休みの向き a0（局所の単位ベクトル）を d へ向ける [rx, ry, twist]。ガウス・ニュートン。
+    ねじれ（twist）を決めると向きの解は二つ（腕が自分の軸まわりに 180° 回ったもの）。回転の小さい方を取る
+    （180° 回った解は箱が体の内側へずれて胴に刺さり、肌の向きも裏返る）。guess があれば 360° の倍数で寄せる。"""
+    d = np.asarray(d, float)
+    d = d / max(np.linalg.norm(d), 1e-9)
+    rx0 = -math.degrees(math.acos(float(np.clip(-d[1], -1, 1))))
+    s = math.sin(math.radians(rx0))
+    ry0 = math.degrees(math.atan2(d[0] / s, d[2] / s)) if abs(s) > 1e-6 else 0.0
+    starts = [(rx0, ry0), (-rx0, ry0 + 180.0)]
+    if guess is not None:
+        starts.append((guess[0], guess[1]))
+    sols = []
+    for st in starts:
+        x, res = _look_gn(d, a0, twist, st)
+        if res < 1e-3:
+            sols.append(x)
+    if not sols:
+        x, _res = _look_gn(d, a0, twist, starts[-1])
+        sols = [x]
+    ang = [_rot_angle(rot((x[0], x[1], twist))) for x in sols]
+    best = min(ang)
+    near = [x for x, a in zip(sols, ang) if a < best + 8.0]   # ほぼ同じなら前のキーに近い方
+    if guess is not None:
+        g2 = np.array([guess[0], guess[1]], float)
+        near = [g2 + (x - g2 + 180.0) % 360.0 - 180.0 for x in near]
+        x = min(near, key=lambda v: float(np.sum((v - g2) ** 2)))
+    else:
+        x = near[0]
     return np.array([x[0], x[1], twist])
+
+
+def rodrigues(w) -> np.ndarray:
+    """回転ベクトル（ラジアン）→ 回転行列。"""
+    w = np.asarray(w, float)
+    th = float(np.linalg.norm(w))
+    if th < 1e-12:
+        return np.eye(3)
+    k = w / th
+    K = np.array([[0.0, -k[2], k[1]], [k[2], 0.0, -k[0]], [-k[1], k[0], 0.0]])
+    return np.eye(3) + math.sin(th) * K + (1.0 - math.cos(th)) * (K @ K)
+
+
+def nelder_mead(f, x0, step=0.15, iters=400, tol=1e-9):
+    """小さな決定的なネルダー＝ミード法（scipy 無しで動くように）。(x, f(x)) を返す。"""
+    n = len(x0)
+    pts = [np.asarray(x0, float)] + [np.asarray(x0, float) + step * np.eye(n)[i] for i in range(n)]
+    vals = [f(q) for q in pts]
+    for _ in range(iters):
+        order = np.argsort(vals, kind="stable")
+        pts = [pts[i] for i in order]
+        vals = [vals[i] for i in order]
+        if vals[-1] - vals[0] < tol:
+            break
+        cen = np.mean(pts[:-1], axis=0)
+        xr = cen + (cen - pts[-1])
+        fr = f(xr)
+        if fr < vals[0]:
+            xe = cen + 2.0 * (cen - pts[-1])
+            fe = f(xe)
+            pts[-1], vals[-1] = (xe, fe) if fe < fr else (xr, fr)
+        elif fr < vals[-2]:
+            pts[-1], vals[-1] = xr, fr
+        else:
+            xc = cen + 0.5 * (pts[-1] - cen)
+            fc = f(xc)
+            if fc < vals[-1]:
+                pts[-1], vals[-1] = xc, fc
+            else:
+                pts = [pts[0]] + [pts[0] + 0.5 * (q - pts[0]) for q in pts[1:]]
+                vals = [vals[0]] + [f(q) for q in pts[1:]]
+    i = int(np.argmin(vals))
+    return pts[i], vals[i]
 
 
 def _T(R=None, t=(0, 0, 0)) -> np.ndarray:
@@ -355,6 +425,8 @@ def _style_axes() -> Dict[str, dict]:
 
 
 STYLES = _style_axes()
+# 両手持ちの拳の間隔の範囲（持ち物の軸に沿って。剣の柄は短く、斧・槌・槍の柄は長い）
+GRIP_RANGE = {"two_hand": (2.4, 8.0), "spear": (3.0, 12.0), "rifle": (5.0, 11.0)}
 
 # ===========================================================================
 #  4. キーの姿勢 → ボーンのチャンネル
@@ -366,18 +438,21 @@ STYLES = _style_axes()
 #    rAt/lAt     腕で指す点（体の座標、fb の前 = 全身の回転と一緒に動く）。rAz/lAz はそのときの腕のねじり
 #    rAg/lAg     腕で指す点（エンティティの座標。全身を回しても動かない = 障害物・地面に手をつく）
 #    rAc/lAc     腕で指す点（胸の座標。腰・胸のひねりと一緒に動く。両手武器の「体の正面の弧」）
-#    rB / rBc    右手の持ち物の向き（体の座標 / 胸の座標）。腕の向きと合わせて腕のねじりを解く（Kabsch）。
+#    rB / rBc    右手の持ち物の向き（体の座標 / 胸の座標。rBg はエンティティの座標）。腕の向きと合わせて
+#                腕のねじりを解く（Kabsch）。
 #                両手の型で rAc と lAc を書けば、持ち物の向き = 右の拳 → 左の拳、握りの間隔 = 二点の距離
-#    gap         両手持ちの拳の間隔（既定は構えの間隔。振りでは手を寄せてよい）
+#    gap         両手持ちの拳の間隔の好み（既定は構えの間隔）。実際は左の拳が柄に乗る間隔を GRIP_RANGE の
+#                範囲で探し、好みに近いものを使う
 #    lA="grip"   両手持ち（右手の持ち物の軸に沿って左手を置く。両手の型は書かなければ自動）
 #    rL/lL       脚（fb の枠で）      rLw/lLw 脚（体基準の向き）
 #    h           頭（胸に対して。胴と一緒に回る）  hw 頭（体基準）  hl 頭（視線に足すだけ）
 #    rAp/lAp/bp  腕・胸の位置のずれ   ground=True 一番低い点を y=0 に（接地。数値ならその高さ）
 #    wgt         打ち消しの重み（既定: 一発ものは両端 0・中 1）  aim 狙い（q.target_x/y_rotation を腕へ）の重み
+#    bw          持ち物の向き（rB/rBc）の重み（既定 1 = 腕の向き優先。槍の突きのように刃先の向きが大事なら大きく）
 
 _ZERO = np.zeros(3)
 _GROUPS = {
-    "rA": ("rA", "rAw", "rAt", "rAg", "rAc", "rAz", "rAp", "rB", "rBc"),
+    "rA": ("rA", "rAw", "rAt", "rAg", "rAc", "rAz", "rAp", "rB", "rBc", "rBg", "bw"),
     "lA": ("lA", "lAw", "lAt", "lAg", "lAc", "lAz", "lAp", "gap"),
     "rL": ("rL", "rLw"), "lL": ("lL", "lLw"), "h": ("h", "hw", "hl"), "w": ("w",), "b": ("b",), "bp": ("bp",),
 }
@@ -459,6 +534,73 @@ class Solved:
         self.W = None
         self.head_written = False
         self.reach = 0.0          # 両手持ち: 左の拳と柄の二つ目の握りの距離
+        self.gap = 0.0            # 両手持ち: 実際に使った握りの間隔
+
+
+ARM_LEN = float(np.linalg.norm(FIST["leftArm"] - np.array(PIV["leftArm"])))
+
+
+def _grip_pref(P: dict, clip: Clip) -> float:
+    if isinstance(P.get("gap"), (int, float)):
+        return float(P["gap"])
+    if "rAc" in P and "lAc" in P:
+        return float(np.linalg.norm(np.asarray(P["lAc"], float) - np.asarray(P["rAc"], float)))
+    st = STYLES[clip.style or "two_hand"]
+    return clip.grip if clip.grip is not None else (st.get("gap") or 4.0)
+
+
+def grip_gap(fist, axis, sh, side, clip: Clip, pref: float) -> Tuple[float, float]:
+    """柄の上で左の拳が乗る間隔と、そのときの届かなさ（腕の長さとの差）。座標は何でもよい（同じ枠なら）。"""
+    lo, hi = GRIP_RANGE.get(clip.style or "two_hand", (2.5, 8.0))
+    gs = np.unique(np.append(np.arange(lo, hi + 1e-6, 0.05), min(max(pref, lo), hi)))   # 好みそのものも候補に
+    miss = np.abs(np.linalg.norm(fist[None, :] + gs[:, None] * axis[None, :] + side[None, :] - sh[None, :],
+                                 axis=1) - ARM_LEN)
+    i = int(np.argmin(miss + 0.04 * np.abs(gs - pref)))
+    return float(gs[i]), float(miss[i])
+
+
+_TORSO_LO = np.array(BOXES["body"][0], float)
+_TORSO_HI = _TORSO_LO + np.array(BOXES["body"][1], float)
+
+
+def seg_depth(a, b) -> float:
+    """胸の座標の線分 a→b（腕の芯）が胴の箱へ入る深さの最大（外なら負）。肩の近くは除く。"""
+    us = np.linspace(0.2, 1.0, 9)[:, None]
+    pts = a[None, :] + (b - a)[None, :] * us
+    return float(np.max(np.min(np.minimum(pts - _TORSO_LO, _TORSO_HI - pts), axis=1)))
+
+
+def refine_two_hand(R0, a0, d, b, bw, clip: Clip, pref: float) -> np.ndarray:
+    """両手持ち: 右腕の回転を「腕の向き・持ち物の向き・左の拳が柄に届くこと・腕が胴に刺さらないこと」の和が
+    最小になるよう解き直す（胸の座標。肘が無いので、柄の向きと右腕の向きは持ち物の型で決まった角度でしか組めない）。"""
+    st = STYLES[clip.style]
+    pr = np.array(PIV["rightArm"])
+    sh = np.array(PIV["leftArm"])
+    fr0 = FIST["rightArm"] - pr
+    top_r, top_l = np.array([-6.0, 22.0, 0.0]), np.array([6.0, 22.0, 0.0])   # 腕の芯の上端（肩の外）
+    side = np.array([clip.grip_side, 0.0, 0.0])
+    d = np.asarray(d, float) / max(np.linalg.norm(d), 1e-9)
+    b = np.asarray(b, float) / max(np.linalg.norm(b), 1e-9)
+
+    def parts(R):
+        fist = pr + R @ fr0
+        axis = R @ st["axis"]
+        g, miss = grip_gap(fist, axis, sh, side, clip, pref)
+        tgt = fist + axis * g + side
+        pen = max(seg_depth(pr + R @ (top_r - pr), fist), seg_depth(top_l, tgt))
+        return miss, pen
+
+    def cost(w):
+        R = rodrigues(w) @ R0
+        miss, pen = parts(R)
+        return (6.0 * float(np.sum((R @ a0 - d) ** 2)) + bw * float(np.sum((R @ st["axis"] - b) ** 2))
+                + 1.5 * miss * miss + 2.0 * max(0.0, pen - 0.2) ** 2)
+
+    miss0, pen0 = parts(R0)
+    if miss0 < 0.05 and pen0 < 0.5:
+        return R0
+    w, _f = nelder_mead(cost, np.zeros(3), step=0.12)
+    return rodrigues(w) @ R0
 
 
 def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solved] = None) -> Solved:
@@ -487,11 +629,17 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
     W = fk(S.ch)
     C = W["body"][:3, :3]
     F = lambda x: Rfb @ (np.asarray(x, float) - c) + c + tr  # noqa: E731  体の座標 → ワールド
-    auto_grip = two_handed(clip) and not any(k in P for k in _GROUPS["lA"] if k != "lAc")
+    # 両手持ちの左手は自動で柄へ（右腕に何か書いたキーか、構えの上の差分のときだけ。空のキーは休みのまま）。
+    # gap（握りの間隔）・lAz（ねじり）・lAp・lAc は握りの指定なので自動の握りを止めない
+    l_free = any(k in P for k in ("lAw", "lAt", "lAg")) or P.get("lA") not in (None, "grip")
+    auto_grip = (two_handed(clip) and not l_free
+                 and (base is not None or any(k in P for k in _GROUPS["rA"])))
     # 持ち物の向き（右手）: rB = 体の座標の向き（全身の回転と一緒に回る）、rBc = 胸の座標の向き、
     # 両手で rAc と lAc があれば右の拳 → 左の拳の向き
     blade = None
-    if "rB" in P:
+    if "rBg" in P:
+        blade = np.asarray(P["rBg"], float)
+    elif "rB" in P:
         blade = Rfb @ np.asarray(P["rB"], float)
     elif "rBc" in P:
         blade = C @ np.asarray(P["rBc"], float)
@@ -516,7 +664,10 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
                 tgt = (W["body"] @ np.append(np.asarray(P[f"{key}c"], float), 1.0))[:3]
             d = C.T @ (tgt - sh[:3])
             if side == "r" and blade is not None and clip.style in STYLES:
-                R = kabsch([a0, STYLES[clip.style]["axis"]], [d, C.T @ blade], [6.0, 1.0])
+                bw = float(P.get("bw", 1.0))
+                R = kabsch([a0, STYLES[clip.style]["axis"]], [d, C.T @ blade], [6.0, bw])
+                if auto_grip:
+                    R = refine_two_hand(R, a0, d, C.T @ blade, bw, clip, _grip_pref(P, clip))
                 e = euler(R, g)
             else:
                 e = look_rot(d, a0, float(P.get(f"{key}z", 0.0)), g if prev else None)
@@ -533,15 +684,12 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
         Wr = W["rightArm"]
         fist = (Wr @ np.append(FIST["rightArm"], 1.0))[:3]
         axis = Wr[:3, :3] @ st["axis"]
-        if "gap" in P:
-            gap = float(P["gap"])
-        elif "rAc" in P and "lAc" in P:
-            gap = float(np.linalg.norm(np.asarray(P["lAc"], float) - np.asarray(P["rAc"], float)))
-        else:
-            gap = clip.grip if clip.grip is not None else (st.get("gap") or 4.0)
-        side = np.array([clip.grip_side, 0, 0])
-        target = fist + axis * float(gap) + W["body"][:3, :3] @ side
         sh = (W["body"] @ np.append(PIV["leftArm"], 1.0))[:3]
+        # 握りの間隔: 書いた値（または構えの間隔）は「好み」。肘の無い腕の拳は肩から腕の長さちょうどの所にしか
+        # 来ないので、柄の上でそうなる点を型ごとの範囲で探す（剣は手を寄せ、槍は広く）。好みに近い方を取る
+        side = W["body"][:3, :3] @ np.array([clip.grip_side, 0, 0])
+        gap, _miss = grip_gap(fist, axis, sh, side, clip, _grip_pref(P, clip))
+        target = fist + axis * gap + side
         a0 = FIST["leftArm"] - np.array(PIV["leftArm"])
         a0 = a0 / np.linalg.norm(a0)
         d = C.T @ (target - sh)
@@ -551,6 +699,7 @@ def solve_pose(P: dict, clip: Clip, prev: Optional[Solved], base: Optional[Solve
         S.ch["leftArm"] = {"rot": look_rot(d, a0, twist, guess), "pos": _v(P, "lAp")}
         W2 = fk(S.ch)
         S.reach = float(np.linalg.norm(fist_world(W2, "leftArm") - target))
+        S.gap = float(gap)
     # 頭（体基準の向き）
     if "hw" in P:
         S.ch["head"] = {"rot": euler(rot(_v(P, "hw")), pv("head"))}
@@ -691,6 +840,8 @@ def _base_of(clip: Clip):
 def solve_clip(clip: Clip) -> List[Tuple[float, Solved, dict]]:
     bb = _base_of(clip)
     base, bP = (bb if bb else (None, None))
+    if clip.kind == "recoil":     # 反動・ポンプ・ボルトは狙いの上の小さな加算。書いていない部位は 0 のまま
+        base, bP = None, None
     skip = ("lA",) if two_handed(clip) else ()
     out = []
     prev = base
@@ -1139,10 +1290,13 @@ def preview_pose(total: Dict[str, dict]) -> Dict[str, dict]:
 
 
 def _layers_for(c: Clip, t: float) -> List[Tuple[str, float]]:
-    L = []
-    if c.base and c.kind in ("act", "aim", "recoil"):
-        L.append((PREFIX + c.base, 0.0))
-    L.append((PREFIX + c.name, t))
+    """実機の重なり: 構え（nr.p.hold）→ 狙い・振り（nr.p.act）→ 反動（nr.p.recoil）。base を辿って下から積む。"""
+    L = [(PREFIX + c.name, t)]
+    b = c.base if c.kind in ("act", "aim", "recoil") else None
+    while b:
+        L.insert(0, (PREFIX + b, 0.0))
+        bc = CLIPS.get(b)
+        b = bc.base if (bc and bc.kind in ("act", "aim", "recoil")) else None
     return L
 
 
@@ -1209,6 +1363,43 @@ def check_hold_keep(doc: dict) -> List[str]:
                                                               if abs(want[2]) < 1e-9 else 0.0])
                 if np.max(np.abs(got[:2] - want[:2])) > 0.11:
                     probs.append(f"{n}: 右腕 {np.round(got, 2)} が契約 {want} と違う")
+    return probs
+
+
+def pose_metrics(W) -> Dict[str, float]:
+    """腕・脚の芯線が胴の箱へ入る深さ（正 = 中。手足の太さ 4 の半分 2 を超えると芯まで刺さっている）と、
+    胴に対する脚の振り（前 = 正、横 = 開き）。"""
+    Tb = np.linalg.inv(W["body"])
+    o, s = np.array(BOXES["body"][0], float), np.array(BOXES["body"][1], float)
+    out = {}
+    for limb, cx in (("rightArm", -6.0), ("leftArm", 6.0), ("rightLeg", -1.9), ("leftLeg", 1.9)):
+        y0, y1 = (13.0, 20.0) if "Arm" in limb else (1.0, 9.0)
+        worst = -9.0
+        for y in np.linspace(y0, y1, 8):
+            p = (Tb @ (W[limb] @ np.array([cx, y, 0.0, 1.0])))[:3]
+            worst = max(worst, float(np.minimum(p - o, o + s - p).min()))
+        out["pen_" + limb] = worst
+    Rw = W["waist"][:3, :3]
+    for limb in ("rightLeg", "leftLeg"):
+        d = Rw.T @ (W[limb][:3, :3] @ np.array([0.0, -1.0, 0.0]))     # 腰の座標での脚の向き
+        out["fwd_" + limb] = math.degrees(math.atan2(-d[2], -d[1]))
+        out["side_" + limb] = math.degrees(math.asin(float(np.clip(abs(d[0]), 0, 1))))
+    return out
+
+
+def check_poses(names=None, pen_tol=0.5, reach_tol=0.8) -> List[str]:
+    """全キーの解いた姿勢: 手足が胴に刺さる・両手の握りが届かない・脚が後ろへ反り過ぎ（膝の無い脚で 60° 超）。"""
+    probs = []
+    for n in sorted(names or CLIPS):
+        c = CLIPS[n]
+        for t, S, P in solve_clip(c):
+            m = pose_metrics(S.W)
+            bad = [f"{k[4:]} {v:+.1f}" for k, v in m.items() if k.startswith("pen_") and v > pen_tol]
+            if two_handed(c) and S.reach > reach_tol and P:
+                bad.append(f"握り {S.reach:.1f}")
+            bad += [f"{k[4:]} 後ろ {-v:.0f}°" for k, v in m.items() if k.startswith("fwd_") and v < -60]
+            if bad:
+                probs.append(f"{n} t={t}: " + ", ".join(bad))
     return probs
 
 
@@ -1287,6 +1478,81 @@ def qa_render(doc: dict, names=None, out_dir: str = QA_DIR, frames: int = 7, siz
     return written
 
 
+# 一覧の組（--sheet）: パルクール・全身 / 近接と構え / 飛び道具・投擲・道具
+SHEET_GROUPS = {
+    "move": lambda c: c.kind == "move",
+    "melee": lambda c: c.kind == "hold" or (c.kind == "act" and c.style in ("one_hand", "two_hand", "spear")
+                                            and not c.name.startswith("throw")),
+    "ranged": lambda c: True,
+}
+
+
+def _sheet_times(c: Clip, k: int) -> List[float]:
+    """一覧に載せる時刻: 一発ものは中のキー（多ければ当たりを含めて k 個に間引く）、ループは等間隔。"""
+    if c.kind == "hold":
+        return [0.0]
+    if c.loop is True or c.kind == "aim":
+        return [round(float(x), 3) for x in np.linspace(0.0, c.length, min(k, 4), endpoint=False)]
+    inner = [round(t, 3) for t, _ in c.keys[1:-1]] or [round(c.length / 2, 3)]
+    if c.loop == "hold_on_last_frame" or c.meta.get("from"):
+        inner = [round(t, 3) for t, _ in c.keys]
+    if len(inner) > k:
+        hit = c.meta.get("hit")
+        idx = sorted(set(int(round(i)) for i in np.linspace(0, len(inner) - 1, k)))
+        pick = [inner[i] for i in idx]
+        if hit is not None and not any(abs(t - hit) < 1e-6 for t in pick):
+            pick[min(range(len(pick)), key=lambda i: abs(pick[i] - hit))] = round(hit, 3)
+        inner = sorted(set(pick))
+    return inner
+
+
+def qa_sheets(doc: dict, out_dir: str = QA_DIR, per_clip: int = 5, size: int = 118,
+              groups=("move", "melee", "ranged"), names=None, all_views: bool = False) -> List[str]:
+    """全クリップのキーの姿勢を少数の一覧にまとめる（1 クリップ = 最初の向きで数コマ、1 行に 2 クリップ）。
+    all_views なら clip.views の向きごとに 1 段（細部の確認用。--only と一緒に）。"""
+    import nr_preview as NPV
+    from PIL import Image
+    os.makedirs(out_dir, exist_ok=True)
+    g0, tex = _qa_assets()
+    anims = doc["animations"]
+    views = {"side": (90.0, 4.0), "tq": (35.0, 12.0), "front": (0.0, 6.0), "back": (180.0, 8.0),
+             "tql": (-40.0, 12.0), "top": (0.0, 70.0), "rear": (150.0, 12.0)}
+    left = [n for n in sorted(CLIPS) if not names or n in names]
+    written = []
+    geo_cache: Dict[Tuple[str, str], object] = {}
+    for gname in groups:
+        mine = [n for n in left if SHEET_GROUPS[gname](CLIPS[n])]
+        left = [n for n in left if n not in mine]
+        if not mine:
+            continue
+        cells = []
+        for n in mine:
+            c = CLIPS[n]
+            key = (c.proxy, c.style or "")
+            if key not in geo_cache:
+                geo_cache[key] = NPV.load_geometry({"format_version": "1.16.0",
+                                                    "minecraft:geometry": [_with_proxy(g0, c.proxy, c.style)]})
+            g = geo_cache[key]
+            ts = _sheet_times(c, per_clip)
+            for vw in (c.views if all_views else c.views[:1]):
+                yaw, pitch = views[vw]
+                row = []
+                for t in ts:
+                    total, _w = stack_pose(anims, _layers_for(c, t), _qa_vars(c))
+                    cam = NPV.Camera(yaw=yaw, pitch=pitch, target=(0.0, 15.0, -2.0), scale=size / 44.0)
+                    img = NPV.render(g, tex, camera=cam, size=(size, int(size * 1.2)), pose=preview_pose(total),
+                                     floor=True, bg=(40, 42, 48))
+                    row.append((f"{n} {t:.2f}" + (f" {vw}" if all_views else ""), img))
+                while len(row) < per_clip:
+                    row.append(("", Image.new("RGB", (size, int(size * 1.2)), (16, 17, 21))))
+                cells += row
+        sheet = NPV.contact_sheet(cells, cols=per_clip * 2, title=f"nr_player {gname}: {len(mine)} clips")
+        path = os.path.join(out_dir, f"_sheet_{gname}.png")
+        sheet.save(path)
+        written.append(path)
+    return written
+
+
 # ===========================================================================
 #  11. 入口
 # ===========================================================================
@@ -1306,6 +1572,9 @@ def main(argv=None) -> int:
     ap.add_argument("--only", default="", help="確認画像を描くクリップ（カンマ区切り・前方一致）")
     ap.add_argument("--check", action="store_true", help="打ち消し・両端 0 の数値検査も走らせる（遅い）")
     ap.add_argument("--no-write", action="store_true")
+    ap.add_argument("--sheet", default="", help="全クリップの一覧を描く（move,melee,ranged のどれか・カンマ区切り。all で全部）")
+    ap.add_argument("--size", type=int, default=118, help="一覧の 1 コマの幅（画素）")
+    ap.add_argument("--views", action="store_true", help="一覧でクリップの向きを全部描く")
     a = ap.parse_args(argv)
     doc, errs, warns = generate(write=not a.no_write)
     n = len(doc["animations"])
@@ -1315,7 +1584,7 @@ def main(argv=None) -> int:
     if a.check or PREVIEW or a.qa:
         probs = check_ends(doc) + check_hold_keep(doc)
         names = [x for x in CLIPS if not a.only or any(x.startswith(p) for p in a.only.split(","))]
-        probs += check_cancel(doc, names)
+        probs += check_cancel(doc, names) + check_poses(names)
         for p_ in probs:
             print("  検査:", p_)
         print(f"  数値検査: {len(probs)} 件")
@@ -1323,6 +1592,11 @@ def main(argv=None) -> int:
         names = [x for x in CLIPS if not a.only or any(x.startswith(p) for p in a.only.split(","))]
         files = qa_render(doc, names)
         print(f"  確認画像: {len(files)} 枚 → {os.path.relpath(QA_DIR, ROOT)}")
+    if a.sheet:
+        gs = tuple(SHEET_GROUPS) if a.sheet == "all" else tuple(x for x in a.sheet.split(",") if x in SHEET_GROUPS)
+        names = [x for x in CLIPS if not a.only or any(x.startswith(p) for p in a.only.split(","))]
+        for f in qa_sheets(doc, groups=gs, names=names if a.only else None, size=a.size, all_views=a.views):
+            print("  一覧:", f)
     for e in errs:
         print("  NG:", e)
     return 1 if errs else 0

@@ -14,19 +14,27 @@
 //  * 壁を叩く（entityHitBlock）: 金属・木の音、火花、耐久 per_wall。
 //  * 届く距離 reach より遠い一撃はかすり傷（0.6 倍・ゴアは半分）。落ちながらの一撃は会心。
 //  * 鎧の部位には alt_dtype の方が通るならそちらで叩く（消防斧の背・釘バットの釘）。
+//  * 武器の special: backstab_mult（背後の倍率）・heavy_is_stab（溜め攻撃は突き）・stagger_bonus（よろめかせる確率）・
+//    pin_stagger_ticks（刺して止める）・push_back（押し返し）・hits_max（一振りで当たる数）・
+//    ground_slam_radius / ground_slam_damage（溜め攻撃の地面叩き）。スキル skull_crusher・dismember_mastery もここ。
+//  * 近接武器でない NR の武器（銃・弓・投げ物）で殴ると銃床・弓の軽い打撃（切断しない。モーション shove）。
+//  * 這う・倒れた敵への踏みつけ（finishers.js）の振りは武器を振らない（スタミナは蹴りと同じ）。
 // ===========================================================================
-import { world } from "@minecraft/server";
-import { COMBAT_TUNING } from "../data/settings.js";
-import { setMeleeResolver, applyHit, armorOf, goreSpec } from "../gore/gore.js";
+import { world, system, EntityDamageCause } from "@minecraft/server";
+import { COMBAT_TUNING, PARKOUR_TUNING } from "../data/settings.js";
+import { setMeleeResolver, applyHit, armorOf, goreSpec, stagger, stateOf } from "../gore/gore.js";
 import { kick, GIB_ID } from "../gore/gibs.js";
 import { isCorpse } from "../gore/death.js";
 import { locate, groupOf } from "../gore/hitloc.js";
-import { particle, sound, playerAnim, PRIO } from "../core/fx.js";
+import { on, EV } from "../core/bus.js";
+import { particle, sound, playerAnim, shake, PRIO } from "../core/fx.js";
 import { get as getSetting } from "../core/settings.js";
-import { valid, now, norm, add, sub, scale, dot, len, clamp, isZombie, isPlayer, safe, later, getProp } from "../core/util.js";
+import {
+  valid, now, norm, add, sub, scale, dot, len, distXZ, clamp, chance, flat, yawForward, yawOf, isZombie, isPlayer, safe, later, getProp,
+} from "../core/util.js";
 import {
   heldInfo, weaponOf, animSetOf, sfxOf, rarityOf, isExhausted, spendStamina, skillEff, hasSkill, noise, eyeRay, rightOf,
-  publishWeaponState,
+  publishWeaponState, isBoss,
 } from "./common.js";
 import { wear, brokenMult, DUR } from "./durability.js";
 import { effectiveMods, modDamageMult } from "./mods.js";
@@ -47,6 +55,10 @@ const MELEE_NOISE = Number(CT.noise?.melee) || 4;
 const WEIGHT_POWER = { light: 0.75, medium: 1.0, heavy: 1.35 };
 /** 重さ → gib を蹴る強さ。 */
 const KICK_POWER = { light: 0.8, medium: 1.1, heavy: 1.6 };
+/** 踏みつけ・銃床で殴る時のスタミナ（蹴りと同じ）。 */
+const KICK_STAMINA = Number(/** @type {any} */ (PARKOUR_TUNING)?.stamina?.kick) || 8;
+/** 突きの組（special.heavy_is_stab の溜め攻撃）。 */
+const STAB_SET = animSetOf({ anim_set: "stab" });
 
 /**
  * その tick の振り（同じ tick の entityHitEntity / entityHurt / onHitEntity で一度だけ）。
@@ -57,9 +69,10 @@ const KICK_POWER = { light: 0.8, medium: 1.1, heavy: 1.6 };
  * @property {number} spam      速すぎる振りの倍率 0.2..1
  * @property {boolean} exhausted
  * @property {boolean} heavy    スニークの強撃（power_attack）
+ * @property {boolean} stomp    踏みつけ（武器は振らない）
  * @property {string} anim
  */
-/** @type {Map<string, {last: number, combo: number, end: number, swing?: Swing, wall: number}>} */
+/** @type {Map<string, {last: number, combo: number, end: number, swing?: Swing, wall: number, bash: number}>} */
 const swings = new Map();
 /** @type {Map<string, number>} スニークを押した tick */
 const sneakSince = new Map();
@@ -67,7 +80,7 @@ const sneakSince = new Map();
 /** @param {Player} p */
 function rec(p) {
   let r = swings.get(p.id);
-  if (!r) { r = { last: -1e9, combo: -1, end: -1e9, wall: -1e9 }; swings.set(p.id, r); }
+  if (!r) { r = { last: -1e9, combo: -1, end: -1e9, wall: -1e9, bash: -1 }; swings.set(p.id, r); }
   return r;
 }
 
@@ -85,6 +98,12 @@ function powerAttack(p) {
   const since = sneakSince.get(p.id);
   const need = Number(eff.heavy_charge_ticks) || HEAVY.charge_ticks;
   return since === undefined ? true : now() - since >= need;
+}
+
+/** 溜め攻撃の振り（ANIM_SETS の heavy。special.heavy_is_stab なら突きの heavy）。 @param {any} w @returns {any[]} */
+function heavyDef(w) {
+  const set = w?.special?.heavy_is_stab && Array.isArray(STAB_SET.heavy) ? STAB_SET : animSetOf(w);
+  return Array.isArray(set.heavy) ? set.heavy : [`${w.anim_set}_heavy`, 10, 13, 22, "r2l"];
 }
 
 /** 振りの軌跡の向き。 @param {string} arcName @param {Vector3} dir */
@@ -116,10 +135,11 @@ function swingFx(p, w, def, heavy) {
 }
 
 /**
- * その tick の振り（無ければ作る: スタミナ・モーション・音・軌跡・音の知らせ）。
- * @param {Player} p @param {any} w @returns {Swing}
+ * その tick の振り（無ければ作る: スタミナ・モーション・音・軌跡・音の知らせ）。target を渡すと、這う・倒れた敵への
+ * 踏みつけ（finishers.js の stompHit がモーション finisher_stomp を出す）なら武器は振らない。
+ * @param {Player} p @param {any} w @param {Entity} [target] @returns {Swing}
  */
-export function swingOf(p, w) {
+export function swingOf(p, w, target) {
   const t = now();
   const r = rec(p);
   if (r.swing && r.swing.tick === t && r.swing.w === w) return r.swing;
@@ -128,20 +148,54 @@ export function swingOf(p, w) {
   const spam = 0.2 + 0.8 * progress * progress;
   const set = animSetOf(w);
   const list = Array.isArray(set.swings) && set.swings.length ? set.swings : [[`${w.anim_set}_1`, 3, 5, 10, "r2l"]];
-  const heavy = powerAttack(p);
+  const stomp = !!target && isZombie(target) && canStomp(p, target);
+  const heavy = !stomp && powerAttack(p);
   const combo = t - r.end <= COMBO_WINDOW ? (r.combo + 1) % list.length : 0;
-  const def = heavy && set.heavy ? set.heavy : list[combo];
-  spendStamina(p, (Number(w.stamina_cost) || 0) * (heavy ? Number(HEAVY.stamina_mult) || 1.8 : 1), heavy ? "power_attack" : "melee");
-  playerAnim(p, String(def[0]));
-  swingFx(p, w, def, heavy);
+  const def = heavy ? heavyDef(w) : list[combo];
+  if (stomp) spendStamina(p, KICK_STAMINA, "stomp");
+  else {
+    spendStamina(p, (Number(w.stamina_cost) || 0) * (heavy ? Number(HEAVY.stamina_mult) || 1.8 : 1), heavy ? "power_attack" : "melee");
+    playerAnim(p, String(def[0]));
+    swingFx(p, w, def, heavy);
+  }
   noise(p.dimension, p.location, MELEE_NOISE, "melee", p);
   r.last = t;
-  if (!heavy) r.combo = combo;
+  if (!heavy && !stomp) r.combo = combo;
   r.end = t + (Number(def[3]) || 10);
   /** @type {Swing} */
-  const s = { tick: t, w, combo, spam, exhausted, heavy, anim: String(def[0]) };
+  const s = { tick: t, w, combo, spam, exhausted, heavy, stomp, anim: stomp ? "finisher_stomp" : String(def[0]) };
   r.swing = s;
   return s;
+}
+
+/** 銃床・弓・投げ物で殴る振り（その tick に一度だけ）。 @param {Player} p */
+function bashSwing(p) {
+  const r = rec(p);
+  const t = now();
+  if (r.bash === t) return;
+  r.bash = t;
+  spendStamina(p, KICK_STAMINA * 0.75, "bash");
+  playerAnim(p, "shove");
+  const { eye, dir } = eyeRay(p);
+  sound(p.dimension, "nr.w.swing_light", add(eye, dir), { volume: 0.7, pitch: 0.85 });
+  noise(p.dimension, p.location, MELEE_NOISE, "melee", p);
+}
+
+/**
+ * 近接武器でない NR の武器（銃・弓・クロスボウ・投げ物）で殴った hit: 軽い打撃（銃の dtype・sever_bias は使わない）。
+ * @param {Player} p @param {Entity} z @param {any} w @returns {any}
+ */
+export function bashHit(p, z, w) {
+  void z;
+  bashSwing(p);
+  const two = Number(w?.hands) === 2;
+  const base = w?.kind === "throwable" ? 2 : two ? 4.5 : 3;
+  const { dir } = eyeRay(p);
+  return {
+    attacker: p, source: "melee", dtype: "blunt", weight: two ? "medium" : "light",
+    damage: base * (isExhausted(p) ? Number(EXH.damage_mult) || 0.7 : 1), weapon: undefined, mods: undefined,
+    power: two ? 0.95 : 0.7, gorePower: 0.2, dir, outcome: undefined, heavy: undefined,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -164,7 +218,7 @@ function chooseDtype(w, z, part) {
 /**
  * 武器の一撃の hit（解決・溜め攻撃の共通）。
  * @param {Player} p @param {Entity} z @param {any} w @param {any} item 手の ItemStack
- * @param {{spam?: number, exhausted?: boolean, heavy?: boolean, corpse?: boolean, dir?: Vector3}} o
+ * @param {{spam?: number, exhausted?: boolean, heavy?: boolean, corpse?: boolean, dir?: Vector3, dtype?: string}} o
  * @returns {any}
  */
 export function weaponHit(p, z, w, item, o) {
@@ -177,10 +231,16 @@ export function weaponHit(p, z, w, item, o) {
   const dir = o.dir ?? view;
   const ph = locate(z, { attacker: p, dir });
   const group = groupOf(ph.part);
-  const dtype = chooseDtype(w, z, ph.part);
+  const dtype = o.dtype ?? chooseDtype(w, z, ph.part);
   let gp = (Number(w.gore_power) || 0.5) * (0.55 + 0.45 * spam);
   // スキル
-  if (dtype === "slash") gp += Number(skillEff(p, "dismember_mastery")?.slash_gore_add) || 0;
+  const dm = dtype === "slash" ? skillEff(p, "dismember_mastery") : undefined;
+  if (dm) {
+    gp += Number(dm.slash_gore_add) || 0;
+    // 手足の部位体力 × limb_hp_mult と同じ強さ（gore.js の強さ = 一撃 / 部位体力 × (0.4 + gorePower)）
+    const lm = Number(dm.limb_hp_mult) || 1;
+    if ((group === "arm" || group === "leg") && lm > 0 && lm < 1) gp = (0.4 + gp) / lm - 0.4;
+  }
   if (dtype === "blunt" && group === "head") gp += Number(skillEff(p, "skull_crusher")?.blunt_head_crush_add) || 0;
   const hh = skillEff(p, "headhunter");
   /** @type {any} */
@@ -196,6 +256,9 @@ export function weaponHit(p, z, w, item, o) {
       gp += (Number(pa.heavy_gore_add) || 0) - (Number(HEAVY.gore_add) || 0);
     }
   }
+  // 背後からの一撃: gore.js が COMBAT_TUNING.backstab_mult を掛けるので、special.backstab_mult の武器はその倍率に直す
+  const bsm = Number(w.special?.backstab_mult) || 0;
+  if (bsm > 0 && !o.corpse && dot(flat(dir), yawForward(yawOf(z))) > 0.5) dmg *= bsm / Math.max(1, Number(CT.backstab_mult) || 1.5);
   // 届かない一撃はかすり傷
   const reach = Number(w.reach) || 3;
   const d = len(sub(ph.point, eye));
@@ -214,18 +277,71 @@ export function weaponHit(p, z, w, item, o) {
 }
 
 /**
- * 近接の解決（gore.js の setMeleeResolver）。NR の近接武器でなければ undefined（既定の解決）。
+ * 近接の解決（gore.js の setMeleeResolver）。NR の武器でなければ undefined（既定の解決 = バニラの道具・素手）。
+ * 近接武器でない NR の武器（銃・弓・投げ物）は銃床の軽い打撃。
  * @param {Player} p @param {Entity} z @param {{damage: number, cause: string, corpse: boolean}} info
  */
 export function resolveMelee(p, z, info) {
   const h = heldInfo(p);
   const w = h?.w;
-  if (!h || !w || w.kind !== "melee") return undefined;
-  const sw = swingOf(p, w);
+  if (!h || !w) return undefined;
+  if (w.kind !== "melee") return bashHit(p, z, w);
+  const sw = swingOf(p, w, z);
   if (!info.corpse && canStomp(p, z)) return stompHit(p, z);
-  const hit = weaponHit(p, z, w, h.item, { spam: sw.spam, exhausted: sw.exhausted, heavy: sw.heavy, corpse: info.corpse });
+  const stab = sw.heavy && !!w.special?.heavy_is_stab;
+  const hit = weaponHit(p, z, w, h.item, { spam: sw.spam, exhausted: sw.exhausted, heavy: sw.heavy, corpse: info.corpse, dtype: stab ? "pierce" : undefined });
   if (sw.heavy && !info.corpse && canExecute(p, z)) return decapHit(p, z, w, { damage: hit.damage, mods: hit.mods });
+  // 一振りで何体にも当たる武器（熊手の hits_max）: 同じ向きの奥の相手にも（次の tick、少し弱く）
+  const more = Math.floor(Number(w.special?.hits_max) || 0) - 1;
+  if (more > 0 && !info.corpse) {
+    const zid = z.id;
+    system.run(() => { if (valid(p)) extraHits(p, w, zid, more, sw); });
+  }
   return hit;
+}
+
+/**
+ * 視線の前の届く範囲にいる相手（近い順。gib・他の生き物も。友軍は設定 friendly_fire の時だけ）。
+ * @param {Player} p @param {number} reach @param {number} cosMin 視線との角度の cos（-1 = 周り全部）
+ * @returns {{e: Entity, d: number}[]}
+ */
+function targetsInArc(p, reach, cosMin) {
+  const { eye, dir } = eyeRay(p);
+  /** @type {Entity[]} */
+  let near = [];
+  try { near = p.dimension.getEntities({ location: eye, maxDistance: reach + 1.6, excludeTypes: ["minecraft:item", "minecraft:xp_orb", "minecraft:arrow"] }); } catch { near = []; }
+  /** @type {{e: Entity, d: number}[]} */
+  const cand = [];
+  for (const e of near) {
+    if (!valid(e) || e.id === p.id || e.typeId.startsWith("nr:proj_")) continue;
+    if (isPlayer(e) && getSetting("friendly_fire") !== true) continue;
+    const c = add(e.location, { x: 0, y: e.typeId === GIB_ID ? 0.15 : 0.9, z: 0 });
+    const v = sub(c, eye);
+    const d = len(v);
+    if (d - 0.45 > reach) continue;
+    if (cosMin > -1 && d > 0.3 && dot(scale(v, 1 / d), dir) < cosMin) continue;
+    cand.push({ e, d });
+  }
+  return cand.sort((a, b) => a.d - b.d);
+}
+
+/**
+ * 普通の振りで奥の相手にも当てる（hits_max）。当てた数を返す。
+ * @param {Player} p @param {any} w @param {string} firstId もう当たった相手 @param {number} n @param {Swing} sw
+ */
+function extraHits(p, w, firstId, n, sw) {
+  const h = heldInfo(p);
+  if (!h?.item || h.item.typeId !== w.id) return 0;
+  let k = 0;
+  for (const { e } of targetsInArc(p, Number(w.reach) || 3, Math.cos(25 * Math.PI / 180))) {
+    if (k >= n) break;
+    if (e.id === firstId || !isZombie(e) || !valid(e)) continue;
+    const hit = weaponHit(p, e, w, h.item, { spam: sw.spam, exhausted: sw.exhausted, corpse: isCorpse(e) });
+    hit.damage *= 0.75;
+    safe("extraHits.applyHit", () => applyHit(e, hit));
+    k++;
+  }
+  return k;
 }
 setMeleeResolver((p, z, info) => resolveMelee(p, z, info));
 
@@ -238,8 +354,9 @@ world.afterEvents.entityHitEntity.subscribe((ev) => {
   const pl = /** @type {Player} */ (p);
   const h = heldInfo(pl);
   const w = h?.w?.kind === "melee" ? h.w : undefined;
-  const sw = w ? swingOf(pl, w) : undefined;
   const target = ev.hitEntity;
+  const sw = w ? swingOf(pl, w, target) : undefined;
+  if (!w && h?.w) bashSwing(pl);
   if (target?.typeId === GIB_ID && valid(target)) {
     const kp = (KICK_POWER[/** @type {"light" | "medium" | "heavy"} */ (w?.weight)] ?? 0.9) * (sw ? 0.6 + 0.4 * sw.spam : 1) * (sw?.heavy ? 1.3 : 1);
     safe("kick", () => kick(target, pl.getViewDirection(), kp));
@@ -312,8 +429,7 @@ function arcReach(arcName, w) {
  * @param {Player} p @param {any} w
  */
 export function heavyAttack(p, w) {
-  const set = animSetOf(w);
-  const hv = Array.isArray(set.heavy) ? set.heavy : [`${w.anim_set}_heavy`, 10, 13, 22, "r2l"];
+  const hv = heavyDef(w);
   spendStamina(p, (Number(w.stamina_cost) || 0) * (Number(HEAVY.stamina_mult) || 1.8), "heavy");
   playerAnim(p, String(hv[0]));
   swingFx(p, w, hv, true);
@@ -331,47 +447,106 @@ export function strike(p, w, arcName) {
   if (!valid(p)) return 0;
   const h = heldInfo(p);
   if (!h?.item || h.item.typeId !== w.id) return 0;
-  const { eye, dir } = eyeRay(p);
-  const reach = Number(w.reach) || 3;
-  const [maxN, cosMin] = arcReach(arcName, w);
-  /** @type {Entity[]} */
-  let near = [];
-  try { near = p.dimension.getEntities({ location: eye, maxDistance: reach + 1.6, excludeTypes: ["minecraft:item", "minecraft:xp_orb", "minecraft:arrow"] }); } catch { near = []; }
-  /** @type {{e: Entity, d: number}[]} */
-  const cand = [];
-  for (const e of near) {
-    if (!valid(e) || e.id === p.id || e.typeId.startsWith("nr:proj_")) continue;
-    if (isPlayer(e) && getSetting("friendly_fire") !== true) continue;
-    const c = add(e.location, { x: 0, y: e.typeId === GIB_ID ? 0.15 : 0.9, z: 0 });
-    const v = sub(c, eye);
-    const d = len(v);
-    if (d - 0.45 > reach) continue;
-    if (cosMin > -1 && d > 0.3 && dot(scale(v, 1 / d), dir) < cosMin) continue;
-    cand.push({ e, d });
-  }
-  cand.sort((a, b) => a.d - b.d);
+  const { dir } = eyeRay(p);
+  const [arcN, cosMin] = arcReach(arcName, w);
+  const maxN = Math.max(arcN, Math.floor(Number(w.special?.hits_max) || 0));
+  const stab = !!w.special?.heavy_is_stab;
+  /** @type {Set<string>} */
+  const done = new Set();
   let n = 0;
-  for (const { e } of cand.slice(0, maxN)) {
+  for (const { e } of targetsInArc(p, Number(w.reach) || 3, cosMin).slice(0, maxN)) {
     if (!valid(e)) continue;
     if (isZombie(e)) {
       const radial = arcName === "spin" ? norm({ x: e.location.x - p.location.x, y: 0, z: e.location.z - p.location.z }, dir) : dir;
-      let hit = weaponHit(p, e, w, h.item, { heavy: true, dir: radial, corpse: isCorpse(e) });
+      let hit = weaponHit(p, e, w, h.item, { heavy: true, dir: radial, corpse: isCorpse(e), dtype: stab ? "pierce" : undefined });
       if (!isCorpse(e) && canExecute(p, e)) hit = decapHit(p, e, w, { damage: hit.damage, mods: hit.mods });
       else hit.heavy = true;
+      done.add(e.id);
       safe("heavy.applyHit", () => applyHit(e, hit));
       n++;
     } else if (e.typeId === GIB_ID) {
       safe("heavy.kick", () => kick(e, dir, 1.8));
     } else {
-      safe("heavy.damage", () => e.applyDamage(Math.max(1, (Number(w.damage) || 4) * 0.55 * (Number(HEAVY.damage_mult) || 1.6)), { cause: /** @type {any} */ ("entityAttack"), damagingEntity: p }));
+      safe("heavy.damage", () => e.applyDamage(Math.max(1, (Number(w.damage) || 4) * 0.55 * (Number(HEAVY.damage_mult) || 1.6)), { cause: EntityDamageCause.entityAttack, damagingEntity: p }));
       n++;
     }
   }
+  if (Number(w.special?.ground_slam_radius) > 0) n += groundSlam(p, w, done);
   if (n > 0) wear(p, (Number(DUR.per_hit) || 1) * 2, "heavy");
   noise(p.dimension, p.location, MELEE_NOISE * 1.5, "melee", p);
   publishWeaponState(p);
   return n;
 }
+
+/**
+ * 地面を叩く衝撃（special.ground_slam_radius / ground_slam_damage。溜め攻撃の振り下ろしの後）。
+ * 周りのゾンビの脚に重い打撃（近いほど強く、倒れる）。当てた数を返す。
+ * @param {Player} p @param {any} w @param {Set<string>} skip もう溜め攻撃が当たった相手
+ */
+export function groundSlam(p, w, skip) {
+  const s = w.special ?? {};
+  const r = Number(s.ground_slam_radius) || 2.5;
+  const dmg = Number(s.ground_slam_damage) || 8;
+  const f = flat(eyeRay(p).dir);
+  const reach = Number(w.reach) || 3;
+  const at = { x: p.location.x + f.x * reach * 0.6, y: p.location.y, z: p.location.z + f.z * reach * 0.6 };
+  particle(p.dimension, "shockwave_ground", add(at, { x: 0, y: 0.1, z: 0 }), { radius: r }, PRIO.HIGH);
+  particle(p.dimension, "dust_land", add(at, { x: 0, y: 0.1, z: 0 }), { size: r / 2 }, PRIO.NORMAL);
+  sound(p.dimension, "nr.fx.metal_clang", at, { volume: 1.3, pitch: 0.6 });
+  shake(p, 0.6, 0.3);
+  noise(p.dimension, at, MELEE_NOISE * 3, "melee", p);
+  /** @type {Entity[]} */
+  let zs = [];
+  try { zs = p.dimension.getEntities({ location: at, maxDistance: r + 0.6, families: ["nr_zombie"] }); } catch { zs = []; }
+  let n = 0;
+  for (const z of zs) {
+    if (!valid(z) || skip.has(z.id)) continue;
+    const d = distXZ(z.location, at);
+    if (d > r || Math.abs(z.location.y - at.y) > 1.6) continue;
+    const near = 1 - d / r;
+    const out = norm({ x: z.location.x - at.x, y: 0.4, z: z.location.z - at.z }, { x: f.x, y: 0.4, z: f.z });
+    safe("slam.applyHit", () => applyHit(z, {
+      attacker: p, source: "melee", dtype: "blunt", weight: "heavy", damage: dmg * (0.5 + 0.5 * near), parts: ["leg_r", "leg_l"],
+      dir: out, power: 0.8 + 0.6 * near, gorePower: 0.45 + 0.4 * near, crit: false, knockdown: near > 0.35, weapon: w,
+    }));
+    n++;
+  }
+  return n;
+}
+
+// ---------------------------------------------------------------------------
+//  当たった後（EV.HIT）: 武器の special とスキルのよろめき・押し返し
+// ---------------------------------------------------------------------------
+/**
+ * 近接の一撃の後の効果（熊手の押し返し・鉄筋の槍の刺し止め・警棒のよろめき・skull_crusher）。テストから直接呼んでもよい。
+ * @param {any} res HitResult
+ */
+export function afterMeleeHit(res) {
+  const hit = res?.hit;
+  if (!hit || hit.source !== "melee" || hit._mod || res.corpse || res.killed || res.blocked || res.deflected) return;
+  const p = isPlayer(res.attacker) ? /** @type {Player} */ (res.attacker) : undefined;
+  const z = res.zombie;
+  if (!p || !valid(z) || isCorpse(z)) return;
+  const sp = weaponOf(hit.weapon)?.special ?? {};
+  const push = Number(sp.push_back) || 0;
+  if (push > 0 && !hit.noKnockback) {
+    const d = flat(hit.dir ?? sub(z.location, p.location));
+    safe("push_back", () => z.applyKnockback({ x: d.x * push, z: d.z * push }, 0.12));
+  }
+  if (res.staggered || res.knockdown || res.crawl || stateOf(z) !== "normal" || isBoss(z)) return;
+  const pin = Number(sp.pin_stagger_ticks) || 0;
+  if (pin > 0) { stagger(z, pin); return; }
+  let pst = Number(sp.stagger_bonus) || 0;
+  const sc = res.dtype === "blunt" ? skillEff(p, "skull_crusher") : undefined;
+  const sm = Number(sc?.blunt_stagger_mult) || 1;
+  if (sm > 1) {
+    // gore.js のよろめき（一撃 ≥ 最大体力 × stagger_frac）を blunt_stagger_mult 倍よろめきやすく
+    const frac = Number(goreSpec(z).stagger_frac ?? CT.stagger_threshold ?? 0.25);
+    if (Number(res.damage) >= (frac * Number(res.maxHp)) / sm) pst = 1;
+  }
+  if (pst > 0 && chance(pst)) stagger(z, Number(CT.stagger_ticks) || 24);
+}
+on(EV.HIT, (res) => afterMeleeHit(res));
 
 world.afterEvents.playerLeave.subscribe((ev) => { swings.delete(ev.playerId); charges.delete(ev.playerId); sneakSince.delete(ev.playerId); });
 

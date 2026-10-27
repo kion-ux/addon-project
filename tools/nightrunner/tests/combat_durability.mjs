@@ -18,15 +18,18 @@ test("耐久: 近接の命中で per_hit（1）減る", async () => {
 test("耐久: 残りが warn_frac を切ると警告（一度だけ）", async () => {
   const { p, z } = await arena({ item: "nr:w_machete", hp: 300 });
   const cap = durabilityOf(held(p)).cap;
-  editHeld(p, (it) => { it.getComponent("minecraft:durability").damage = Math.floor(cap * (1 - DUR.warn_frac)) - 1; });
+  // 今は warn_frac 以上残り、1 回の命中（per_hit = 1）で warn_frac を切る傷
+  editHeld(p, (it) => { it.getComponent("minecraft:durability").damage = Math.floor(cap * (1 - DUR.warn_frac)); });
   await hit(p, z, { part: "torso" });
   await tick(2);
-  expect(used().actionbars).toBe(1);
-  expect(p.onScreenDisplay.actionBar ?? "").toBeDefined();
+  // 知らせはバス "hud_notice"（HUD が聞く。テストの記録も聞くので、アクションバーへ直接は出さない）
+  expect(rec.notice.length).toBe(1);
+  expect(rec.notice[0].text).toContain(MACHETE.ja);
+  expect(used().actionbars).toBe(0);
   await tick(12);
   await hit(p, z, { part: "torso" });
   await tick(2);
-  expect(used().actionbars).toBe(1);
+  expect(rec.notice.length).toBe(1);
 });
 
 test("耐久: 尽きると壊れる（消えない・nr.w.break・説明文・ダメージは broken_damage_mult 倍）", async () => {

@@ -686,6 +686,32 @@ def coil(bone: Bone, centre, axis, d: float, length: float, turns: int, style: s
     return out
 
 
+def lash(bone: Bone, centre, axis, w: float, h: float, length: float, turns: int, style: str, *, wire=0.14,
+         up=(0.0, 1.0, 0.0), skew=0.18, **kw) -> List[Cube]:
+    """四角い束を縛る針金・紐（幅 w × 高さ h の長方形の輪を turns 本。2 本の棒・柄と刃物の柄をまとめる）。
+    輪は 1 本おきに傾けて（skew 単位）、巻き付けた螺旋に見せる。局所の高さ方向は up。"""
+    a = _v3(axis)
+    a = a / np.linalg.norm(a)
+    c = _v3(centre)
+    yv = _v3(up) - a * float(_v3(up) @ a)
+    yv = yv / np.linalg.norm(yv)
+    xv = np.cross(yv, a)
+    out = []
+    for i in range(turns):
+        t = ((i + 0.5) / turns - 0.5) * length
+        cc = c + a * t
+        sk = skew * (1 if i % 2 else -1) * 0.5
+        hw, hh = w / 2 + wire / 2, h / 2 + wire / 2
+        # 上下の辺（x 方向）と左右の辺（y 方向）。上下で軸方向に少しずらして傾ける
+        for sy in (-1, 1):
+            p = cc + yv * sy * (h / 2) + a * sk * sy
+            out.append(beam(bone, p - xv * hw, p + xv * hw, wire, wire, style, up=yv, **kw))
+        for sx in (-1, 1):
+            p = cc + xv * sx * (w / 2)
+            out.append(beam(bone, p - yv * hh - a * sk, p + yv * hh + a * sk, wire, wire, style, up=xv, **kw))
+    return out
+
+
 def teeth_row(bone: Bone, p0, p1, n: int, size, style: str, *, up=(0.0, 1.0, 0.0), rot45=True, **kw):
     """p0 → p1 に n 個の歯（45° 回した小さな箱 = 三角の山）を並べる。鋸刃・レンチの顎の刻み。"""
     p0, p1 = _v3(p0), _v3(p1)
@@ -699,6 +725,36 @@ def teeth_row(bone: Bone, p0, p1, n: int, size, style: str, *, up=(0.0, 1.0, 0.0
         c = p0 + d * ((i + 0.5) / n)
         out.append(oriented(bone, c, size, R, style, **kw))
     return out
+
+
+def inside_cubes(cubes, P) -> np.ndarray:
+    """武器空間の点 P (n,3) がキューブの集まりのどれかの中にあるか（root と、回転の無いボーンのキューブ用）。"""
+    P = np.atleast_2d(np.asarray(P, float))
+    ins = np.zeros(len(P), bool)
+    for c in cubes:
+        o = _v3(c.origin) - c.inflate
+        s = _v3(c.size) + 2 * c.inflate
+        if c.rotation:
+            piv = _v3(c.pivot)
+            Q = (P - piv) @ HS.rot(*c.rotation) + piv
+        else:
+            Q = P
+        ins |= np.all((Q >= o) & (Q <= o + s), axis=1)
+    return ins
+
+
+def surface_point(cubes, start, direction, *, step: float = 0.03, max_len: float = 20.0, sink: float = 0.06):
+    """不規則な塊（回したキューブの重ね: コンクリの塊・溶接の頭）の表面の点。start（塊の中）から direction へ
+    進み、最後に中だった所から sink だけ戻った点を返す（小石・肉片・鋲をそこに貼る）。"""
+    p0 = _v3(start)
+    d = _v3(direction)
+    d = d / np.linalg.norm(d)
+    ts = np.arange(0.0, max_len, step)
+    ins = inside_cubes(cubes, p0[None, :] + ts[:, None] * d[None, :])
+    if not ins[0]:
+        return p0
+    k = int(np.argmin(ins)) if not ins.all() else len(ts)
+    return p0 + d * max(0.0, ts[k - 1] - sink)
 
 
 def rbeam(bone: Bone, p0, p1, w: float, h: float, style: str, *, k: float = 0.78, **kw) -> List[Cube]:
@@ -836,6 +892,151 @@ def hamon(edge_fn, *, offset=0.32, amp=0.1, period=1.3, width=0.16, seed=0):
         below = ok & (h < -width) & (y > ye)
         col = np.where(below[:, None], np.minimum(255, col * 1.06 + 10), col)
         return np.where(band[:, None], np.minimum(255, col * 0.55 + 118), col)
+    return fn
+
+
+def _u32(v) -> np.ndarray:
+    return np.asarray(v, np.int64).astype(np.uint32)
+
+
+def worley3(P, cell: float, seed: int):
+    """3D のセル（ウォーリー）ノイズ: 各点から最も近い特徴点までの距離（単位）と、その特徴点の乱数 0..1 を 3 つ。
+    面の上の点で測るので、面と特徴点の距離の分だけ大きさの違う丸（打痕・骨材・錆の点）になる。"""
+    P = np.asarray(P, np.float64)
+    q = P / cell
+    base = np.floor(q).astype(np.int64)
+    best = np.full(len(P), 1e9)
+    r3 = np.zeros((len(P), 3))
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                c = base + np.array([dx, dy, dz])
+                ix, iy, iz = _u32(c[:, 0]), _u32(c[:, 1]), _u32(c[:, 2])
+                rnd = np.stack([NP._u01(NP.hash3i(ix, iy, iz, seed + 7919 * k)) for k in range(3)], -1)
+                fp = c + 0.1 + 0.8 * rnd
+                d = np.linalg.norm(q - fp, axis=1)
+                m = d < best
+                best[m] = d[m]
+                r3[m] = rnd[m]
+    return best * cell, r3
+
+
+def pock(seed: int, *, cell: float = 0.9, r: float = 0.24, frac: float = 0.5, dark: float = 0.6,
+         rim: float = 1.16, lo=None, hi=None):
+    """打痕・へこみ（全部の面に。world 模様）。frac は特徴点のうち痕になる割合、lo / hi で武器空間の箱に限る。
+    中は暗く、縁は少し明るい（叩かれて光った縁）。"""
+    lo_ = None if lo is None else _v3(lo)
+    hi_ = None if hi is None else _v3(hi)
+
+    def fn(P, N, L, size, col):
+        d, rnd = worley3(P, cell, seed)
+        ok = rnd[:, 0] < frac
+        if lo_ is not None:
+            ok &= np.all((P >= lo_) & (P <= hi_), axis=1)
+        rr = r * (0.55 + 0.9 * rnd[:, 1])
+        inner = ok & (d < rr * 0.68)
+        ring = ok & (d >= rr * 0.68) & (d < rr)
+        col = np.where(inner[:, None], col * dark, col)
+        return np.where(ring[:, None], np.minimum(255, col * rim + 6), col)
+    return fn
+
+
+def paint_band(z0: float, z1: float, rgb, *, seed: int = 0, chip: float = 0.3, edge: float = 0.12,
+               gloss: float = 0.12):
+    """z0〜z1 の帯に塗ったペンキ（柄の黄色い帯・目印）。chip は剥げの量（下地が見える）。端は少しよれる。"""
+    za, zb = min(z0, z1), max(z0, z1)
+    rgb_ = np.asarray(rgb, np.float32)
+
+    def fn(P, N, L, size, col):
+        x, y, z = P[:, 0], P[:, 1], P[:, 2]
+        wob = (NP.fbm3(x * 3.0, y * 3.0, z * 0.5, seed, octaves=2) - 0.5) * edge * 2
+        inb = (z > za + wob) & (z < zb - wob)
+        n = NP.fbm3(x * 2.4, y * 2.4, z * 2.4, seed + 11, octaves=3)
+        # 端ほど剥げやすい
+        e = np.clip(np.minimum(z - za, zb - z) / 0.6, 0, 1)
+        peeled = n < chip * (1.25 - 0.5 * e)
+        lum = col.mean(1, keepdims=True) / 255.0
+        paint = rgb_[None, :] * (0.78 + 0.3 * lum) * (1.0 + gloss * (n[:, None] - 0.5))
+        m = inb & ~peeled
+        out = np.where(m[:, None], np.clip(paint, 0, 255), col)
+        rim_ = inb & peeled & (n > chip * (1.25 - 0.5 * e) - 0.05)
+        return np.where(rim_[:, None], out * 0.72, out)
+    return fn
+
+
+def crack(p0, p1, *, width: float = 0.07, seed: int = 0, wiggle: float = 0.22, dark: float = 0.3,
+          branch: float = 0.0, normal=None):
+    """表面の割れ（p0 → p1 の線を noise でうねらせた暗い筋、縁はわずかに明るい）。木の柄の割れ・コンクリのひび。
+    normal を渡すとその向きの面だけに、面の中でうねる線として描く（柄の +X の面の割れなど）。
+    渡さなければ線からの 3D の距離で描くので、線の近くを通る全部の面に出る（角をまたいで続く）。
+    branch > 0 で細い枝。"""
+    a, b = _v3(p0), _v3(p1)
+    d = b - a
+    L = float(np.linalg.norm(d)) or 1.0
+    u = d / L
+    nn = None if normal is None else _v3(normal) / np.linalg.norm(normal)
+
+    def fn(P, N, Lc, size, col):
+        t = np.clip((P - a) @ u, 0, L)
+        foot = a + np.outer(t, u)
+        off = P - foot
+        # 線に直角な 2 方向へ、t に沿った noise でうねらせる
+        n1 = (NP.fbm3(t * 1.7, t * 0.3, np.zeros_like(t), seed, octaves=3) - 0.5) * 2 * wiggle
+        n2 = (NP.fbm3(t * 1.7 + 9.1, t * 0.3, np.zeros_like(t), seed + 3, octaves=3) - 0.5) * 2 * wiggle
+        if nn is not None:
+            v1 = np.cross(nn, u)
+            v1 /= (np.linalg.norm(v1) or 1.0)
+            off = off - np.outer(off @ nn, nn)
+            dist = np.linalg.norm(off - np.outer(n1, v1), axis=1)
+            dist = np.where((N @ nn) > 0.6, dist, 1e9)
+        else:
+            ref = np.array([0.0, 1.0, 0.0]) if abs(u[1]) < 0.9 else np.array([1.0, 0.0, 0.0])
+            v1 = np.cross(u, ref)
+            v1 /= np.linalg.norm(v1)
+            v2 = np.cross(u, v1)
+            dist = np.linalg.norm(off - np.outer(n1, v1) - np.outer(n2, v2), axis=1)
+        taper = np.clip(np.minimum(t, L - t) / (0.25 * L + 1e-6), 0.25, 1.0)
+        w = width * taper
+        m = dist < w
+        rim_ = (dist >= w) & (dist < w + 0.05)
+        if branch > 0:
+            bt = (NP.fbm3(P[:, 0] * 4, P[:, 1] * 4, P[:, 2] * 4, seed + 5, octaves=2))
+            m |= (dist < w * 4) & (np.abs(bt - 0.5) < 0.02 * branch) & (dist > w)
+        col = np.where(rim_[:, None], np.minimum(255, col * 1.1 + 4), col)
+        return np.where(m[:, None], col * dark, col)
+    return fn
+
+
+def stamp_on(text: str, centre, height: float, *, normal=(0.0, 0.0, -1.0), up=(0.0, 1.0, 0.0), mul=0.55,
+             tint=None):
+    """normal を向いた面（ピストンの冠面・ハンマーの頭の端など、±X 以外）に打刻の文字。外から見て up が上、
+    正しく読める向き。WC.stamp の一般化（stamp は ±X の面専用）。"""
+    from nr_paint import text_mask
+    n_ = _v3(normal) / np.linalg.norm(normal)
+    up_ = _v3(up)
+    up_ = up_ - n_ * float(up_ @ n_)
+    up_ /= np.linalg.norm(up_)
+    right = np.cross(up_, n_)
+    k = len(text)
+    gh, gw = 5, 4 * k - 1
+    unit = height / gh
+    W, H = gw * 4, gh * 4
+    mask = text_mask(text, W, H, (0.5, 0.5), 4, 1)
+    c = _v3(centre)
+
+    def fn(P, N, L, size, col):
+        ok = (N @ n_) > 0.7
+        rel = P - c
+        u = (rel @ right) / unit + gw / 2
+        v = -(rel @ up_) / unit + gh / 2
+        iu = np.floor(u * 4).astype(np.int64)
+        iv = np.floor(v * 4).astype(np.int64)
+        inside = ok & (iu >= 0) & (iu < W) & (iv >= 0) & (iv < H)
+        m = np.zeros(len(P), bool)
+        m[inside] = mask[iv[inside], iu[inside]] > 0.5
+        if tint is not None:
+            return np.where(m[:, None], np.asarray(tint, np.float32) * (0.85 + 0.15 * col / 255.0), col)
+        return np.where(m[:, None], col * mul, col)
     return fn
 
 

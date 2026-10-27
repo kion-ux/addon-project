@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.sign_axe.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -30.38,
+            -11.77,
+            59.35
+          ],
+          "position": [
+            -0.09,
+            22.18,
+            1.14
+          ],
+          "scale": [
+            0.82,
+            0.82,
+            0.82
+          ]
+        }
+      }
+    },
+    "animation.nr.w.sign_axe.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -34.72,
+            -10.92,
+            159.4
+          ],
+          "position": [
+            -1.37,
+            28.15,
+            0.63
+          ],
+          "scale": [
+            0.823,
+            0.823,
+            0.823
+          ]
+        }
+      }
+    },
+    "animation.nr.w.sign_axe.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -48.34,
+            31.24,
+            4.92
+          ],
+          "position": [
+            0.05,
+            22.07,
+            1.09
+          ],
+          "scale": [
+            0.82,
+            0.82,
+            0.82
+          ]
+        }
+      }
+    },
+    "animation.nr.w.sign_axe.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -44.46,
+            -64.91,
+            162.38
+          ],
+          "position": [
+            -2.12,
+            28.06,
+            0.78
+          ],
+          "scale": [
+            0.823,
+            0.823,
+            0.823
+          ]
+        }
+      }
+    }
+  }
+}
