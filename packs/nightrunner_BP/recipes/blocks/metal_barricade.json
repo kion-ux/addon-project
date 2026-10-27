@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_metal_barricade"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SIS",
+      "SIS",
+      "SIS"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "S": {
+        "item": "nr:scrap"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:metal_barricade",
+      "count": 2
+    }
+  }
+}

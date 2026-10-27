@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_spike_trap"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "R R",
+      "RRR",
+      "PPP"
+    ],
+    "key": {
+      "P": {
+        "item": "minecraft:oak_planks"
+      },
+      "R": {
+        "item": "minecraft:iron_ingot"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "result": {
+      "item": "nr:spike_trap",
+      "count": 1
+    }
+  }
+}

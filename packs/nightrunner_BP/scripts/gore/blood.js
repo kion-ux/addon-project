@@ -35,19 +35,19 @@ const FALLBACK_GT = {
 /** @type {any} */
 export const GT = { ...FALLBACK_GT, ...tuning("GORE_TUNING", {}) };
 
-/** 血の種類（spec の gore.blood。無ければ red）。@param {Entity | string | undefined} z */
+/** 血の種類（spec の gore.blood。無ければ red）。 @param {Entity | string | undefined} z */
 export function kindOf(z) {
   const s = zombieSpec(/** @type {any} */ (z));
   return String(s?.gore?.blood ?? "red");
 }
-/** 血の量の倍率（spec の gore.bleed_mult）。@param {Entity | string | undefined} z */
+/** 血の量の倍率（spec の gore.bleed_mult）。 @param {Entity | string | undefined} z */
 export function bleedOf(z) {
   const s = zombieSpec(/** @type {any} */ (z));
   const v = Number(s?.gore?.bleed_mult);
   return Number.isFinite(v) && v > 0 ? v : 1;
 }
 const DRY = new Set(["ash", "ember"]);       // 血の代わりに灰・火の粉
-/** その種類は血だまり・血痕を作るか。@param {string} kind */
+/** その種類は血だまり・血痕を作るか。 @param {string} kind */
 export function makesPools(kind) { return kind !== "ash"; }
 
 /** 血痕・血だまりの寿命（秒）。G が大きいほど長い。 */
@@ -102,7 +102,7 @@ export function spray(dim, pos, dir, power = 1, o) {
   return ok;
 }
 
-/** 全方向に弾ける血。@param {Dimension} dim @param {Vector3} pos @param {number} [power] @param {BloodOpts} [o] */
+/** 全方向に弾ける血。 @param {Dimension} dim @param {Vector3} pos @param {number} [power] @param {BloodOpts} [o] */
 export function burst(dim, pos, power = 1, o) {
   const G = gore();
   if (G <= 0.02) return false;
@@ -116,7 +116,7 @@ export function burst(dim, pos, power = 1, o) {
   return ok;
 }
 
-/** 細かい血の霧（頭が弾ける・散弾）。@param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
+/** 細かい血の霧（頭が弾ける・散弾）。 @param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
 export function mist(dim, pos, size = 1, o) {
   const G = gore();
   if (G <= 0.05) return false;
@@ -124,14 +124,14 @@ export function mist(dim, pos, size = 1, o) {
   return particle(dim, "blood_mist", pos, { size: size * (0.6 + 0.4 * G), life: 0.5 + 0.5 * G, gore: G }, o?.prio ?? PRIO.NORMAL);
 }
 
-/** ぽたぽた落ちる数滴。@param {Dimension} dim @param {Vector3} pos @param {number} [n] @param {BloodOpts} [o] */
+/** ぽたぽた落ちる数滴。 @param {Dimension} dim @param {Vector3} pos @param {number} [n] @param {BloodOpts} [o] */
 export function drip(dim, pos, n = 3, o) {
   const G = gore();
   if (G <= 0.05 || DRY.has(o?.kind ?? "red")) return false;
   return particle(dim, "blood_drip", pos, { count: Math.max(1, Math.round(n * G)), size: 0.8 }, o?.prio ?? PRIO.LOW);
 }
 
-/** 動く gib・這うゾンビの血の点。@param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
+/** 動く gib・這うゾンビの血の点。 @param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
 export function trail(dim, pos, size = 1, o) {
   const G = gore();
   if (G <= 0.1 || !makesPools(o?.kind ?? "red") || DRY.has(o?.kind ?? "red")) return false;
@@ -142,7 +142,7 @@ export function trail(dim, pos, size = 1, o) {
 //  血痕・血だまり（地形のレイで貼る場所を決める）
 // ---------------------------------------------------------------------------
 /**
- * 下の地面を探して返す（見つからなければ undefined）。@param {Dimension} dim @param {Vector3} pos @param {number} [reach]
+ * 下の地面を探して返す（見つからなければ undefined）。 @param {Dimension} dim @param {Vector3} pos @param {number} [reach]
  * @returns {Vector3 | undefined}
  */
 export function groundBelow(dim, pos, reach = 4) {
@@ -155,7 +155,7 @@ export function groundBelow(dim, pos, reach = 4) {
   } catch { return undefined; }
 }
 
-/** 地面の血痕。@param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
+/** 地面の血痕。 @param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
 export function splatGround(dim, pos, size = 1, o) {
   const G = gore();
   const kind = o?.kind ?? "red";
@@ -195,7 +195,7 @@ export function splatWall(dim, pos, dir, size = 1, o) {
   }
 }
 
-/** 広がる血だまり（死体・gib の下）。@param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
+/** 広がる血だまり（死体・gib の下）。 @param {Dimension} dim @param {Vector3} pos @param {number} [size] @param {BloodOpts} [o] */
 export function pool(dim, pos, size = 1, o) {
   const G = gore();
   const kind = o?.kind ?? "red";
@@ -234,7 +234,7 @@ export function fountain(z, loc, ticks, o) {
   return true;
 }
 
-/** そのゾンビの噴水を止める。@param {Entity | string} z */
+/** そのゾンビの噴水を止める。 @param {Entity | string} z */
 export function stopFountains(z) {
   const id = typeof z === "string" ? z : z.id;
   for (const k of [...fountains.keys()]) if (k.startsWith(id + "|")) fountains.delete(k);

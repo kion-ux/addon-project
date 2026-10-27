@@ -1,0 +1,87 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:broken_window",
+      "menu_category": {
+        "category": "construction"
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.nr.b.broken_window",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_broken_window",
+          "render_method": "alpha_test"
+        }
+      },
+      "minecraft:collision_box": false,
+      "minecraft:selection_box": {
+        "origin": [
+          -8,
+          0,
+          -1
+        ],
+        "size": [
+          16,
+          16,
+          2
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#8aa0a8",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.6
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

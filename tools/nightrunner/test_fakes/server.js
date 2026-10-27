@@ -48,7 +48,7 @@ const S = G.__nr = {
   perTick: 0, maxPerTick: 0, maxPerTickAt: 0, budget: ENV.particleBudget ?? 300, budgetHit: new Set(),
   violations: [], errors: [], limitations: new Map(), notices: new Map(),
   warns: [], consoleErrors: [], logs: [],
-  light: null, pendingRemove: new Set(), stepState: new Map(), harness: 0,
+  light: null, pendingRemove: new Set(), pendingProps: new Set(), tickBlocks: new Map(), stepState: new Map(), harness: 0,
   ENV, DEFS, API, rand,
 };
 
@@ -89,6 +89,31 @@ function notice(kind) { bump(S.notices, kind); }
 function recordError(whereName, e) {
   S.errors.push({ where: whereName, msg: String(e?.message ?? e), stack: shortStack(e), tick: S.tick });
 }
+// d.ts の interface（オプションの辞書）のキー。実機は知らないキーを黙って無視する（綴り違いの stopExpresion は
+// 「止まらないアニメ」、famillies は「全部のエンティティ」になる）ので、偽物は契約違反 "options" にする。
+const IFACES = API.interfaces || {}, IFACE_EXT = API.ifaceExtends || {};
+const ifaceCache = new Map();
+function ifaceKeys(name) {
+  let ks = ifaceCache.get(name);
+  if (!ks) {
+    ks = new Set();
+    const visit = (n, depth) => { if (depth > 8) return; for (const k of IFACES[n] ?? []) ks.add(k); for (const b of IFACE_EXT[n] ?? []) visit(b, depth + 1); };
+    visit(name, 0);
+    ifaceCache.set(name, ks);
+  }
+  return ks;
+}
+function optsCheck(o, names, what) {
+  if (o === undefined) return;
+  check(o !== null && typeof o === "object" && !Array.isArray(o), "options", `${what} のオプションは辞書: ${fmt(o)}`, TypeError);
+  const list = [].concat(names), keys = new Set();
+  for (const n of list) for (const k of ifaceKeys(n)) keys.add(k);
+  if (!keys.size) return;   // d.ts が読めていない（偽物の自己テストで分かる）
+  for (const k of Object.keys(o)) {
+    check(keys.has(k), "options", `${what} のオプションに d.ts（${list.join(" / ")}）に無いキー ${k}（実機では黙って無視される。綴り違い？ 使えるのは ${[...keys].join(" / ")}）`, TypeError);
+  }
+}
+S.optsCheck = optsCheck; S.ifaceKeys = ifaceKeys;
 function checkVec3(v, what) {
   check(v && typeof v === "object" && finite(v.x) && finite(v.y) && finite(v.z), "vector",
     `${what} が有限の {x, y, z} でない: ${fmt(v)}`, InvalidArgumentError);
@@ -102,6 +127,8 @@ function vanillaCheck(kind, id) {
   const set = VAN[kind];
   if (set.size && !set.has(id)) notice(`バニラの一覧に無い ${kind} ID: ${id}`);
 }
+// どれかの BP エンティティが定義しているプロパティの名前（getProperty の綴り違いを見つける）
+const ALL_PROPS = new Set(Object.values(DEFS.entities || {}).flatMap((d) => Object.keys(d.props || {})));
 const PARTICLES = new Set(DEFS.particles || []);
 const SOUNDS = new Set(DEFS.sounds || []);
 const ANIMS = new Set(DEFS.animations || []);
@@ -389,6 +416,7 @@ export class Entity {
     let cause = "override", damager, proj;
     if (options) {
       check(typeof options === "object", "damage", "applyDamage の options は辞書");
+      optsCheck(options, ["EntityApplyDamageOptions", "EntityApplyDamageByProjectileOptions"], "applyDamage");
       if (options.damagingProjectile) { cause = "projectile"; proj = options.damagingProjectile; damager = options.damagingEntity; }
       else {
         cause = options.cause;
@@ -474,6 +502,7 @@ export class Entity {
   lookAt(t) { checkVec3(t, "lookAt"); this._rot = rotToward(this.getHeadLocation(), t); }
   teleport(loc, o = {}) {
     checkVec3(loc, "teleport");
+    optsCheck(o, "TeleportOptions", "teleport");
     if (o.rotation) check(finite(o.rotation.x) && finite(o.rotation.y), "vector", "teleport の rotation", InvalidArgumentError);
     if (o.facingLocation) checkVec3(o.facingLocation, "teleport の facingLocation");
     if (o.dimension) this._dim = o.dimension;
@@ -490,9 +519,11 @@ export class Entity {
     const proj = c["minecraft:projectile"];
     const g = c["minecraft:physics"]?.has_gravity === false ? 0 : proj ? (proj.gravity ?? 0.05) : 0.08;
     if (this._isPlayer && this._mode === "Creative" && this._flying) return;
-    const was = this._onGround;
-    if (!this._onGround || this._vel.y > 0) this._vel.y -= g;
     const L = this._loc, V = this._vel;
+    // 足元が無くなった（空中に出した・下のブロックが壊れた・奈落）ものは、下の「地面に当たらない」枝で
+    // _onGround が外れ、次の tick から落ちる（自己テスト「空中に出したもの…は落ちる」）
+    const was = this._onGround;
+    if (!this._onGround || V.y > 0) V.y -= g;
     if (proj && !this._stuck) { this._projectileStep(proj); return; }
     const nx = L.x + V.x, nz = L.z + V.z;
     if (solidAt(nx, L.y + 0.4, L.z)) V.x = 0; else L.x = nx;
@@ -606,18 +637,32 @@ export class Entity {
   }
 
   // ---- プロパティ・イベント ----
+  // d.ts（server:L7592 / L7963）: setProperty の値は次の tick まで getProperty に出ない。偽物も同じにする
+  // （書いた値は _propsNext に置き、次の tick の頭で _props へ移す。テストの道具の prop() は書いた最新の値を返す）。
+  // 実機は定義に無いプロパティを読むと undefined。別の種類のエンティティにはある名前なら同じく undefined、
+  // どの BP エンティティにも無い nr: の名前（綴り違い）は契約違反にする。
   getProperty(name) {
     if (this._props.has(name)) return this._props.get(name);
-    if (this._def && String(name).startsWith("nr:")) throw violation("property", `${this._typeId} に無いプロパティ ${name} を読んだ`);
+    if (String(name).startsWith("nr:") && !ALL_PROPS.has(name)) throw violation("property", `どの BP エンティティにも無いプロパティ ${name} を読んだ（綴り違い？ ${this._typeId}）`);
     return undefined;
   }
   setProperty(name, value) {
     const pd = this._def?.props?.[name];
     check(pd, "property", `${this._typeId} に無いプロパティ ${name} を書こうとした`, InvalidArgumentError);
     this._checkProp(name, pd, value);
-    this._props.set(name, value);
+    this._setPropNext(name, value);
     bump(S.log.props, `${name}=${value}`);
   }
+  _setPropNext(name, value) {
+    (this._propsNext ??= new Map()).set(name, value);
+    S.pendingProps.add(this);
+  }
+  _commitProps() {
+    if (!this._propsNext) return;
+    for (const [k, v] of this._propsNext) this._props.set(k, v);
+    this._propsNext = null;
+  }
+  _latestProp(name) { return this._propsNext?.has(name) ? this._propsNext.get(name) : this._props.get(name); }
   _checkProp(name, pd, value) {
     if (pd.type === "enum") check(typeof value === "string" && pd.values.includes(value), "property", `${this._typeId} の ${name} に enum に無い値 ${fmt(value)}（${pd.values.join(" / ")}）`, InvalidArgumentError);
     else if (pd.type === "int") check(Number.isInteger(value) && value >= pd.range[0] && value <= pd.range[1], "property", `${this._typeId} の ${name} に ${fmt(value)}（整数 ${pd.range[0]}〜${pd.range[1]}）`, ArgumentOutOfBoundsError);
@@ -628,18 +673,21 @@ export class Entity {
     const pd = this._def?.props?.[name];
     check(pd, "property", `${this._typeId} に無いプロパティ ${name}`, InvalidArgumentError);
     const d = propDefaults({ props: { [name]: pd } }, this).get(name);
-    this._props.set(name, d);
+    this._setPropNext(name, d);
     return d;
   }
   triggerEvent(name) {
     if (!this._def) { notice(`バニラのエンティティへの triggerEvent（${this._typeId} ${name}）は確かめない`); return; }
-    const ev = this._def.events?.[name];
+    // d.ts: 名前空間が無ければ minecraft: とみなす
+    const full = String(name).includes(":") ? String(name) : `minecraft:${name}`;
+    const ev = this._def.events?.[full];
     check(ev, "event", `${this._typeId} に BP イベント ${name} が無い`, InvalidArgumentError);
-    bump(S.log.events, name);
-    this._applyEvent(ev, name, 0);
-    queueAfter("dataDrivenEntityTrigger", { entity: this, eventId: name, getModifiers: () => [] });
+    bump(S.log.events, full);
+    this._applyEvent(ev, full, 0, false);
+    queueAfter("dataDrivenEntityTrigger", { entity: this, eventId: full, getModifiers: () => [] });
   }
-  _applyEvent(ev, name, depth) {
+  // now = true は出現時のイベント（プロパティもすぐ入る）。triggerEvent の set_property は setProperty と同じく次の tick
+  _applyEvent(ev, name, depth, now = true) {
     if (!ev || depth > 16) return;
     if (ev.filters && !this._filter(ev.filters)) return;
     for (const g of ev.remove?.component_groups ?? []) { this._groups.delete(g); this._invalidate(); }
@@ -663,16 +711,16 @@ export class Entity {
         try { val = molangEval(v, this); } catch { /* 下で違反になる */ }
       }
       this._checkProp(k, pd, val);
-      this._props.set(k, val);
+      if (now) this._props.set(k, val); else this._setPropNext(k, val);
     }
-    for (const sub of ev.sequence ?? []) this._applyEvent(sub, name, depth + 1);
+    for (const sub of ev.sequence ?? []) this._applyEvent(sub, name, depth + 1, now);
     if (ev.randomize?.length) {
       const total = ev.randomize.reduce((a, r) => a + (r.weight ?? 1), 0);
       let x = rand() * total;
-      for (const r of ev.randomize) { x -= r.weight ?? 1; if (x <= 0) { this._applyEvent(r, name, depth + 1); break; } }
+      for (const r of ev.randomize) { x -= r.weight ?? 1; if (x <= 0) { this._applyEvent(r, name, depth + 1, now); break; } }
     }
     if (ev.first_valid?.length) {
-      for (const r of ev.first_valid) if (!r.filters || this._filter(r.filters)) { this._applyEvent(r, name, depth + 1); break; }
+      for (const r of ev.first_valid) if (!r.filters || this._filter(r.filters)) { this._applyEvent(r, name, depth + 1, now); break; }
     }
     const trig = ev.trigger;
     if (trig) {
@@ -680,7 +728,7 @@ export class Entity {
       const target = typeof trig === "string" ? "self" : (trig.target ?? "self");
       if (target === "self") {
         check(this._def.events?.[tn], "event", `${this._typeId} のイベント ${name} が無いイベント ${tn} を trigger`);
-        this._applyEvent(this._def.events[tn], tn, depth + 1);
+        this._applyEvent(this._def.events[tn], tn, depth + 1, now);
       }
     }
     if (ev.queue_command) S.log.commands.push(...[].concat(ev.queue_command.command ?? []));
@@ -708,11 +756,14 @@ export class Entity {
 
   // ---- 効果・タグ・火 ----
   addEffect(type, duration, o = {}) {
+    optsCheck(o, "EntityEffectOptions", "addEffect");
     const id = String(typeof type === "string" ? type : type?.getName?.() ?? type).replace(/^minecraft:/, "");
     check(EFFECTS.has(id), "effect", `知らない効果 ${fmt(type)}`, InvalidArgumentError);
-    check(Number.isInteger(duration) && duration >= 1 && duration <= 20000000, "effect", `addEffect の duration ${duration}（整数 1〜20000000 tick）`, ArgumentOutOfBoundsError);
+    // d.ts（server:L7148）: duration は tick で [0, 20000000]
+    check(finite(duration) && duration >= 0 && duration <= 20000000, "effect", `addEffect の duration ${duration}（0〜20000000 tick）`, ArgumentOutOfBoundsError);
     const amp = o.amplifier ?? 0;
     check(Number.isInteger(amp) && amp >= 0 && amp <= 255, "effect", `amplifier ${amp}（0〜255）`, ArgumentOutOfBoundsError);
+    duration = Math.floor(duration);
     const ef = { typeId: id, amplifier: amp, end: S.tick + duration, duration };
     this._effects.set(id, ef);
     bump(S.log.effects, id);
@@ -752,6 +803,7 @@ export class Entity {
   // ---- 演出・その他 ----
   playAnimation(name, o = {}) {
     check(typeof name === "string", "anim", "playAnimation の名前");
+    optsCheck(o, "PlayAnimationOptions", `playAnimation(${name})`);
     if (name.startsWith("animation.nr.")) check(ANIMS.has(name), "anim", `RP に無いアニメーション ${name}`, InvalidArgumentError);
     if (o.blendOutTime !== undefined) check(finite(o.blendOutTime) && o.blendOutTime >= 0, "anim", `blendOutTime ${o.blendOutTime}`);
     if (o.controller !== undefined) check(typeof o.controller === "string" && o.controller.length > 0, "anim", "controller は文字列");
@@ -843,6 +895,7 @@ export class Player extends Entity {
   setGameMode(m) { check(m === undefined || GAME_MODES.size === 0 || GAME_MODES.has(m), "player", `GameMode に無い ${fmt(m)}`); this._mode = m ?? "Survival"; }
   playSound(id, o = {}) {
     checkSound(id);
+    optsCheck(o, "PlayerSoundOptions", `player.playSound(${id})`);
     if (o.location) checkVec3(o.location, "playSound の location");
     checkVolPitch(o);
     bump(S.log.sounds, id);
@@ -967,6 +1020,7 @@ export class EntityProjectileComponent extends EntityComponent {
   set owner(v) { this._owner._owner = v; }
   shoot(v, o = {}) {
     checkVec3(v, "projectile.shoot");
+    optsCheck(o, "ProjectileShootOptions", "projectile.shoot");
     if (o.uncertainty !== undefined) check(finite(o.uncertainty) && o.uncertainty >= 0, "projectile", "uncertainty");
     this._owner._vel = { x: v.x, y: v.y, z: v.z }; this._owner._onGround = false; this._owner._stuck = false;
   }
@@ -976,6 +1030,9 @@ export class Camera {
   constructor(p) { this._p = p; }
   get isValid() { return this._p._valid; }
   fade(o = {}) {
+    optsCheck(o, "CameraFadeOptions", "camera.fade");
+    if (o.fadeTime) optsCheck(o.fadeTime, "CameraFadeTimeOptions", "camera.fade の fadeTime");
+    if (o.fadeColor) optsCheck(o.fadeColor, "RGB", "camera.fade の fadeColor");
     const t = o.fadeTime;
     if (t) for (const k of ["fadeInTime", "holdTime", "fadeOutTime"]) check(finite(t[k]) && t[k] >= 0 && t[k] <= 10, "camera", `fade の ${k} ${t[k]}（0〜10 秒）`, ArgumentOutOfBoundsError);
     const c = o.fadeColor;
@@ -992,6 +1049,7 @@ export class ScreenDisplay {
   get isValid() { return this._p._valid; }
   setActionBar(t) { this.actionBar = textOf(t); S.log.actionbars++; }
   setTitle(t, o) {
+    optsCheck(o, "TitleDisplayOptions", "setTitle");
     if (o) for (const k of ["fadeInDuration", "stayDuration", "fadeOutDuration"]) check(Number.isInteger(o[k]) && o[k] >= 0, "title", `setTitle の ${k} ${o[k]}（0 以上の整数 tick。三つとも要る）`, ArgumentOutOfBoundsError);
     this.title = textOf(t); this.subtitle = o?.subtitle !== undefined ? textOf(o.subtitle) : ""; S.log.titles++;
   }
@@ -1063,9 +1121,13 @@ export class ItemStack {
   getRawLore() { return this._lore.map((x) => (typeof x === "string" ? { text: x } : x)); }
   setLore(list) {
     if (list === undefined) { this._lore = []; return; }
+    // d.ts（server:L12642）: 20 行まで・1 行 50 文字まで。§ の色コードも数える（数えないかは要実機確認 — 厳しい側で見る）
     check(Array.isArray(list), "item", "setLore は配列", InvalidArgumentError);
-    check(list.length <= 100, "item", `lore が ${list.length} 行（100 行まで）`, ArgumentOutOfBoundsError);
-    for (const x of list) check((typeof x === "string" && x.length <= 1000) || (x && typeof x === "object"), "item", `lore の行 ${fmt(x)?.slice(0, 60)}`, ArgumentOutOfBoundsError);
+    check(list.length <= 20, "item", `${this._typeId} の lore が ${list.length} 行（20 行まで。server:L12642）`, ArgumentOutOfBoundsError);
+    for (const x of list) {
+      check(typeof x === "string" || (x && typeof x === "object" && !Array.isArray(x)), "item", `lore の行は文字列か RawMessage: ${fmt(x)?.slice(0, 60)}`, InvalidArgumentError);
+      if (typeof x === "string") check(x.length <= 50, "item", `${this._typeId} の lore の行が ${x.length} 文字（50 文字まで。§ の色コードも数える）: ${x.slice(0, 60)}`, ArgumentOutOfBoundsError);
+    }
     this._lore = [...list];
   }
   _dpOk() { check(!this.isStackable, "dynprop", `重ねられるアイテム ${this._typeId}（最大 ${this.maxAmount}）に動的プロパティは付けられない（実機で例外）`, ArgumentOutOfBoundsError); }
@@ -1228,8 +1290,14 @@ export class MolangVariableMap {
   setSpeedAndDirection(n, speed, dir) {
     this._name(n);
     check(finite(speed), "molang", `${n} の speed ${speed}`, InvalidArgumentError);
-    checkVec3(dir, `${n} の direction`);
+    check(dir && finite(dir.x) && finite(dir.y) && finite(dir.z), "molang", `${n} の direction ${fmt(dir)}（有限の {x, y, z}）`, InvalidArgumentError);
     this._vars.set(n, { speed, dir: { ...dir } });
+  }
+  // 2.3.0 にある（server:L13378。<name>.x / .y / .z になる）
+  setVector3(n, v) {
+    this._name(n);
+    check(v && finite(v.x) && finite(v.y) && finite(v.z), "molang", `${n} = ${fmt(v)}（有限の {x, y, z}）`, InvalidArgumentError);
+    this._vars.set(n, { x: v.x, y: v.y, z: v.z });
   }
 }
 
@@ -1293,6 +1361,8 @@ function setBlockAt(x, y, z, typeId, states) {
   S.blocks.set(k, paletteIndex(typeId, states));
   const le = DEFS.blocks[typeId]?.light ?? VANILLA_LIGHT[typeId] ?? 0;
   if (le > 0) S.lights.set(k, le); else S.lights.delete(k);
+  // minecraft:tick を持つブロックだけ毎 tick 見る（街の何十万ブロックを毎 tick なめない）
+  if (DEFS.blocks[typeId]?.tick) S.tickBlocks.set(k, typeId); else S.tickBlocks.delete(k);
 }
 function checkBlockId(id, what) {
   const n = nsId(typeof id === "string" ? id : id?.id ?? id?.typeId);
@@ -1463,6 +1533,7 @@ function raycastBlocks(o, dIn, maxDist, opts) {
 S.raycastBlocks = raycastBlocks;
 function blockFromRay(dim, o, d, opts = {}) {
   checkVec3(o, "ray の始点"); checkVec3(d, "ray の向き");
+  optsCheck(opts, "BlockRaycastOptions", "getBlockFromRay / getBlockFromViewDirection");
   const md = opts.maxDistance ?? 64;
   check(finite(md) && md >= 0, "query", `maxDistance ${md}`, InvalidArgumentError);
   const h = raycastBlocks(o, d, md, opts);
@@ -1472,6 +1543,7 @@ function blockFromRay(dim, o, d, opts = {}) {
 }
 function entitiesFromRay(dim, o, dIn, opts = {}, self) {
   checkVec3(o, "ray の始点"); checkVec3(dIn, "ray の向き");
+  optsCheck(opts, "EntityRaycastOptions", "getEntitiesFromRay / getEntitiesFromViewDirection");
   const d = norm(dIn); if (!d) return [];
   const md = opts.maxDistance ?? 64;
   check(finite(md) && md >= 0, "query", `maxDistance ${md}`, InvalidArgumentError);
@@ -1530,6 +1602,7 @@ function matchQuery(e, q, loc) {
 }
 function queryEntities(dim, q = {}, playersOnly = false) {
   check(q && typeof q === "object", "query", "getEntities の options は辞書");
+  optsCheck(q, "EntityQueryOptions", playersOnly ? "getPlayers" : "getEntities");
   if (q.location !== undefined) checkVec3(q.location, "getEntities の location");
   for (const k of ["maxDistance", "minDistance", "closest", "farthest"]) if (q[k] !== undefined) check(finite(q[k]) && q[k] >= 0, "query", `getEntities の ${k} = ${q[k]}`, InvalidArgumentError);
   if ((q.maxDistance !== undefined || q.closest !== undefined || q.farthest !== undefined) && !q.location) throw violation("query", "maxDistance / closest / farthest には location が要る", InvalidArgumentError);
@@ -1605,6 +1678,7 @@ export class Dimension {
     setBlockAt(loc.x, loc.y, loc.z, perm._typeId, perm._states);
   }
   fillBlocks(vol, block, o = {}) {
+    optsCheck(o, "BlockFillOptions", "fillBlocks");
     check(vol instanceof BlockVolumeBase, "block", "fillBlocks の範囲は BlockVolume", InvalidArgumentError);
     const perm = block instanceof BlockPermutation ? block : BlockPermutation.resolve(typeof block === "string" ? block : block.id);
     const cap = vol.getCapacity();
@@ -1622,6 +1696,7 @@ export class Dimension {
   containsBlock(vol, filter) { for (const p of vol.getBlockLocationIterator()) { const t = blockAt(p.x, p.y, p.z).typeId; if (!filter?.includeTypes || filter.includeTypes.map(nsId).includes(t)) if (!filter?.excludeTypes?.map(nsId).includes(t)) return true; } return false; }
   getBlocks(vol, filter) { const out = []; for (const p of vol.getBlockLocationIterator()) { const t = blockAt(p.x, p.y, p.z).typeId; if (filter?.includeTypes && !filter.includeTypes.map(nsId).includes(t)) continue; if (filter?.excludeTypes?.map(nsId).includes(t)) continue; out.push(p); } return new ListBlockVolume(out); }
   spawnEntity(type, loc, o = {}) {
+    optsCheck(o, "SpawnEntityOptions", "spawnEntity");
     const id = nsId(typeof type === "string" ? type : type?.id);
     check(typeof id === "string" && id.length > 0, "entity", `spawnEntity の種類 ${fmt(type)}`, InvalidArgumentError);
     if (id.startsWith("nr:")) check(DEFS.entities[id], "entity", `BP に無いエンティティ ${id}`, EntitySpawnError);
@@ -1647,8 +1722,13 @@ export class Dimension {
     return e;
   }
   spawnParticle(id, loc, vars) { spawnParticleImpl(id, loc, vars); }
-  playSound(id, loc, o = {}) { checkSound(id); checkVec3(loc, `playSound(${id}) の位置`); checkVolPitch(o); bump(S.log.sounds, id); }
+  playSound(id, loc, o = {}) {
+    checkSound(id); checkVec3(loc, `playSound(${id}) の位置`);
+    optsCheck(o, "WorldSoundOptions", `dimension.playSound(${id})`);
+    checkVolPitch(o); bump(S.log.sounds, id);
+  }
   createExplosion(loc, radius, o = {}) {
+    optsCheck(o, "ExplosionOptions", "createExplosion");
     checkVec3(loc, "createExplosion の位置");
     check(finite(radius) && radius > 0 && radius <= 1000, "explosion", `爆発の半径 ${radius}`, ArgumentOutOfBoundsError);
     const ev = fireBefore("explosion", { cancel: false, dimension: this, source: o.source, getImpactedBlocks: () => [], setImpactedBlocks: () => { } });
@@ -1733,6 +1813,7 @@ export class StructureManager {
     return s;
   }
   place(structure, dim, loc, o = {}) {
+    optsCheck(o, "StructurePlaceOptions", "structureManager.place");
     const id = typeof structure === "string" ? structure : structure?.id;
     const st = structure instanceof Structure ? structure : getStructure(id);
     check(st, "structure", `BP にもワールドにも無い構造物 ${fmt(id)}`, InvalidStructureError);
@@ -1884,8 +1965,11 @@ export class System {
 export const system = new System();
 
 // ---- カスタムコンポーネント・カスタムコマンドの登録 ----
-const BLOCK_HOOKS = new Set(["beforeOnPlayerPlace", "onEntityFallOn", "onPlace", "onPlayerBreak", "onPlayerInteract", "onRandomTick", "onStepOff", "onStepOn", "onTick", "onRedstoneUpdate", "onBreak"]);
-const ITEM_HOOKS = new Set(["onBeforeDurabilityDamage", "onCompleteUse", "onConsume", "onHitEntity", "onMineBlock", "onUse", "onUseOn"]);
+// フックの名前は d.ts の interface BlockCustomComponent / ItemCustomComponent から（onBreak などベータ専用は無い）
+const BLOCK_HOOKS = ifaceKeys("BlockCustomComponent").size ? ifaceKeys("BlockCustomComponent")
+  : new Set(["beforeOnPlayerPlace", "onEntityFallOn", "onPlace", "onPlayerBreak", "onPlayerInteract", "onRandomTick", "onStepOff", "onStepOn", "onTick"]);
+const ITEM_HOOKS = ifaceKeys("ItemCustomComponent").size ? ifaceKeys("ItemCustomComponent")
+  : new Set(["onBeforeDurabilityDamage", "onCompleteUse", "onConsume", "onHitEntity", "onMineBlock", "onUse", "onUseOn"]);
 function regCheck(kind, name, comp, hooks, map, DupErr) {
   check(S.phase === "startup", "startup", `${kind}ComponentRegistry.registerCustomComponent は system.beforeEvents.startup の中だけ（今は ${S.phase}）`, CustomComponentInvalidRegistryError);
   check(typeof name === "string" && /^[a-z0-9_]+:[a-z0-9_]+$/.test(name) && !name.startsWith("minecraft:"), "startup", `カスタムコンポーネントの名前 ${fmt(name)}`, CustomComponentNameError);
@@ -1966,10 +2050,10 @@ function stepBlocks() {
     }
   }
   if (S.reg.block.size) {
-    for (const [k, idx] of [...S.blocks]) {
-      const def = DEFS.blocks[S.palette[idx].typeId];
-      if (!def?.tick) continue;
-      const every = Math.max(1, def.tick[0] ?? 20);
+    for (const [k, typeId] of [...S.tickBlocks]) {
+      const def = DEFS.blocks[typeId];
+      // interval_range [最小, 最大] の最小で回す（偽物は乱れなし）
+      const every = Math.max(1, Math.floor(def?.tick?.[0] ?? 20));
       if (S.tick % every === 0) blockHook(k, "onTick", {});
     }
   }
@@ -2016,6 +2100,9 @@ function runJobs() {
 S.__tick = function () {
   S.tick++;
   S.perTick = 0;
+  // 前の tick に setProperty / triggerEvent で書いたプロパティがここで見えるようになる
+  for (const e of S.pendingProps) e._commitProps();
+  S.pendingProps.clear();
   if (world.gameRules.doDayLightCycle && S.daylightCycle) { S.time = (S.time + 1) % 24000; S.absTime++; }
   for (const p of S.players) stepInput(p);
   for (const e of [...S.entities.values()]) if (e._valid) { try { e._physicsStep(); } catch (err) { recordError("physics", err); } }
@@ -2049,8 +2136,8 @@ S.createPlayer = function (name, loc) {
 };
 S.resetWorld = function () {
   for (const e of [...S.entities.values()]) { e._valid = false; }
-  S.entities.clear(); S.players.length = 0; S.queue.length = 0; S.pendingRemove.clear(); S.stepState.clear();
-  S.blocks.clear(); S.lights.clear(); S.groundY = 64; S.flat = true; S.time = 1000; S.light = null;
+  S.entities.clear(); S.players.length = 0; S.queue.length = 0; S.pendingRemove.clear(); S.pendingProps.clear(); S.stepState.clear();
+  S.blocks.clear(); S.lights.clear(); S.tickBlocks.clear(); S.groundY = 64; S.flat = true; S.time = 1000; S.light = null;
   S.formQueue.length = 0; S.forms.length = 0; S.budgetHit.clear();
 };
 S.blockAt = blockAt; S.setBlockAt = setBlockAt; S.lightAt = lightAt; S.solidAt = solidAt; S.checkBlockId = checkBlockId;

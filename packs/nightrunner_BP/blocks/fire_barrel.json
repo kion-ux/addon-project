@@ -1,0 +1,125 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:fire_barrel",
+      "menu_category": {
+        "category": "items"
+      },
+      "states": {
+        "nr:lit": [
+          1,
+          0
+        ]
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.nr.b.fire_barrel",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_fire_barrel",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -6,
+          0,
+          -6
+        ],
+        "size": [
+          12,
+          14,
+          12
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -6,
+          0,
+          -6
+        ],
+        "size": [
+          12,
+          14,
+          12
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#5a3a2a",
+      "minecraft:light_emission": 13,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 3.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "minecraft:tick": {
+        "interval_range": [
+          10,
+          20
+        ],
+        "looping": true
+      },
+      "nr:fire_barrel": {
+        "state": "nr:lit",
+        "burn_on_touch": 1,
+        "particle": "nr:flame",
+        "updraft_height": 6,
+        "updraft_strength": 0.2
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('nr:lit') == 0",
+        "components": {
+          "minecraft:light_emission": 0
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

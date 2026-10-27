@@ -1,0 +1,32 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_sickle"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "BB",
+      " S"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:blades"
+      }
+    ],
+    "result": {
+      "item": "nr:w_sickle",
+      "count": 1
+    }
+  }
+}

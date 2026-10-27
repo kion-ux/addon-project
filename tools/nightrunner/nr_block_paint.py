@@ -893,6 +893,10 @@ def d_pool(fc, d):
     cu, cv = d.get("at", (0.5, 0.5))
     ax = (fc.u - cu)
     ay = (fc.v - cv)
+    ang = math.radians(float(d.get("angle", 0.0)))
+    if ang:
+        ax, ay = ax * math.cos(ang) + ay * math.sin(ang), -ax * math.sin(ang) + ay * math.cos(ang)
+    ay = ay / float(d.get("stretch", 1.0))
     r = np.sqrt(ax * ax + ay * ay) / rad
     n = fc.noise(0.35, fc.seed + 1, 3)
     n2 = fc.noise(1.2, fc.seed + 2, 2)
@@ -1149,7 +1153,285 @@ def d_uv_mark(fc, d):
     fc.paint(m & (fc.grain(fc.seed + 2) > 0.7), np.minimum(255, col * 0.5 + 130))
 
 
+def _cell_rand(idx, sd):
+    """整数の配列 idx ごとの乱数 0..1。"""
+    return NP._u01(NP.hash2i(np.asarray(idx, np.int64).astype(np.uint32), np.uint32(7), sd))
+
+
+def d_planks(fc, d):
+    """板の継ぎ目（axis h: 横板 = v 方向に width 単位ごと / v: 縦板）。板ごとの色むら・上の縁の明るさ・
+    端の釘（nails）。"""
+    w = float(d.get("width", 3.0)) * fc.s
+    axis = d.get("axis", "h")
+    q = (fc.py if axis == "h" else fc.px) + float(d.get("offset", 0.0)) * fc.s
+    t = fc.px if axis == "h" else fc.py
+    tl = fc.w if axis == "h" else fc.h
+    idx = np.floor(q / w)
+    fr = q - idx * w
+    gw = max(1.0, fc.s * float(d.get("gap", 0.22)))
+    gap = fr < gw
+    rnd = _cell_rand(idx, fc.seed + 1)
+    tint = 0.84 + 0.3 * rnd
+    _mulk(fc, ~gap, np.stack([tint, tint * (0.98 + 0.04 * rnd), tint * (0.95 + 0.06 * rnd)], -1))
+    fc.paint(gap, (26, 20, 15), 0.88)
+    fc.mul((fr >= gw) & (fr < gw + 1.0), 1.16)
+    fc.mul((fr >= w - 1.0), 0.84)
+    if d.get("nails", True):
+        r = max(0.55, fc.s * 0.18)
+        for end in (float(d.get("nail_in", 0.07)), 1.0 - float(d.get("nail_in", 0.07))):
+            c_t = end * tl
+            c_q = idx * w + w * 0.5
+            dd = np.sqrt((t - c_t) ** 2 + (q - c_q) ** 2)
+            head = dd < r + 0.25
+            fc.paint(head, (64, 58, 52))
+            fc.paint((dd < r * 3.0) & ~head & (fc.grain(fc.seed + 3) > 0.45), (96, 50, 26), 0.45)
+            if fc.side and axis == "h":
+                fc.drips_from(head.astype(f32), 0.35, fc.seed + 5, col=(98, 54, 28))
+
+
+def d_arc(fc, d):
+    """電気の放電（ぎざぎざの線と枝、外はアルファで抜く）。u 方向に端から端まで。colour, n（本数）。"""
+    col = _rgb(d.get("colour", (170, 210, 255)))
+    rng = np.random.default_rng(fc.seed & 0xFFFFFFFF)
+    keep = np.zeros((fc.h, fc.w), bool)
+    core = np.zeros((fc.h, fc.w), bool)
+    for k in range(int(d.get("n", 2))):
+        n = 7
+        pts = [(i / (n - 1), 0.5 + rng.normal(0, 0.18) * (0 < i < n - 1)) for i in range(n)]
+        for (u0, v0), (u1, v1) in zip(pts[:-1], pts[1:]):
+            m = fc.seg(u0, v0, u1, v1, 1.0) > 0.5
+            core |= m
+            keep |= fc.seg(u0, v0, u1, v1, 3.0) > 0.4
+            if rng.random() < 0.45:
+                bu, bv = u0 + rng.uniform(0.05, 0.2), v0 + rng.normal(0, 0.25)
+                keep |= fc.seg(u0, v0, bu, bv, 1.0) > 0.5
+    fc.paint(keep, col * 0.75)
+    fc.paint(core, np.minimum(255, col * 0.3 + 190))
+    _cut(fc, keep)
+
+
+def d_tread(fc, d):
+    """タイヤの踏み面（側面。ジグザグの溝と擦り減った山）。period（単位）。"""
+    per = float(d.get("period", 1.4)) * fc.s
+    zig = np.abs(((fc.px / per) % 1.0) - 0.5) * 2.0
+    v = fc.v
+    groove = (np.abs(v - 0.5 - (zig - 0.5) * 0.35) < 0.09) | (np.abs(v - 0.2) < 0.05) | (np.abs(v - 0.8) < 0.05)
+    sipes = (np.abs(((fc.px / per + 0.5) % 1.0) - 0.5) < 0.08) & ((v < 0.2) | (v > 0.8))
+    fc.mul(groove | sipes, 0.45)
+    fc.mul((~(groove | sipes)) & (fc.noise(1.5, fc.seed + 1, 2) > 0.55), 1.25)
+    fc.mul((v < 0.06) | (v > 0.94), 0.7)
+
+
+def d_tire_top(fc, d):
+    """積んだタイヤの上面: 側壁の輪（文字の浮き彫り・ビード）と、中の暗い穴（溜まった雨水の照り）。
+    ri / ro は面の短い辺に対する半径の割合。"""
+    x = fc.u - 0.5
+    y = fc.v - 0.5
+    r = np.sqrt(x * x + y * y) * 2.0
+    ri = float(d.get("ri", 0.5))
+    ro = float(d.get("ro", 1.0))
+    t = (r - ri) / max(1e-3, ro - ri)
+    ang = np.arctan2(y, x)
+    side = (r >= ri) & (r <= ro)
+    fc.mul(side & (np.abs(t - 0.12) < 0.06), 0.55)
+    fc.mul(side & (np.abs(t - 0.55) < 0.12) & (np.sin(ang * 26) > 0.2), 1.45)
+    fc.mul(side & (t > 0.86), 0.72)
+    hole = r < ri
+    if d.get("hub"):
+        hub = _ramp_np(np.clip(r / max(ri, 1e-3), 0, 1), [(0.0, (150, 150, 146)), (0.5, (110, 108, 104)),
+                                                          (0.85, (80, 76, 72)), (1.0, (40, 38, 36))])
+        fc.paint(hole, hub)
+        fc.paint(hole & (np.abs(r - ri * 0.35) < 0.04), (40, 38, 36))
+        fc.paint(hole & (fc.noise(1.0, fc.seed + 3, 2) > 0.6), (120, 62, 30), 0.6)
+        return
+    deep = _ramp_np(np.clip(r / max(ri, 1e-3), 0, 1), [(0.0, (8, 8, 10)), (0.75, (14, 14, 16)), (1.0, (30, 30, 32))])
+    fc.paint(hole, deep)
+    if d.get("water", True):
+        wat = hole & (r < ri * 0.8) & (fc.noise(0.8, fc.seed + 1, 2) > 0.45)
+        fc.paint(wat, (44, 48, 54), 0.8)
+        fc.paint(wat & (fc.grain(fc.seed + 2) > 0.9), (120, 130, 140), 0.6)
+
+
+def d_skull(fc, d):
+    """頭蓋骨の正面（眼窩・鼻の穴・頬骨の陰・上の歯、顎は無い）。"""
+    u, v = fc.u, fc.v
+    sock = np.zeros_like(u, bool)
+    for cu in (0.3, 0.7):
+        e = ((u - cu) / 0.17) ** 2 + ((v - 0.42) / 0.15) ** 2
+        sock |= e < 1.0
+        fc.mul((e >= 1.0) & (e < 1.7), 0.72)
+    fc.paint(sock, (26, 18, 14))
+    nose = (np.abs(u - 0.5) < 0.09 - (0.68 - v) * 0.25) & (v > 0.55) & (v < 0.72)
+    fc.paint(nose, (34, 22, 18))
+    fc.mul((v > 0.5) & (v < 0.62) & ((np.abs(u - 0.2) < 0.12) | (np.abs(u - 0.8) < 0.12)), 1.15)
+    teeth = (v > 0.8) & (np.abs(u - 0.5) < 0.3)
+    gaps = (np.floor((u - 0.2) / 0.075) % 1 == 0) & (((u - 0.2) / 0.075) % 1.0 < 0.18)
+    fc.paint(teeth, (204, 192, 160))
+    fc.mul(teeth & gaps, 0.5)
+    fc.paint(teeth & (fc.grain(fc.seed + 1) > 0.8), (120, 96, 60), 0.6)
+    fc.mul((v > 0.78) & (v < 0.81) & (np.abs(u - 0.5) < 0.32), 0.55)
+    crack = fc.seg(0.62, 0.0, 0.55, 0.25, 1.0)
+    fc.paint(crack, (70, 54, 40), 0.8)
+
+
+def d_inside(fc, d):
+    """箱の中（上から見た底）。縁の内側の影と中身の小物（items: bandage / can / pills / cash / ammo / cloth）。"""
+    fc.paint(np.ones((fc.h, fc.w)), _rgb(d.get("floor", (40, 38, 30))))
+    edge = np.minimum(np.minimum(fc.u, 1 - fc.u), np.minimum(fc.v, 1 - fc.v))
+    fc.mul(np.ones((fc.h, fc.w)), 0.55 + 0.45 * _ss(0.0, 0.16, edge))
+    fc.paint(edge < 0.03, _rgb(d.get("wall", (70, 76, 52))))
+    cols = {"bandage": (226, 220, 206), "can": (150, 154, 156), "pills": (200, 120, 40), "cash": (110, 140, 90),
+            "ammo": (182, 146, 60), "cloth": (120, 40, 34), "battery": (40, 40, 44)}
+    for kind, (cu, cv, su, sv) in d.get("items", []):
+        box = (np.abs(fc.u - cu) < su / 2) & (np.abs(fc.v - cv) < sv / 2)
+        col = _rgb(cols.get(kind, (140, 140, 140)))
+        shade = 0.85 + 0.25 * (1 - (fc.v - (cv - sv / 2)) / max(sv, 1e-3))
+        fc.paint(box, col * shade[..., None])
+        fc.mul(((np.abs(fc.u - cu - 0.02) < su / 2) & (np.abs(fc.v - cv - 0.03) < sv / 2)) & ~box, 0.6)
+        if kind == "can":
+            fc.paint(box & (np.abs(fc.v - cv) < sv * 0.18), (170, 40, 30))
+        if kind == "bandage":
+            fc.mul(box & ((fc.px.astype(np.int64) % 3) == 0), 0.9)
+        if kind == "battery":
+            fc.paint(box & (fc.u > cu + su * 0.3), (200, 60, 40))
+        if kind == "ammo":
+            fc.mul(box & ((fc.px.astype(np.int64) % 2) == 0), 0.7)
+
+
+def d_gills(fc, d):
+    """キノコの傘の裏のひだ（放射状の線）。glow で明るい色。"""
+    x = fc.u - 0.5
+    y = fc.v - 0.5
+    r = np.sqrt(x * x + y * y)
+    ang = np.arctan2(y, x)
+    g = np.abs(np.sin(ang * float(d.get("n", 14)))) < 0.35
+    col = _rgb(d.get("colour", (210, 150, 255)))
+    fc.paint((r < 0.5) & g, col)
+    fc.paint(r < 0.1, col * 0.6)
+    fc.mul((r < 0.5) & ~g, 0.7)
+
+
+def d_fins(fc, d):
+    """放熱フィン・縦のルーバー（u 方向に n 本の溝）。"""
+    n = float(d.get("n", 8))
+    q = (fc.u * n) % 1.0
+    fc.mul(q < 0.3, 0.45)
+    fc.mul((q >= 0.3) & (q < 0.45), 1.3)
+
+
+def d_warn(fc, d):
+    """三角の警告の標識（黄に黒縁、中に記号）。box=(u0,v0,u1,v1)、symbol bolt|flame|skull|cross。"""
+    u0, v0, u1, v1 = d.get("box", (0.1, 0.1, 0.9, 0.9))
+    tri = [((u0 + u1) / 2, v0), (u1, v1), (u0, v1)]
+    m = _soft_poly(fc, tri)
+    fc.paint(m, (24, 22, 20))
+    k = 0.16
+    cu, cv = (u0 + u1) / 2, v0 + (v1 - v0) * 0.62
+    inner = [(cu + (px - cu) * (1 - k * 1.6), cv + (py - cv) * (1 - k * 1.6)) for px, py in tri]
+    mi = _soft_poly(fc, inner)
+    fc.paint(mi, np.array([232, 190, 36], f32) * (0.9 + 0.15 * fc.grain(fc.seed + 1))[..., None])
+    sym = d.get("symbol", "bolt")
+    sb = (cu - (u1 - u0) * 0.17, v0 + (v1 - v0) * 0.38, cu + (u1 - u0) * 0.17, v0 + (v1 - v0) * 0.88)
+    _draw_symbol(fc, sym, sb, {"ink": (24, 22, 20), "bg": (232, 190, 36)})
+    wear = float(d.get("wear", 0.3))
+    fc.mul((m > 0.5) & (fc.noise(1.5, fc.seed + 2, 3) > 0.8 - wear * 0.3), 0.75)
+
+
+def d_stencil(fc, d):
+    """吹き付けのステンシル文字（3x5 字体、文字の中の橋、周りの霧）。at, h（面の高さに対する字の高さ）。"""
+    col = _rgb(d.get("colour", (220, 218, 206)))
+    cu, cv = d.get("at", (0.5, 0.5))
+    hh = float(d.get("h", 0.25))
+    th = max(5, int(fc.h * hh))
+    tm = NP.text_mask(d.get("text", "NR"), fc.w, th, (cu, 0.5), d.get("px"))
+    full = np.zeros((fc.h, fc.w), f32)
+    y0 = int(cv * fc.h - th / 2)
+    ys, ye = max(0, y0), min(fc.h, y0 + th)
+    full[ys:ye] = tm[ys - y0:ye - y0]
+    bridge = (fc.py.astype(np.int64) % 5) == 2
+    m = full * (~bridge | (fc.grain(fc.seed + 1) > 0.7))
+    halo = np.clip(_blur2(full, 1.5) - full, 0, 1) * 0.35
+    fc.paint(halo * (fc.grain(fc.seed + 2) > 0.4), col, 0.6)
+    fc.paint(m * (fc.grain(fc.seed + 3) > float(d.get("wear", 0.2)) * 0.5), col)
+
+
+def _blur2(a, r):
+    k = int(max(1, round(r)))
+    out = np.zeros_like(a)
+    n = 0
+    for dy in range(-k, k + 1):
+        for dx in range(-k, k + 1):
+            out += np.roll(np.roll(a, dy, 0), dx, 1)
+            n += 1
+    return out / n
+
+
+def d_lens(fc, d):
+    """灯具の下向きのレンズ（プリズムの格子、中央が明るい）。lit で明るく、消えていれば灰色。"""
+    lit = bool(d.get("lit", True))
+    col = _rgb(d.get("colour", (255, 244, 214)))
+    gx = (fc.u * float(d.get("cols", 6))) % 1.0
+    gy = (fc.v * float(d.get("rows", 8))) % 1.0
+    cell = (np.abs(gx - 0.5) < 0.38) & (np.abs(gy - 0.5) < 0.38)
+    r = np.sqrt((fc.u - 0.5) ** 2 + (fc.v - 0.5) ** 2)
+    if lit:
+        base = col * (0.78 + 0.22 * _ss(0.6, 0.0, r))[..., None]
+        fc.paint(np.ones((fc.h, fc.w)), base)
+        fc.paint(cell & (r < 0.3), np.minimum(255, col * 0.3 + 185))
+    else:
+        fc.paint(np.ones((fc.h, fc.w)), (92, 94, 88))
+        fc.mul(cell, 1.15)
+        fc.paint(fc.noise(0.8, fc.seed + 1, 2) > 0.6, (64, 60, 50), 0.5)
+
+
+def d_jet(fc, d):
+    """横へ噴く炎（base の辺 u0|u1|v0|v1 から反対へ伸びる円錐。外はアルファで抜く）。"""
+    base = d.get("base", "u0")
+    t = {"u0": fc.u, "u1": 1 - fc.u, "v0": fc.v, "v1": 1 - fc.v}[base]
+    s = {"u0": fc.v, "u1": fc.v, "v0": fc.u, "v1": fc.u}[base] - 0.5
+    n = fc.noise(0.9, fc.seed + 1, 3)
+    width = 0.12 + 0.36 * t ** 0.7 + (n - 0.5) * 0.18 * t
+    keep = (np.abs(s) < width) & (t < 0.92 + (n - 0.5) * 0.2)
+    core = np.clip(1 - np.abs(s) / np.maximum(width, 1e-3), 0, 1)
+    k = np.clip(t * 0.8 + (1 - core) * 0.5, 0, 1)
+    col = _ramp_np(k, [(0.0, (240, 250, 255)), (0.15, (170, 200, 255)), (0.3, (255, 236, 160)),
+                       (0.6, (255, 150, 40)), (1.0, (190, 50, 14))])
+    fc.paint(np.ones((fc.h, fc.w)), col)
+    _cut(fc, keep)
+
+
+def d_wheel(fc, d):
+    """バルブのハンドル車（輪と 4 本のスポーク。外と隙間はアルファで抜く）。"""
+    x = fc.u - 0.5
+    y = fc.v - 0.5
+    r = np.sqrt(x * x + y * y) * 2
+    ring = (r > 0.72) & (r < 0.98)
+    spokes = ((np.abs(x) < 0.07) | (np.abs(y) < 0.07)) & (r < 0.8)
+    hub = r < 0.22
+    keep = ring | spokes | hub
+    fc.mul(ring & (np.abs(np.sin(np.arctan2(y, x) * 18)) > 0.7), 0.8)
+    fc.mul(hub, 0.75)
+    _cut(fc, keep)
+
+
+def d_nailband(fc, d):
+    """缶に巻いた釘の層（側面。斜めの釘の胴と頭が並ぶ）。"""
+    step = max(2.0, fc.s * 0.8)
+    q = (fc.px + (fc.py // step) * step * 0.5) % step
+    shank = (q < 1.0)
+    head = (fc.py % step) < 1.0
+    fc.paint(np.ones((fc.h, fc.w)), (70, 66, 60))
+    fc.paint(shank, (120, 114, 104))
+    fc.paint(head & (q < 2.0), (150, 146, 138))
+    fc.paint(fc.noise(1.2, fc.seed + 1, 3) > 0.55, (110, 58, 30), 0.6)
+    fc.mul(fc.grain(fc.seed + 2) > 0.8, 0.6)
+
+
 DECALS = {
+    "nrb_jet": d_jet, "nrb_wheel": d_wheel, "nrb_nailband": d_nailband,
+    "nrb_planks": d_planks, "nrb_arc": d_arc, "nrb_tread": d_tread, "nrb_tire_top": d_tire_top,
+    "nrb_skull": d_skull, "nrb_inside": d_inside, "nrb_gills": d_gills, "nrb_fins": d_fins, "nrb_warn": d_warn,
+    "nrb_stencil": d_stencil, "nrb_lens": d_lens,
     "nrb_spray": d_spray, "nrb_nails": d_nails, "nrb_brick": d_brick, "nrb_chainlink": d_chainlink,
     "nrb_clear": d_clear, "nrb_cut_poly": d_cut_poly, "nrb_corrugate": d_corrugate, "nrb_slits": d_slits,
     "nrb_grille": d_grille, "nrb_rivets": d_rivets, "nrb_label": d_label, "nrb_sign": d_sign,

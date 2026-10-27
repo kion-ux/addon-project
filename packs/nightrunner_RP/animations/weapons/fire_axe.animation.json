@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.fire_axe.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -30.38,
+            -11.77,
+            59.35
+          ],
+          "position": [
+            0.92,
+            22.39,
+            -0.49
+          ],
+          "scale": [
+            0.8,
+            0.8,
+            0.8
+          ]
+        }
+      }
+    },
+    "animation.nr.w.fire_axe.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -34.72,
+            -10.92,
+            159.4
+          ],
+          "position": [
+            -1.25,
+            26.92,
+            -1.05
+          ],
+          "scale": [
+            0.876,
+            0.876,
+            0.876
+          ]
+        }
+      }
+    },
+    "animation.nr.w.fire_axe.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -48.34,
+            31.24,
+            4.92
+          ],
+          "position": [
+            -0.49,
+            23.56,
+            -0.0
+          ],
+          "scale": [
+            0.8,
+            0.8,
+            0.8
+          ]
+        }
+      }
+    },
+    "animation.nr.w.fire_axe.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -44.46,
+            -64.91,
+            162.38
+          ],
+          "position": [
+            -2.96,
+            26.25,
+            0.15
+          ],
+          "scale": [
+            0.876,
+            0.876,
+            0.876
+          ]
+        }
+      }
+    }
+  }
+}

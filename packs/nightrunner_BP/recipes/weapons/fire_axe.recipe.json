@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_fire_axe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SSB",
+      " W ",
+      " W "
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "S": {
+        "item": "nr:scrap"
+      },
+      "W": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:w_fire_axe",
+      "count": 1
+    }
+  }
+}

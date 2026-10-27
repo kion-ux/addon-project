@@ -1,0 +1,102 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:street_lamp_base",
+      "menu_category": {
+        "category": "items"
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.nr.b.street_lamp_base",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_street_lamp_base",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -3,
+          0,
+          -3
+        ],
+        "size": [
+          6,
+          16,
+          6
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -3,
+          0,
+          -3
+        ],
+        "size": [
+          6,
+          16,
+          6
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#3a3c40",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 5.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "nr:multiblock": {
+        "group": "street_lamp",
+        "part": 0
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

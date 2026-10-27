@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_hatchet"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SS",
+      "BW",
+      " W"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "S": {
+        "item": "nr:scrap"
+      },
+      "W": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:w_hatchet",
+      "count": 1
+    }
+  }
+}

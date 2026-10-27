@@ -29,7 +29,7 @@ function roll() {
   cap = Math.max(1, Math.min(HARD_CAP, Math.floor(num("particle_budget", HARD_CAP))));
 }
 
-/** その優先度で使える残り。@param {number} [prio] */
+/** その優先度で使える残り。 @param {number} [prio] */
 export function left(prio = PRIO.NORMAL) {
   roll();
   const share = SHARE[Math.max(0, Math.min(3, prio | 0))];
@@ -49,7 +49,7 @@ export function take(n = 1, prio = PRIO.NORMAL, all = true) {
   return got;
 }
 
-/** n 点が取れるか（取らない）。@param {number} [n] @param {number} [prio] */
+/** n 点が取れるか（取らない）。 @param {number} [n] @param {number} [prio] */
 export function can(n = 1, prio = PRIO.NORMAL) { return left(prio) >= n; }
 
 /**

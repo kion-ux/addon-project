@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_zipline_anchor"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "ISI",
+      " I ",
+      "SIS"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "S": {
+        "item": "nr:scrap"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:zipline_anchor",
+      "count": 1
+    }
+  }
+}

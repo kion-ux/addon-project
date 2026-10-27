@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.scythe.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -30.38,
+            -11.77,
+            59.35
+          ],
+          "position": [
+            0.63,
+            22.33,
+            -0.01
+          ],
+          "scale": [
+            0.75,
+            0.75,
+            0.75
+          ]
+        }
+      }
+    },
+    "animation.nr.w.scythe.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -31.74,
+            -12.39,
+            159.61
+          ],
+          "position": [
+            1.42,
+            26.52,
+            2.52
+          ],
+          "scale": [
+            0.583,
+            0.583,
+            0.583
+          ]
+        }
+      }
+    },
+    "animation.nr.w.scythe.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -44.41,
+            -56.84,
+            98.41
+          ],
+          "position": [
+            0.73,
+            21.37,
+            0.53
+          ],
+          "scale": [
+            0.75,
+            0.75,
+            0.75
+          ]
+        }
+      }
+    },
+    "animation.nr.w.scythe.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            12.16,
+            -67.58,
+            167.16
+          ],
+          "position": [
+            -3.56,
+            25.79,
+            2.71
+          ],
+          "scale": [
+            0.583,
+            0.583,
+            0.583
+          ]
+        }
+      }
+    }
+  }
+}

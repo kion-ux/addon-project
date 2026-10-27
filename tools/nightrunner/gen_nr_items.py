@@ -20,6 +20,8 @@ BP アイテムの決め方（スクリプトとの約束。scripts/data/items.j
   `world.afterEvents.itemCompleteUse` で効果を与えるだけ（自分で減らさない）。タグ `nr:engine_consumed`。
 * 道具（grapple / glide / uv_light / zoom / terminal / lockpick / repair）は `minecraft:food` を付けない。
   使った瞬間に `itemUse` が来るだけで、減らすならスクリプト（ロックピックが折れる・修理キットを使い切る）。
+  spec の `use.use_ticks`（ロックピック 40・修理キット 30）はエンジンの使用時間にしない（食べ物の形にすると
+  使い終わりで 1 個減ってしまう）。かかる時間はスクリプトが数える（data JS の `use_seconds` は 0）。
   グラップリングフックは spec の `cooldown_ticks` で `minecraft:cooldown`（category `nr:grapple`）。
 * 弾のうち、spec の飛び道具（`PROJECTILES[*].pickup`）が拾い直せるもの（矢・ボルト）は
   `minecraft:projectile`（`nr:proj_arrow` / `nr:proj_bolt`）を持つ（`minecraft:shooter` の弾にできる）。
@@ -33,8 +35,9 @@ BP アイテムの決め方（スクリプトとの約束。scripts/data/items.j
 nr_paint の fbm / セルノイズで錆・布・紙・骨・肉の質感を足す。縮めた後に 1px の暗い縁取り（隣の色を暗くした色）と、
 光る部分（UV・抑制血清・変異）のにじみを付ける。乱数は key の crc32 から（決定的）。
 
-使い方: `python3 tools/nightrunner/gen_nr_items.py [--only key,key] [--sheet-only]`
+使い方: `python3 tools/nightrunner/gen_nr_items.py [--only key,key] [--sheet PATH]`
 （普通は build_nr.py から。NR_PREVIEW=1 でなくてもコンタクトシートは描く。安い）。
+`--only` は指定した鍵のアイコンだけ描いてコンタクトシートに出す（JSON・PNG・断片は書かない。描き直しの確認用）。
 """
 from __future__ import annotations
 
@@ -606,6 +609,19 @@ def glass_streak(ic, ax: Axis, t0, t1, off, w=0.55, a=0.6, col="#ffffff"):
     ic.fill(ic.seg(x0, y0, x1, y1, w), col, light="flat", alpha=a)
 
 
+def hexagon(ic, cx, cy, r, rot=0.0):
+    """正六角形（ボルト・ナットの頭）。"""
+    return ic.poly([(cx + r * math.cos(math.radians(a + rot)), cy + r * math.sin(math.radians(a + rot)))
+                    for a in range(0, 360, 60)])
+
+
+def along(ax, ic):
+    """軸に沿った距離 t と、右手側へのずれ o（配列）。"""
+    t = (ic.X - ax.x0) * ax.ux + (ic.Y - ax.y0) * ax.uy
+    o = (ic.X - ax.x0) * ax.nx + (ic.Y - ax.y0) * ax.ny
+    return t, o
+
+
 # ===========================================================================
 #  アイコン（spec の icon の説明をなぞる）
 # ===========================================================================
@@ -622,65 +638,71 @@ def painter(key):
 # --- 素材 -------------------------------------------------------------------
 @painter("scrap")
 def p_scrap(ic):
-    # 奥の曲がった鋼板（2 枚の面で折れ目を作る）
-    back = ic.rough(ic.poly([(2.6, 16.5), (15.5, 5.0), (26.5, 9.5), (29.0, 17.5), (17.0, 26.0), (8.0, 23.0)]),
-                    0.35, 1.4)
-    upper = ic.poly([(0, 0), (32, 0), (32, 7.0), (5.0, 26.0), (0, 26)])
-    col = mix(STEEL, "#7d8388", np.clip(ic.inter(back, -upper) < 0, 0, 1) * 0.0 + (upper > 0) * 0.6)
-    rm = rust_mask(ic, back, 2.6, 0.6, k=1)
-    col = mix(col, mix(RUST, "#b56a2c", ic.noise(1.2, 2, k=2)), rm)
-    ic.fill(back, col, bevel=0.9, tex=metal_tex(ic, 25, 0.1, k=3), spec=0.35, shine=22)
-    # 折れ目の線
-    ic.stroke(ic.seg(5.0, 26.0, 27.5, 8.0, 0), 0.5, "#3c4045", alpha=0.55)
-    ic.fill(ic.inter(ic.seg(5.6, 25.0, 27.0, 8.6, 0.45), back), "#e6ecef", light="flat", alpha=0.45)
-    # 手前の青く塗った板（剥げて地金と錆が出る）
-    front = ic.rough(ic.poly([(4.0, 24.0), (14.5, 15.5), (26.5, 20.0), (19.5, 30.0), (8.5, 29.5)]), 0.3, 1.2, k=4)
-    ic.shadow(front, 0.5, 0.8, 0.5)
-    chip = smooth(0.56, 0.62, ic.noise(2.2, 4, k=5) + smooth(1.6, 0, -front) * 0.35)
-    col = mix("#2e63a8", STEEL, chip)
-    col = mix(col, RUST, chip * smooth(0.5, 0.65, ic.noise(1.5, 3, k=6)))
-    ic.fill(front, col, bevel=0.9, tex=ic.grain(0.08, 1.0, k=7), spec=0.3)
-    # 六角ボルト（ねじの軸 → 頭）
-    ax = Axis(14.0, 18.5, 22.5, 9.5)
-    shank = ic.abox(ax, 0.0, 9.0, 3.3, 0.8)
-    ic.shadow(shank, 0.5, 0.8, 0.5)
-    t = ((ic.X - ax.x0) * ax.ux + (ic.Y - ax.y0) * ax.uy)
-    threads = 1.0 + 0.32 * np.sign(np.sin(t * 2 * math.pi / 1.05))
-    ic.fill(shank, "#8d9398", light="cyl", axis=ax, tex=threads, spec=0.55, shine=26)
-    hx, hy = ax.p(9.6)
-    head = ic.poly([(hx + 4.4 * math.cos(math.radians(a + 10)), hy + 4.4 * math.sin(math.radians(a + 10)))
-                    for a in range(0, 360, 60)])
-    ic.shadow(head, 0.6, 0.8, 0.55)
-    ic.fill(head, "#a3a9ae", bevel=1.4, profile="lin", tex=metal_tex(ic, 0, 0.1, k=8), spec=0.6, shine=20)
-    ic.fill(ic.circle(hx, hy, 2.0), "#8a9095", bevel=0.8, spec=0.4)
-    ic.tint(rust_mask(ic, head, 1.5, 0.5, k=9) * (head < 0), RUST, 0.6, "mix")
+    # 奥: 折れ曲がった鋼板（ほとんど赤錆。折れ目で 2 面、上の面は明るく下の面は影）
+    fold = [(2.0, 14.0), (24.0, 11.0)]
+    top = ic.rough(ic.poly([fold[0], (10.5, 3.0), (27.0, 3.5), fold[1]]), 0.35, 1.3, k=1)
+    bot = ic.rough(ic.poly([fold[0], fold[1], (24.5, 17.0), (4.0, 20.0)]), 0.35, 1.3, k=2)
+    ic.shadow(ic.union(top, bot), 0.5, 0.8, 0.4)
+    for d, lift, k in ((top, 1.0, 3), (bot, 0.68, 4)):
+        bare = smooth(0.58, 0.68, ic.noise(2.6, 4, k=k))          # 錆の間に残る地金
+        col = mix(mix("#a5532a", "#7a3818", ic.noise(1.4, 3, k=k + 10)), "#a9afb3", bare * 0.85)
+        ic.fill(d, col * lift, bevel=0.6, profile="lin", tex=ic.grain(0.12, 0.8, k=k + 30), spec=0.25, shine=18)
+    ic.line(fold, 0.5, "#e8b48a", alpha=0.7)
+    for x, y in ((8.6, 7.4), (21.0, 6.0)):       # 古いリベット穴
+        ic.fill(ic.circle(x, y, 0.95), "#2a1a12", bevel=0.5, contrast=-0.5)
+    # 手前右: 青く塗った板（剥げて地金、縁に錆）
+    blue = ic.rough(ic.poly([(12.5, 20.0), (23.0, 11.5), (30.6, 19.5), (25.0, 29.8), (14.0, 28.4)]), 0.3, 1.2, k=5)
+    ic.shadow(blue, 0.6, 0.9, 0.6)
+    chip = smooth(0.62, 0.68, ic.noise(2.4, 4, k=6) + smooth(1.8, 0.0, -blue) * 0.22)
+    col = mix(mix("#3a78cc", "#2556a0", ic.noise(3.0, 3, k=7)), "#b4babf", chip)
+    col = mix(col, RUST, smooth(1.0, 0.0, -blue) * smooth(0.45, 0.6, ic.noise(1.2, 3, k=8)))
+    ic.fill(blue, col, bevel=0.8, profile="lin", tex=ic.grain(0.05, 1.0, k=9), spec=0.5, shine=24)
+    # 手前左: 光る六角ボルト（ねじの軸が青い板の上に乗る）
+    ax = Axis(8.2, 24.2, 21.5, 15.0)
+    shank = ic.abox(ax, 2.0, ax.len, 3.6, 1.0)
+    ic.shadow(shank, 0.7, 1.0, 0.7)
+    t, _o = along(ax, ic)
+    threads = 1.0 + 0.28 * np.sign(np.sin(t * 2 * math.pi / 1.35)) * (t > 6.0)
+    ic.fill(shank, "#dfe4e8", light="cyl", axis=ax, tex=threads, spec=0.9, shine=30, contrast=1.15)
+    head = hexagon(ic, 8.2, 24.2, 5.2, 12)
+    ic.shadow(head, 0.7, 1.0, 0.75, soft=1.0)
+    ic.fill(head, "#d6dbdf", bevel=1.8, profile="lin", tex=metal_tex(ic, 30, 0.07, k=10), spec=0.9, shine=24,
+            contrast=1.25)
+    ic.fill(hexagon(ic, 8.2, 24.2, 3.1, 12), "#c4cace", light="flat", alpha=0.6)
+    ic.tint(smooth(0.62, 0.72, ic.noise(1.0, 3, k=11)) * (head < 0), RUST, 0.55, "mix")
 
 
 @painter("rags")
 def p_rags(ic):
-    blob = ic.smin(ic.smin(ic.ellipse(15.5, 19.5, 12.0, 8.0, -12), ic.ellipse(11.0, 13.0, 6.5, 5.5, -20), 2.0),
-                   ic.ellipse(21.5, 13.5, 6.5, 5.5, 15), 2.0)
-    blob = ic.rough(blob, 0.45, 1.3)
-    stain = smooth(0.55, 0.68, ic.noise(4.0, 4, k=1)) * smooth(10, 2, np.hypot(ic.X - 20, ic.Y - 21))
-    col = mix("#d8d0bb", "#bfb59d", ic.noise(3.0, 3, k=2))
-    col = mix(col, "#7a5634", stain * 0.75)
-    ic.fill(blob, col, bevel=3.2, profile="soft", tex=cloth_tex(ic, -20, 0.22, k=3), spec=0.05)
-    # 灰色の布の帯と結び目
-    band = ic.inter(ic.rough(ic.box(16.0, 17.0, 30, 6.0, 0, -42), 0.35, 1.0, k=4), blob - 0.6)
-    ic.shadow(band, 0.4, 0.6, 0.35)
-    ic.fill(band, "#7c8189", bevel=1.6, profile="soft", tex=cloth_tex(ic, 48, 0.25, k=5), spec=0.05)
-    # 垂れた端（ほつれ）
-    for pts, k in (([(15.0, 18.5), (12.0, 23.5), (9.0, 29.0)], 6), ([(17.5, 19.0), (21.0, 24.0), (24.5, 29.5)], 7)):
-        tail = ic.rough(ic.path(pts, 2.0, 1.2), 0.4, 0.9, k=k)
-        ic.shadow(tail, 0.4, 0.6, 0.35)
-        ic.fill(tail, "#80858d", bevel=1.2, tex=cloth_tex(ic, 60, 0.2, k=k + 10), spec=0.05)
-    for x0, y0, x1, y1 in ((8.8, 28.8, 7.6, 30.6), (9.6, 29.0, 9.8, 31.0), (24.2, 29.3, 23.2, 31.0),
-                           (25.0, 29.2, 26.0, 30.8)):
-        ic.line([(x0, y0), (x1, y1)], 0.55, "#6c7178")
-    knot = ic.rough(ic.ellipse(16.2, 17.6, 3.6, 3.0, -30), 0.3, 0.9, k=8)
-    ic.shadow(knot, 0.5, 0.7, 0.45)
-    ic.fill(knot, "#868b93", bevel=2.6, tex=cloth_tex(ic, 10, 0.25, k=9), spec=0.08)
-    ic.stroke(ic.ellipse(16.2, 17.6, 1.8, 1.2, -30), 0.5, "#4c5056", alpha=0.7)
+    rot = -20
+    cx, cy = 16.0, 16.4
+    lx, ly = ic.local(cx, cy, rot)
+    half = 7.0 - 2.6 * np.exp(-(lx / 2.6) ** 2) + 0.6 * smooth(8.0, 12.5, np.abs(lx))
+    body = np.maximum(np.abs(ly) - half, np.abs(lx) - 12.6)
+    fray = smooth(9.5, 12.6, np.abs(lx))
+    body = body + (ic.noise(0.7, 2, rot=rot + 90, stretch=3.0, k=1) - 0.5) * 3.0 * fray
+    body = ic.rough(body, 0.3, 1.2, k=2)
+    layer = smooth(-0.7, 0.7, -(ly + half * 0.25 + (ic.noise(2.4, 3, k=3) - 0.5) * 2.4))   # 上の層 = 灰色の布
+    cream = mix("#e2d9c2", "#c8bd9f", ic.noise(3.0, 3, k=4))
+    grey = mix("#8b9199", "#6c727a", ic.noise(2.0, 3, k=5))
+    col = mix(cream, grey, layer)
+    stain = smooth(0.56, 0.68, ic.noise(3.0, 4, k=6)) * smooth(3.0, 9.0, lx) * (1 - layer)
+    col = mix(col, "#7a5232", stain * 0.85)
+    folds = 1.0 + (ic.noise(2.6, 3, rot=rot, stretch=4.0, k=7) - 0.5) * 0.55
+    ic.shadow(body, 0.5, 0.8, 0.45)
+    ic.fill(body, col, bevel=3.4, profile="soft", tex=folds * ic.grain(0.07, 0.7, k=8), spec=0.05, contrast=1.2)
+    # 縛った紐と結び目
+    tie = ic.inter(ic.box(cx, cy, 2.6, 16.0, 0.6, rot), body - 0.4)
+    ic.shadow(tie, 0.4, 0.7, 0.45)
+    ic.fill(tie, "#5c4632", bevel=1.0, tex=cloth_tex(ic, rot + 90, 0.2, k=9), spec=0.1)
+    r = math.radians(rot)
+    kx, ky = cx - 4.6 * math.sin(r), cy + 4.6 * math.cos(r)        # 結び目（胴の手前の縁）
+    tail = ic.path([(kx, ky), (kx + 1.6, ky + 3.4), (kx + 3.4, ky + 5.4)], 0.8, 0.55)
+    ic.shadow(tail, 0.4, 0.6, 0.4)
+    ic.fill(tail, "#66503a", bevel=0.6, spec=0.1)
+    knot = ic.ellipse(kx, ky, 2.2, 1.7, rot)
+    ic.shadow(knot, 0.4, 0.6, 0.45)
+    ic.fill(knot, "#6c563e", bevel=1.6, spec=0.12, tex=cloth_tex(ic, 30, 0.2, k=10))
 
 
 @painter("alcohol")
@@ -804,34 +826,36 @@ def p_duct_tape(ic):
 
 @painter("battery")
 def p_battery(ic):
-    ax1 = Axis(7.6, 26.5, 18.6, 7.0)
-    w = 7.4
-    for off, body_c, band_c, k in ((0.0, "#202226", "#d4741e", 1), (7.5, "#26303b", "#3f8fd6", 2)):
-        ax = Axis(*ax1.p(0, off), *ax1.p(ax1.len, off))
-        cell = ic.abox(ax, 0.8, 20.6, w, 1.2)
-        ic.shadow(cell, 0.5, 0.7, 0.45)
-        t = (ic.X - ax.x0) * ax.ux + (ic.Y - ax.y0) * ax.uy
-        col = mix(body_c, band_c, (t > 14.5).astype(f32))
-        ic.fill(cell, col, light="cyl", axis=ax, spec=0.6, shine=26, tex=ic.grain(0.05, 1.0, k=k))
-        # − 側の銀の底、＋ 側の端子
-        neg = ic.abox(ax, 0.8, 2.0, w - 0.2, 0.9)
-        ic.fill(neg, "#b9bfc4", light="cyl", axis=ax, spec=0.7, shine=30)
-        pos = ic.abox(ax, 20.4, 22.2, 2.8, 0.6)
-        ic.fill(pos, "#c8ced2", light="cyl", axis=ax, spec=0.8, shine=30)
-        if k == 1:      # 錆びた端子
-            ic.tint((neg < 0) * smooth(0.45, 0.6, ic.noise(1.0, 3, k=9)), RUST, 0.85, "mix")
-    # テープの帯
-    mid = Axis(*ax1.p(10.0, -1.5), *ax1.p(10.0, 10.5))
-    tape = ic.rough(ic.abox(mid, -0.3, 12.0, 4.6, 0.4), 0.25, 0.9, k=3)
-    ic.shadow(tape, 0.4, 0.6, 0.4)
-    ic.fill(tape, TAPE, bevel=0.8, tex=cloth_tex(ic, mid.deg, 0.12, k=4), spec=0.35)
-    # 赤と黒の導線
-    for pts, c, k in (([ax1.p(22.0, 0.0), (21.0, 3.0), (26.0, 2.2), (29.0, 6.0)], "#1c1c1e", 5),
-                      ([ax1.p(22.0, 7.5), (26.5, 10.0), (28.0, 14.5), (29.6, 18.0)], "#c2241f", 6)):
-        wire = ic.path(pts, 0.75)
-        ic.shadow(wire, 0.4, 0.5, 0.4)
-        ic.fill(wire, c, bevel=0.7, spec=0.6, shine=24)
-        ic.fill(ic.circle(pts[-1][0], pts[-1][1], 0.85), "#d98c4a", bevel=0.6, spec=0.7)
+    ax0 = Axis(3.6, 22.8, 25.2, 11.2)
+    tips = []
+    for off, k in ((-4.0, 1), (4.0, 2)):
+        ax = Axis(*ax0.p(0, off), *ax0.p(1, off))
+        t, _o = along(ax, ic)
+        cell = ic.abox(ax, 0.0, 19.6, 7.6, 1.4)
+        ic.shadow(cell, 0.5, 0.8, 0.5)
+        col = mix("#1b1c20", "#cf8530", (t > 12.4).astype(f32))           # 黒い胴と銅色の頭
+        ic.fill(cell, col, light="cyl", axis=ax, spec=0.85, shine=32, tex=ic.grain(0.04, 1.0, k=k), contrast=1.15)
+        ic.fill(ic.inter(np.abs(t - 12.4) - 0.28, cell + 0.2), "#3a3c40", light="flat", alpha=0.8)
+        ic.fill(ic.abox(ax, 0.0, 1.0, 7.2, 0.8), "#b6bcc2", light="cyl", axis=ax, spec=0.8)
+        nub = ic.abox(ax, 19.4, 21.2, 3.0, 0.6)
+        ic.fill(nub, "#d3d8dc", light="cyl", axis=ax, spec=0.9, shine=30)
+        if k == 2:          # 錆びた + 端子
+            ic.tint((nub < 0.4) * smooth(0.3, 0.5, ic.noise(0.8, 3, k=9)), "#7a3a14", 0.9, "mix")
+            ic.tint((cell < 0) * (t > 17.5) * smooth(0.5, 0.65, ic.noise(1.0, 3, k=10)), "#8a4a1a", 0.7, "mix")
+        tips.append(ax.p(21.0))
+    # 真ん中のテープ
+    mid = Axis(*ax0.p(7.6, -9.4), *ax0.p(7.6, 9.4))
+    tape = ic.rough(ic.abox(mid, 0.0, 18.8, 4.4, 0.4), 0.25, 0.9, k=3)
+    ic.shadow(tape, 0.4, 0.6, 0.45)
+    ic.fill(tape, TAPE, bevel=0.8, tex=cloth_tex(ic, mid.deg, 0.12, k=4), spec=0.4)
+    # 導線（黒と赤）、先は剥いた銅線
+    for start, pts, c in ((tips[0], [(27.8, 8.6), (30.0, 12.6), (29.0, 16.0)], "#121316"),
+                          (tips[1], [(27.6, 20.6), (26.6, 25.6), (29.6, 28.8)], "#d0261f")):
+        wire = ic.path([start] + pts, 0.8)
+        ic.shadow(wire, 0.4, 0.6, 0.45)
+        ic.fill(wire, c, bevel=0.8, spec=0.7, shine=26)
+        ex, ey = pts[-1]
+        ic.fill(ic.circle(ex, ey, 0.95), "#e8a25a", bevel=0.6, spec=0.9)
 
 
 @painter("gunpowder_pouch")
@@ -1052,33 +1076,42 @@ def p_uv_shroom(ic):
 
 @painter("bandage")
 def p_bandage(ic):
-    # 垂れた端（後ろ）
-    tail = ic.rough(ic.path([(16.0, 22.0), (21.5, 24.5), (25.5, 25.0), (29.4, 28.6)], 2.6, 2.2), 0.3, 0.9, k=1)
-    ic.shadow(tail, 0.4, 0.6, 0.35)
-    gauze = 1.0 + 0.10 * np.sin(ic.X * 5.5) * np.sin(ic.Y * 5.5) + (ic.noise(0.6, 2, k=2) - 0.5) * 0.12
-    ic.fill(tail, "#ece9e0", bevel=1.2, tex=gauze, spec=0.08)
-    ic.tint((tail < 0) * smooth(0.55, 0.7, ic.noise(2.0, 4, k=3)), "#a8402e", 0.45)
-    # 巻いた本体（奥の円・つなぎ・手前の面）
-    back = ic.circle(17.0, 18.4, 9.0)
-    ic.fill(back, "#d3d0c6", bevel=1.0, tex=gauze)
-    link = ic.inter(ic.seg(12.0, 13.6, 17.0, 18.4, 9.0), -ic.circle(12.0, 13.6, 9.0))
-    ic.fill(link, "#dedbd2", light="cyl", axis=Axis(16.0, 9.0, 8.0, 17.0), tex=gauze, spec=0.1)
-    face = ic.circle(12.0, 13.6, 9.0)
-    r = np.hypot(ic.X - 12.0, ic.Y - 13.6)
-    ang = np.arctan2(ic.Y - 13.6, ic.X - 12.0)
-    spiral = 1.0 - 0.10 * (np.sin(r * 4.6 - ang * 0.73) > 0.55)
-    ic.fill(face, "#f4f2ec", bevel=1.6, profile="soft", tex=spiral * gauze, spec=0.1)
-    ic.fill(ic.circle(12.0, 13.6, 1.2), "#b7b2a6", bevel=0.6)
-    ic.tint((face < 0) * smooth(0.6, 0.72, ic.noise(1.8, 4, k=4)) * smooth(9, 4, r), "#b0503a", 0.3)
-    # 安全ピン
-    pin = Axis(20.6, 26.4, 28.0, 22.6)
-    for off in (-0.7, 0.7):
-        x0, y0 = pin.p(0.6, off)
-        x1, y1 = pin.p(7.4, off)
-        ic.line([(x0, y0), (x1, y1)], 0.55, "#d8dde1")
-    coil = ic.cut(ic.circle(*pin.p(0.4), 1.4), ic.circle(*pin.p(0.4), 0.7))
-    ic.fill(coil, "#cfd4d8", bevel=0.5, spec=0.8)
-    ic.fill(ic.abox(pin, 6.6, 8.6, 2.6, 0.6), "#b7bdc2", bevel=0.6, spec=0.8)
+    fc, bc, R = (11.0, 11.6), (16.4, 17.0), 8.4
+    ax = Axis(*fc, *bc)
+    gauze = 1.0 + (ic.noise(0.8, 2, k=1) - 0.5) * 0.14
+    # 垂れた端（ロールの下から右下へ。後ろに描く）
+    tail_pts = [(15.0, 24.0), (20.0, 26.2), (25.0, 25.4), (29.6, 28.0)]
+    tail = ic.rough(ic.path(tail_pts, 2.5, 2.2), 0.25, 0.8, k=2)
+    ic.fill(tail, "#ece8de", bevel=1.0, tex=gauze * (1.0 + 0.10 * np.sin(ic.X * 3.1)), spec=0.08)
+    ic.tint((tail < 0) * smooth(0.6, 0.72, ic.noise(1.8, 4, k=3)), "#b03a2c", 0.3, "mix")
+    for x0, y0, x1, y1 in ((29.0, 26.2, 31.0, 26.6), (29.6, 28.6, 31.2, 29.8), (28.8, 29.8, 29.6, 31.2)):
+        ic.line([(x0, y0), (x1, y1)], 0.5, "#e2ddd0")
+    # ロールの胴（円柱）
+    body = ic.seg(*fc, *bc, R)
+    ic.shadow(body, 0.6, 0.8, 0.4)
+    t, o = along(ax, ic)
+    wraps = 1.0 - 0.10 * (np.abs(((o + 30) % 2.2) - 1.1) < 0.25)
+    ic.fill(body, "#e4e0d6", light="cyl", axis=ax, tex=gauze * wraps, spec=0.12, contrast=1.15)
+    # 手前の面: 巻いた層の渦と中心の穴
+    face = ic.circle(*fc, R)
+    r = np.hypot(ic.X - fc[0], ic.Y - fc[1])
+    ang = np.arctan2(ic.Y - fc[1], ic.X - fc[0])
+    s = (r - (ang + math.pi) / (2 * math.pi) * 1.5) % 1.5
+    layers = 1.0 - 0.22 * (s < 0.42) * (r > 2.2)
+    ic.fill(face, mix("#fbf9f3", "#e9e4d8", smooth(2, 8.4, r)), bevel=1.2, profile="soft", tex=layers * gauze,
+            spec=0.12)
+    ic.fill(ic.circle(*fc, 2.2), "#6f695e", bevel=1.0, contrast=-0.6)
+    ic.tint((face < 0) * smooth(0.58, 0.7, ic.noise(1.6, 4, k=4)) * smooth(8.4, 3.0, r), "#c0503e", 0.4, "mix")
+    # 安全ピン（垂れた端を留める）
+    pin = Axis(19.4, 23.4, 27.0, 25.0)
+    wires = ic.union(ic.path([pin.p(0.8, -0.8), pin.p(7.0, -0.8)], 0.36),
+                     ic.path([pin.p(0.8, 0.8), pin.p(7.0, 0.8)], 0.36))
+    ic.shadow(wires, 0.4, 0.6, 0.6)
+    ic.fill(wires, "#9aa3aa", bevel=0.4, spec=1.0, shine=30)
+    ic.fill(ic.cut(ic.circle(*pin.p(0.6), 1.5), ic.circle(*pin.p(0.6), 0.6)), "#a3abb2", bevel=0.5, spec=0.9)
+    clasp = ic.abox(pin, 6.2, 8.8, 3.0, 0.7)
+    ic.shadow(clasp, 0.4, 0.6, 0.6)
+    ic.fill(clasp, "#8f989f", bevel=0.7, spec=0.9, shine=30)
 
 
 @painter("medkit")
@@ -1125,7 +1158,6 @@ def p_immunity(ic):
     crimp = ic.abox(ax, 19.4, 20.8, 8.6, 0.4)
     ic.fill(crimp, "#9aa1a7", light="cyl", axis=ax, spec=0.7)
     cap = ic.abox(ax, 20.4, 26.6, 10.8, 1.4)
-    t = (ic.X - ax.x0) * ax.ux + (ic.Y - ax.y0) * ax.uy
     o = (ic.X - ax.x0) * ax.nx + (ic.Y - ax.y0) * ax.ny
     ridges = 1.0 + 0.14 * np.sign(np.sin(o * 2 * math.pi / 1.3))
     ic.fill(cap, "#c3c9ce", light="cyl", axis=ax, tex=ridges * metal_tex(ic, ax.deg, 0.08, k=1), spec=0.9, shine=34)
@@ -1160,7 +1192,17 @@ def _rounds(ic, n, start, step, ang, case_len, case_w, tip_len, tip_c, *, neck_w
 
 @painter("ammo_pistol")
 def p_ammo_pistol(ic):
-    _rounds(ic, 5, (6.0, 26.6), (4.4, -1.6), -62, 7.2, 4.2, 4.2, COPPER, lead=2)
+    for i in range(4):
+        bx, by = 5.4 + 5.9 * i, 28.4 - 2.2 * i
+        ax = Axis(bx, by, bx + math.cos(math.radians(-64)), by + math.sin(math.radians(-64)))
+        case = ic.abox(ax, 0.0, 9.0, 5.0, 0.5)
+        tipd = ic.seg(*ax.p(8.6), *ax.p(11.6), 2.35, 1.5)
+        ic.shadow(ic.union(case, tipd), 0.6, 0.8, 0.55)
+        ic.fill(tipd, "#8d9298" if i == 1 else COPPER, light="cyl", axis=ax, spec=0.85, shine=30)
+        ic.fill(case, BRASS, light="cyl", axis=ax, spec=0.95, shine=34, spec_col="#fff2c0",
+                tex=metal_tex(ic, ax.deg, 0.06, k=i))
+        ic.fill(ic.abox(ax, 0.0, 1.0, 5.4, 0.3), "#a07c28", light="cyl", axis=ax, spec=0.6)
+        ic.fill(ic.abox(ax, 1.1, 1.6, 4.8, 0.1), "#6e5418", light="cyl", axis=ax, alpha=0.8)
 
 
 @painter("ammo_shotgun")
@@ -1171,7 +1213,6 @@ def p_ammo_shotgun(ic):
         hull = ic.abox(ax, 4.6, 20.0, 6.4, 0.9)
         base = ic.abox(ax, 0.0, 5.4, 6.8, 0.7)
         ic.shadow(ic.union(hull, base), 0.6, 0.8, 0.55)
-        t = (ic.X - ax.x0) * ax.ux + (ic.Y - ax.y0) * ax.uy
         o = (ic.X - ax.x0) * ax.nx + (ic.Y - ax.y0) * ax.ny
         ribs = 1.0 + 0.10 * np.sign(np.sin(o * 2 * math.pi / 1.2))
         ic.fill(hull, "#b8221e", light="cyl", axis=ax, tex=ribs, spec=0.5, shine=24)
@@ -1275,7 +1316,7 @@ def p_money(ic):
         return d
     note(16.0, 19.8, -26, 1)
     note(15.4, 17.6, -16, 2)
-    top = note(16.4, 15.6, -22, 3, top=True)
+    note(16.4, 15.6, -22, 3, top=True)
     band = ic.inter(ic.box(13.6, 17.0, 2.6, 30.0, 0.8, -22 + 0), ic.box(15.6, 17.4, 30, 14.6, 0, -22))
     ic.shadow(band, 0.3, 0.5, 0.35)
     ic.fill(band, "#b0492e", light="cyl", axis=Axis(12.6, 6.0, 18.0, 28.0), spec=0.5, shine=20)
@@ -1350,7 +1391,6 @@ def p_chocolate(ic):
     bar = ic.cut(bar, bite)
     # 板チョコの区画
     seg_t = np.abs(((t - 12.0) % 4.4) - 2.2)
-    seg_o = np.abs(o) - 0.0
     grooves = (seg_t > 1.85) | (np.abs(o) < 0.3)
     ic.fill(bar, "#5a3017", bevel=0.9, profile="lin", spec=0.45, shine=26, tex=1.0 - 0.35 * grooves)
     ic.fill(ic.inter(np.abs(bite - 0.25) - 0.25, bar + 0.1), "#7a4426", light="flat", alpha=0.9)
@@ -1547,22 +1587,25 @@ def p_uv_flashlight(ic):
 
 @painter("lockpick")
 def p_lockpick(ic):
-    # テンションレンチ（L 字）
-    wrench = ic.path([(9.6, 27.4), (24.4, 12.6), (26.8, 14.6)], 0.62)
-    ic.shadow(wrench, 0.4, 0.6, 0.45)
-    ic.fill(wrench, "#9aa1a7", bevel=0.6, spec=0.9, shine=30)
-    # ピック（先が鉤）
-    pick = ic.path([(6.6, 25.4), (25.2, 6.8), (26.4, 6.6), (27.2, 4.4)], 0.62, 0.45)
-    ic.shadow(pick, 0.4, 0.6, 0.45)
-    ic.fill(pick, "#c9d0d5", bevel=0.6, spec=0.9, shine=30)
+    # テンションレンチ（L 字。暗い鋼）
+    wr = ic.path([(12.0, 28.6), (27.4, 21.0), (29.4, 24.8)], 0.8)
+    ic.shadow(wr, 0.5, 0.7, 0.5)
+    ic.fill(wr, "#7f878e", bevel=0.8, spec=0.9, shine=30)
+    # ピック（明るい鋼。先が鉤）
+    ax = Axis(9.0, 22.6, 25.0, 6.6)
+    pick = ic.union(ic.path([ax.p(0), ax.p(ax.len)], 0.85, 0.7),
+                    ic.path([ax.p(ax.len), (26.8, 6.0), (27.6, 3.6)], 0.75, 0.55))
+    ic.shadow(pick, 0.5, 0.7, 0.5)
+    ic.fill(pick, "#c7cfd5", bevel=0.8, spec=1.0, shine=34)
     # 布を巻いた握り
-    grip = ic.rough(ic.box(8.8, 25.2, 10.0, 5.2, 1.8, -45), 0.25, 0.7, k=1)
-    ic.shadow(grip, 0.4, 0.6, 0.45)
-    lx, ly = ic.local(8.8, 25.2, -45)
-    wraps = 1.0 - 0.25 * (np.sin((lx + ly * 0.8) * 2.4) > 0.55)
-    ic.fill(grip, "#8a7656", bevel=1.6, profile="soft", tex=wraps * cloth_tex(ic, 45, 0.12, k=2), spec=0.05)
-    ic.line([(4.4, 30.0), (3.2, 31.2)], 0.5, "#6e5d42")
-    ic.line([(5.4, 30.4), (5.0, 31.6)], 0.5, "#6e5d42")
+    gax = Axis(3.2, 28.6, 11.6, 20.2)
+    grip = ic.rough(ic.abox(gax, 0.0, gax.len, 5.4, 2.0), 0.25, 0.7, k=1)
+    ic.shadow(grip, 0.5, 0.7, 0.5)
+    t, o = along(gax, ic)
+    wraps = 1.0 - 0.28 * (np.abs(((t + o * 0.7) % 2.2) - 1.1) < 0.35)
+    ic.fill(grip, "#a48c64", bevel=2.0, profile="soft", tex=wraps * cloth_tex(ic, 45, 0.1, k=2), spec=0.05)
+    ic.tint((grip < 0) * smooth(0.55, 0.7, ic.noise(1.6, 3, k=3)), "#6a4a2a", 0.5)
+    ic.line([gax.p(0.4, 1.8), (1.4, 31.4)], 0.6, "#8a7452")
 
 
 @painter("repair_kit")
@@ -1595,30 +1638,33 @@ def p_repair_kit(ic):
 
 @painter("binoculars")
 def p_binoculars(ic):
-    strap = ic.path([(6.8, 8.6), (3.6, 15.0), (4.2, 23.0), (6.4, 30.0)], 0.6)
-    ic.fill(strap, "#3a2c22", bevel=0.4, spec=0.2)
-    for cx in (10.6, 21.6):
-        barrel = ic.box(cx, 17.4, 9.0, 19.0, 3.4)
-        ic.shadow(barrel, 0.4, 0.6, 0.45)
-        wear = smooth(0.6, 0.72, ic.noise(1.6, 3, k=int(cx)) + smooth(1.4, 0, -barrel) * 0.25)
-        col = mix("#26282c", "#9ea3a8", wear)
-        ic.fill(barrel, col, light="cyl", axis=Axis(cx, 30, cx, 5), spec=0.6, shine=24,
-                tex=ic.grain(0.08, 0.8, k=int(cx) + 1))
-        cup = ic.box(cx, 8.6, 8.2, 3.4, 1.4)
-        ic.fill(cup, "#141517", light="cyl", axis=Axis(cx, 30, cx, 5), spec=0.2)
-    bridge = ic.box(16.1, 14.0, 5.6, 7.0, 1.4)
-    ic.fill(bridge, "#1d1f22", bevel=0.8, spec=0.5)
-    ic.fill(ic.box(16.1, 9.8, 3.4, 3.0, 0.6), "#3a3d42", bevel=0.6, spec=0.6,
-            tex=1.0 - 0.2 * (np.sin(ic.X * 2 * math.pi / 0.9) > 0.3))
-    for cx, cracked in ((10.6, False), (21.6, True)):
-        ring = ic.ellipse(cx, 25.8, 3.9, 2.6)
-        ic.fill(ring, "#3a3d42", bevel=0.6, spec=0.6)
-        lens = ic.ellipse(cx, 25.8, 3.0, 1.9)
-        ic.fill(lens, ic.lin(cx - 3, 24, cx + 3, 27.5, "#4060a0", "#141a30"), light="flat")
-        ic.fill(ic.ellipse(cx - 1.0, 25.2, 1.1, 0.5, -20), "#c8d8ff", light="flat", alpha=0.85)
+    strap = ic.path([(7.2, 7.4), (3.6, 13.0), (3.4, 21.0), (5.6, 28.0), (9.0, 30.8)], 0.8)
+    ic.fill(strap, "#5a3e28", bevel=0.6, spec=0.3, tex=ic.grain(0.1, 0.7, k=1))
+    # 中央の蝶番とピント合わせの輪
+    ic.fill(ic.box(16.0, 13.0, 5.0, 7.4, 1.2), "#1b1c1f", bevel=0.8, spec=0.4)
+    for cx, cracked in ((10.2, False), (21.8, True)):
+        ax = Axis(cx, 29.0, cx, 4.0)
+        barrel = ic.seg(cx, 9.0, cx, 23.6, 3.4, 4.6)
+        ic.shadow(barrel, 0.5, 0.7, 0.45)
+        grip = 1.0 - 0.14 * ((np.abs(((ic.Y + 0.5) % 1.8) - 0.9) < 0.3) & (ic.Y > 12.0) & (ic.Y < 20.0))
+        worn = smooth(0.66, 0.74, ic.noise(1.4, 3, k=int(cx))) * smooth(1.6, 0.4, -barrel)
+        col = mix("#26282d", "#8d9297", worn)
+        ic.fill(barrel, col, light="cyl", axis=ax, tex=grip, spec=0.55, shine=20, contrast=1.1)
+        cup = ic.box(cx, 6.8, 6.4, 3.8, 1.4)
+        ic.shadow(cup, 0.4, 0.6, 0.4)
+        ic.fill(cup, "#141518", light="cyl", axis=ax, spec=0.4)
+        ic.fill(ic.ellipse(cx, 5.4, 2.8, 0.9), "#3a3d42", light="flat")
+        rim = ic.ellipse(cx, 25.4, 5.0, 3.0)
+        ic.fill(rim, "#4a4e54", bevel=0.8, spec=0.8, shine=26)
+        lens = ic.ellipse(cx, 25.6, 3.9, 2.2)
+        ic.fill(lens, ic.lin(cx - 3, 23.6, cx + 3, 27.6, "#3c5cc0", "#0b1030"), light="flat")
+        ic.fill(ic.inter(ic.ellipse(cx + 0.6, 26.6, 3.2, 1.2), lens), "#3a8a6a", light="flat", alpha=0.45)
+        ic.fill(ic.ellipse(cx - 1.4, 24.8, 1.3, 0.6, -15), "#eef4ff", light="flat")
         if cracked:
-            ic.line([(cx - 2.6, 25.0), (cx - 0.4, 26.0), (cx + 0.8, 24.6), (cx + 2.6, 26.6)], 0.4, "#e8eeff")
-            ic.line([(cx - 0.4, 26.0), (cx - 0.2, 27.4)], 0.35, "#e8eeff")
+            ic.line([(cx - 3.2, 25.0), (cx - 0.8, 26.2), (cx + 0.6, 24.6), (cx + 3.0, 26.8)], 0.45, "#f2f6ff")
+            ic.line([(cx - 0.8, 26.2), (cx - 0.4, 27.6)], 0.4, "#f2f6ff")
+    wheel = ic.box(16.0, 8.6, 3.6, 3.4, 0.8)
+    ic.fill(wheel, "#6d7277", bevel=0.6, spec=0.8, tex=1.0 - 0.3 * (np.sin(ic.X * 2 * math.pi / 0.9) > 0.2))
 
 
 @painter("survivor_terminal")

@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:bolt",
+      "menu_category": {
+        "category": "equipment",
+        "group": "minecraft:itemGroup.name.arrow"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_bolt",
+      "minecraft:display_name": {
+        "value": "item.nr:bolt"
+      },
+      "minecraft:max_stack_size": 32,
+      "minecraft:projectile": {
+        "projectile_entity": "nr:proj_bolt"
+      },
+      "minecraft:tags": {
+        "tags": [
+          "nr:item",
+          "nr:ammo"
+        ]
+      }
+    }
+  }
+}

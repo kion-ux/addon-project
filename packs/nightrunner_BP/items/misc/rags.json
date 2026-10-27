@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:rags",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_rags",
+      "minecraft:display_name": {
+        "value": "item.nr:rags"
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:tags": {
+        "tags": [
+          "nr:item",
+          "nr:material"
+        ]
+      }
+    }
+  }
+}

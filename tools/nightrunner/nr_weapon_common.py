@@ -239,8 +239,10 @@ def hex_prism(bone: Bone, centre, axis, across: float, thick: float, style: str,
     return out
 
 
-def disc(bone: Bone, centre, axis, radius: float, thick: float, style: str, n: int = 3, **kw) -> List[Cube]:
-    """円板（軸 axis のまわりに 90/n 度ずつ回した正方形 n 枚）。丸ノコ・歯車・ピストンの断面。"""
+def disc(bone: Bone, centre, axis, radius: float, thick: float, style: str, n: int = 3, star: float = 1.0,
+         **kw) -> List[Cube]:
+    """円板（軸 axis のまわりに 90/n 度ずつ回した正方形 n 枚）。丸ノコ・歯車・ピストンの断面。
+    star < 1 なら 2 枚目以降を縮めて角の尖り（星形）を抑える（小さな鋲の頭は 0.84 で八角に近く）。"""
     a = _v3(axis)
     a = a / np.linalg.norm(a)
     R0 = frame(a, (0, 1, 0) if abs(a[1]) < 0.9 else (1, 0, 0))
@@ -249,7 +251,8 @@ def disc(bone: Bone, centre, axis, radius: float, thick: float, style: str, n: i
     for k in range(n):
         t = math.radians(90.0 / n * k)
         Rr = R0 @ np.array([[math.cos(t), -math.sin(t), 0], [math.sin(t), math.cos(t), 0], [0, 0, 1.0]])
-        out.append(oriented(bone, centre, (side, side, thick), Rr, style, **kw))
+        sd = side * (star if k else 1.0)
+        out.append(oriented(bone, centre, (sd, sd, thick), Rr, style, **kw))
     return out
 
 
@@ -332,7 +335,7 @@ def _yz_normal(a, b, toward):
 
 
 def _band_beam(bone, x, a_lo, a_hi, b_lo, b_hi, za, zb, t, style, *, align="mid", ov=0.04, extend=0.1,
-               uv=None, tags=()):
+               uv=None, tags=(), flip=False, bt=None):
     """YZ 平面の四角形（za で [a_lo, a_hi]、zb で [b_lo, b_hi]）を 1 本の角柱で覆う。
     align="lo" なら下の線に、"hi" なら上の線に、"mid" なら中心線に沿わせる。高さは広い方 + ov。"""
     ga, gb = a_hi - a_lo, b_hi - b_lo
@@ -354,7 +357,11 @@ def _band_beam(bone, x, a_lo, a_hi, b_lo, b_hi, za, zb, t, style, *, align="mid"
     off = sgn * h / 2
     p0 = (x, ya + n[0] * off, za + n[1] * off)
     p1 = (x, yb + n[0] * off, zb + n[1] * off)
-    return beam(bone, p0, p1, t, h, style, up=(0, n[0], n[1]), extend=extend, uv=uv, tags=tags)
+    up = (0, -n[0], -n[1]) if flip else (0, n[0], n[1])
+    c = beam(bone, p0, p1, t, h, style, up=up, extend=extend, uv=uv, tags=tags)
+    if bt is not None:
+        c.bt = (bt[1], bt[0]) if flip else tuple(bt)
+    return c
 
 
 def blade(bone: Bone, prof, body: str, edge: str, spine: Optional[str] = None, *, x=0.0, t_body=0.34,
@@ -380,38 +387,40 @@ def blade(bone: Bone, prof, body: str, edge: str, spine: Optional[str] = None, *
     for i in range(len(prof) - 1):
         za, zb = prof[i][0], prof[i + 1][0]
         sa, sb, ea, eb = prof[i][1], prof[i + 1][1], prof[i][2], prof[i + 1][2]
-        if not up_is_spine:            # 刃が +Y 側でも同じ式で（下 = 刃、上 = 峰 に揃える）
-            pass
         lo_a, hi_a = (ea, sa) if up_is_spine else (sa, ea)
         lo_b, hi_b = (eb, sb) if up_is_spine else (sb, eb)
         hgt = min(hi_a - lo_a, hi_b - lo_b)
         if hgt < 0.02:
             continue
+        H = max(1e-3, (hi_a - lo_a + hi_b - lo_b) / 2)
         bev = min(bevel, max(0.1, hgt * (0.45 if double else 0.55)))
         sh = 0.0 if double else min(spine_h, max(0.08, hgt * 0.3))
         top_bev = bev if double else sh
-        # 研いだ縁（下の線に沿う）
+        # 研いだ縁（刃の線に沿う。局所 -Y が刃の線 = _edge_shine の約束。刃が +Y 側なら上下を返す）
         el, eh = (lo_a, lo_a + bev), (lo_b, lo_b + bev)
         if not up_is_spine:
             el, eh = (hi_a - bev, hi_a), (hi_b - bev, hi_b)
         out["edge"].append(_band_beam(bone, x, el[0], el[1], eh[0], eh[1], za, zb, t_edge, edge,
                                       align="lo" if up_is_spine else "hi", ov=0.05, extend=extend,
-                                      uv=edge_uv, tags=edge_tags))
-        # 峰（上の線に沿う）
+                                      uv=edge_uv, tags=edge_tags, flip=not up_is_spine,
+                                      bt=(0.0, bev / H) if up_is_spine else (1.0 - bev / H, 1.0)))
+        # 峰（上の線に沿う）。両刃なら峰の代わりに 2 本目の研いだ縁（局所 -Y を峰の線へ向ける）
         if double:
             sl, sh_ = (hi_a - top_bev, hi_a), (hi_b - top_bev, hi_b)
             if not up_is_spine:
                 sl, sh_ = (lo_a, lo_a + top_bev), (lo_b, lo_b + top_bev)
             out["spine"].append(_band_beam(bone, x, sl[0], sl[1], sh_[0], sh_[1], za, zb, t_edge, edge,
                                            align="hi" if up_is_spine else "lo", ov=0.05, extend=extend,
-                                           uv=edge_uv, tags=edge_tags))
+                                           uv=edge_uv, tags=edge_tags, flip=up_is_spine,
+                                           bt=(1.0 - top_bev / H, 1.0) if up_is_spine else (0.0, top_bev / H)))
         elif sh > 0:
             sl, sh_ = (hi_a - sh, hi_a), (hi_b - sh, hi_b)
             if not up_is_spine:
                 sl, sh_ = (lo_a, lo_a + sh), (lo_b, lo_b + sh)
             out["spine"].append(_band_beam(bone, x, sl[0], sl[1], sh_[0], sh_[1], za, zb, t_spine, spine,
                                            align="hi" if up_is_spine else "lo", ov=0.03, extend=extend,
-                                           uv=uv, tags=spine_tags))
+                                           uv=uv, tags=spine_tags,
+                                           bt=(1.0 - sh / H, 1.0) if up_is_spine else (0.0, sh / H)))
         # 本体の帯（刃側 → 峰側。厚みは段々に増える）
         a0, a1 = (lo_a + bev, hi_a - top_bev) if up_is_spine else (lo_a + top_bev, hi_a - bev)
         b0, b1 = (lo_b + bev, hi_b - top_bev) if up_is_spine else (lo_b + top_bev, hi_b - bev)
@@ -429,8 +438,12 @@ def blade(bone: Bone, prof, body: str, edge: str, spine: Optional[str] = None, *
                 continue
             tk = (k + 0.5) / K
             tt = lerp(t_edge + (t_body - t_edge) * grind, t_body, tk) if K > 1 else t_body
+            # bt: 局所の下 → 上の t（0 = 刃の線、1 = 峰の線）
+            y_lo = ((al + bl) / 2 - (lo_a + lo_b) / 2) / H
+            y_hi = ((ah + bh) / 2 - (lo_a + lo_b) / 2) / H
+            btv = (y_lo, y_hi) if up_is_spine else (1.0 - y_lo, 1.0 - y_hi)
             out["body"].append(_band_beam(bone, x, al, ah, bl, bh, za, zb, tt, body, align="mid", ov=0.06,
-                                          extend=extend, uv=uv, tags=body_tags))
+                                          extend=extend, uv=uv, tags=body_tags, bt=btv))
     return out
 
 
@@ -451,12 +464,379 @@ def curved_blade(bone: Bone, pts, widths, body: str, edge: str, *, edge_side=-1,
         bev = min(bevel, w * 0.45)
         # 本体（刃の側を bevel だけ空ける）
         off_b = -nrm * (bev / 2)
-        out["body"].append(beam(bone, a + off_b, b + off_b, t_body, max(0.1, w - bev), body, up=-nrm,
-                                extend=overlap, uv=uv, tags=body_tags))
+        c = beam(bone, a + off_b, b + off_b, t_body, max(0.1, w - bev), body, up=-nrm,
+                 extend=overlap, uv=uv, tags=body_tags)
+        c.bt = (bev / w, 1.0)
+        out["body"].append(c)
         off_e = nrm * (w / 2 - bev / 2 - 0.06)
-        out["edge"].append(beam(bone, a + off_e, b + off_e, t_edge, bev + 0.12, edge, up=-nrm,
-                                extend=overlap, uv=edge_uv, tags=edge_tags))
+        c = beam(bone, a + off_e, b + off_e, t_edge, bev + 0.12, edge, up=-nrm,
+                 extend=overlap, uv=edge_uv, tags=edge_tags)
+        c.bt = (0.0, (bev + 0.12) / w)
+        out["edge"].append(c)
     return out
+
+
+def fill_poly_yz(bone: Bone, poly, style: str, *, x=0.0, thick=0.4, strip=0.5, along="z", ov=0.06,
+                 min_len=0.12, uv=None, tags=(), fx=None, bt=None) -> List[Cube]:
+    """YZ 平面の多角形 poly=[(y, z), ...] を、along 方向の細長い板（角柱）の重ねで埋める（走査線塗り）。
+    along="z" なら Z に沿う板を Y 方向に strip ずつ、"y" なら Y に沿う板を Z 方向に並べる。
+    thick は数か関数 f(y, z) → X 方向の厚み（斧の刃のように縁へ向かって薄くする）。
+    斧頭の扇・標識の板・包丁の平など、輪郭のある平たい部品に使う。"""
+    ys = [p[0] for p in poly]
+    zs = [p[1] for p in poly]
+    out = []
+    n = len(poly)
+    if along == "z":
+        lo, hi = min(ys), max(ys)
+        k = max(1, int(math.ceil((hi - lo) / strip - 1e-6)))
+        hstep = (hi - lo) / k
+        for i in range(k):
+            yc = lo + (i + 0.5) * hstep
+            xs = []
+            for j in range(n):
+                (y0, z0), (y1, z1) = poly[j], poly[(j + 1) % n]
+                if (y0 <= yc < y1) or (y1 <= yc < y0):
+                    xs.append(z0 + (yc - y0) * (z1 - z0) / (y1 - y0))
+            xs.sort()
+            for a, b in zip(xs[0::2], xs[1::2]):
+                if b - a < min_len:
+                    continue
+                t = thick((yc, (a + b) / 2)) if callable(thick) else thick
+                c = oriented(bone, (x, yc, (a + b) / 2), (t, hstep + ov, b - a), None, style, uv=uv, tags=tags,
+                             fx=fx)
+                if bt is not None:     # bt=(y の刃の線, y の峰) → 写り込みの階調（_steel_look）
+                    ye, ys_ = bt
+                    c.bt = ((yc - (hstep + ov) / 2 - ye) / (ys_ - ye), (yc + (hstep + ov) / 2 - ye) / (ys_ - ye))
+                out.append(c)
+    else:
+        lo, hi = min(zs), max(zs)
+        k = max(1, int(math.ceil((hi - lo) / strip - 1e-6)))
+        hstep = (hi - lo) / k
+        for i in range(k):
+            zc = lo + (i + 0.5) * hstep
+            xs = []
+            for j in range(n):
+                (y0, z0), (y1, z1) = poly[j], poly[(j + 1) % n]
+                if (z0 <= zc < z1) or (z1 <= zc < z0):
+                    xs.append(y0 + (zc - z0) * (y1 - y0) / (z1 - z0))
+            xs.sort()
+            for a, b in zip(xs[0::2], xs[1::2]):
+                if b - a < min_len:
+                    continue
+                t = thick(((a + b) / 2, zc)) if callable(thick) else thick
+                out.append(oriented(bone, (x, (a + b) / 2, zc), (t, b - a, hstep + ov), None, style,
+                                    uv=uv, tags=tags, fx=fx))
+    return out
+
+
+# ---------------------------------------------------------------------------
+#  よく使う部品（テープ巻き・鋲・釘・ボルト・溶接・布切れ・針金）。飛び道具の生成器も使う
+# ---------------------------------------------------------------------------
+def _axis_frame(axis):
+    a = _v3(axis)
+    a = a / np.linalg.norm(a)
+    return a, frame(a, (0, 1, 0) if abs(a[1]) < 0.9 else (1, 0, 0))
+
+
+def wrap(bone: Bone, p0, p1, d: float, style: str, *, pitch=0.85, gap=0.0, grow=0.05, tilt=7.0, seed=0,
+         round_=True, uv=None, period=None, tail=None, tags=()) -> List[Cube]:
+    """p0 → p1 の柄に巻いたテープ・布・革紐。幅 pitch の帯を少しずつ傾けて重ねる（巻きの段差が出る）。
+    d は巻いた後の差し渡し（下の柄より grow*2 ほど太く）。tail=(長さ, 向き) で巻き終わりの垂れた端。
+    帯には fx wrap（斜めの巻き筋）を付ける。period は巻き筋の周期（既定 pitch*0.55）。"""
+    import random as _random
+    rng = _random.Random(stable_hash(("wrap", seed, tuple(np.round(_v3(p0), 2)))))
+    p0, p1 = _v3(p0), _v3(p1)
+    L = float(np.linalg.norm(p1 - p0))
+    a = (p1 - p0) / L
+    n = max(1, int(round(L / pitch)))
+    seg = L / n
+    out = []
+    fx = {"wrap": period or pitch * 0.55}
+    dw, dh = (float(d[0]), float(d[1])) if isinstance(d, (tuple, list)) else (float(d), float(d))
+    for i in range(n):
+        c = p0 + a * (seg * (i + 0.5))
+        g = (grow if i % 2 else 0.0) + rng.uniform(-0.03, 0.03)
+        tl = tilt * (1 if i % 2 == 0 else -0.6) + rng.uniform(-2, 2)
+        up = np.array([0.0, 1.0, 0.0]) if abs(a[1]) < 0.9 else np.array([1.0, 0.0, 0.0])
+        up = up + a * math.tan(math.radians(tl))
+        q0, q1 = c - a * (seg / 2 + 0.02 - gap / 2), c + a * (seg / 2 + 0.02 - gap / 2)
+        out.append(beam(bone, q0, q1, dw + g, dh + g, style, up=up, uv=uv, tags=tags, fx=fx))
+        if round_:
+            k = 0.88 if dw == dh else 0.8
+            out.append(beam(bone, q0, q1, (dw + g) * k, (dh + g) * k, style, up=up, roll=45.0 if dw == dh else 0.0,
+                            uv=uv, tags=tags, fx=fx) if dw == dh else
+                       beam(bone, q0, q1, dw + g + 0.12, (dh + g) * 0.72, style, up=up, uv=uv, tags=tags, fx=fx))
+    if tail:
+        ln, dirv = tail
+        dv = _v3(dirv)
+        dv = dv / np.linalg.norm(dv)
+        start = p1 - a * 0.2
+        out.append(beam(bone, start, start + dv * ln, max(0.5, min(dw, dh) * 0.55), 0.08, style,
+                        up=np.cross(dv, a) if np.linalg.norm(np.cross(dv, a)) > 1e-3 else (0, 1, 0),
+                        uv=uv, tags=tuple(tags) + ("ragged",)))
+    return out
+
+
+def rivet(bone: Bone, centre, normal, d: float = 0.5, h: float = 0.14, style: str = "rivet", **kw) -> List[Cube]:
+    """丸い鋲の頭（面 normal の上に乗る、2 枚で八角）。centre は頭の底の中心。"""
+    n, _R = _axis_frame(normal)
+    c = _v3(centre) + n * (h / 2)
+    out = disc(bone, c, n, d / 2 * 0.9, h, style, n=2, star=0.86, **kw)
+    return out
+
+
+def nail(bone: Bone, p0, p1, style: str, *, d: float = 0.22, head: float = 0.0, bend=None, **kw) -> List[Cube]:
+    """釘: p0（頭の側）→ p1（先）。head > 0 なら p0 に頭（直径 head）。bend=(長さ, 向き) で先を曲げる。"""
+    p0, p1 = _v3(p0), _v3(p1)
+    out = [beam(bone, p0, p1, d, d, style, **kw)]
+    a = (p1 - p0) / np.linalg.norm(p1 - p0)
+    if head > 0:
+        out += disc(bone, p0 - a * 0.05, a, head / 2, 0.12, style, n=2, **kw)
+    if bend:
+        ln, dv = bend
+        dv = _v3(dv)
+        dv = dv / np.linalg.norm(dv)
+        out.append(beam(bone, p1 - a * d * 0.4, p1 - a * d * 0.4 + dv * ln, d * 0.95, d * 0.95, style, **kw))
+    return out
+
+
+def bolt(bone: Bone, centre, axis, length: float, d: float, style: str, *, nut: Optional[str] = None,
+         nut_size: float = None, washer: bool = False, ends=(True, True), **kw) -> List[Cube]:
+    """ボルトを軸 axis に貫通させ、両端に六角（頭とナット）を付ける。ends で頭・ナットの有無。"""
+    a, _R = _axis_frame(axis)
+    c = _v3(centre)
+    out = rod(bone, c - a * length / 2, c + a * length / 2, d, style, **kw)
+    ns = nut_size or d * 1.9
+    for sgn, on in ((-1, ends[0]), (1, ends[1])):
+        if not on:
+            continue
+        p = c + a * sgn * (length / 2 - ns * 0.25)
+        out += hex_prism(bone, p, a, ns, ns * 0.5, nut or style, **kw)
+        if washer:
+            out += disc(bone, p - a * sgn * ns * 0.3, a, ns * 0.68, 0.1, nut or style, n=2, **kw)
+    return out
+
+
+def weld(bone: Bone, pts, d: float, style: str, *, seed=0, step=0.45, **kw) -> List[Cube]:
+    """溶接のビード: 点列に沿って小さな塊を少しずつずらして並べる（盛り上がった不揃いの粒）。"""
+    import random as _random
+    rng = _random.Random(stable_hash(("weld", seed)))
+    out = []
+    pts = [_v3(p) for p in pts]
+    for i in range(len(pts) - 1):
+        a, b = pts[i], pts[i + 1]
+        L = float(np.linalg.norm(b - a))
+        k = max(1, int(round(L / step)))
+        for j in range(k):
+            c = a + (b - a) * ((j + 0.5) / k)
+            s = d * rng.uniform(0.75, 1.1)
+            rot = (rng.uniform(-30, 30), rng.uniform(-40, 40), rng.uniform(-30, 30))
+            out.append(cbox(bone, c, (s, s * 0.8, s * 1.1), style, rot=rot, **kw))
+    return out
+
+
+def rag(bone: Bone, top, length: float, width: float, style: str, *, hang=(0.0, -1.0, 0.25), thick=0.08,
+        strips: int = 2, spread: float = 0.35, seed=0, uv=None) -> List[Cube]:
+    """結んだ所 top から垂れる布切れ（strips 枚の短冊、端はほつれて穴が開く = tags ragged）。"""
+    import random as _random
+    rng = _random.Random(stable_hash(("rag", seed)))
+    out = []
+    h = _v3(hang)
+    h = h / np.linalg.norm(h)
+    side = np.cross(h, np.array([1.0, 0.0, 0.0]))
+    if np.linalg.norm(side) < 1e-3:
+        side = np.array([0.0, 0.0, 1.0])
+    side = side / np.linalg.norm(side)
+    for i in range(strips):
+        off = (i - (strips - 1) / 2) * spread
+        dv = h + side * rng.uniform(-0.25, 0.25) + np.array([rng.uniform(-0.15, 0.15), 0, 0])
+        dv = dv / np.linalg.norm(dv)
+        ln = length * rng.uniform(0.75, 1.1)
+        p0 = _v3(top) + side * off
+        mid = p0 + dv * ln * 0.5 + np.array([rng.uniform(-0.15, 0.15), 0, 0])
+        # 2 段に折って、布のたるみ（2 枚目は少しよじる）
+        w_ = width * rng.uniform(0.75, 1.0)
+        out.append(beam(bone, p0, mid, thick, w_, style, up=np.cross(dv, (1, 0, 0)) if abs(dv[0]) < 0.9 else (0, 1, 0),
+                        uv=uv, tags=("ragged", "noao")))
+        dv2 = dv + np.array([rng.uniform(-0.25, 0.25), 0, rng.uniform(-0.2, 0.2)])
+        dv2 = dv2 / np.linalg.norm(dv2)
+        out.append(beam(bone, mid - dv * 0.1, mid + dv2 * ln * 0.55, thick, w_ * 0.85, style,
+                        up=np.cross(dv2, (1, 0, 0)) if abs(dv2[0]) < 0.9 else (0, 1, 0), roll=rng.uniform(-14, 14),
+                        uv=uv, tags=("ragged", "noao")))
+    return out
+
+
+def coil(bone: Bone, centre, axis, d: float, length: float, turns: int, style: str, *, wire=0.16, **kw):
+    """針金・銅線の巻き（turns 本の細い輪を並べる。輪は 4 本の角柱で四角に回す）。"""
+    a, R = _axis_frame(axis)
+    c = _v3(centre)
+    out = []
+    xa, ya = R[:, 0], R[:, 1]
+    r = d / 2
+    for i in range(turns):
+        t = (i + 0.5) / turns - 0.5
+        cc = c + a * (t * length)
+        tw = 0.12 * (1 if i % 2 else -1)     # 輪を少しずつ傾ける（巻きの螺旋）
+        for k in range(4):
+            u = xa * math.cos(k * math.pi / 2) + ya * math.sin(k * math.pi / 2)
+            v = np.cross(a, u)
+            p_mid = cc + u * r + a * tw * (1 if k % 2 else -1) * 0.5
+            out.append(beam(bone, p_mid - v * (r + wire * 0.5), p_mid + v * (r + wire * 0.5), wire, wire, style,
+                            up=u, **kw))
+    return out
+
+
+def teeth_row(bone: Bone, p0, p1, n: int, size, style: str, *, up=(0.0, 1.0, 0.0), rot45=True, **kw):
+    """p0 → p1 に n 個の歯（45° 回した小さな箱 = 三角の山）を並べる。鋸刃・レンチの顎の刻み。"""
+    p0, p1 = _v3(p0), _v3(p1)
+    d = p1 - p0
+    R = frame(d / np.linalg.norm(d), up)
+    if rot45:
+        a = math.radians(45.0)
+        R = R @ np.array([[1, 0, 0], [0, math.cos(a), -math.sin(a)], [0, math.sin(a), math.cos(a)]])
+    out = []
+    for i in range(n):
+        c = p0 + d * ((i + 0.5) / n)
+        out.append(oriented(bone, c, size, R, style, **kw))
+    return out
+
+
+def rbeam(bone: Bone, p0, p1, w: float, h: float, style: str, *, k: float = 0.78, **kw) -> List[Cube]:
+    """角を落とした角柱（幅 w × 高さ h の箱 2 本: (w, h·k) と (w·k, h)）。柄・握りの丸みのある四角い断面。"""
+    return [beam(bone, p0, p1, w, h * k, style, **kw), beam(bone, p0, p1, w * k, h, style, **kw)]
+
+
+def hairs(bone: Bone, x: float, centre_yz, n: int, length: float, style: str, *, seed=0, spread=(1.0, 1.4),
+          side=1, **kw) -> List[Cube]:
+    """刃の平に貼り付いた髪の毛（細いうねった線を数本）。x は平の面の位置（その少し外に置く）。"""
+    import random as _random
+    rng = _random.Random(stable_hash(("hair", seed)))
+    out = []
+    for i in range(n):
+        y0 = centre_yz[0] + rng.uniform(-spread[0], spread[0]) * 0.5
+        z0 = centre_yz[1] + rng.uniform(-spread[1], spread[1]) * 0.5
+        ang = rng.uniform(-0.8, 0.8) + (math.pi / 2 if i % 3 == 0 else 0)
+        pts = [(x + side * 0.03, y0, z0)]
+        for j in range(3):
+            ang += rng.uniform(-0.6, 0.6)
+            yy, zz = pts[-1][1] + math.sin(ang) * length / 3, pts[-1][2] + math.cos(ang) * length / 3
+            pts.append((x + side * 0.03, yy, zz))
+        out += polyline(bone, pts, 0.05, 0.06, style, up=(1, 0, 0), overlap=0.04, tags=("noao",), **kw)
+    return out
+
+
+# ---------------------------------------------------------------------------
+#  武器空間で描く模様（cube.fx["world"] に渡す関数を作る）
+# ---------------------------------------------------------------------------
+def stamp(text: str, centre_zy, height: float, *, mul=0.55, tint=None, side=0, px_per_unit=None):
+    """側面（±X）に打刻・焼き印の文字。centre_zy = (z, y) 武器空間、height は字の高さ（単位）。
+    side: +1 なら +X 面だけ、-1 なら -X 面だけ、0 なら両面（-X 面は鏡に映らないよう向きを合わせる）。
+    文字は -Z 向き（刃先の方）へ読める。mul は暗くする倍率、tint を渡すとその色で塗る。"""
+    from nr_paint import text_mask
+    n = len(text)
+    gh = 5
+    gw = 4 * n - 1
+    unit = height / gh
+    W = gw * 4
+    H = gh * 4
+    mask = text_mask(text, W, H, (0.5, 0.5), 4, 1)
+    zc, yc = centre_zy
+
+    def fn(P, N, L, size, col):
+        sx = np.sign(N[:, 0])
+        ok = np.abs(N[:, 0]) > 0.7
+        if side:
+            ok &= sx == side
+        # 読む向き: 刃先（-Z）へ。-X 面は外から見ると z が逆に見えるので反転しない（表と裏で鏡文字にならない）
+        u = (-(P[:, 2] - zc) * np.where(sx > 0, -1.0, 1.0)) / unit + gw / 2
+        v = (-(P[:, 1] - yc)) / unit + gh / 2
+        iu = np.floor(u * 4).astype(np.int64)
+        iv = np.floor(v * 4).astype(np.int64)
+        inside = ok & (iu >= 0) & (iu < W) & (iv >= 0) & (iv < H)
+        m = np.zeros(len(P), bool)
+        m[inside] = mask[iv[inside], iu[inside]] > 0.5
+        if tint is not None:
+            return np.where(m[:, None], np.asarray(tint, np.float32) * (0.85 + 0.15 * col / 255.0), col)
+        return np.where(m[:, None], col * mul, col)
+    return fn
+
+
+def prof_fns(prof):
+    """blade() の輪郭から (峰の y(z), 刃の y(z)) の関数。"""
+    zs = np.array([p[0] for p in prof], float)
+    sp = np.array([p[1] for p in prof], float)
+    ed = np.array([p[2] for p in prof], float)
+    o = np.argsort(zs)
+    return (lambda z: np.interp(z, zs[o], sp[o])), (lambda z: np.interp(z, zs[o], ed[o]))
+
+
+def groove(prof, t_lo: float, t_hi: float, z0: float, z1: float, *, dark=0.55, taper=0.6):
+    """樋（フラー）: 刃の輪郭の t_lo〜t_hi（0 = 刃、1 = 峰）、z0〜z1 の帯を暗く、下の縁に照り、上の縁に影。
+    両端 taper 単位で細って消える。"""
+    spf, edf = prof_fns(prof)
+    za, zb = min(z0, z1), max(z0, z1)
+
+    def fn(P, N, L, size, col):
+        ok = np.abs(N[:, 0]) > 0.7
+        z, y = P[:, 2], P[:, 1]
+        ys, ye = spf(z), edf(z)
+        t = (y - ye) / np.where(np.abs(ys - ye) < 1e-3, 1e-3, ys - ye)
+        e = np.clip(np.minimum(z - za, zb - z) / taper, 0, 1)
+        mid = (t_lo + t_hi) / 2
+        half = (t_hi - t_lo) / 2 * e
+        inn = ok & (z > za) & (z < zb) & (np.abs(t - mid) < half)
+        lo_rim = ok & (z > za) & (z < zb) & (t < mid - half) & (t > mid - half - 0.05) & (e > 0.2)
+        hi_rim = ok & (z > za) & (z < zb) & (t > mid + half) & (t < mid + half + 0.04) & (e > 0.2)
+        col = np.where(inn[:, None], col * dark, col)
+        col = np.where(lo_rim[:, None], np.minimum(255, col * 1.25 + 12), col)
+        return np.where(hi_rim[:, None], col * 0.8, col)
+    return fn
+
+
+def compose(*fns):
+    """world 模様の関数を順に重ねる（抜きは OR）。"""
+    def fn(P, N, L, size, col):
+        cut = np.zeros(len(P), bool)
+        for f in fns:
+            r = f(P, N, L, size, col)
+            if isinstance(r, tuple):
+                col, c2 = r
+                cut |= np.asarray(c2, bool)
+            else:
+                col = r
+        return (col, cut) if cut.any() else col
+    return fn
+
+
+def spots(centres_zy, r: float, *, mul=0.6, ring=0.12, ring_mul=1.18, side=0):
+    """側面の丸い跡（埋めたボルト穴・溶接の点・打痕）。中は暗く、縁は少し明るい輪。"""
+    C = np.asarray(centres_zy, np.float32).reshape(-1, 2)
+
+    def fn(P, N, L, size, col):
+        ok = np.abs(N[:, 0]) > 0.7
+        if side:
+            ok &= np.sign(N[:, 0]) == side
+        d = np.min(np.hypot(P[:, 2:3] - C[None, :, 0], P[:, 1:2] - C[None, :, 1]), axis=1)
+        inner = ok & (d < r)
+        rim = ok & (d >= r) & (d < r + ring)
+        col = np.where(inner[:, None], col * mul, col)
+        return np.where(rim[:, None], np.minimum(255, col * ring_mul + 4), col)
+    return fn
+
+
+def hamon(edge_fn, *, offset=0.32, amp=0.1, period=1.3, width=0.16, seed=0):
+    """刃文: 刃の線 y = edge_fn(z) から offset 上に、波打つ白い帯。帯より刃側は少し白く曇らせる。"""
+    def fn(P, N, L, size, col):
+        ok = np.abs(N[:, 0]) > 0.7
+        z, y = P[:, 2], P[:, 1]
+        ye = edge_fn(z)
+        wave = amp * np.sin(z * (2 * math.pi / period) + seed) + amp * 0.5 * np.sin(z * 5.1 + seed * 2)
+        h = y - ye - offset - wave
+        band = ok & (np.abs(h) < width)
+        below = ok & (h < -width) & (y > ye)
+        col = np.where(below[:, None], np.minimum(255, col * 1.06 + 10), col)
+        return np.where(band[:, None], np.minimum(255, col * 0.55 + 118), col)
+    return fn
 
 
 # ===========================================================================
@@ -479,6 +859,16 @@ class WeaponModel:
         self.bones: Dict[str, Bone] = {"hold": self.hold, "root": self.root}
         self.idle: Dict[str, dict] = {}         # 待機アニメのボーン（{"saw": {"rotation": [...]}}）
         self.uv_fit = 1.0                       # pack() が縮めた倍率
+        self.cuts: List[dict] = []              # 貫通穴（texture() が透明に抜く。cut() で足す）
+
+    def cut(self, centre, axis=(1, 0, 0), r: float = 0.4, half: float = 3.0, rim: float = 0.14,
+            shape: str = "round") -> None:
+        """武器空間の円柱（軸 axis、半径 r、長さ 2*half）の中の texel を全部透明にする（吊るし穴・肉抜き・
+        ククリのチョー）。キューブを削れないので「表と裏の面を同じ形で抜く」ことで穴に見せる。
+        穴の周り rim は暗くする。shape="square" なら四角い穴。"""
+        a = _v3(axis)
+        self.cuts.append({"c": _v3(centre), "a": a / np.linalg.norm(a), "r": float(r), "half": float(half),
+                          "rim": float(rim), "shape": shape})
 
     def bone(self, name: str, pivot=(0, 0, 0), parent: str = "root", rotation=None) -> Bone:
         if name in self.bones:
@@ -846,6 +1236,39 @@ def _edge_shine(rgb, tm: TexMap):
     return out
 
 
+def _steel_look(rgb, tm: TexMap, seed: int):
+    """刃（cube.bt を持つキューブ = blade() / curved_blade() の部品）の平に、写り込みの帯を描く。
+    t（0 = 刃の線、1 = 峰）で「研いだ縁の明るさ → 研ぎの段 → 平の暗い地平線の帯 → 峰寄りの空の明るさ」の
+    階調を掛け、刃の長さ方向に流れるヘアラインの筋を重ねる。帯は z でゆるく波打たせる（定規の線にしない）。"""
+    ids = [k for k, c in enumerate(tm.cubes) if getattr(c, "bt", None) is not None]
+    if not ids:
+        return rgb
+    fr = tm.local_frac()
+    T = np.full((tm.H, tm.W), -1.0, np.float32)
+    for k in ids:
+        m = tm.cube == k
+        if m.any():
+            b0, b1 = tm.cubes[k].bt
+            T[m] = b0 + (b1 - b0) * fr[m][:, 1]
+    face = tm.face
+    side = (face == FACE_IDS["east"]) | (face == FACE_IDS["west"])
+    m = (T >= 0) & side & tm.valid
+    if not m.any():
+        return rgb
+    P = tm.P[m]
+    t = np.clip(T[m] + 0.07 * np.sin(P[:, 2] * 0.33 + (seed % 97) * 0.1) +
+                0.03 * np.sin(P[:, 2] * 1.1 + 1.7), 0, 1)
+    xs = [0.0, 0.1, 0.24, 0.42, 0.55, 0.66, 0.8, 0.92, 1.0]
+    ys = [1.2, 1.1, 1.02, 0.9, 0.74, 0.82, 1.04, 1.1, 1.0]
+    env = np.interp(t, xs, ys).astype(np.float32)
+    streak = NP.fbm3(P[:, 0] * 3.0, P[:, 1] * 9.0, P[:, 2] * 0.18, seed + 11, 3) - 0.5
+    fine = NP.fbm3(P[:, 0] * 3.0, P[:, 1] * 30.0, P[:, 2] * 0.5, seed + 12, 2) - 0.5
+    mult = env * (1.0 + streak * 0.26 + fine * 0.12)
+    out = rgb.copy()
+    out[m] = np.clip(rgb[m] * mult[:, None], 0, 255)
+    return out
+
+
 def blood_zone(lo, hi, amount: float = 0.8, kind: str = "wet", soft: float = 1.2, drip: float = 1.0) -> dict:
     """血の付く範囲（武器空間の軸平行の箱）。amount 0..1 は覆う割合、kind は wet（濡れて照る）/ dry（乾いて黒い）。"""
     return {"lo": _v3(lo), "hi": _v3(hi), "amount": float(amount), "kind": kind, "soft": float(soft),
@@ -875,105 +1298,111 @@ def _thr(cover):
 
 
 def _blood(rgb, tm: TexMap, zones: Sequence[dict], seed: int):
-    """武器空間の範囲に血を塗る（3D ノイズなのでキューブの継ぎ目をまたいで繋がる）。"""
+    """武器空間の範囲に血を塗る（3D ノイズなのでキューブの継ぎ目をまたいで繋がる）。
+
+    層（下から）: 薄い膜（下地が透ける赤茶）→ 拭った筋（刃の長さ方向 = Z に伸びる）→ 厚い塊（不透明。
+    縁が黒く固まり、濡れていれば上の縁に照り）→ 垂れ（-Y へ。塊の下の縁から、先に玉）→ 飛沫（範囲の外の点）。
+    形は低い周波数のノイズで大きくまとめる（細かい斑点の砂嵐にしない）。kind: wet / dry。"""
     if not zones:
         return rgb
     v = tm.valid
     P = tm.P[v].astype(np.float32)
     X, Y, Z = P[:, 0], P[:, 1], P[:, 2]
-    zf = np.zeros(len(P), np.float32)
-    wet = np.zeros(len(P), np.float32)
-    drip = np.zeros(len(P), np.float32)
+    N = tm.N[v]
     seed = int(seed) & 0x7FFFFFFF
-    # 範囲の境目を 3D ノイズで揺らす（箱の形が見えないように）
-    warp = (NP.fbm3(X * 0.45 + 3.1, Y * 0.45, Z * 0.45, seed + 9, 3) - 0.5) * 2.0
+    # 範囲の場（0..1）。境目は 3D ノイズで揺らす
+    warp = (NP.fbm3(X * 0.5 + 3.1, Y * 0.5, Z * 0.5, seed + 9, 3) - 0.5) * 2.0
+    f = np.zeros(len(P), np.float32)
+    wet = np.zeros(len(P), np.float32)
+    drip_amt = np.zeros(len(P), np.float32)
     for zn in zones:
         d = np.linalg.norm(np.maximum(np.maximum(zn["lo"] - P, 0), P - zn["hi"]), axis=1)
-        inside = np.linalg.norm(np.minimum(P - zn["lo"], zn["hi"] - P).clip(0, None).min(axis=1, keepdims=True),
-                                axis=1)
-        sd = d - inside + warp * zn["soft"]
-        f = zn["amount"] * np.clip(0.5 - sd / (2 * zn["soft"]), 0, 1) ** 1.2
-        better = f > zf
+        inside = np.minimum(P - zn["lo"], zn["hi"] - P).clip(0, None).min(axis=1)
+        sd = d - inside * 0.6 + warp * zn["soft"] * 0.8
+        fz = zn["amount"] * NP._ss(zn["soft"], -zn["soft"] * 0.6, sd)
+        better = fz > f
         wet = np.where(better, 1.0 if zn["kind"] == "wet" else 0.0, wet)
-        drip = np.maximum(drip, f * zn["drip"])
-        zf = np.maximum(zf, f)
-    act = zf > 0.004
+        drip_amt = np.maximum(drip_amt, fz * zn["drip"])
+        f = np.maximum(f, fz)
+    act = f > 0.01
     if not act.any():
         return rgb
-    N = tm.N[v]
     base = rgb[v]
 
-    def thick_val(yoff=0.0):
-        # 厚い血の塊（等方）。yoff だけ上の位置で評価して「上に塊があるか」を見る（垂れ用）
+    def body_val(yoff=0.0):
         yy = Y + yoff
-        return NP.fbm3(X * 0.75, yy * 0.75, Z * 0.75, seed + 1, 4) + \
-            (NP.fbm3(X * 2.4, yy * 2.4, Z * 2.4, seed + 3, 2) - 0.5) * 0.3
+        return (0.62 * NP.fbm3(X * 0.42, yy * 0.42, Z * 0.42, seed + 1, 3) +
+                0.38 * NP.fbm3(X * 1.3, yy * 1.3, Z * 1.3, seed + 3, 3))
 
-    thr_thick = _thr_vec(np.clip(zf * 0.55, 0.005, 0.99))
-    tv = thick_val()
-    thick_cov = NP._ss(thr_thick - 0.02, thr_thick + 0.02, tv) * act
-    th = np.clip((tv - thr_thick) / 0.14, 0, 1) * act
-    # 拭った跡（刃の長さ方向 = Z に伸びた筋。薄く半透明）
-    sm = NP.fbm3(X * 1.4, Y * 2.2, Z * 0.28, seed + 2, 3)
-    thr_sm = _thr_vec(np.clip(zf * 0.85, 0.005, 0.99))
-    smear = NP._ss(thr_sm - 0.03, thr_sm + 0.03, sm) * act * (1 - thick_cov)
-    # 垂れ（-Y へ）。列 = 量子化した X / Z ごとに長さと有無を乱数で決め、上（+Y）に塊があれば垂らす
-    side = np.abs(N[:, 1]) < 0.35
-    colx = np.floor(X * 9.0 + 0.5).astype(np.int64)
-    colz = np.floor(Z * 9.0 + 0.5).astype(np.int64)
+    bv = body_val()
+    sval = f + (bv - 0.5) * 1.25
+    film = NP._ss(0.34, 0.40, sval) * act
+    thick = NP._ss(0.56, 0.60, sval) * act
+    depth = np.clip((sval - 0.58) / 0.35, 0, 1)
+    # 拭った筋: Z に長く伸びたノイズ。膜の外側にも少し出る
+    wipe_n = NP.fbm3(X * 1.2, Y * 3.6, Z * 0.16, seed + 2, 3)
+    wipe = NP._ss(0.58, 0.63, wipe_n + f * 0.25) * NP._ss(0.08, 0.3, f) * (1 - thick)
+    # 垂れ: 側面で、上（+Y）に厚い塊がある列から下へ。列は 0.22 単位幅
+    side = np.abs(N[:, 1]) < 0.4
+    colx = np.floor(X / 0.22 + 0.5).astype(np.int64)
+    colz = np.floor(Z / 0.22 + 0.5).astype(np.int64)
     hcol = NP.hash2i((colx * 7919 + colz).astype(np.uint32), np.full(len(X), 17, np.uint32), seed + 6)
     pr = NP._u01(hcol)
-    Lc = 0.35 + 2.4 * NP._u01(NP._fin(hcol ^ np.uint32(0x9E3779B9))) ** 1.7
-    dr_on = side & (pr < 0.30 + 0.25 * np.clip(drip, 0, 1)) & (zf > 0.05)
+    Lc = 0.3 + 2.2 * NP._u01(NP._fin(hcol ^ np.uint32(0x9E3779B9))) ** 1.6
+    dr_on = side & (pr < 0.05 + 0.13 * np.clip(drip_amt, 0, 1)) & (f > 0.05) & (thick < 0.5)
     dmask = np.zeros(len(X), bool)
-    tipm = np.zeros(len(X), bool)
+    bead = np.zeros(len(X), bool)
     if dr_on.any():
         idx = np.nonzero(dr_on)[0]
         hit = np.zeros(len(idx), bool)
         dist = np.full(len(idx), 1e9, np.float32)
-        for dy in (0.12, 0.3, 0.55, 0.85, 1.2, 1.6, 2.1, 2.7):
+        for dy in (0.1, 0.25, 0.45, 0.7, 1.0, 1.35, 1.75, 2.2, 2.6):
             yy = Y[idx] + dy
-            tvv = NP.fbm3(X[idx] * 0.75, yy * 0.75, Z[idx] * 0.75, seed + 1, 4) + \
-                (NP.fbm3(X[idx] * 2.4, yy * 2.4, Z[idx] * 2.4, seed + 3, 2) - 0.5) * 0.3
-            c = (tvv > thr_thick[idx] + 0.03) & (dy <= Lc[idx])
+            bvv = (0.62 * NP.fbm3(X[idx] * 0.42, yy * 0.42, Z[idx] * 0.42, seed + 1, 3) +
+                   0.38 * NP.fbm3(X[idx] * 1.3, yy * 1.3, Z[idx] * 1.3, seed + 3, 3))
+            c = (f[idx] + (bvv - 0.5) * 1.25 > 0.6) & (dy <= Lc[idx])
             newhit = c & ~hit
             dist[newhit] = dy
             hit |= c
-        dmask[idx] = hit & (thick_cov[idx] < 0.5)
-        # 先端の玉（長さの終わり近く）
-        tipm[idx] = hit & (np.abs(dist - Lc[idx]) < 0.25)
-    # 飛沫（範囲の外側にも点々）
-    near = np.clip(zf * 2.5, 0, 1)
-    dn = NP.vnoise3(X * 5.0, Y * 5.0, Z * 5.0, seed + 4)
-    dots = (dn > 0.9 - 0.07 * near) & (near > 0.04)
-    big = (NP.vnoise3(X * 2.2 + 7, Y * 2.2, Z * 2.2, seed + 8) > 0.88 - 0.06 * near) & (near > 0.2)
+        dmask[idx] = hit
+        bead[idx] = hit & (np.abs(dist - Lc[idx]) < 0.2)
+    # 飛沫（範囲の縁の外側に点々。大小）
+    near = NP._ss(0.02, 0.4, f)
+    dn = NP.vnoise3(X * 4.2, Y * 4.2, Z * 4.2, seed + 4)
+    dots = (dn > 0.93 - 0.05 * near) & (f > 0.015) & (thick < 0.5)
+    big = (NP.vnoise3(X * 1.9 + 7, Y * 1.9, Z * 1.9, seed + 8) > 0.9 - 0.05 * near) & (f > 0.04) & (thick < 0.5)
     # 色
-    wet_thick = NP._ramp(th, [(0.0, (128, 8, 10)), (0.4, (92, 4, 6)), (1.0, (44, 1, 3))])
-    dry_thick = NP._ramp(th, [(0.0, (88, 24, 16)), (0.5, (58, 14, 10)), (1.0, (30, 8, 6))])
     wm_ = wet[:, None]
+    rough = (NP.fbm3(X * 6.0, Y * 6.0, Z * 6.0, seed + 10, 2) - 0.5)
+    wet_thick = NP._ramp(depth + rough * 0.25, [(0.0, (112, 8, 10)), (0.35, (86, 4, 7)), (1.0, (46, 1, 4))])
+    dry_thick = NP._ramp(depth + rough * 0.35, [(0.0, (92, 30, 20)), (0.4, (66, 18, 12)), (1.0, (38, 10, 8))])
     thick_c = wet_thick * wm_ + dry_thick * (1 - wm_)
-    smear_c = base * np.array([0.42, 0.10, 0.09], np.float32) + \
-        (np.array([70, 4, 5], np.float32) * wm_ + np.array([48, 14, 9], np.float32) * (1 - wm_))
-    drip_c = np.array([104, 5, 7], np.float32) * wm_ + np.array([60, 14, 10], np.float32) * (1 - wm_)
-    out = NP._mix(base, smear_c, smear * 0.75)
-    out = NP._mix(out, thick_c, thick_cov)
-    # 塊の縁は少し暗く（固まりかけ）
-    rim = thick_cov * (1 - NP._ss(0.0, 0.25, th))
-    out = out * (1 - (rim * 0.22)[:, None])
+    film_k = np.clip((sval - 0.34) / 0.26, 0, 1)[:, None]          # 塊に近いほど濃い膜
+    film_c = base * (np.array([0.26, 0.07, 0.06], np.float32) * (1 - film_k * 0.5)) + \
+        (np.array([62, 4, 6], np.float32) * wm_ + np.array([54, 17, 11], np.float32) * (1 - wm_)) * (1 - film_k * 0.25)
+    drip_c = np.array([104, 6, 8], np.float32) * wm_ + np.array([70, 20, 13], np.float32) * (1 - wm_)
+    out = NP._mix(base, film_c, np.maximum(film * 0.94, wipe * 0.65))
+    out = NP._mix(out, thick_c, thick)
+    # 塊の縁（固まりかけて黒い輪）
+    rim = thick * (1 - NP._ss(0.0, 0.12, depth))
+    out = out * (1 - (rim * 0.3)[:, None])
+    # 乾いた血はひび割れ（セルの境目を暗く）
+    if (wet < 0.5).any():
+        crk = NP.vnoise3(X * 7.0, Y * 7.0, Z * 7.0, seed + 12)
+        crack = (np.abs(crk - 0.5) < 0.035) & (thick > 0.5) & (wet < 0.5)
+        out = np.where(crack[:, None], out * 0.6, out)
     out = np.where(dmask[:, None], drip_c * (0.9 + 0.2 * NP.texel_rand(colz.astype(np.uint32),
-                                                                       colx.astype(np.uint32), seed))[:, None]
-                   , out)
-    out = np.where((tipm & dmask)[:, None], drip_c * 0.62, out)
-    out = np.where((dots | big)[:, None], NP._mix(out, thick_c * 0.95 + 8, np.full(len(out), 0.85, np.float32)),
-                   out)
-    # 照り: 濡れた厚い塊の上側の縁（上に塊が無い所）だけ、まばらに
-    above = NP._ss(thr_thick - 0.02, thr_thick + 0.02, thick_val(0.14))
+                                                                       colx.astype(np.uint32), seed))[:, None], out)
+    out = np.where(bead[:, None], drip_c * 0.7, out)
+    out = np.where((dots | big)[:, None], NP._mix(out, thick_c * 0.95 + 6, np.full(len(out), 0.9, np.float32)), out)
+    # 照り: 濡れた厚い塊の上側の縁（上に塊が無い所）だけ、まばらに。垂れの玉にも 1 点
+    above = NP._ss(0.56, 0.6, f + (body_val(0.16) - 0.5) * 1.25)
     g = NP.texel_rand(colx.astype(np.uint32), (np.floor(Y * 9.0).astype(np.int64) * 31 + colz).astype(np.uint32),
                       seed + 5)
-    gl = (thick_cov > 0.6) & (above < 0.5) & (wet > 0.5) & (g > 0.45) & (th > 0.15)
-    gl |= (thick_cov > 0.6) & (wet > 0.5) & (th > 0.6) & (g > 0.985)
-    out = np.where(gl[:, None], NP._mix(out, np.array([214, 92, 88], np.float32),
-                                        np.full(len(out), 0.6, np.float32)), out)
+    gl = (thick > 0.6) & (above < 0.5) & (wet > 0.5) & (g > 0.35)
+    gl |= (thick > 0.6) & (wet > 0.5) & (depth > 0.5) & (g > 0.97)
+    out = np.where(gl[:, None], NP._mix(out, np.array([206, 86, 82], np.float32),
+                                        np.full(len(out), 0.55, np.float32)), out)
     res = rgb.copy()
     res[v] = out
     return res
@@ -1018,6 +1447,10 @@ def _fx(rgb, alpha, tm: TexMap, seed: int):
       hazard=周期    黄黒の斜め縞（警告テープ）。基準色の上に黒の縞
       sdf=関数       f(局所座標 (n,3) 箱の原点から, 箱の大きさ) → 符号付き距離（負が内側）。外は透明に
       border=(rgb, 幅)  sdf の縁取り（標識の白い縁）
+      chips=[(z, 半幅, 深さ), ...]  研いだ縁（局所 -Y が刃の線）の V 字の欠け。z は武器空間。欠けは透明
+      line=[(高さの割合, 幅, 濃さ), ...]  側面に長軸に沿った線（樋・グラインドの段・刃文の芯）
+      world=関数     f(P 武器空間 (n,3), N 法線 (n,3), L 局所 (n,3), size, col (n,3)) → col か (col, 抜く bool)
+                     武器空間で描く模様（刃文・打刻・溶接痕・焼き印）。キューブをまたいで繋がる
     """
     out = rgb.copy()
     a = alpha.copy()
@@ -1077,6 +1510,38 @@ def _fx(rgb, alpha, tm: TexMap, seed: int):
             p = float(fx["hazard"])
             g = np.floor((long_c + around) / p) % 2
             col = np.where((g == 1)[:, None], col * 0.16 + np.array([14, 13, 12], np.float32), col)
+        if "line" in fx:
+            hb = Lr[:, 1] / max(size[1], 1e-6)
+            for frac, wid, dark in fx["line"]:
+                dl = np.abs(hb - frac) * size[1]
+                m_ = side & (nax != 1) & (dl < wid / 2)
+                col = np.where(m_[:, None], col * (1.0 - dark), col)
+                hi_ = side & (nax != 1) & (dl >= wid / 2) & (dl < wid / 2 + 0.1) & (Lr[:, 1] < frac * size[1])
+                col = np.where(hi_[:, None], np.minimum(255, col * (1.0 + dark * 0.4) + 6), col)
+        if "chips" in fx:
+            Pw = tm.P[m]
+            cutm = np.zeros(len(Pw), bool)
+            for zc, hw, dep in fx["chips"]:
+                dz = np.abs(Pw[:, 2] - zc)
+                v = 1.0 - dz / hw
+                cutm |= (v > 0) & (Lr[:, 1] < dep * np.clip(v, 0, 1) ** 0.7)
+                # 欠けの周り（内側の縁）を少し暗く: 研ぎ直していない荒れ
+                rim_ = (v > -0.35) & (Lr[:, 1] < dep * 1.5) & ~cutm
+                col = np.where(rim_[:, None], col * 0.78, col)
+            am = a[m]
+            am[cutm] = 0
+            a[m] = am
+            col[cutm] = 0
+        if "world" in fx:
+            r = fx["world"](tm.P[m], tm.N[m], Lr, size, col)
+            if isinstance(r, tuple):
+                col, cutm = r
+                am = a[m]
+                am[np.asarray(cutm, bool)] = 0
+                a[m] = am
+                col = np.where(np.asarray(cutm, bool)[:, None], 0, col)
+            else:
+                col = r
         if "sdf" in fx:
             sd = np.asarray(fx["sdf"](Lr, size), np.float32)
             if "border" in fx:
@@ -1153,16 +1618,50 @@ def texture(wm: WeaponModel, book: Stylebook, seed: int, *, blood: Sequence[dict
         f = _ao(tm, ao_strength)
         rgb = np.where(glow[..., None], rgb, rgb * f[..., None])
     if edges:
+        rgb = np.where(glow[..., None], rgb, _steel_look(rgb, tm, seed + 4000))
         rgb = np.where(glow[..., None], rgb, _edge_shine(rgb, tm))
     if blood:
         rgb = np.where(glow[..., None], rgb, _blood(rgb, tm, blood, seed + 1000))
     alpha, rgb = _ragged(alpha, rgb, tm, seed + 2000)
+    if wm.cuts:
+        alpha, rgb = _cut_holes(alpha, rgb, tm, wm.cuts)
     # M2: 穴は (0,0,0,0)、発光以外の α は 255 か 0
     out = np.zeros_like(arr)
     out[..., :3] = np.clip(np.round(rgb), 0, 255).astype(np.uint8)
     out[..., 3] = alpha
     out[alpha == 0, :3] = 0
     return Image.fromarray(out, "RGBA")
+
+
+def _cut_holes(alpha, rgb, tm: TexMap, cuts):
+    """WeaponModel.cut() の円柱・角柱の中を透明に、周りを暗く。"""
+    v = tm.valid
+    P = tm.P[v]
+    a_ = alpha[v].copy()
+    col = rgb[v].copy()
+    for c in cuts:
+        d = P - c["c"]
+        t = d @ c["a"]
+        radial = d - np.outer(t, c["a"])
+        if c["shape"] == "square":
+            # 軸に直角な 2 方向のうち大きい方（チェビシェフ距離）
+            ref = np.array([0.0, 1.0, 0.0]) if abs(c["a"][1]) < 0.9 else np.array([1.0, 0.0, 0.0])
+            u = np.cross(c["a"], ref)
+            u = u / np.linalg.norm(u)
+            w = np.cross(c["a"], u)
+            rr = np.maximum(np.abs(radial @ u), np.abs(radial @ w))
+        else:
+            rr = np.linalg.norm(radial, axis=1)
+        inside = (np.abs(t) <= c["half"]) & (rr < c["r"])
+        rim = (np.abs(t) <= c["half"]) & (rr >= c["r"]) & (rr < c["r"] + c["rim"])
+        col[rim] = col[rim] * 0.55
+        a_[inside] = 0
+        col[inside] = 0
+    alpha = alpha.copy()
+    rgb = rgb.copy()
+    alpha[v] = a_
+    rgb[v] = col
+    return alpha, rgb
 
 
 def _painter_legacy() -> bool:
@@ -1277,16 +1776,16 @@ def hold_one_hand(wm: WeaponModel, *, grip=0.0, scale=1.0, pitch=38.0, yaw=-4.0,
         up = up * math.cos(a) + side * math.sin(a)
     anchor = (0.0, 0.0, grip)
     tp = place_tp(arm, frame(fwd, up), anchor, scale)
-    # 構え（右クリック長押しで溜める）: 刃を後ろ上へ倒す
-    q = math.radians(pitch + 62.0)
-    fwd_u = np.array([0.18, math.sin(q), -math.cos(q)])
-    up_u = np.array([0.0, math.cos(q), math.sin(q)])
+    # 構え（右クリック長押しで溜める）: 刃を外（-X = 右）・上・後ろへ担ぎ上げる（腕は垂れたままなので、
+    # 腕に沿わせず外へ逃がしてめり込ませない）。刃（-Y）は前上を向く
+    fwd_u = np.array([-0.42, 0.82, 0.38])
+    up_u = np.array([0.1, -0.45, 0.88])
     tp_use = place_tp(arm, frame(fwd_u, up_u), anchor, scale)
-    s_fp = _fp_scale(wm, 17.0, 0.5, 0.92)
-    fpd = dict(fwd=(-0.34, 0.66, 0.67), up=(0.55, 0.2, 0.75), cam_point=(9.0, -9.5, 14.0))
+    s_fp = _fp_scale(wm, 17.0, 0.55, 0.95)
+    fpd = dict(fwd=(-0.38, 0.6, 0.7), up=(0.55, 0.25, 0.75), cam_point=(7.6, -8.2, 11.0))
     fpd.update(fp or {})
     fpp = fp_place_cam(fpd["fwd"], fpd["up"], fpd["cam_point"], anchor, fpd.get("scale", s_fp))
-    fud = dict(fwd=(-0.12, 0.92, -0.12), up=(0.4, 0.15, 0.9), cam_point=(11.0, -8.0, 12.0))
+    fud = dict(fwd=(-0.3, 0.9, -0.2), up=(0.45, 0.2, 0.85), cam_point=(9.5, -7.5, 10.0))
     fud.update(use or {})
     fpu = fp_place_cam(fud["fwd"], fud["up"], fud["cam_point"], anchor, fud.get("scale", s_fp))
     return {"style": "one_hand", "arm_r": tuple(arm), "arm_l": None, "grip1": anchor, "grip2": None,
@@ -1307,21 +1806,21 @@ def hold_two_hand(wm: WeaponModel, *, style="two_hand", grip=0.0, scale=1.0, up=
     anchor = (0.0, 0.0, grip)
     tp = place_tp(ar, R, anchor, scale)
     grip2 = (0.0, 0.0, grip - d / scale)
-    # 構え: 柄を右の拳まわりに後ろへ倒して振りかぶる（左手は離れてよい — 一瞬の溜め）
-    ax = np.cross(fwd, np.array([0.0, 1.0, 0.0]))
-    ax = ax / (np.linalg.norm(ax) or 1)
-    a = math.radians(-55.0 if style == "two_hand" else 25.0)
-    K = np.array([[0, -ax[2], ax[1]], [ax[2], 0, -ax[0]], [-ax[1], ax[0], 0]])
-    Rot = np.eye(3) + math.sin(a) * K + (1 - math.cos(a)) * K @ K
-    tp_use = place_tp(ar, Rot @ R, anchor, scale)
+    # 構え（右クリック長押しで溜める。腕は構えの角度のまま、左手は柄から離れてよい — 一瞬の溜め）:
+    #   両手: 右の拳から真上へ立て、顔の右前に掲げる（刃は前）。体の前・頭の右を通るのでめり込まない
+    #   槍:   穂先を前に向けたまま、肘を引くように手元へ引き寄せる（突きの溜め）
+    if style == "two_hand":
+        tp_use = place_tp(ar, frame((-0.3, 0.95, -0.1), (0.05, 0.1, 1.0)), anchor, scale)
+    else:
+        tp_use = place_tp(ar, R, (0.0, 0.0, grip - 3.0 / scale), scale)
     if style == "spear":
         s_fp = _fp_scale(wm, 21.0, 0.42, 0.8)
         fpd = dict(fwd=(-0.22, 0.20, 0.95), up=(0.0, 1.0, 0.1), cam_point=(7.5, -8.5, 6.0))
-        fud = dict(fwd=(-0.16, 0.10, 0.98), up=(0.0, 1.0, 0.1), cam_point=(9.5, -7.0, 1.0))
+        fud = dict(fwd=(-0.16, 0.10, 0.98), up=(0.0, 1.0, 0.1), cam_point=(9.0, -7.5, 2.5))
     else:
-        s_fp = _fp_scale(wm, 24.0, 0.42, 0.85)
-        fpd = dict(fwd=(-0.52, 0.72, 0.45), up=(0.35, 0.25, 0.9), cam_point=(11.0, -12.5, 15.0))
-        fud = dict(fwd=(-0.05, 0.75, -0.62), up=(0.3, 0.6, 0.75), cam_point=(12.5, -9.0, 13.0))
+        s_fp = _fp_scale(wm, 22.0, 0.45, 0.9)
+        fpd = dict(fwd=(-0.5, 0.7, 0.5), up=(0.35, 0.25, 0.9), cam_point=(9.0, -10.0, 12.5))
+        fud = dict(fwd=(0.18, 0.92, 0.34), up=(0.2, -0.35, 0.9), cam_point=(9.5, -9.5, 12.0))
     fpd.update(fp or {})
     fud.update(use or {})
     fpp = fp_place_cam(fpd["fwd"], fpd["up"], fpd["cam_point"], anchor, fpd.get("scale", s_fp))
@@ -1654,8 +2153,13 @@ def _composite(wm: WeaponModel, tex: Image.Image, with_player=True):
             if parent:
                 bb["parent"] = parent
             bones.append(bb)
+    # 武器のボーン名はプレイヤーの骨格（root など）と重なるので、hold 以外に接頭辞を付ける
+    ren = {b["name"]: (b["name"] if b["name"] == "hold" else "wpn_" + b["name"]) for b in g["bones"]}
     for b in g["bones"]:
         b = dict(b)
+        b["name"] = ren[b["name"]]
+        if b.get("parent"):
+            b["parent"] = ren.get(b["parent"], b["parent"])
         if b["name"] == "hold":
             b.pop("binding", None)
             b["parent"] = "rightItem"

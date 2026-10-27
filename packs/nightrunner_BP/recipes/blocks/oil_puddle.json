@@ -1,0 +1,29 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "nr:craft_block_oil_puddle"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "nr:alcohol",
+        "count": 2
+      },
+      {
+        "item": "nr:chemicals"
+      }
+    ],
+    "unlock": [
+      {
+        "item": "nr:alcohol"
+      }
+    ],
+    "result": {
+      "item": "nr:oil_puddle",
+      "count": 3
+    }
+  }
+}

@@ -13,6 +13,7 @@ export const STATE = {
   startupOk: false, worldLoaded: false, ticks: 0, hits: [], formResults: [], buttons: [], scriptEvents: [],
   used: 0, weaponHits: 0, weaponParams: undefined, stepped: 0, trapTicks: 0, jobDone: 0, waited: undefined,
   died: 0, deadEvents: 0, projHits: 0, projLoc: undefined, spawnedCauses: [], removed: [], early: system.currentTick,
+  randomTicks: 0, leftBefore: [], leftAfter: [], formErrors: [],
 };
 
 // ---- 起動 -------------------------------------------------------------------------------
@@ -29,6 +30,7 @@ system.beforeEvents.startup.subscribe((ev) => {
       STATE.stepped++;
     },
     onTick() { STATE.trapTicks++; },
+    onRandomTick() { STATE.randomTicks++; },
   });
   ev.customCommandRegistry.registerCommand(
     { name: "nr:selftest", description: "self test", permissionLevel: CommandPermissionLevel.Any, cheatsRequired: false,
@@ -89,6 +91,10 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
   STATE.projLoc = ev.location;
 });
 
+// ---- 抜ける（before で名前を読む。after ではもう Player は無い） ----------------------------------
+world.beforeEvents.playerLeave.subscribe((ev) => { STATE.leftBefore.push(ev.player.name); });
+world.afterEvents.playerLeave.subscribe((ev) => { STATE.leftAfter.push(ev.playerName); });
+
 // ---- 入力 ----------------------------------------------------------------------------------
 world.afterEvents.playerButtonInput.subscribe((ev) => {
   STATE.buttons.push(`${ev.button}:${ev.newButtonState}`);
@@ -100,7 +106,7 @@ world.beforeEvents.itemUse.subscribe((ev) => {
   if (ev.itemStack.typeId !== "nr:test_terminal") return;
   ev.cancel = true;
   const p = ev.source;
-  system.run(() => { terminal(p).catch((e) => console.warn("[nr] form", e)); });
+  system.run(() => { terminal(p).catch((e) => { STATE.formErrors.push(e?.reason ?? String(e)); console.warn("[nr] form", e); }); });
 });
 
 /** @param {Player} p */

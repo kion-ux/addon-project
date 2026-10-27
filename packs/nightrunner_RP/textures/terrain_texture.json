@@ -3,5 +3,123 @@
   "texture_name": "atlas.terrain",
   "padding": 8,
   "num_mip_levels": 4,
-  "texture_data": {}
+  "texture_data": {
+    "nr_ac_unit": {
+      "textures": "textures/nr/blocks/ac_unit"
+    },
+    "nr_barbed_wire": {
+      "textures": "textures/nr/blocks/barbed_wire"
+    },
+    "nr_barricade": {
+      "textures": "textures/nr/blocks/barricade"
+    },
+    "nr_bear_trap": {
+      "textures": "textures/nr/blocks/bear_trap"
+    },
+    "nr_blood_pool": {
+      "textures": "textures/nr/blocks/blood_pool"
+    },
+    "nr_broken_window": {
+      "textures": "textures/nr/blocks/broken_window"
+    },
+    "nr_chainlink_fence": {
+      "textures": "textures/nr/blocks/chainlink_fence"
+    },
+    "nr_crafting_bench": {
+      "textures": "textures/nr/blocks/crafting_bench"
+    },
+    "nr_debris_scatter": {
+      "textures": "textures/nr/blocks/debris_scatter"
+    },
+    "nr_electric_trap": {
+      "textures": "textures/nr/blocks/electric_trap"
+    },
+    "nr_fire_barrel": {
+      "textures": "textures/nr/blocks/fire_barrel"
+    },
+    "nr_fuel_canister": {
+      "textures": "textures/nr/blocks/fuel_canister"
+    },
+    "nr_gas_pipe": {
+      "textures": "textures/nr/blocks/gas_pipe"
+    },
+    "nr_gore_remains": {
+      "textures": "textures/nr/blocks/gore_remains"
+    },
+    "nr_graffiti_panel": {
+      "textures": "textures/nr/blocks/graffiti_panel"
+    },
+    "nr_med_cabinet": {
+      "textures": "textures/nr/blocks/med_cabinet"
+    },
+    "nr_metal_barricade": {
+      "textures": "textures/nr/blocks/metal_barricade"
+    },
+    "nr_oil_puddle": {
+      "textures": "textures/nr/blocks/oil_puddle"
+    },
+    "nr_road_barrier": {
+      "textures": "textures/nr/blocks/road_barrier"
+    },
+    "nr_road_sign": {
+      "textures": "textures/nr/blocks/road_sign"
+    },
+    "nr_roof_vent": {
+      "textures": "textures/nr/blocks/roof_vent"
+    },
+    "nr_rubble_pile": {
+      "textures": "textures/nr/blocks/rubble_pile"
+    },
+    "nr_sandbags": {
+      "textures": "textures/nr/blocks/sandbags"
+    },
+    "nr_scaffold_platform": {
+      "textures": "textures/nr/blocks/scaffold_platform"
+    },
+    "nr_spike_trap": {
+      "textures": "textures/nr/blocks/spike_trap"
+    },
+    "nr_street_lamp_base": {
+      "textures": "textures/nr/blocks/street_lamp_base"
+    },
+    "nr_street_lamp_head": {
+      "textures": "textures/nr/blocks/street_lamp_head"
+    },
+    "nr_street_lamp_pole": {
+      "textures": "textures/nr/blocks/street_lamp_pole"
+    },
+    "nr_survivor_stash": {
+      "textures": "textures/nr/blocks/survivor_stash"
+    },
+    "nr_tire_stack": {
+      "textures": "textures/nr/blocks/tire_stack"
+    },
+    "nr_traffic_cone": {
+      "textures": "textures/nr/blocks/traffic_cone"
+    },
+    "nr_trash_bags": {
+      "textures": "textures/nr/blocks/trash_bags"
+    },
+    "nr_tripwire_mine": {
+      "textures": "textures/nr/blocks/tripwire_mine"
+    },
+    "nr_uv_lamp": {
+      "textures": "textures/nr/blocks/uv_lamp"
+    },
+    "nr_uv_shroom_patch": {
+      "textures": "textures/nr/blocks/uv_shroom_patch"
+    },
+    "nr_uv_trap": {
+      "textures": "textures/nr/blocks/uv_trap"
+    },
+    "nr_water_tower_leg": {
+      "textures": "textures/nr/blocks/water_tower_leg"
+    },
+    "nr_wooden_crate": {
+      "textures": "textures/nr/blocks/wooden_crate"
+    },
+    "nr_zipline_anchor": {
+      "textures": "textures/nr/blocks/zipline_anchor"
+    }
+  }
 }

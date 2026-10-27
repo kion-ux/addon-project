@@ -1,0 +1,71 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:w_buzzsaw_glaive",
+      "menu_category": {
+        "category": "equipment",
+        "group": "minecraft:itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_w_buzzsaw_glaive",
+      "minecraft:display_name": {
+        "value": "item.nr:w_buzzsaw_glaive"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:durability": {
+        "max_durability": 360,
+        "damage_chance": {
+          "min": 100,
+          "max": 100
+        }
+      },
+      "minecraft:damage": 9,
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 18
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "nr:scrap"
+            ],
+            "repair_amount": "query.max_durability * 0.25"
+          },
+          {
+            "items": [
+              "nr:w_buzzsaw_glaive"
+            ],
+            "repair_amount": "context.other->query.remaining_durability + 0.12 * context.other->query.max_durability"
+          }
+        ]
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:swing_duration": {
+        "value": 0.61
+      },
+      "minecraft:rarity": "epic",
+      "minecraft:tags": {
+        "tags": [
+          "minecraft:is_sword",
+          "nr:weapon",
+          "nr:melee",
+          "nr:slash_2h",
+          "nr:slash",
+          "nr:heavy",
+          "nr:cls_two_hand_blade"
+        ]
+      },
+      "nr:weapon": {
+        "key": "buzzsaw_glaive"
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 30.0,
+        "movement_modifier": 0.48
+      }
+    }
+  }
+}

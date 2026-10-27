@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_barbed_wire"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SBS",
+      "BSB",
+      "SBS"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "S": {
+        "item": "nr:scrap"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:barbed_wire",
+      "count": 4
+    }
+  }
+}

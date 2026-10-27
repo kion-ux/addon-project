@@ -54,6 +54,8 @@ function optsOk(o, keys, what) {
   if (o.tooltip !== undefined) rawOk(o.tooltip, `${what} の tooltip`);
   return o;
 }
+// オプションの辞書のキーは d.ts（ModalFormData*Options）から。読めなければ 2.0.0 の値
+const uiKeys = (n, fb) => (UI.interfaces?.[n]?.length ? UI.interfaces[n] : fb);
 const INPUTS = new Set(["slider", "toggle", "dropdown", "textField"]);
 const DECOR = new Set(["label", "header", "divider"]);
 function layoutOk(f) {
@@ -184,7 +186,7 @@ export class ModalFormData {
     if (arguments.length > 3 || typeof opts === "number") throw violation("ui", `dropdown(${fmt(textOf(label))}, items, ${fmt(opts)}) は server-ui 1.x の形。2.0.0 は dropdown(label, items, {defaultValueIndex})`, TypeError);
     check(Array.isArray(items) && items.length > 0, "ui", `dropdown の items は空でない配列: ${fmt(items)}`, TypeError);
     items.forEach((x) => rawOk(x, "dropdown の項目"));
-    const o = optsOk(opts, ["defaultValueIndex", "tooltip"], "dropdown");
+    const o = optsOk(opts, uiKeys("ModalFormDataDropdownOptions", ["defaultValueIndex", "tooltip"]), "dropdown");
     if (o.defaultValueIndex !== undefined) check(Number.isInteger(o.defaultValueIndex) && o.defaultValueIndex >= 0 && o.defaultValueIndex < items.length, "ui", `dropdown の defaultValueIndex ${o.defaultValueIndex}（0〜${items.length - 1}）`);
     this._f.controls.push({ type: "dropdown", label: textOf(label), items: items.map(textOf), defaultValueIndex: o.defaultValueIndex });
     return this;
@@ -193,7 +195,7 @@ export class ModalFormData {
     rawOk(label, "slider の label");
     if (arguments.length > 4 || typeof opts === "number") throw violation("ui", `slider(${fmt(textOf(label))}, ${min}, ${max}, ${fmt(opts)}, …) は server-ui 1.x の形（step, default）。2.0.0 は slider(label, min, max, {defaultValue, valueStep})`, TypeError);
     check(Number.isFinite(min) && Number.isFinite(max) && min < max, "ui", `slider の範囲 ${min}〜${max}`);
-    const o = optsOk(opts, ["defaultValue", "tooltip", "valueStep"], "slider");
+    const o = optsOk(opts, uiKeys("ModalFormDataSliderOptions", ["defaultValue", "tooltip", "valueStep"]), "slider");
     if (o.valueStep !== undefined) check(Number.isFinite(o.valueStep) && o.valueStep > 0, "ui", `slider の valueStep ${o.valueStep}`);
     if (o.defaultValue !== undefined) check(Number.isFinite(o.defaultValue) && o.defaultValue >= min && o.defaultValue <= max, "ui", `slider の defaultValue ${o.defaultValue}（${min}〜${max}）`);
     this._f.controls.push({ type: "slider", label: textOf(label), min, max, defaultValue: o.defaultValue, valueStep: o.valueStep ?? 1 });
@@ -202,7 +204,7 @@ export class ModalFormData {
   textField(label, placeholder, opts) {
     rawOk(label, "textField の label"); rawOk(placeholder, "textField の placeholder");
     if (arguments.length > 3 || typeof opts === "string") throw violation("ui", `textField(label, placeholder, ${fmt(opts)}) は server-ui 1.x の形。2.0.0 は textField(label, placeholder, {defaultValue})`, TypeError);
-    const o = optsOk(opts, ["defaultValue", "tooltip"], "textField");
+    const o = optsOk(opts, uiKeys("ModalFormDataTextFieldOptions", ["defaultValue", "tooltip"]), "textField");
     if (o.defaultValue !== undefined) check(typeof o.defaultValue === "string", "ui", `textField の defaultValue は文字列: ${fmt(o.defaultValue)}`);
     this._f.controls.push({ type: "textField", label: textOf(label), placeholder: textOf(placeholder), defaultValue: o.defaultValue });
     return this;
@@ -210,7 +212,7 @@ export class ModalFormData {
   toggle(label, opts) {
     rawOk(label, "toggle の label");
     if (arguments.length > 2 || typeof opts === "boolean") throw violation("ui", `toggle(${fmt(textOf(label))}, ${fmt(opts)}) は server-ui 1.x の形。2.0.0 は toggle(label, {defaultValue})`, TypeError);
-    const o = optsOk(opts, ["defaultValue", "tooltip"], "toggle");
+    const o = optsOk(opts, uiKeys("ModalFormDataToggleOptions", ["defaultValue", "tooltip"]), "toggle");
     if (o.defaultValue !== undefined) check(typeof o.defaultValue === "boolean", "ui", `toggle の defaultValue は bool: ${fmt(o.defaultValue)}`);
     this._f.controls.push({ type: "toggle", label: textOf(label), defaultValue: o.defaultValue });
     return this;

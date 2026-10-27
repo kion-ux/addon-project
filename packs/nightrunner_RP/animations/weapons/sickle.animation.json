@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.sickle.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            7.99,
+            3.9,
+            0.55
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.sickle.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -49.07,
+            -3.12,
+            165.67
+          ],
+          "position": [
+            -0.62,
+            26.7,
+            0.17
+          ],
+          "scale": [
+            0.92,
+            0.92,
+            0.92
+          ]
+        }
+      }
+    },
+    "animation.nr.w.sickle.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -54.43,
+            -5.98,
+            8.29
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.sickle.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -20.42,
+            -52.27,
+            171.64
+          ],
+          "position": [
+            -3.59,
+            26.45,
+            1.33
+          ],
+          "scale": [
+            0.92,
+            0.92,
+            0.92
+          ]
+        }
+      }
+    }
+  }
+}

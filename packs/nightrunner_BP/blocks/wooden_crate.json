@@ -1,0 +1,103 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:wooden_crate",
+      "menu_category": {
+        "category": "items"
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.nr.b.wooden_crate",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_wooden_crate",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -7,
+          0,
+          -7
+        ],
+        "size": [
+          14,
+          14,
+          14
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -7,
+          0,
+          -7
+        ],
+        "size": [
+          14,
+          14,
+          14
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#9a7448",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "minecraft:flammable": {
+        "catch_chance_modifier": 5,
+        "destroy_chance_modifier": 20
+      },
+      "minecraft:loot": "loot_tables/nr_blocks/wooden_crate.json"
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

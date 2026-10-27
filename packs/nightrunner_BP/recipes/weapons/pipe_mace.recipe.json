@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_pipe_mace"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SIS",
+      " I ",
+      " T "
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "S": {
+        "item": "nr:scrap"
+      },
+      "T": {
+        "item": "nr:duct_tape"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:w_pipe_mace",
+      "count": 1
+    }
+  }
+}

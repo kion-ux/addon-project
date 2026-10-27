@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_scaffold_platform"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PPP",
+      "I I",
+      "I I"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "P": {
+        "item": "minecraft:oak_planks"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:oak_planks"
+      }
+    ],
+    "result": {
+      "item": "nr:scaffold_platform",
+      "count": 2
+    }
+  }
+}

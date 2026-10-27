@@ -35,6 +35,16 @@ const BAD = {
   budget: ["budget", "1 tick にパーティクル 320 個"],
   global: ["global", "setTimeout（ゲームに無い）"],
   dimension_query: ["query", "location の無い maxDistance"],
+  molang_nan: ["molang", "NaN の Molang 値"],
+  ui_layout_modal: ["ui", "ModalForm の入力の間の divider"],
+  ui_dropdown_v1: ["ui", "server-ui 1.x の dropdown(label, items, 1)"],
+  struct_palette: ["structure", "パレットに BP に無いブロックがある構造物"],
+  effect: ["effect", "無い効果"],
+  spawn_event: ["event", "無い spawnEvent"],
+  prop_typo: ["property", "どの BP エンティティにも無いプロパティを読む（綴り違い）"],
+  lore: ["item", "lore の行が 50 文字超（§ も数える）"],
+  options_query: ["options", "getEntities のオプションの綴り違い（famillies）"],
+  options_anim: ["options", "playAnimation のオプションの綴り違い（blendOuttime）"],
 };
 for (const [c, [kind, what]] of Object.entries(BAD)) {
   test(`bad[${kind}] ${c}: ${what}（アドオンが握りつぶしても失敗）`, async () => {
@@ -44,7 +54,8 @@ for (const [c, [kind, what]] of Object.entries(BAD)) {
   });
 }
 
-for (const [mode, what] of [["write", "applyDamage"], ["form", "フォームの show"], ["subscribe", "subscribe"]]) {
+for (const [mode, what] of [["write", "applyDamage"], ["form", "フォームの show"], ["subscribe", "subscribe"],
+  ["setter", "書けるプロパティ（selectedSlotIndex）への代入"], ["property", "setProperty"]]) {
   test(`bad[readonly] before イベントの中で ${what}`, async () => {
     const { p } = setup();
     await scriptEvent("nr:mode", mode);
@@ -56,6 +67,7 @@ for (const [mode, what] of [["write", "applyDamage"], ["form", "フォームの 
 
 test("bad[error] 購読者の中の捕まらない例外", async () => { setup(); await scriptEvent("nr:throw"); });
 test("bad[error] system.run の中の捕まらない例外", async () => { setup(); await scriptEvent("nr:run_throw"); await tick(1); });
+test("bad[error] 捕まらない Promise の reject", async () => { setup(); await scriptEvent("nr:reject"); await tick(1); });
 test("bad[console] アドオンの console.error", async () => { setup(); await scriptEvent("nr:console"); });
 test("bad[expect] expect の失敗", async () => { expect(1 + 1).toBe(3); });
 test("bad[expect] 起きなかった違反を expectViolation で待つ", async () => { await expectViolation(() => {}, "particle"); });

@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_nail_bat"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "NPN",
+      " P ",
+      " T "
+    ],
+    "key": {
+      "N": {
+        "item": "nr:scrap"
+      },
+      "P": {
+        "item": "minecraft:oak_planks"
+      },
+      "T": {
+        "item": "nr:duct_tape"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:w_nail_bat",
+      "count": 1
+    }
+  }
+}

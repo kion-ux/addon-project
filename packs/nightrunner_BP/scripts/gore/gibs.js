@@ -67,14 +67,14 @@ const gibs = new Map();
 function lifetimeTicks() { return Math.round(clamp(num("gib_lifetime_s", 60), 1, 3600) * 20); }
 function maxGibs() { return Math.round(clamp(num("max_gibs", 48), 0, 256)); }
 
-/** 部位 → nr:part の番号（名前でも数でも）。@param {string | number} part */
+/** 部位 → nr:part の番号（名前でも数でも）。 @param {string | number} part */
 export function gibPart(part) {
   if (typeof part === "number") return clamp(Math.round(part), 0, 15);
   const v = /** @type {Record<string, number>} */ (GIB)[part];
   return v === undefined ? GIB.chunk : v;
 }
 
-/** gib の出る位置（部位の箱・ロケータから）。@param {Entity} z @param {number} p */
+/** gib の出る位置（部位の箱・ロケータから）。 @param {Entity} z @param {number} p */
 function spawnPos(z, p) {
   try {
     switch (p) {
@@ -148,7 +148,7 @@ export function spawnGib(zombie, part, dir, power = 1, o = {}) {
 /**
  * 汎用の肉片（腸・脳・肉・骨・目玉）をまとめて出す。G で数を減らす。出した数を返す。
  * @param {Entity} zombie @param {number} n G = 100 での数 @param {Vector3} dir @param {number} [power]
- * @param {number[]} [parts] 選ぶ nr:part（既定は 13 肉片・14 骨）@param {{at?: Vector3}} [o]
+ * @param {number[]} [parts] 選ぶ nr:part（既定は 13 肉片・14 骨） @param {{at?: Vector3}} [o]
  */
 export function spawnChunks(zombie, n, dir, power = 1, parts = [GIB.chunk, GIB.chunk, GIB.bone], o = {}) {
   const k = Math.round(n * gore());
@@ -161,7 +161,7 @@ export function spawnChunks(zombie, n, dir, power = 1, parts = [GIB.chunk, GIB.c
   return made;
 }
 
-/** 速度を足して飛ばす（重さ・空気は無視。上向きの成分を必ず足す）。@param {Entity} e @param {Vector3} dir @param {number} power */
+/** 速度を足して飛ばす（重さ・空気は無視。上向きの成分を必ず足す）。 @param {Entity} e @param {Vector3} dir @param {number} power */
 function fling(e, dir, power) {
   const d = norm({ x: dir.x, y: 0, z: dir.z }, { x: rand(-1, 1), y: 0, z: rand(-1, 1) });
   const p = clamp(power, 0, 2.5);
@@ -197,7 +197,7 @@ export function clearGibs() { for (const rec of gibs.values()) despawn(rec.e); g
 /** 登録中の gib（テスト・デバッグ用の写し）。 */
 export function gibList() { return [...gibs.values()].map((r) => r.e); }
 
-/** 寿命の終わり（炭になる種類は灰を散らす）。@param {string} id @param {GibRec} rec */
+/** 寿命の終わり（炭になる種類は灰を散らす）。 @param {string} id @param {GibRec} rec */
 function expire(id, rec) {
   gibs.delete(id);
   if (rec.crumble && valid(rec.e)) {

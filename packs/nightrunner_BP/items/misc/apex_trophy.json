@@ -1,0 +1,26 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:apex_trophy",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_apex_trophy",
+      "minecraft:display_name": {
+        "value": "item.nr:apex_trophy"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:rarity": "epic",
+      "minecraft:glint": true,
+      "minecraft:tags": {
+        "tags": [
+          "nr:item",
+          "nr:trophy"
+        ]
+      }
+    }
+  }
+}

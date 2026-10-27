@@ -3,5 +3,122 @@
     1,
     1,
     0
-  ]
+  ],
+  "nr:ac_unit": {
+    "sound": "metal"
+  },
+  "nr:barbed_wire": {
+    "sound": "chain"
+  },
+  "nr:barricade": {
+    "sound": "wood"
+  },
+  "nr:bear_trap": {
+    "sound": "metal"
+  },
+  "nr:blood_pool": {
+    "sound": "slime"
+  },
+  "nr:broken_window": {
+    "sound": "glass"
+  },
+  "nr:chainlink_fence": {
+    "sound": "chain"
+  },
+  "nr:crafting_bench": {
+    "sound": "wood"
+  },
+  "nr:debris_scatter": {
+    "sound": "gravel"
+  },
+  "nr:electric_trap": {
+    "sound": "metal"
+  },
+  "nr:fire_barrel": {
+    "sound": "metal"
+  },
+  "nr:fuel_canister": {
+    "sound": "metal"
+  },
+  "nr:gas_pipe": {
+    "sound": "metal"
+  },
+  "nr:gore_remains": {
+    "sound": "bone_block"
+  },
+  "nr:graffiti_panel": {
+    "sound": "wood"
+  },
+  "nr:med_cabinet": {
+    "sound": "metal"
+  },
+  "nr:metal_barricade": {
+    "sound": "metal"
+  },
+  "nr:oil_puddle": {
+    "sound": "slime"
+  },
+  "nr:road_barrier": {
+    "sound": "stone"
+  },
+  "nr:road_sign": {
+    "sound": "metal"
+  },
+  "nr:roof_vent": {
+    "sound": "metal"
+  },
+  "nr:rubble_pile": {
+    "sound": "gravel"
+  },
+  "nr:sandbags": {
+    "sound": "sand"
+  },
+  "nr:scaffold_platform": {
+    "sound": "scaffolding"
+  },
+  "nr:spike_trap": {
+    "sound": "wood"
+  },
+  "nr:street_lamp_base": {
+    "sound": "metal"
+  },
+  "nr:street_lamp_head": {
+    "sound": "lantern"
+  },
+  "nr:street_lamp_pole": {
+    "sound": "metal"
+  },
+  "nr:survivor_stash": {
+    "sound": "metal"
+  },
+  "nr:tire_stack": {
+    "sound": "cloth"
+  },
+  "nr:traffic_cone": {
+    "sound": "bamboo_wood"
+  },
+  "nr:trash_bags": {
+    "sound": "cloth"
+  },
+  "nr:tripwire_mine": {
+    "sound": "metal"
+  },
+  "nr:uv_lamp": {
+    "sound": "lantern"
+  },
+  "nr:uv_shroom_patch": {
+    "sound": "slime"
+  },
+  "nr:uv_trap": {
+    "sound": "lantern"
+  },
+  "nr:water_tower_leg": {
+    "sound": "metal"
+  },
+  "nr:wooden_crate": {
+    "sound": "wood"
+  },
+  "nr:zipline_anchor": {
+    "sound": "metal"
+  }
 }

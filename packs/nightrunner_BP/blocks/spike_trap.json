@@ -1,0 +1,126 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:spike_trap",
+      "menu_category": {
+        "category": "items"
+      },
+      "states": {
+        "nr:trap_state": [
+          "armed",
+          "triggered"
+        ],
+        "nr:wear": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.nr.b.spike_trap",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_spike_trap",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -8,
+          0,
+          -8
+        ],
+        "size": [
+          16,
+          4,
+          16
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -8,
+          0,
+          -8
+        ],
+        "size": [
+          16,
+          2,
+          16
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#6a5a4a",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 2.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "minecraft:tick": {
+        "interval_range": [
+          5,
+          5
+        ],
+        "looping": true
+      },
+      "nr:trap": {
+        "key": "spike_trap",
+        "trigger": "step",
+        "state": "nr:trap_state",
+        "who": "any_mob",
+        "wear_state": "nr:wear",
+        "rearm": "durable",
+        "poll": false
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

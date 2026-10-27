@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_kukri"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " B",
+      "BS",
+      "L "
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "L": {
+        "item": "minecraft:leather"
+      },
+      "S": {
+        "item": "nr:scrap"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:blades"
+      }
+    ],
+    "result": {
+      "item": "nr:w_kukri",
+      "count": 1
+    }
+  }
+}

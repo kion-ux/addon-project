@@ -29,13 +29,13 @@ const BY_KEY = new Map();
   arr.forEach((z, i) => { if (z && z.key) BY_KEY.set(String(z.key), { ...z, ztype: Number.isInteger(z.ztype) ? z.ztype : i }); });
 }
 
-/** ゾンビの spec（鍵・ID・エンティティのどれでも）。無ければ undefined。@param {string | Entity | undefined} k */
+/** ゾンビの spec（鍵・ID・エンティティのどれでも）。無ければ undefined。 @param {string | Entity | undefined} k */
 export function zombieSpec(k) {
   if (!k) return undefined;
   const key = typeof k === "string" ? (k.startsWith("nr:z_") ? k.slice(5) : k) : zkey(k.typeId);
   return BY_KEY.get(key);
 }
-/** 種類番号（ZOMBIES の並び。不明は 63 = 汎用）。@param {string | Entity | undefined} k */
+/** 種類番号（ZOMBIES の並び。不明は 63 = 汎用）。 @param {string | Entity | undefined} k */
 export function ztypeOf(k) {
   const s = zombieSpec(k);
   if (s) return s.ztype;
@@ -45,7 +45,7 @@ export function ztypeOf(k) {
 export function zombieKeys() { return [...BY_KEY.keys()]; }
 
 // ---- 体力 -----------------------------------------------------------------------------------
-/** 種類の基本体力 × 難易度 × 人数。@param {string} key */
+/** 種類の基本体力 × 難易度 × 人数。 @param {string} key */
 export function baseHp(key) {
   const s = zombieSpec(key);
   const hp = Number(s?.hp) > 0 ? Number(s.hp) : 20;
@@ -72,7 +72,7 @@ export function initHp(z, hp) {
   return true;
 }
 
-/** 本当の体力（無ければ初期化してから）。@param {Entity} z */
+/** 本当の体力（無ければ初期化してから）。 @param {Entity} z */
 export function hpOf(z) {
   if (!valid(z)) return 0;
   const v = dpNum(z, HP_KEY, NaN);
@@ -80,7 +80,7 @@ export function hpOf(z) {
   initHp(z);
   return dpNum(z, HP_KEY, 0);
 }
-/** 最大体力。@param {Entity} z */
+/** 最大体力。 @param {Entity} z */
 export function maxHpOf(z) {
   if (!valid(z)) return 1;
   const v = dpNum(z, HP_MAX_KEY, NaN);
@@ -88,10 +88,10 @@ export function maxHpOf(z) {
   initHp(z);
   return Math.max(1, dpNum(z, HP_MAX_KEY, 1));
 }
-/** 体力の割合 0..1。@param {Entity} z */
+/** 体力の割合 0..1。 @param {Entity} z */
 export function hpFraction(z) { return clamp(hpOf(z) / maxHpOf(z), 0, 1); }
 
-/** 体力を書く（0..最大に丸める）。書いた値を返す。@param {Entity} z @param {number} v */
+/** 体力を書く（0..最大に丸める）。書いた値を返す。 @param {Entity} z @param {number} v */
 export function setHp(z, v) {
   if (!valid(z)) return 0;
   const max = maxHpOf(z);
@@ -99,10 +99,10 @@ export function setHp(z, v) {
   z.setDynamicProperty(HP_KEY, n);
   return n;
 }
-/** 体力を足す（負で減る）。新しい値を返す。@param {Entity} z @param {number} d */
+/** 体力を足す（負で減る）。新しい値を返す。 @param {Entity} z @param {number} d */
 export function addHp(z, d) { return setHp(z, hpOf(z) + d); }
 
-/** 最大体力を変える（今の割合を保つ）。@param {Entity} z @param {number} max */
+/** 最大体力を変える（今の割合を保つ）。 @param {Entity} z @param {number} max */
 export function setMaxHp(z, max) {
   if (!valid(z) || !(max > 0)) return;
   const f = hpFraction(z);
@@ -110,7 +110,7 @@ export function setMaxHp(z, max) {
   z.setDynamicProperty(HP_KEY, max * f);
 }
 
-/** minecraft:health のプールを満タンへ（バニラの死を防ぐ）。@param {Entity} z */
+/** minecraft:health のプールを満タンへ（バニラの死を防ぐ）。 @param {Entity} z */
 export function resetPool(z) {
   if (!valid(z)) return;
   try { z.getComponent("minecraft:health")?.resetToMaxValue(); } catch { /* 死体・無効 */ }
@@ -145,7 +145,7 @@ export function consumeReservation(z, cause) {
   return i >= 0;
 }
 
-/** 予約を取り消す（applyDamage が通らなかった時）。@param {Entity} z @param {string} cause */
+/** 予約を取り消す（applyDamage が通らなかった時）。 @param {Entity} z @param {string} cause */
 function unreserve(z, cause) {
   const list = reservations.get(z.id);
   if (!list) return;
@@ -174,7 +174,7 @@ export function hurtVanilla(z, amount = 1, attacker, cause = EntityDamageCause.o
   return ok;
 }
 
-/** 消えたエンティティの予約を捨てる。@param {string} id */
+/** 消えたエンティティの予約を捨てる。 @param {string} id */
 export function forget(id) { reservations.delete(id); }
 
 world.afterEvents.entityRemove.subscribe((ev) => { if (ev.typeId.startsWith("nr:z_")) reservations.delete(ev.removedEntityId); });

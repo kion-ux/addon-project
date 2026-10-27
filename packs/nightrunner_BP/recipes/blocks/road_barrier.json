@@ -1,0 +1,29 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_road_barrier"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "CCC",
+      "CCC"
+    ],
+    "key": {
+      "C": {
+        "item": "minecraft:smooth_stone"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:smooth_stone"
+      }
+    ],
+    "result": {
+      "item": "nr:road_barrier",
+      "count": 2
+    }
+  }
+}

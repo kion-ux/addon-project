@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_uv_trap"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "UGU",
+      "SBS",
+      "S S"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:battery"
+      },
+      "G": {
+        "item": "minecraft:glass_pane"
+      },
+      "S": {
+        "item": "nr:scrap"
+      },
+      "U": {
+        "item": "nr:uv_shroom"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:uv_shroom"
+      }
+    ],
+    "result": {
+      "item": "nr:uv_trap",
+      "count": 1
+    }
+  }
+}

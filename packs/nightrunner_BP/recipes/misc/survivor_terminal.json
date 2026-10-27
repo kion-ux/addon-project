@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_survivor_terminal"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SGS",
+      "SRS",
+      "SBS"
+    ],
+    "key": {
+      "S": {
+        "item": "nr:scrap"
+      },
+      "G": {
+        "item": "minecraft:glass_pane"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "B": {
+        "item": "nr:battery"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:survivor_terminal",
+      "count": 1
+    }
+  }
+}

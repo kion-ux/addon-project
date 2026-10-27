@@ -13,14 +13,20 @@
   （実機の "does not have required privileges"）。「early-execution で呼べる」と書かれていない
   World / Dimension などの関数と `new ItemStack`・`BlockPermutation.resolve` を worldLoad 前に呼ぶと例外
 * 偽物がまだ持っていない実機の関数を呼ぶと「偽物の限界」と分かる例外（アドオンの不具合と区別する）
-* 実機に無いメソッド（例 MolangVariableMap.setVector3 は 2.3.0 に無い）は偽物にも無い（自己テストで確かめる）
+* d.ts に書かれた実機の振る舞いに合わせる: `setProperty`（と `triggerEvent` の set_property）の値は次の tick まで
+  `getProperty` に出ない（server:L7592）、定義に無いプロパティの `getProperty` は undefined、名前空間の無い
+  イベント名は `minecraft:`、カスタムコンポーネントのフック名・オプションの辞書のキーは d.ts の interface のものだけ
+* 実機に無いメソッド（例 `Entity.getAABB`・`afterEvents.playerSwingStart` は 2.4.0-beta だけ）は偽物にも無い。
+  手書きのクラスが d.ts に無い公開メンバーを持たないことも自己テストで確かめる
 
 **契約違反（violation）**は、スクリプトが try/catch で握りつぶしてもテストを失敗にする:
 存在しないエンティティ・パーティクル・効果音・アニメ・アイテム・ブロック・構造物（のパレットのブロック）・
-BP イベント・プロパティの ID、enum に無い値・範囲外の int、有限でない座標や Molang 値、`variable.` の無い
-Molang 変数名、プレイヤーへの `applyImpulse`・`remove`、1.x の形の `applyKnockback(x, z, h, v)`、
+BP イベント・プロパティの ID（`getProperty` はどの BP エンティティにも無い名前 = 綴り違い）・`spawnEvent`・効果、
+enum に無い値・範囲外の int、有限でない座標や Molang 値、`variable.` の無い Molang 変数名、
+オプションの辞書の d.ts に無いキー（`stopExpresion`・`famillies` など。実機は黙って無視する）、lore の 20 行・50 文字超、
+プレイヤーへの `applyImpulse`・`remove`、1.x の形の `applyKnockback(x, z, h, v)`、
 before イベント内の書き換え・subscribe・フォームの show、worldLoad 前の world、重ねられるアイテムへの動的プロパティ、
-server-ui 1.x の形の `toggle(label, true)` / `slider(..., step, default)`、入力の間に挟んだ label / header /
+server-ui 1.x の形の `toggle(label, true)` / `slider(..., step, default)` / `dropdown(l, items, 1)`、入力の間に挟んだ label / header /
 divider、`animation.nr.*` の playAnimation に controller（`nr.` で始まる）・stopExpression・nextState が無い
 （rendering.md P1 / P2）、location の無い `getEntities({maxDistance})`、ゲームに無い `setTimeout` などのグローバル、
 1 tick のパーティクル 300 個超（DESIGN.md §11）、startup の外・無いフック名のカスタムコンポーネント登録、
@@ -83,7 +89,7 @@ boot_*.js）が期待どおりの違反で落ちる」ことの両方を確か�
 | `tick(n=1)` | n tick 進める（物理・効果・タイマー・runJob・after イベント・Promise） |
 | `spawnZombie(type, pos, {yaw, face})` | ゾンビ（`dimension.spawnEntity` 経由。entitySpawn も来る）。既定でプレイヤーの方を向く |
 | `spawn(id, pos, {yaw, face, event})` / `despawn(e)` | 何でも出す（gib・弾・小道具）/ イベントなしで消す |
-| `spawnPlayer(pos, item, {name, mode, yaw})` | プレイヤー（playerJoin / playerSpawn が来る）。item は ID か ItemStack |
+| `spawnPlayer(pos, item, {name, mode, yaw})` / `leave(player)` | プレイヤー（playerJoin / playerSpawn が来る）。item は ID か ItemStack / 抜ける（playerLeave の before → after） |
 | `give(player, item, slot)` / `held(player)` | 持ち物 |
 | `hit(player, target, {part, point, damage, cause})` | 近接で殴る。part は head/torso/arm_r/arm_l/leg_r/leg_l（`PARTS`） |
 | `shoot(player, target, {part, point, projectile, damage})` | 飛び道具が当たる（projectileHitEntity + entityHurt） |
@@ -91,12 +97,13 @@ boot_*.js）が期待どおりの違反で落ちる」ことの両方を確か�
 | `press(player, "Jump"|"Sneak", down=true)` / `setInput(player, {x, y, sprint, sneak, jump})` | 入力（playerButtonInput・inputInfo・移動） |
 | `interact(player, entityOrPos)` / `breakBlock(player, pos)` / `placeBlock(player, pos, id)` | 触る・壊す・置く |
 | `scriptEvent(id, message, source)` / `command(name, args, source)` | `/scriptevent` / startup で登録したカスタムコマンド |
-| `setBlock(pos, id)` / `fill(from, to, id)` / `blockAt(pos)` / `setGround(y)` | 偽のワールドの地形（既定は y<64 が石） |
+| `setBlock(pos, id)` / `fill(from, to, id)` / `blockAt(pos)` / `setGround(y)` | 偽のワールドの地形（既定は y<64 が石。null で奈落） |
+| `randomTick(pos)` | そのブロックの onRandomTick を一回（偽物は自分では random tick を起こさない） |
 | `setTime(t)` / `setLight(n | fn)` | 時刻（0〜23999）と光（既定は時刻と空・光るブロックから） |
 | `answerForm(resp)` / `lastForm()` | フォームの答え（番号・formValues の配列・"defaults"・{canceled:true}・関数）と最後に出たフォーム |
 | `partPoint(zombie, part)` / `aim(player, point)` | 部位の世界座標（scripts/data/zombie_shapes.js の当たり箱）・視線を向ける |
-| `prop(e, name)` / `entities(type)` / `zombieTypes()` | 読み出し |
-| `used()` / `mark()` / `since(mark)` | 使った演出の回数（particles / sounds / anims / events / props / spawned …。used() はそのテストの分） |
+| `prop(e, name)` / `entities(type)` / `zombieTypes()` | 読み出し（prop は書いた最新の値。アドオンの getProperty は次の tick から） |
+| `used()` / `mark()` / `since(mark)` / `particlePeak()` | 使った演出の回数（particles / sounds / anims / events / props / spawned / molangVars …。used() はそのテストの分）/ 1 tick のパーティクルの最大 |
 | `expect(v)` | toBe / toEqual / toBeTruthy / toBeGreaterThan / toBeCloseTo / toContain / toThrow / toBeOneOf / not … |
 | `expectViolation(fn, kind)` | わざと契約違反を起こすテスト用（違反を確かめて記録から消す。必ず await） |
 | `DATA` | scripts/data/*.js の中身（zombies / shapes / weapons / items / fx …。無ければ空） |
@@ -162,6 +169,8 @@ _ENUM_HEAD = re.compile(r"^export enum (\w+)\s*\{")
 _ENUM_ITEM = re.compile(r"""^\s+['"]?(\w+)['"]?\s*=\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|(-?\d+(?:\.\d+)?))\s*,?\s*$""")
 _CLASS_HEAD = re.compile(r"^export class (\w+)(?:<[^>]*>)?(?:\s+extends\s+([\w.]+)(?:<.*?>)?)?"
                          r"(?:\s+implements\s+[^{]+)?\s*\{\s*$")
+_IFACE_HEAD = re.compile(r"^export interface (\w+)(?:<[^>]*>)?(?:\s+extends\s+([^{]+))?\s*\{\s*$")
+_IFACE_MEMBER = re.compile(r"^    (?:readonly\s+)?['\"]?([A-Za-z_$][\w$]*)['\"]?\??\s*[:(]")
 _CONST = re.compile(r"^export const (\w+)\s*(?::\s*([^=;]+?))?\s*(?:=\s*(.+?))?\s*;\s*$")
 _CTOR = re.compile(r"^    (?:(private|protected)\s+)?constructor\s*\(")
 _METHOD = re.compile(r"^    (static\s+)?([A-Za-z_$][\w$]*)\s*(?:<.*>)?\s*\(")
@@ -184,16 +193,33 @@ def _literal(src: str):
 
 def parse_dts(path: str) -> dict:
     """d.ts → {classes: {名前: {extends, ctor, error, members: {名前: {kind, static, ro, early, value?}}}},
-    enums: {名前: {キー: 値}}, events: {WorldAfterEvents: [...], ...}, consts: {名前: 値 / None}}。
+    enums: {名前: {キー: 値}}, events: {WorldAfterEvents: [...], ...}, consts: {名前: 値 / None},
+    interfaces: {名前: [メンバー名...]}, ifaceExtends: {名前: [親...]}}（interface は実行時に無いので export しない。カスタムコンポーネントの
+    フック名など、偽物が「d.ts にある名前だけ」を受け付けるのに使う）。
 
     ro / early は @remarks の定型文（"can't be called in read-only mode" / "can't be edited in read-only mode" /
     "can be called in early-execution mode" / "can be read in early-execution mode"）から拾う。
     """
     lines = read_text(path).splitlines()
-    api = {"classes": {}, "enums": {}, "events": {}, "consts": {}}
+    api = {"classes": {}, "enums": {}, "events": {}, "consts": {}, "interfaces": {}, "ifaceExtends": {}}
     i, n = 0, len(lines)
     while i < n:
         ln = lines[i]
+        m = _IFACE_HEAD.match(ln)
+        if m:
+            names = []
+            i += 1
+            while i < n and lines[i].rstrip() != "}":
+                mm = _IFACE_MEMBER.match(lines[i])
+                if mm and mm.group(1) not in names:
+                    names.append(mm.group(1))
+                i += 1
+            api["interfaces"][m.group(1)] = names
+            if m.group(2):
+                bases = [re.sub(r"<.*", "", b).strip() for b in m.group(2).split(",")]
+                api["ifaceExtends"][m.group(1)] = [b for b in bases if b]
+            i += 1
+            continue
         m = _ENUM_HEAD.match(ln)
         if m:
             vals = {}
@@ -284,6 +310,9 @@ def api_problems(api: dict, ui: dict) -> list:
         bad.append("@remarks の read-only / early-execution の印が読めていない")
     if api["consts"].get("TicksPerSecond") != 20:
         bad.append("定数 TicksPerSecond が読めない")
+    for iface, at_least in (("BlockCustomComponent", 9), ("ItemCustomComponent", 7), ("PlayAnimationOptions", 5)):
+        if len(api["interfaces"].get(iface, [])) < at_least:
+            bad.append(f"interface {iface} のメンバーが {len(api['interfaces'].get(iface, []))} 個しか読めない")
     for c in ("ActionFormData", "ModalFormData", "MessageFormData", "UIManager", "FormRejectError"):
         if c not in ui["classes"]:
             bad.append(f"server-ui の d.ts に {c} が無い")
@@ -434,7 +463,16 @@ def build_defs(bp: str, rp: str, work: str, notes: list) -> dict:
         if not ident:
             continue
         comps = b.get("components") or {}
-        states = dict(desc.get("states") or {})
+        states = {}
+        for st, vals in (desc.get("states") or {}).items():
+            # 値の並び [..] と、範囲の形 {"values": {"min": a, "max": b}}（整数の状態）の両方を並びに直す
+            if isinstance(vals, dict):
+                rng = vals.get("values", vals)
+                if isinstance(rng, dict) and isinstance(rng.get("min"), int) and isinstance(rng.get("max"), int):
+                    vals = list(range(rng["min"], rng["max"] + 1))
+                elif isinstance(rng, list):
+                    vals = rng
+            states[st] = vals
         for trait in (desc.get("traits") or {}).values():
             for st in (trait or {}).get("enabled_states") or []:
                 if st in _TRAIT_STATES:
@@ -599,6 +637,9 @@ def _at(x: dict) -> str:
     return f"（{'、'.join(bits)}）" if bits else ""
 
 
+BOOT_TITLE = "（起動: import → startup → worldLoad）"
+
+
 def failures(res: dict) -> list:
     """失敗の一覧 [(見出し, [行...])]。"""
     out = []
@@ -617,7 +658,7 @@ def failures(res: dict) -> list:
     for d in boot.get("dataErrors", []):
         lines.append(f"scripts/data を読めない: {d}")
     if lines:
-        out.append(("（起動: import → startup → worldLoad）", lines))
+        out.append((BOOT_TITLE, lines))
     if res.get("fileError"):
         fe = res["fileError"]
         out.append(("（テストファイルの読み込み）", [fe["msg"]] + [f"    at {s}" for s in fe.get("stack", [])[:3]]))
@@ -635,9 +676,11 @@ def failures(res: dict) -> list:
         for c in t.get("consoleErrors", []):
             lines.append(f"console.error: {c['msg']}{_at(c)}")
         out.append((t["name"], lines))
-    left = res.get("leftoverViolations") or []
+    left = [f"違反 {v['kind']}: {v['msg']}{_at(v)}" for v in res.get("leftoverViolations") or []]
+    left += [f"捕まらない例外（{e['where']}）: {e['msg']}" for e in res.get("leftoverErrors") or []]
+    left += [f"console.error: {c['msg']}{_at(c)}" for c in res.get("leftoverConsoleErrors") or []]
     if left:
-        out.append(("（テストの外）", [f"違反 {v['kind']}: {v['msg']}{_at(v)}" for v in left]))
+        out.append(("（テストの外）", left))
     return out
 
 
@@ -645,7 +688,8 @@ def file_ok(res: dict) -> bool:
     return not failures(res)
 
 
-def print_file(res: dict, label: str, verbose: bool, limit: int = 40) -> None:
+def print_file(res: dict, label: str, verbose: bool, limit: int = 40, seen: dict | None = None) -> None:
+    """seen = {起動の失敗の行: 最初に出したファイル}。同じ起動の失敗はファイルごとに繰り返さない。"""
     tests = res.get("tests", [])
     n_ok = sum(1 for t in tests if t["ok"])
     fails = failures(res)
@@ -657,6 +701,13 @@ def print_file(res: dict, label: str, verbose: bool, limit: int = 40) -> None:
             print(f"      {'ok  ' if t['ok'] else 'FAIL'} {t['name']}（{t['ms']} ms）")
     shown = 0
     for title, lines in fails:
+        if title == BOOT_TITLE and seen is not None:
+            key = "\n".join(lines)
+            if key in seen:
+                print(f"      FAIL {title}: {seen[key]} と同じ（{len(lines)} 行）")
+                shown += 1
+                continue
+            seen[key] = label
         print(f"      FAIL {title}")
         for ln in lines[:12]:
             print(f"          {ln}")
@@ -908,8 +959,10 @@ def _selftest_variants(tmp: str) -> list:
     return [
         dict(name="good", scripts=addon, tests=[(os.path.join(SELF, "selftest.mjs"), "selftest.mjs"),
                                                 (os.path.join(FAKES, "builtin_smoke.mjs"), SMOKE_NAME)]),
+        # 壊れた側だけ、パレットに BP に無いブロックを持つ構造物を足す（組み込み smoke が全構造物を置くので正しい側には入れない）
         dict(name="bad", scripts=os.path.join(SELF, "addon_bad"),
-             tests=[(os.path.join(SELF, "selftest_bad.mjs"), "selftest_bad.mjs")]),
+             tests=[(os.path.join(SELF, "selftest_bad.mjs"), "selftest_bad.mjs")],
+             extra_structures={"nr:test_bad_hut": ((1, 2, 1), [("minecraft:stone", {}), ("nr:no_such_block", {})], [0, 1])}),
         dict(name="boot_early", entry=os.path.join(SELF, "boot_early.js"), tests=[(noop, "noop.mjs")]),
         dict(name="boot_late", entry=os.path.join(SELF, "boot_late.js"), tests=[(noop, "noop.mjs")]),
         dict(name="boot_import", entry=os.path.join(SELF, "boot_import.js"), tests=[(noop, "noop.mjs")]),
@@ -953,6 +1006,11 @@ def run_selftest(node: str, api: dict, ui_api: dict, tmp: str, workers: int, ver
         notes: list = []
         defs = build_defs(bp, rp, work, notes)
         defs["items"].update(v.get("extra_items", {}))
+        for k, (sid, (size, palette, indices)) in enumerate(sorted(v.get("extra_structures", {}).items())):
+            out = f"__nr_structs/extra_{k:02d}.json"
+            write_json(os.path.join(work, out), {"indices": indices,
+                                                 "palette": [{"name": nm, "states": st} for nm, st in palette]})
+            defs["structures"][sid] = {"size": list(size), "file": out}
         rels = prepare_work(work, scripts_src=v.get("scripts"), entry_file=v.get("entry"), tests=v["tests"],
                             defs=defs, api=api, ui_api=ui_api, modules=modules)
         for r in rels:
@@ -986,6 +1044,11 @@ def run_selftest(node: str, api: dict, ui_api: dict, tmp: str, workers: int, ver
                     counts["bad"] += 1
             if len(res["tests"]) != len(res["names"]):
                 problems.append(f"{label}: テストが {len(res['tests'])} / {len(res['names'])} しか走らない")
+            # テストの中の違反・例外はそのテストにだけ数える（「テストの外」に残れば切り分けの不具合）
+            left = (res.get("leftoverViolations") or []) + (res.get("leftoverErrors") or []) + \
+                (res.get("leftoverConsoleErrors") or [])
+            if left:
+                problems.append(f"{label}: テストの外に {len(left)} 件残る（例: {left[0].get('msg', '')[:80]}）")
         else:
             want = {
                 "boot_early": lambda: vk.count("early") >= 2,
@@ -1067,10 +1130,11 @@ def main(argv=None) -> int:
             if args.strict:
                 print(f"  [test] FAIL {msg}（--strict）")
                 failed = True
-            else:
+            elif not args.file:
                 print(f"  [test] {msg}ので、アドオンのテストは飛ばす（自己テストだけ。OK）")
-                if not args.file:
-                    return finish(report, failed, args, tmp, t_start)
+            if not args.file:
+                return finish(report, failed, args, tmp, t_start)
+            print(f"  [test] {msg}。--file のテストはアドオン無しで走らせる（偽物と scripts/ の部品だけ）")
         notes: list = []
         work = os.path.join(tmp, "addon")
         defs = build_defs(BP, RP, work, notes)
@@ -1082,7 +1146,9 @@ def main(argv=None) -> int:
                 print(f"  [test] --file {args.file} が見つからない", file=sys.stderr)
                 return 2
             helpers = [t for t in user_tests() if not t[1].endswith(".mjs")]
-            tests = helpers + [(src, os.path.basename(src))]
+            src = os.path.abspath(src)
+            inside = os.path.commonpath([src, os.path.abspath(TESTS_DIR)]) == os.path.abspath(TESTS_DIR)
+            tests = helpers + [(src, os.path.relpath(src, TESTS_DIR) if inside else os.path.basename(src))]
         else:
             tests = [(os.path.join(FAKES, "builtin_smoke.mjs"), SMOKE_NAME)] + user_tests()
         rels = prepare_work(work, scripts_src=SCRIPTS if os.path.isdir(SCRIPTS) else None, tests=tests, defs=defs,
@@ -1093,12 +1159,13 @@ def main(argv=None) -> int:
                      entry="scripts/main.js" if has_main else "-") for r in rels]
         results = run_all(node, jobs, workers)
         ran = 0
+        seen_boot: dict = {}
         for res in results:
             label = "組み込み smoke" if res["file"].endswith(SMOKE_NAME) else res["file"]
             if args.filt and not res.get("tests") and not failures(res):
                 continue
             ran += len(res.get("tests", []))
-            print_file(res, label, args.verbose)
+            print_file(res, label, args.verbose, seen=seen_boot)
             if not file_ok(res):
                 failed = True
             report["files"].append(res)
@@ -1108,8 +1175,9 @@ def main(argv=None) -> int:
         report["usage"] = usage
         report["coverage"] = coverage(usage, defs)
         cv = report["coverage"]
-        print("  [test] 使った演出（RP / BP にある nr: のうち）: " + "、".join(
-            f"{k} {v['used']}/{v['total']}" for k, v in cv.items() if v["total"]))
+        parts = [f"{k} {v['used']}/{v['total']}" for k, v in cv.items() if v["total"]]
+        if parts:
+            print("  [test] 使った演出（RP / BP にある nr: のうち）: " + "、".join(parts))
         peak = max((r.get("maxPerTick", 0) for r in results), default=0)
         if peak:
             print(f"  [test] 1 tick のパーティクルの最大 {peak}（予算 {PARTICLE_BUDGET}）")

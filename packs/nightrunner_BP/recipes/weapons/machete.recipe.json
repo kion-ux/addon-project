@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_machete"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " B",
+      " B",
+      "ST"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      },
+      "T": {
+        "item": "nr:duct_tape"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:blades"
+      }
+    ],
+    "result": {
+      "item": "nr:w_machete",
+      "count": 1
+    }
+  }
+}

@@ -110,7 +110,7 @@ export function sound(dim, id, loc, opts) {
   try { dim.playSound(id, loc, o); return true; } catch (err) { warnOnce(`playSound:${id}`, "playSound 失敗", id, err); return false; }
 }
 
-/** その人にだけ聞こえる音。@param {Player} p @param {string} id @param {{volume?: number, pitch?: number, location?: Vector3}} [opts] */
+/** その人にだけ聞こえる音。 @param {Player} p @param {string} id @param {{volume?: number, pitch?: number, location?: Vector3}} [opts] */
 export function playerSound(p, id, opts) {
   if (!valid(p) || !id) return false;
   try { p.playSound(id, opts ?? {}); return true; } catch (err) { warnOnce(`playerSound:${id}`, "player.playSound 失敗", id, err); return false; }

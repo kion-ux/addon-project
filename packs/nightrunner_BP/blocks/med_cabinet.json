@@ -1,0 +1,110 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:med_cabinet",
+      "menu_category": {
+        "category": "items"
+      },
+      "states": {
+        "nr:open": [
+          0,
+          1
+        ]
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.nr.b.med_cabinet",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_med_cabinet",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -5,
+          2,
+          4
+        ],
+        "size": [
+          10,
+          12,
+          4
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -5,
+          2,
+          4
+        ],
+        "size": [
+          10,
+          12,
+          4
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#d8d8d0",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "minecraft:loot": "loot_tables/nr_blocks/med_cabinet.json",
+      "nr:stash": {
+        "loot": "med_cabinet",
+        "refill_days": 2,
+        "open_state": "nr:open"
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

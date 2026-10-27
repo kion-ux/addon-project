@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_electric_trap"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "CBC",
+      "SSS"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:battery"
+      },
+      "C": {
+        "item": "minecraft:copper_ingot"
+      },
+      "S": {
+        "item": "nr:scrap"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:battery"
+      }
+    ],
+    "result": {
+      "item": "nr:electric_trap",
+      "count": 1
+    }
+  }
+}

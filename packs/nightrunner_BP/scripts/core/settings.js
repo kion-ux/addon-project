@@ -4,31 +4,25 @@
 //  * 既定値は data/settings.js の SETTINGS_DEFAULTS（spec の SETTINGS_SCHEMA）。
 //  * world を読むのは worldLoad の後だけ（early execution では既定値を返す）。
 //  * set() は after イベント・system.run の中から呼ぶ（before イベントの中では書かない）。
-//  * tuning(name, fallback): 生成データ（data/*.js）の表を名前で探す。生成器がまだ出していない表は
+//  * tuning(name, fallback): 生成データ（data/settings.js・zombies.js）の表を名前で探す。生成器がまだ出していない表は
 //    fallback（この JS に写した spec の値）を使う。
 // ===========================================================================
 import { world } from "@minecraft/server";
 import * as SET_D from "../data/settings.js";
 import * as ZOM_D from "../data/zombies.js";
-import * as WEP_D from "../data/weapons.js";
-import * as ITM_D from "../data/items.js";
-import * as MOD_D from "../data/mods.js";
-import * as TRP_D from "../data/traps.js";
-import * as PRP_D from "../data/props.js";
-import * as CRF_D from "../data/crafting.js";
 import { emit, on, EV } from "./bus.js";
 import { clamp, clamp01 } from "./util.js";
 
 const KEY = "nr:settings";
 
-// 生成データの名前空間（export の有無は生成器しだいなので any で引く）
+// 生成データの名前空間（data/settings.js と data/zombies.js。export の有無は生成器しだいなので any で引く）
 /** @type {any[]} */
-const DATA = [SET_D, ZOM_D, WEP_D, ITM_D, MOD_D, TRP_D, PRP_D, CRF_D];
+const DATA = [SET_D, ZOM_D];
 /** @type {Map<string, any>} */
 const tableCache = new Map();
 
 /**
- * 生成データの表を名前で引く（data/*.js のどれかが export していればそれ、無ければ fallback）。
+ * 生成データの表を名前で引く（data/settings.js・data/zombies.js が export していればそれ、無ければ fallback）。
  * @template T @param {string} name @param {T} fallback @returns {T}
  */
 export function tuning(name, fallback) {
@@ -80,7 +74,7 @@ const SCHEMA = schema();
 let cur = { ...DEFAULTS };
 let ready = false;
 
-/** 値を既定値の型に合わせて検査する（合わなければ undefined）。@param {string} key @param {any} v */
+/** 値を既定値の型に合わせて検査する（合わなければ undefined）。 @param {string} key @param {any} v */
 function coerce(key, v) {
   const d = DEFAULTS[key];
   if (d === undefined) return undefined;
@@ -127,10 +121,10 @@ function save() {
 
 world.afterEvents.worldLoad.subscribe(() => { load(); emit(EV.SETTINGS, { key: "*", value: undefined }); });
 
-/** 設定の値（worldLoad 前は既定値）。@param {string} key @returns {any} */
+/** 設定の値（worldLoad 前は既定値）。 @param {string} key @returns {any} */
 export function get(key) { return key in cur ? cur[key] : DEFAULTS[key]; }
 
-/** 数の設定（数でなければ def）。@param {string} key @param {number} def */
+/** 数の設定（数でなければ def）。 @param {string} key @param {number} def */
 export function num(key, def) { const v = Number(get(key)); return Number.isFinite(v) ? v : def; }
 
 /**
@@ -148,7 +142,7 @@ export function set(key, value) {
   return true;
 }
 
-/** まとめて変える。@param {Record<string, any>} obj @returns {number} 受け付けた数 */
+/** まとめて変える。 @param {Record<string, any>} obj @returns {number} 受け付けた数 */
 export function setMany(obj) {
   let n = 0;
   for (const [k, v] of Object.entries(obj ?? {})) {
@@ -169,7 +163,7 @@ export function all() { return { ...cur }; }
 /** 設定が読み込まれたか（worldLoad 後）。 */
 export function isReady() { return ready; }
 
-/** 変更を受け取る。@param {(e: {key: string, value: any}) => void} fn */
+/** 変更を受け取る。 @param {(e: {key: string, value: any}) => void} fn */
 export function onChange(fn) { return on(EV.SETTINGS, fn); }
 
 /** ゴアレベル 0..1（設定 gore_level / 100）。 */
@@ -183,7 +177,7 @@ const FALLBACK_DIFFICULTY = {
   nightmare: { zombie_hp_mult: 1.6, zombie_damage_mult: 1.8, night_mult: 1.6, horde_mult: 1.6, immunity_drain_mult: 1.5, durability_mult: 0.6, player_scale_per_extra: 0.25 },
 };
 
-/** いまの難易度の倍率表（DIFFICULTY[settings.difficulty]）。@returns {Record<string, number>} */
+/** いまの難易度の倍率表（DIFFICULTY[settings.difficulty]）。 @returns {Record<string, number>} */
 export function difficulty() {
   const t = tuning("DIFFICULTY", FALLBACK_DIFFICULTY);
   return t[String(get("difficulty"))] ?? t.normal ?? FALLBACK_DIFFICULTY.normal;

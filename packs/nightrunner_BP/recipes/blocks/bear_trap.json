@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_bear_trap"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "S S",
+      "BIB",
+      "SSS"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "S": {
+        "item": "nr:scrap"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:bear_trap",
+      "count": 1
+    }
+  }
+}

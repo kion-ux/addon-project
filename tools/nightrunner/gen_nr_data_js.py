@@ -25,7 +25,9 @@
   上書き}）、`ability_states`（{"能力.段階": 1..7}）、`all_attacks`、`initial_armor`、`collision`（[幅, 高さ]）。
 * `ITEMS[i]` に足す派生フィールド: `engine_consumes`（true = BP の `minecraft:food` で**エンジンが 1 個減らす**。
   スクリプトは `itemCompleteUse` で効果だけ与え、自分で数を減らさない。false = スクリプトが減らす）と
-  `use_seconds`（使う時間。無ければ 0）。決め方は gen_nr_items.engine_consumes()。
+  `use_seconds`（BP の `minecraft:use_modifiers.use_duration` = **エンジンが数える**使用時間の秒）。
+  engine_consumes = false の道具は 0（`itemUse` が即座に来るだけ）で、spec の `use.use_ticks`
+  （ロックピック・修理キット）があればスクリプトが自分で数える。決め方は gen_nr_items.engine_consumes()。
 * `*_BY_ID` / `*_BY_KEY` は同じオブジェクトを指す索引で、JS の式（`Object.fromEntries(...)`）で作る（重複して書かない）。
 * fx.js は登録簿（nr_registry）が正。ただし作る側が登録簿より**増やした** ID（RP のパーティクル・音の断片と
   sound_definitions・アニメーションに実在するもの）も後ろに足す（登録簿の約束「増やしたら data JS にも出る」）。
@@ -43,7 +45,6 @@ import glob
 import json
 import math
 import os
-import re
 import sys
 import types
 
@@ -325,7 +326,8 @@ def build(S) -> dict:
         RARITY=S.RARITY,
         ZOMBIE_SOURCED=S.ZOMBIE_SOURCED,
     ), "ITEMS = MATERIAL_ITEMS（共有）+ ITEMS（その他）。engine_consumes = true のものは BP の minecraft:food で\n"
-       "エンジンが 1 個減らす（スクリプトは itemCompleteUse で効果だけ）。false はスクリプトが減らす")
+       "エンジンが 1 個減らす（スクリプトは itemCompleteUse で効果だけ）。false はスクリプトが減らす\n"
+       "use_seconds = エンジンが数える使用時間（BP の use_modifiers）。道具は 0 で、use.use_ticks はスクリプトが数える")
     mods["mods"] = (dict(MODS=S.MODS, MOD_BY_KEY=by("MODS", "key")), "")
     mods["traps"] = (dict(TRAPS=strip_visual(S.TRAPS),
                           TRAP_BY_ID=Derived("Object.fromEntries(TRAPS.filter((x) => x.id).map((x) => [x.id, x]))",

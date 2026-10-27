@@ -111,9 +111,10 @@ export async function __runTests({ filter = "", file = "" } = {}) {
     let error = null;
     try { await runOne(t); await __drain(); }
     catch (e) { error = errInfo(e); }
-    const violations = S.violations.slice(c0.v);
-    const errors = S.errors.slice(c0.e);
-    const consoleErrors = S.consoleErrors.slice(c0.c);
+    // このテストの分は記録から外す（残るのは「テストの外」で起きたものだけ）
+    const violations = S.violations.splice(c0.v);
+    const errors = S.errors.splice(c0.e);
+    const consoleErrors = S.consoleErrors.splice(c0.c);
     const limitations = {};
     for (const [k, n] of S.limitations) { const d = n - (c0.lim.get(k) ?? 0); if (d) limitations[k] = d; }
     results.push({ name: t.name, ok: !error && !violations.length && !errors.length && !consoleErrors.length,
@@ -167,6 +168,14 @@ export function fill(from, to, id) {
       for (let y = Math.min(a.y, b.y); y <= Math.max(a.y, b.y); y++)
         for (let z = Math.min(a.z, b.z); z <= Math.max(a.z, b.z); z++) S.setBlockAt(x, y, z, t, st);
   });
+}
+/** その場所のブロックに random tick を一回入れる（カスタムコンポーネントの onRandomTick。偽物は自分では
+ *  random tick を起こさない）。フックが呼ばれたら true。 */
+export async function randomTick(pos) {
+  const p = floorPos(pos);
+  const any = S.blockHook(p, "onRandomTick", {});
+  S.flush(); await __drain();
+  return any;
 }
 /** その場所のブロックの ID。 */
 export function blockAt(pos) { const p = floorPos(pos); return S.blockAt(p.x, p.y, p.z).typeId; }
@@ -239,13 +248,27 @@ export function give(player, item, slot) {
 export function held(player) { needEnt(player, "held"); return asHarness(() => player._inv.getItem(player._slot)); }
 /** 消す（イベントなし。後片付け用）。 */
 export function despawn(e) { needEnt(e, "despawn"); e._removeNow(true); }
+/** プレイヤーが抜ける（beforeEvents.playerLeave → 無効になる → afterEvents.playerLeave）。開いているフォームは
+ *  次の tick に FormRejectError（PlayerQuit）で reject される。 */
+export async function leave(player) {
+  needLive(player, "leave");
+  if (!player._isPlayer) throw new Error("leave: プレイヤーでない");
+  S.fireBefore("playerLeave", { player });
+  const id = player._id, name = player._name;
+  player._valid = false;
+  S.entities.delete(id);
+  S.players.splice(S.players.indexOf(player), 1);
+  S.queueAfter("playerLeave", { playerId: id, playerName: name });
+  S.flush(); await __drain();
+}
 
-/** エンティティのプロパティ（"nr:" は省略可）。 */
+/** エンティティのプロパティ（"nr:" は省略可）。書いた最新の値（実機で次の tick にクライアントへ届く値）を返す。
+ *  アドオンの getProperty は d.ts のとおり setProperty の次の tick まで古い値を返す（server:L7592）。 */
 export function prop(e, name) {
   needEnt(e, "prop");
   const n = name.includes(":") ? name : `nr:${name}`;
   if (!e._props.has(n)) throw new Error(`prop: ${e._typeId} に ${n} は無い（BP の description.properties）`);
-  return e._props.get(n);
+  return e._latestProp(n);
 }
 /** 今いるエンティティ（プレイヤー以外）。type は ID か鍵、省略で全部。 */
 export function entities(type) {
@@ -281,7 +304,7 @@ export function partPoint(e, part = "torso") {
   const idx = idxS === undefined ? 0 : Number(idxS);
   const key = e._typeId.startsWith("nr:z_") ? e._typeId.slice(5) : e._typeId.replace(/^.*:/, "");
   const shape = DATA.shapes?.SHAPES?.[key];
-  const st = e._props.get("nr:state");
+  const st = e._latestProp("nr:state");
   const pose = st === "crawl" ? "prone" : (st === "down" || st === "dead") ? "lie" : "stand";
   const boxes = shape?.[pose]?.[name] ?? (pose === "prone" ? shape?.lie?.[name] : undefined);
   const c = boxes?.length ? (boxes[idx] ?? boxes[0]).c : fallbackBox(e, shape?.[pose] ? pose : (pose === "prone" ? "prone" : pose), name);

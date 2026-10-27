@@ -1,0 +1,25 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:infected_trophy",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_infected_trophy",
+      "minecraft:display_name": {
+        "value": "item.nr:infected_trophy"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:rarity": "uncommon",
+      "minecraft:tags": {
+        "tags": [
+          "nr:item",
+          "nr:trophy"
+        ]
+      }
+    }
+  }
+}

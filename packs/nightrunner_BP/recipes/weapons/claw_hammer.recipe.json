@@ -1,0 +1,32 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_w_claw_hammer"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "II",
+      " S"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "result": {
+      "item": "nr:w_claw_hammer",
+      "count": 1
+    }
+  }
+}

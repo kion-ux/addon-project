@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_fuel_canister"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "S S",
+      "SAS",
+      "SAS"
+    ],
+    "key": {
+      "A": {
+        "item": "nr:alcohol"
+      },
+      "S": {
+        "item": "nr:scrap"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:fuel_canister",
+      "count": 1
+    }
+  }
+}

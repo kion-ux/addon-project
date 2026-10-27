@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_survivor_arrow"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "B",
+      "S",
+      "F"
+    ],
+    "key": {
+      "B": {
+        "item": "nr:blades"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      },
+      "F": {
+        "item": "minecraft:feather"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:blades"
+      }
+    ],
+    "result": {
+      "item": "nr:survivor_arrow",
+      "count": 6
+    }
+  }
+}

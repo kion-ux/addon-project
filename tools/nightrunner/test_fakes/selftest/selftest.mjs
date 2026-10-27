@@ -3,7 +3,8 @@
 import {
   test, tick, spawn, spawnZombie, spawnPlayer, give, held, hit, shoot, use, press, setInput, interact, breakBlock,
   placeBlock, scriptEvent, command, setBlock, fill, blockAt, setGround, setTime, setLight, answerForm, lastForm,
-  partPoint, aim, prop, entities, zombieTypes, used, mark, since, expect, expectViolation, despawn, DATA, mc, ui, S, PARTS,
+  partPoint, aim, prop, entities, zombieTypes, used, mark, since, expect, expectViolation, despawn, leave, randomTick,
+  DATA, mc, ui, S, PARTS,
 } from "nr-test";
 import { STATE } from "../scripts/main.js";
 import { hitPart } from "../scripts/lib.js";
@@ -138,6 +139,96 @@ test("飛び道具: projectileHitEntity（着弾点）と entityHurt(projectile)
   expect(STATE.projLoc.y).toBeCloseTo(r.point.y, 5);
   expect(STATE.hits.at(-1).cause).toBe("projectile");
   expect(entities("nr:proj_test")).toHaveLength(1);
+});
+
+test("MolangVariableMap: 2.3.0 の set 5 種（setVector3 も実機にある）と変数の数え方", async () => {
+  const mv = new mc.MolangVariableMap();
+  mv.setFloat("variable.size", 1.5);
+  mv.setColorRGB("variable.tint", { red: 0.4, green: 0, blue: 0 });
+  mv.setColorRGBA("variable.tint2", { red: 0.4, green: 0, blue: 0, alpha: 0.5 });
+  mv.setSpeedAndDirection("variable.spray", 4, { x: 0, y: 1, z: 0 });
+  mv.setVector3("variable.dir", { x: 0, y: 0, z: 1 });
+  const lim0 = [...S.limitations.values()].reduce((a, n) => a + n, 0);
+  mc.world.getDimension("overworld").spawnParticle("nr:test_blood", { x: 0, y: 65, z: 0 }, mv);
+  const u = used();
+  for (const v of ["size", "tint", "tint2", "spray", "dir"]) expect(u.molangVars[`nr:test_blood variable.${v}`]).toBe(1);
+  expect([...S.limitations.values()].reduce((a, n) => a + n, 0)).toBe(lim0);
+  await expectViolation(() => mv.setVector3("variable.dir", { x: NaN, y: 0, z: 0 }), "molang");
+  await expectViolation(() => mv.setColorRGB("variable.tint", { red: 2, green: 0, blue: 0 }), "molang");
+});
+
+test("setProperty / triggerEvent の値は次の tick まで getProperty に出ない（d.ts server:L7592）。prop() は最新", async () => {
+  const z = spawnZombie("test", { x: 0, y: 64, z: 2 });
+  z.setProperty("nr:blood", 2);
+  expect(z.getProperty("nr:blood")).toBe(0);
+  expect(prop(z, "blood")).toBe(2);
+  z.triggerEvent("nr:to_crawl");
+  expect(z.getProperty("nr:state")).toBe("normal");
+  expect(prop(z, "state")).toBe("crawl");
+  await tick(1);
+  expect(z.getProperty("nr:blood")).toBe(2);
+  expect(z.getProperty("nr:state")).toBe("crawl");
+  // 名前空間の無いイベント名は minecraft: とみなす（d.ts）
+  const m0 = mark();
+  z.triggerEvent("entity_spawned");
+  expect(since(m0).events["minecraft:entity_spawned"]).toBe(1);
+  // 別の種類（gib）が持つプロパティは、ゾンビで読むと実機どおり undefined（違反にしない）
+  expect(z.getProperty("nr:part")).toBeUndefined();
+  // 出現時のイベント（minecraft:entity_spawned の set_property）はすぐ見える
+  expect(Number.isInteger(z.getProperty("nr:variant"))).toBe(true);
+});
+
+test("空中に出したもの・足元が消えたものは落ちる", async () => {
+  const z = spawnZombie("test", { x: 0, y: 70, z: 2 }, { yaw: 0 });
+  await tick(1);
+  expect(z.isOnGround).toBe(false);
+  await tick(40);
+  expect(z.location.y).toBeCloseTo(64, 3);
+  expect(z.isOnGround).toBe(true);
+  setBlock({ x: 5, y: 70, z: 5 }, "minecraft:stone");
+  const g = spawn("nr:gib", { x: 5.5, y: 71, z: 5.5 });
+  await tick(3);
+  expect(g.location.y).toBeCloseTo(71, 3);
+  setBlock({ x: 5, y: 70, z: 5 }, "minecraft:air");
+  await tick(40);
+  expect(g.location.y).toBeCloseTo(64, 3);
+});
+
+test("プレイヤーが抜ける: before で読める、after は名前だけ、開きかけのフォームは PlayerQuit で reject", async () => {
+  const p = spawnPlayer({ x: 0, y: 64, z: 0 }, "nr:test_terminal");
+  answerForm(0);
+  await use(p);
+  await tick(1);                       // system.run でフォームが開く（答えは次の tick）
+  expect(lastForm().type).toBe("action");
+  await leave(p);
+  expect(p.isValid).toBe(false);
+  expect(STATE.leftBefore.at(-1)).toBe("Runner");
+  expect(STATE.leftAfter.at(-1)).toBe("Runner");
+  await tick(2);
+  expect(STATE.formErrors.at(-1)).toBe("PlayerQuit");
+  expect(mc.world.getAllPlayers()).toHaveLength(0);
+});
+
+test("randomTick() でブロックの onRandomTick（偽物は自分では起こさない）", async () => {
+  const n = STATE.randomTicks;
+  setBlock({ x: 3, y: 64, z: 3 }, "nr:test_trap");
+  expect(await randomTick({ x: 3, y: 64, z: 3 })).toBe(true);
+  expect(await randomTick({ x: 4, y: 64, z: 3 })).toBe(false);
+  expect(STATE.randomTicks).toBe(n + 1);
+});
+
+test("オプションの辞書は d.ts の interface のキーだけ（正しいものは通る）", async () => {
+  const dim = mc.world.getDimension("overworld");
+  const z = spawnZombie("test", { x: 0, y: 64, z: 2 });
+  dim.getEntities({ location: { x: 0, y: 64, z: 0 }, maxDistance: 8, families: ["nr_zombie"], excludeTypes: ["nr:gib"], closest: 1 });
+  z.teleport({ x: 0, y: 64, z: 3 }, { keepVelocity: true, rotation: { x: 0, y: 90 } });
+  z.addEffect("slowness", 20, { amplifier: 1, showParticles: false });
+  dim.playSound("nr.test.hit", z.location, { volume: 0.5, pitch: 1.2 });
+  const it = new mc.ItemStack("nr:w_test");
+  it.setLore(["§7改造: §6電撃", "x".repeat(50)]);
+  expect(it.getLore()).toHaveLength(2);
+  await expectViolation(() => z.teleport({ x: 0, y: 64, z: 3 }, { keepVelocty: true }), "options");
+  await expectViolation(() => it.setLore(new Array(21).fill("a")), "item");
 });
 
 test("expectViolation で契約違反を確かめられる（記録から消える）", async () => {
@@ -335,8 +426,9 @@ test("偽の @minecraft/server-ui の export は d.ts の実行時の名前と�
 test("手書きのクラスに d.ts に無い公開メンバーが無い", async () => {
   expect(S.surfaceExtras(S.IMPLEMENTED)).toEqual([]);
   expect(S.surfaceExtras(S.UI_IMPLEMENTED, S.ENV.apiUi)).toEqual([]);
-  expect(mc.MolangVariableMap.prototype.setVector3).toBeUndefined();
   expect(mc.Entity.prototype.getAABB).toBeUndefined();          // 2.4.0-beta だけ
+  expect(mc.Player.prototype.stopSound).toBeUndefined();         // 同上
+  expect(mc.Dimension.prototype.getWeather).toBeUndefined();     // 同上
   expect(mc.WorldAfterEvents).toBeDefined();
   expect(mc.world.afterEvents.playerSwingStart).toBeUndefined(); // ベータ専用のイベント
   expect(mc.world.afterEvents.entityHurt).toBeDefined();

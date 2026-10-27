@@ -38,6 +38,16 @@ const CASES = {
   budget: () => { for (let i = 0; i < 320; i++) world.getDimension("overworld").spawnParticle("nr:test_spark", { x: 0, y: 65, z: 0 }); },
   global: () => setTimeout(() => {}, 1),
   dimension_query: () => world.getDimension("overworld").getEntities({ maxDistance: 5 }),
+  molang_nan: () => new MolangVariableMap().setFloat("variable.size", NaN),
+  ui_layout_modal: () => new ModalFormData().title("m").slider("a", 0, 10).divider().toggle("b").show(player()),
+  ui_dropdown_v1: () => new ModalFormData().dropdown("d", ["a", "b"], 1),
+  struct_palette: () => world.structureManager.place("nr:test_bad_hut", world.getDimension("overworld"), { x: 0, y: 64, z: 0 }),
+  effect: () => zombie().addEffect("no_such_effect", 20),
+  spawn_event: () => world.getDimension("overworld").spawnEntity("nr:z_test", { x: 0, y: 64, z: 3 }, { spawnEvent: "nr:no_such" }),
+  prop_typo: () => zombie().getProperty("nr:hed"),
+  lore: () => new ItemStack("nr:w_test").setLore(["§7" + "x".repeat(49)]),
+  options_query: () => world.getDimension("overworld").getEntities({ location: { x: 0, y: 64, z: 0 }, maxDistance: 5, famillies: ["nr_zombie"] }),
+  options_anim: () => zombie().playAnimation("animation.nr.z.test_react", { controller: "nr.os", stopExpression: "q.any_animation_finished", nextState: "none", blendOuttime: 0.1 }),
 };
 
 system.afterEvents.scriptEventReceive.subscribe((ev) => {
@@ -45,6 +55,7 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
   if (ev.id === "nr:throw") throw new Error("購読者の中の捕まらない例外（わざと）");
   if (ev.id === "nr:console") { console.error("[nr] わざと console.error"); return; }
   if (ev.id === "nr:run_throw") { system.run(() => { throw new Error("system.run の中の捕まらない例外（わざと）"); }); return; }
+  if (ev.id === "nr:reject") { void Promise.reject(new Error("捕まらない Promise の reject（わざと）")); return; }
   if (ev.id !== "nr:bad") return;
   const f = CASES[ev.message];
   if (!f) throw new Error(`知らない種類 ${ev.message}`);
@@ -57,4 +68,6 @@ world.beforeEvents.itemUse.subscribe((ev) => {
   if (MODE === "write") swallow(() => p.applyDamage(1));
   if (MODE === "form") swallow(() => { new ActionFormData().title("x").button("a").show(p); });
   if (MODE === "subscribe") swallow(() => world.afterEvents.entityHurt.subscribe(() => {}));
+  if (MODE === "setter") swallow(() => { p.selectedSlotIndex = 1; });
+  if (MODE === "property") swallow(() => p.dimension.getEntities({ type: "nr:z_test" })[0]?.setProperty("nr:blood", 1));
 });

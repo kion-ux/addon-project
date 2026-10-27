@@ -1,0 +1,25 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:lockpick",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_lockpick",
+      "minecraft:display_name": {
+        "value": "item.nr:lockpick"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:tags": {
+        "tags": [
+          "nr:item",
+          "nr:tool",
+          "nr:use_lockpick"
+        ]
+      }
+    }
+  }
+}

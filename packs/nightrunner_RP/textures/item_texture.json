@@ -1,5 +1,117 @@
 {
   "resource_pack_name": "nightrunner",
   "texture_name": "atlas.items",
-  "texture_data": {}
+  "texture_data": {
+    "nr_alcohol": {
+      "textures": "textures/nr/items/alcohol"
+    },
+    "nr_ammo_pistol": {
+      "textures": "textures/nr/items/ammo_pistol"
+    },
+    "nr_ammo_rifle": {
+      "textures": "textures/nr/items/ammo_rifle"
+    },
+    "nr_ammo_shotgun": {
+      "textures": "textures/nr/items/ammo_shotgun"
+    },
+    "nr_apex_trophy": {
+      "textures": "textures/nr/items/apex_trophy"
+    },
+    "nr_bandage": {
+      "textures": "textures/nr/items/bandage"
+    },
+    "nr_battery": {
+      "textures": "textures/nr/items/battery"
+    },
+    "nr_binoculars": {
+      "textures": "textures/nr/items/binoculars"
+    },
+    "nr_blades": {
+      "textures": "textures/nr/items/blades"
+    },
+    "nr_bolt": {
+      "textures": "textures/nr/items/bolt"
+    },
+    "nr_canned_food": {
+      "textures": "textures/nr/items/canned_food"
+    },
+    "nr_champion_booster": {
+      "textures": "textures/nr/items/champion_booster"
+    },
+    "nr_chemicals": {
+      "textures": "textures/nr/items/chemicals"
+    },
+    "nr_chocolate_bar": {
+      "textures": "textures/nr/items/chocolate_bar"
+    },
+    "nr_duct_tape": {
+      "textures": "textures/nr/items/duct_tape"
+    },
+    "nr_energy_drink": {
+      "textures": "textures/nr/items/energy_drink"
+    },
+    "nr_fortify_booster": {
+      "textures": "textures/nr/items/fortify_booster"
+    },
+    "nr_grappling_hook": {
+      "textures": "textures/nr/items/grappling_hook"
+    },
+    "nr_gunpowder_pouch": {
+      "textures": "textures/nr/items/gunpowder_pouch"
+    },
+    "nr_hunter_booster": {
+      "textures": "textures/nr/items/hunter_booster"
+    },
+    "nr_immunity_booster": {
+      "textures": "textures/nr/items/immunity_booster"
+    },
+    "nr_infected_trophy": {
+      "textures": "textures/nr/items/infected_trophy"
+    },
+    "nr_inhibitor": {
+      "textures": "textures/nr/items/inhibitor"
+    },
+    "nr_lockpick": {
+      "textures": "textures/nr/items/lockpick"
+    },
+    "nr_medkit": {
+      "textures": "textures/nr/items/medkit"
+    },
+    "nr_money": {
+      "textures": "textures/nr/items/money"
+    },
+    "nr_mutated_tissue": {
+      "textures": "textures/nr/items/mutated_tissue"
+    },
+    "nr_painkillers": {
+      "textures": "textures/nr/items/painkillers"
+    },
+    "nr_paraglider": {
+      "textures": "textures/nr/items/paraglider"
+    },
+    "nr_rags": {
+      "textures": "textures/nr/items/rags"
+    },
+    "nr_repair_kit": {
+      "textures": "textures/nr/items/repair_kit"
+    },
+    "nr_scrap": {
+      "textures": "textures/nr/items/scrap"
+    },
+    "nr_survivor_arrow": {
+      "textures": "textures/nr/items/survivor_arrow"
+    },
+    "nr_survivor_terminal": {
+      "textures": "textures/nr/items/survivor_terminal"
+    },
+    "nr_uv_flashlight": {
+      "textures": "textures/nr/items/uv_flashlight"
+    },
+    "nr_uv_shroom": {
+      "textures": "textures/nr/items/uv_shroom"
+    },
+    "nr_volatile_trophy": {
+      "textures": "textures/nr/items/volatile_trophy"
+    }
+  }
 }

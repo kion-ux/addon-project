@@ -1,0 +1,151 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:electric_trap",
+      "menu_category": {
+        "category": "items"
+      },
+      "states": {
+        "nr:trap_state": [
+          "armed",
+          "triggered",
+          "spent"
+        ],
+        "nr:charges": [
+          6,
+          5,
+          4,
+          3,
+          2,
+          1,
+          0
+        ]
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.nr.b.electric_trap",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_electric_trap",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -8,
+          0,
+          -8
+        ],
+        "size": [
+          16,
+          2,
+          16
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -8,
+          0,
+          -8
+        ],
+        "size": [
+          16,
+          2,
+          16
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#4a6a8a",
+      "minecraft:light_emission": 3,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 2.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "minecraft:tick": {
+        "interval_range": [
+          5,
+          5
+        ],
+        "looping": true
+      },
+      "nr:trap": {
+        "key": "electric_trap",
+        "trigger": "proximity",
+        "state": "nr:trap_state",
+        "radius": 1.6,
+        "who": "zombie",
+        "charges_state": "nr:charges",
+        "charges": 6,
+        "rearm": "recharge",
+        "poll": true
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('nr:trap_state') == 'triggered'",
+        "components": {
+          "minecraft:light_emission": 10
+        }
+      },
+      {
+        "condition": "q.block_state('nr:trap_state') == 'spent'",
+        "components": {
+          "minecraft:light_emission": 0
+        }
+      },
+      {
+        "condition": "q.block_state('nr:trap_state') == 'armed' && q.block_state('nr:charges') == 0",
+        "components": {
+          "minecraft:light_emission": 0
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

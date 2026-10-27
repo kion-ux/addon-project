@@ -1,0 +1,130 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:uv_lamp",
+      "menu_category": {
+        "category": "items"
+      },
+      "states": {
+        "nr:powered": [
+          1,
+          0
+        ]
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ],
+          "y_rotation_offset": 180
+        }
+      }
+    },
+    "components": {
+      "minecraft:geometry": {
+        "identifier": "geometry.nr.b.uv_lamp",
+        "bone_visibility": {
+          "tube_off": "q.block_state('nr:powered') == 0",
+          "tube_on": "q.block_state('nr:powered') == 1"
+        }
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_uv_lamp",
+          "render_method": "alpha_test"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -3,
+          0,
+          -3
+        ],
+        "size": [
+          6,
+          16,
+          6
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -3,
+          0,
+          -3
+        ],
+        "size": [
+          6,
+          16,
+          6
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#8040e0",
+      "minecraft:light_emission": 12,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 3.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "minecraft:tick": {
+        "interval_range": [
+          20,
+          20
+        ],
+        "looping": true
+      },
+      "nr:uv_lamp": {
+        "state": "nr:powered",
+        "radius": 10.0,
+        "immunity_regen_per_s": 10.0,
+        "repel_night": true
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('nr:powered') == 0",
+        "components": {
+          "minecraft:light_emission": 0
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

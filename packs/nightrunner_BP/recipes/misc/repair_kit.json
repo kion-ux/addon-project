@@ -1,0 +1,32 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_repair_kit"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SSS",
+      " T "
+    ],
+    "key": {
+      "S": {
+        "item": "nr:scrap"
+      },
+      "T": {
+        "item": "nr:duct_tape"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:scrap"
+      }
+    ],
+    "result": {
+      "item": "nr:repair_kit",
+      "count": 1
+    }
+  }
+}

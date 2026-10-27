@@ -1,0 +1,38 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_medkit"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "RAR",
+      "CBC"
+    ],
+    "key": {
+      "R": {
+        "item": "nr:rags"
+      },
+      "A": {
+        "item": "nr:alcohol"
+      },
+      "C": {
+        "item": "nr:chemicals"
+      },
+      "B": {
+        "item": "nr:bandage"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:rags"
+      }
+    ],
+    "result": {
+      "item": "nr:medkit",
+      "count": 1
+    }
+  }
+}

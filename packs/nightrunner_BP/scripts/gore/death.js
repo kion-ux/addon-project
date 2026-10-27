@@ -57,11 +57,14 @@ export const POSE = Object.freeze({
  * @property {boolean} [noLoot]
  * @property {boolean} [noXp]
  * @property {number} [pose]        nr:pose を指定する時
+ * @property {Vector3} [at]         overkill: エンティティが既に無効な時の位置（最後に見た所）
+ * @property {Dimension} [dim]      overkill: 同じく次元
+ * @property {string} [key]         overkill: 同じく種類の鍵
  */
 
 /** @type {((z: Entity, hit: any) => any) | undefined} */
 let hitHandler;
-/** 周りへのダメージ・死体の衝撃を流す先（gore.js が applyHit を登録する）。@param {(z: Entity, hit: any) => any} fn */
+/** 周りへのダメージ・死体の衝撃を流す先（gore.js が applyHit を登録する）。 @param {(z: Entity, hit: any) => any} fn */
 export function setHitHandler(fn) { hitHandler = fn; }
 /** @param {Entity} z @param {any} hit */
 function hitOther(z, hit) { if (hitHandler && valid(z)) safe("death-hit", () => hitHandler?.(z, hit)); }
@@ -93,7 +96,7 @@ const dead = new Set();
 function corpseTicks() { return Math.round(clamp(num("corpse_lifetime_s", 90), 1, 3600) * 20); }
 function maxCorpses() { return Math.round(clamp(num("max_corpses", 24), 0, 256)); }
 
-/** 死体か（記録にある・nr:state = dead）。@param {Entity} e */
+/** 死体か（記録にある・nr:state = dead）。 @param {Entity} e */
 export function isCorpse(e) { return valid(e) && (corpses.has(e.id) || dead.has(e.id) || getProp(e, "nr:state", "") === "dead"); }
 /** 死体の数。 */
 export function corpseCount() { return corpses.size; }
@@ -158,7 +161,7 @@ export function dropLoot(dim, pos, entries, o) {
   return n;
 }
 
-/** 経験値のオーブ（spec の xp を数個のオーブに分ける）。@param {Dimension} dim @param {Vector3} pos @param {number} xp */
+/** 経験値のオーブ（spec の xp を数個のオーブに分ける）。 @param {Dimension} dim @param {Vector3} pos @param {number} xp */
 export function dropXp(dim, pos, xp) {
   const total = Math.max(0, Math.round(xp));
   if (!total) return 0;
@@ -173,7 +176,7 @@ export function dropXp(dim, pos, xp) {
 // ---------------------------------------------------------------------------
 //  死に方
 // ---------------------------------------------------------------------------
-/** 打たれた向き・部位の状態から nr:pose を選ぶ。@param {Entity} z @param {Vector3} dir @param {KillInfo} info */
+/** 打たれた向き・部位の状態から nr:pose を選ぶ。 @param {Entity} z @param {Vector3} dir @param {KillInfo} info */
 export function poseFrom(z, dir, info) {
   const parts = info.parts ?? {};
   const power = info.power ?? 1;
@@ -188,8 +191,10 @@ export function poseFrom(z, dir, info) {
   return l[0] >= 0 ? POSE.RIGHT : POSE.LEFT;
 }
 
-/** 能力の引数（spec の abilities の上書き込み）。@param {any} spec @param {string} key @returns {Record<string, any> | undefined} */
+/** 能力の引数（spec の abilities の上書き込み）。 @param {any} spec @param {string} key @returns {Record<string, any> | undefined} */
 function abilityParams(spec, key) {
+  const ap = spec?.ability_params?.[key];          // data/zombies.js の派生（語彙の既定 + 上書き）
+  if (ap && typeof ap === "object") return { ...ap };
   for (const a of spec?.abilities ?? []) {
     if (a === key) return { ...(tuning("ABILITIES", {})[key]?.params ?? {}) };
     if (Array.isArray(a) && a[0] === key) return { ...(tuning("ABILITIES", {})[key]?.params ?? {}), ...(a[1] ?? {}) };
@@ -252,6 +257,8 @@ export function kill(z, info = {}) {
       const at = add(loc, { x: 0, y: 0.9, z: 0 });
       later(fuse, () => detonate(dim, at, { radius: Number(p.radius) || 4, dmg: Number(p.dmg) || 12, infectedMult: Number(p.infected_mult) || 2, exclude: z.id }));
     }
+    // 体が残らない: spec の loot に加えて「遺骸」の表（LOOT_TABLES.gore_remains）を半分の確率で
+    if (!info.noLoot && G > 0.05 && chance(0.5)) dropLoot(dim, loc, ["gore_remains"]);
     later(1, () => despawn(z));
   } else {
     const burnt = (info.burn ?? Number(getProp(z, "nr:burn", 0))) >= 3;
@@ -279,18 +286,30 @@ export function kill(z, info = {}) {
  * @param {Entity} z @param {KillInfo} [info]
  */
 export function overkill(z, info = {}) {
-  if (!valid(z) || dead.has(z.id)) return false;
-  dead.add(z.id);
-  const spec = zombieSpec(z);
-  const dim = z.dimension, loc = z.location;
+  const id = safe("id", () => z.id);
+  if (!id || dead.has(id)) return false;
+  const live = valid(z);
+  const key = live ? z.typeId.slice(5) : String(info.key ?? safe("type", () => z.typeId.slice(5)) ?? "");
+  const dim = live ? z.dimension : info.dim;
+  const loc = live ? z.location : info.at;
+  if (!dim || !loc || !finiteVec(loc)) return false;   // 無効で、最後の位置も知らない
+  dead.add(id);
+  const spec = zombieSpec(key);
   const dir = norm(info.dir ?? { x: rand(-1, 1), y: 0.5, z: rand(-1, 1) });
   const G = gore();
-  if (G * 100 >= (Number(GT.overkill_burst_min_g) || 70)) bodyBurst(z, dir, 1.5, info, "none");
-  else burst(dim, add(loc, { x: 0, y: 1, z: 0 }), 1.5, { kind: kindOf(z) });
-  if (!info.noLoot) dropLoot(dim, loc, spec?.loot ?? []);
-  if (!info.noXp && (info.byPlayer || isPlayer(info.attacker))) dropXp(dim, loc, Number(spec?.xp) || 0);
-  emit(EV.KILL, { zombie: z, key: z.typeId.slice(5), attacker: info.attacker, hit: info.hit, cause: "overkill", pos: loc, overkill: true, corpse: false, byPlayer: !!(info.byPlayer || isPlayer(info.attacker)) });
-  later(1, () => despawn(z));
+  const big = G * 100 >= (Number(GT.overkill_burst_min_g) || 70);
+  if (big && live) bodyBurst(z, dir, 1.5, info, "none");
+  else if (big) bodyExplodeFx(dim, add(loc, { x: 0, y: 1, z: 0 }), 1.5, { kind: kindOf(key) });
+  else burst(dim, add(loc, { x: 0, y: 1, z: 0 }), 1.5, { kind: kindOf(key) });
+  if (big) sound(dim, "nr.gore.burst", loc, { volume: 1.4, pitch: rand(0.85, 1.05) });
+  if (!info.noLoot) {
+    dropLoot(dim, loc, spec?.loot ?? []);
+    if (G > 0.05 && chance(0.5)) dropLoot(dim, loc, ["gore_remains"]);
+  }
+  const byPlayer = !!(info.byPlayer || isPlayer(info.attacker));
+  if (!info.noXp && byPlayer) dropXp(dim, loc, Number(spec?.xp) || 0);
+  emit(EV.KILL, { zombie: z, key, attacker: info.attacker, hit: info.hit, cause: "overkill", pos: loc, overkill: true, corpse: false, byPlayer, headshot: false });
+  if (live) later(1, () => despawn(z));
   return true;
 }
 

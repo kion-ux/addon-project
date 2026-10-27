@@ -1,0 +1,29 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_chainlink_fence"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "III",
+      "I I"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_bars"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_bars"
+      }
+    ],
+    "result": {
+      "item": "nr:chainlink_fence",
+      "count": 3
+    }
+  }
+}

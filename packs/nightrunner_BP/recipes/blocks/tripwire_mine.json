@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_tripwire_mine"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "T",
+      "G",
+      "S"
+    ],
+    "key": {
+      "G": {
+        "item": "nr:gunpowder_pouch"
+      },
+      "S": {
+        "item": "nr:scrap"
+      },
+      "T": {
+        "item": "minecraft:tripwire_hook"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:gunpowder_pouch"
+      }
+    ],
+    "result": {
+      "item": "nr:tripwire_mine",
+      "count": 1
+    }
+  }
+}

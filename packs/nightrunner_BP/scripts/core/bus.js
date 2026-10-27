@@ -43,7 +43,7 @@ export function on(name, fn) {
 /** @param {string} name @param {(data: any) => void} fn */
 export function off(name, fn) { subs.get(name)?.delete(fn); }
 
-/** 一度だけ受け取る。@param {string} name @param {(data: any) => void} fn */
+/** 一度だけ受け取る。 @param {string} name @param {(data: any) => void} fn */
 export function once(name, fn) {
   const un = on(name, (d) => { un(); fn(d); });
   return un;
@@ -61,5 +61,5 @@ export function emit(name, data) {
   }
 }
 
-/** 購読者の数（テスト・デバッグ用）。@param {string} name */
+/** 購読者の数（テスト・デバッグ用）。 @param {string} name */
 export function listeners(name) { return subs.get(name)?.size ?? 0; }

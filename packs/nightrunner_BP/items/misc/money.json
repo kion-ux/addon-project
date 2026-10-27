@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:money",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_money",
+      "minecraft:display_name": {
+        "value": "item.nr:money"
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:tags": {
+        "tags": [
+          "nr:item",
+          "nr:currency"
+        ]
+      }
+    }
+  }
+}

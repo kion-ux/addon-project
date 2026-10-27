@@ -1,0 +1,32 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "nr:craft_block_sandbags"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "RRR",
+      "DDD"
+    ],
+    "key": {
+      "D": {
+        "item": "minecraft:sand"
+      },
+      "R": {
+        "item": "nr:rags"
+      }
+    },
+    "unlock": [
+      {
+        "item": "nr:rags"
+      }
+    ],
+    "result": {
+      "item": "nr:sandbags",
+      "count": 2
+    }
+  }
+}

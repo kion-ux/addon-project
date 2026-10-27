@@ -1,0 +1,67 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:block": {
+    "description": {
+      "identifier": "nr:traffic_cone",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "nr:fallen": [
+          0,
+          1
+        ]
+      }
+    },
+    "components": {
+      "minecraft:geometry": {
+        "identifier": "geometry.nr.b.traffic_cone",
+        "bone_visibility": {
+          "fallen": "q.block_state('nr:fallen') == 1",
+          "upright": "q.block_state('nr:fallen') == 0"
+        }
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "nr_traffic_cone",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [
+          -4,
+          0,
+          -4
+        ],
+        "size": [
+          8,
+          11,
+          8
+        ]
+      },
+      "minecraft:selection_box": {
+        "origin": [
+          -4,
+          0,
+          -4
+        ],
+        "size": [
+          8,
+          11,
+          8
+        ]
+      },
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#e07020",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3.0
+      },
+      "nr:knockable": {
+        "state": "nr:fallen"
+      }
+    }
+  }
+}

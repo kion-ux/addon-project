@@ -1,0 +1,93 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nr.w.police_baton.tp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -16.09,
+            3.19,
+            -0.91
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.police_baton.fp": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -48.27,
+            3.56,
+            165.68
+          ],
+          "position": [
+            -3.16,
+            28.55,
+            -1.49
+          ],
+          "scale": [
+            0.897,
+            0.897,
+            0.897
+          ]
+        }
+      }
+    },
+    "animation.nr.w.police_baton.tp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -96.22,
+            1.4,
+            -25.24
+          ],
+          "position": [
+            0.0,
+            22.2,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "animation.nr.w.police_baton.fp_use": {
+      "loop": true,
+      "bones": {
+        "hold": {
+          "rotation": [
+            -12.9,
+            -43.99,
+            173.67
+          ],
+          "position": [
+            -4.88,
+            28.12,
+            -0.1
+          ],
+          "scale": [
+            0.897,
+            0.897,
+            0.897
+          ]
+        }
+      }
+    }
+  }
+}

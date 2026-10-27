@@ -9,11 +9,13 @@
 //  * 近接 = 目から視線のレイ、飛び道具 = 着弾点に一番近い箱、外れたら「狙いの高さ」で決める。
 //  * 2 箱の部位は sub = 0 が上（胸・上腕・太腿）、1 が下（腹・前腕と手・脛と足）。
 //  * SHAPES に無い種類は spec の身長から作る人型の箱で代わりをする。
+//  * data/zombie_shapes.js は gen_nr_zombies の生成物。並行作業中にまだ無いと静的な import は main.js ごと
+//    読み込みに失敗するので、動的な import() で読む（読み込み前・失敗時は人型の箱。失敗は 1 回だけ警告）。
+//    import() はモジュールの評価の直後（最初の tick より前）に解決する。
 // ===========================================================================
-import * as SHP_D from "../data/zombie_shapes.js";
 import { zombieSpec } from "../core/hp.js";
 import {
-  toLocal, toWorld, dirToLocal, dirToWorld, yawOf, getProp, norm, valid, clamp,
+  toLocal, toWorld, dirToLocal, dirToWorld, yawOf, getProp, norm, valid, clamp, warnOnce,
 } from "../core/util.js";
 
 /** @typedef {import("@minecraft/server").Vector3} Vector3 */
@@ -35,20 +37,31 @@ import {
 
 export const PARTS = Object.freeze(["head", "torso", "arm_r", "arm_l", "leg_r", "leg_l"]);
 
-/** 部位 → 部位の系統（head / torso / arm / leg）。@param {string} part */
+/** 部位 → 部位の系統（head / torso / arm / leg）。 @param {string} part */
 export function groupOf(part) {
   return part === "head" ? "head" : part === "torso" ? "torso" : part.startsWith("arm") ? "arm" : "leg";
 }
-/** 左右（"r" / "l" / ""）。@param {string} part */
+/** 左右（"r" / "l" / ""）。 @param {string} part */
 export function sideOf(part) { return part.endsWith("_r") ? "r" : part.endsWith("_l") ? "l" : ""; }
 
 // ---------------------------------------------------------------------------
 //  形（SHAPES と代わりの人型）
 // ---------------------------------------------------------------------------
-/** @type {any} */
-const SHD = SHP_D;
 /** @type {Record<string, any>} */
-const SHAPES = (SHD.SHAPES && typeof SHD.SHAPES === "object") ? SHD.SHAPES : {};
+let SHAPES = {};
+let shapesLoaded = false;
+// 文字列を変数に入れて渡す（tsc にまだ無いファイルを解決させない）。相対パスはこのファイルからの位置
+const SHAPES_MODULE = "../data/zombie_shapes.js";
+/** @type {Promise<void>} */
+export const shapesReady = import(SHAPES_MODULE).then((m) => {
+  const s = m?.SHAPES;
+  if (s && typeof s === "object") { SHAPES = s; shapesLoaded = true; cache.clear(); }
+  else warnOnce("shapes-empty", "data/zombie_shapes.js に SHAPES が無い: 人型の当たり箱で代わりをする");
+}, (err) => {
+  warnOnce("shapes-missing", "data/zombie_shapes.js を読めない（gen_nr_zombies がまだ？）: 人型の当たり箱で代わりをする", err);
+});
+/** data/zombie_shapes.js の SHAPES を読めたか。 */
+export function hasShapes() { return shapesLoaded; }
 
 /**
  * @typedef {object} Shape
@@ -66,7 +79,7 @@ const cache = new Map();
 /** @param {number} r @param {number} u @param {number} f @param {number} hr @param {number} hu @param {number} hf @returns {Box} */
 function box(r, u, f, hr, hu, hf) { return { c: [r, u, f], h: [hr, hu, hf] }; }
 
-/** 人型の代わりの箱（身長 H ブロック）。@param {number} H @param {number} bulk */
+/** 人型の代わりの箱（身長 H ブロック）。 @param {number} H @param {number} bulk */
 function genericStand(H, bulk) {
   const w = 0.2 * bulk;
   return {
@@ -91,7 +104,7 @@ function genericLocators(H, w) {
   };
 }
 
-/** 立ち姿勢の箱から寝た姿勢を作る（nr_rig.hitboxes と同じ式）。@param {Record<string, Box[]>} stand @param {number} fBack @param {number} fFront @param {number} hipU */
+/** 立ち姿勢の箱から寝た姿勢を作る（nr_rig.hitboxes と同じ式）。 @param {Record<string, Box[]>} stand @param {number} fBack @param {number} fFront @param {number} hipU */
 function derivePoses(stand, fBack, fFront, hipU) {
   /** @type {Record<string, Box[]>} */ const lie = {};
   /** @type {Record<string, Box[]>} */ const prone = {};
@@ -102,7 +115,7 @@ function derivePoses(stand, fBack, fFront, hipU) {
   return { lie, prone };
 }
 
-/** 形を引く（無ければ人型の代わり）。@param {string} key @returns {Shape} */
+/** 形を引く（無ければ人型の代わり）。 @param {string} key @returns {Shape} */
 export function shapeOf(key) {
   const hit = cache.get(key);
   if (hit) return hit;
@@ -134,7 +147,7 @@ export function shapeOf(key) {
   return s;
 }
 
-/** 状態 → 当たり箱の姿勢。@param {string} [state] @param {number} [pose] @returns {Pose} */
+/** 状態 → 当たり箱の姿勢。 @param {string} [state] @param {number} [pose] @returns {Pose} */
 export function poseFor(state, pose) {
   if (state === "crawl") return "prone";
   if (state === "down") return "lie";
@@ -151,7 +164,7 @@ function poseOf(z, o) {
 /** @param {Entity} z */
 function keyOf(z) { return z.typeId.startsWith("nr:z_") ? z.typeId.slice(5) : z.typeId; }
 
-/** その姿勢の部位の箱。@param {Entity} z @param {PoseOpts} [o] */
+/** その姿勢の部位の箱。 @param {Entity} z @param {PoseOpts} [o] */
 export function boxesOf(z, o) {
   const s = shapeOf(keyOf(z));
   const pose = poseOf(z, o);
@@ -161,7 +174,7 @@ export function boxesOf(z, o) {
 // ---------------------------------------------------------------------------
 //  幾何
 // ---------------------------------------------------------------------------
-/** レイと箱（局所）。当たれば距離、外れれば null。@param {number[]} o @param {number[]} d @param {Box} b */
+/** レイと箱（局所）。当たれば距離、外れれば null。 @param {number[]} o @param {number[]} d @param {Box} b */
 function rayBox(o, d, b) {
   let t0 = 0, t1 = Infinity;
   for (let k = 0; k < 3; k++) {
@@ -175,17 +188,25 @@ function rayBox(o, d, b) {
   }
   return t0;
 }
-/** 点と箱の距離（中なら 0）。@param {number[]} p @param {Box} b */
+const DEPTH_TOL = 0.2;
+/** レイがいちばん箱の中心に近づく所での「中心らしさ」（0 = 中心を通る、1 = 箱の縁）。 @param {number[]} o @param {number[]} d @param {Box} b */
+function rayCentrality(o, d, b) {
+  const tc = Math.max(0, (b.c[0] - o[0]) * d[0] + (b.c[1] - o[1]) * d[1] + (b.c[2] - o[2]) * d[2]);
+  let s = 0;
+  for (let k = 0; k < 3; k++) s = Math.max(s, Math.abs(o[k] + d[k] * tc - b.c[k]) / Math.max(1e-3, b.h[k]));
+  return s;
+}
+/** 点と箱の距離（中なら 0）。 @param {number[]} p @param {Box} b */
 function pointBoxDist(p, b) {
   let s = 0;
   for (let k = 0; k < 3; k++) { const d = Math.max(Math.abs(p[k] - b.c[k]) - b.h[k], 0); s += d * d; }
   return Math.sqrt(s);
 }
-/** 箱の中へ寄せた点。@param {number[]} p @param {Box} b @returns {RUF} */
+/** 箱の中へ寄せた点。 @param {number[]} p @param {Box} b @returns {RUF} */
 function clampToBox(p, b) {
   return [clamp(p[0], b.c[0] - b.h[0], b.c[0] + b.h[0]), clamp(p[1], b.c[1] - b.h[1], b.c[1] + b.h[1]), clamp(p[2], b.c[2] - b.h[2], b.c[2] + b.h[2])];
 }
-/** 箱の中心からの正規化座標（-1..1）での「中心らしさ」（小さいほど中）。@param {number[]} p @param {Box} b */
+/** 箱の中心からの正規化座標（-1..1）での「中心らしさ」（小さいほど中）。 @param {number[]} p @param {Box} b */
 function centrality(p, b) {
   let s = 0;
   for (let k = 0; k < 3; k++) s = Math.max(s, Math.abs(p[k] - b.c[k]) / Math.max(1e-3, b.h[k]));
@@ -212,14 +233,23 @@ export function rayPart(z, origin, dir, o) {
   const lo = toLocal(feet, yaw, origin);
   const ld = dirToLocal(yaw, norm(dir));
   const maxDist = o?.maxDist ?? 16;
-  /** @type {{part: string, sub: number, t: number} | undefined} */
-  let best;
+  // 当たった箱を全部集め、入口がいちばん手前の箱から DEPTH_TOL 以内に入る箱のうち、レイが中心の近くを
+  // 通る箱を選ぶ（当たり箱は軸に沿った直方体なので、腕と胸・首と頭の箱は重なる。重なりの縁をかすめた箱より、
+  // 狙った箱を選ぶ）
+  /** @type {{part: string, sub: number, t: number, c: number}[]} */
+  const got = [];
   for (const part of PARTS) {
     const list = boxes[part] ?? [];
     for (let i = 0; i < list.length; i++) {
       const t = rayBox(lo, ld, list[i]);
-      if (t !== null && t <= maxDist && (!best || t < best.t)) best = { part, sub: i, t };
+      if (t !== null && t <= maxDist) got.push({ part, sub: i, t, c: rayCentrality(lo, ld, list[i]) });
     }
+  }
+  /** @type {{part: string, sub: number, t: number, c: number} | undefined} */
+  let best;
+  if (got.length) {
+    const tmin = Math.min(...got.map((x) => x.t));
+    for (const x of got) if (x.t <= tmin + DEPTH_TOL && (!best || x.c < best.c)) best = x;
   }
   if (best) {
     const p = /** @type {RUF} */ ([lo[0] + ld[0] * best.t, lo[1] + ld[1] * best.t, lo[2] + ld[2] * best.t]);
@@ -271,7 +301,9 @@ export function pointPart(z, point, o) {
 export function heightPart(z, y, rHint = 0, o) {
   const { pose, boxes, shape } = boxesOf(z, o);
   const side = rHint < 0 ? "l" : "r";
-  let part = "torso", sub = 0;
+  /** @type {string} */
+  let part = "torso";
+  let sub = 0;
   if (pose === "stand") {
     const f = (y - z.location.y) / Math.max(0.5, shape.height);
     if (f > 0.82) part = "head";
@@ -280,9 +312,20 @@ export function heightPart(z, y, rHint = 0, o) {
       part = Math.abs(rHint) > tw ? `arm_${side}` : "torso";
       sub = f > 0.65 ? 0 : 1;
     } else { part = `leg_${side}`; sub = f > 0.25 ? 0 : 1; }
+  } else {
+    // 寝た姿勢: 足元から少し胴の側の、高さの近い箱
+    const yaw = yawOf(z);
+    const lp = toLocal(z.location, yaw, { x: z.location.x, y, z: z.location.z });
+    /** @type {RUF} */
+    const q = [rHint, lp[1], pose === "lie" ? -0.6 * shape.height : 0.3 * shape.height];
+    let bd = Infinity;
+    for (const p of PARTS) (boxes[p] ?? []).forEach((b, i) => { const d = pointBoxDist(q, b); if (d < bd) { bd = d; part = p; sub = i; } });
   }
-  const b = (boxes[part] ?? boxes.torso ?? [])[sub] ?? (boxes[part] ?? boxes.torso)[0];
-  return mk(z, pose, part, b === (boxes[part] ?? [])[sub] ? sub : 0, /** @type {RUF} */ ([...b.c]), "height");
+  const list = boxes[part]?.length ? boxes[part] : boxes.torso?.length ? boxes.torso : undefined;
+  if (!list) return mk(z, pose, part, 0, [0, Math.max(0.5, shape.height * 0.6), 0], "height");
+  if (list !== boxes[part]) { part = "torso"; sub = 0; }
+  const b = list[Math.min(sub, list.length - 1)];
+  return mk(z, pose, part, Math.min(sub, list.length - 1), /** @type {RUF} */ ([...b.c]), "height");
 }
 
 /**
@@ -323,7 +366,7 @@ export function locate(z, hit, o) {
 // ---------------------------------------------------------------------------
 //  位置（部位の中心・ロケータ）
 // ---------------------------------------------------------------------------
-/** 部位の箱の中心（ワールド）。@param {Entity} z @param {string} part @param {number} [sub] @param {PoseOpts} [o] */
+/** 部位の箱の中心（ワールド）。 @param {Entity} z @param {string} part @param {number} [sub] @param {PoseOpts} [o] */
 export function partCenter(z, part, sub = 0, o) {
   const { boxes } = boxesOf(z, o);
   const list = boxes[part] ?? boxes.torso ?? [];
@@ -331,13 +374,13 @@ export function partCenter(z, part, sub = 0, o) {
   return toWorld(z.location, yawOf(z), b.c);
 }
 
-/** 立ち姿勢の局所座標を、姿勢に合わせて直す。@param {Shape} s @param {Pose} pose @param {ArrayLike<number>} p @returns {RUF} */
+/** 立ち姿勢の局所座標を、姿勢に合わせて直す。 @param {Shape} s @param {Pose} pose @param {ArrayLike<number>} p @returns {RUF} */
 function posePoint(s, pose, p) {
   if (pose === "lie") return [p[0], p[2] - s.fBack, -p[1]];
   if (pose === "prone") return [p[0], s.fFront - p[2], p[1] - s.hipU];
   return [p[0], p[1], p[2]];
 }
-/** 向きも同じように。@param {Pose} pose @param {ArrayLike<number>} d @returns {RUF} */
+/** 向きも同じように。 @param {Pose} pose @param {ArrayLike<number>} d @returns {RUF} */
 function poseDir(pose, d) {
   if (pose === "lie") return [d[0], d[2], -d[1]];
   if (pose === "prone") return [d[0], -d[2], d[1]];
@@ -353,7 +396,7 @@ const LOC_DIR = {
   loc_hip_l: [-0.2, -1, 0], loc_knee_r: [0, -1, 0.2], loc_knee_l: [0, -1, 0.2],
 };
 
-/** ロケータが無い形で、箱から近い位置を作る。@param {Shape} s @param {string} name @returns {number[]} */
+/** ロケータが無い形で、箱から近い位置を作る。 @param {Shape} s @param {string} name @returns {number[]} */
 function locFromBoxes(s, name) {
   const B = s.boxes.stand;
   const side = name.endsWith("_r") ? "r" : "l";
@@ -382,7 +425,7 @@ export function locatorPos(z, name, o) {
   return toWorld(z.location, yawOf(z), posePoint(s, pose, raw));
 }
 
-/** ロケータの外向き（ワールドの単位ベクトル）。@param {Entity} z @param {string} name @param {PoseOpts} [o] */
+/** ロケータの外向き（ワールドの単位ベクトル）。 @param {Entity} z @param {string} name @param {PoseOpts} [o] */
 export function locatorDir(z, name, o) {
   const pose = poseOf(z, o);
   const d = LOC_DIR[name] ?? [0, 1, 0];

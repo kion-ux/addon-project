@@ -77,8 +77,12 @@ if (entry !== "-") {
 }
 await H.__drain();
 S.__startup();
-for (const m of S.unregisteredCustomComponents()) {
-  S.violations.push({ kind: "startup", msg: `BP が使うのに system.beforeEvents.startup で登録されていないカスタムコンポーネント ${m}（実機ではそのブロック／アイテムが読み込みエラー）`, where: "", tick: 0 });
+// アドオンを読み込めたときだけ（入口なし・import の失敗では登録が無いのは当たり前で、雑音になる）
+const loaded = entry !== "-" && !result.boot.missing && result.boot.ok;
+if (loaded) {
+  for (const m of S.unregisteredCustomComponents()) {
+    S.violations.push({ kind: "startup", msg: `BP が使うのに system.beforeEvents.startup で登録されていないカスタムコンポーネント ${m}（実機ではそのブロック／アイテムが読み込みエラー）`, where: "", tick: 0 });
+  }
 }
 await H.__drain();
 
@@ -119,6 +123,9 @@ result.notices = mapObj(S.notices);
 result.warns = S.warns.length;
 result.warnSamples = S.warns.slice(0, 8);
 result.ticks = S.tick;
-result.leftoverViolations = S.violations.slice();   // テストの外（片付け中など）で起きた違反
+// テストの外（片付け中・最後のテストの後の Promise など）で起きたもの。テストの分は __runTests が外してある
+result.leftoverViolations = S.violations.slice();
+result.leftoverErrors = S.errors.slice();
+result.leftoverConsoleErrors = S.consoleErrors.slice();
 fs.writeFileSync(outPath, JSON.stringify(result, (k, v) => (v instanceof Map ? Object.fromEntries(v) : v)));
 process.exit(0);

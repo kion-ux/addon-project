@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.120",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nr:ammo_pistol",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "nr_ammo_pistol",
+      "minecraft:display_name": {
+        "value": "item.nr:ammo_pistol"
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:tags": {
+        "tags": [
+          "nr:item",
+          "nr:ammo"
+        ]
+      }
+    }
+  }
+}
