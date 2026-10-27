@@ -23,10 +23,10 @@
   （NR_PREVIEW=1 でも確認画像を描く）
 
 確認画像（build_preview/nightrunner/）:
-  weapons_melee.png        全近接武器の 3/4 と横（テクスチャ付き）
-  weapons_melee_held.png   三人称でプレイヤーに持たせた姿（正面斜め・横・構え）。めり込み・左手の届きを数字で
-  weapons_melee_fp.png     一人称の画面（持ち・構え）
-  weapons_melee_icons.png  アイコン（等倍と 4 倍）
+  weapons_melee.png        全近接武器の 3/4（テクスチャ付き、キューブ数とアトラス）
+  weapons_melee_held.png   三人称でプレイヤーに持たせた姿（持ち・構え）。めり込み（持ち/構え）と左手の届きを数字で
+  weapons_melee_fp.png     一人称の画面（持ち）
+  weapons_melee_icons.png  アイコン（2 倍）
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List
 
 import numpy as np
 from PIL import Image
@@ -799,7 +799,7 @@ def b_pipe_wrench(w) -> Built:
     book.add("weld", "steel_dark", base=(80, 70, 62), wear=0.3, dirt=0.4)
     book.raw("hair", NP.style("hair", base=(52, 36, 24), style="matted"))
     blood = spec_blood(w, amount=0.48, grow=0.5)
-    return Built(wm, book, blood, hold=dict(pitch=28.0))
+    return Built(wm, book, blood, hold=dict(pitch=28.0, charge_fwd=(-0.6, 0.72, 0.36)))
 
 
 @builder("crowbar")
@@ -1385,7 +1385,6 @@ def b_sign_axe(w) -> Built:
     pts = [(yb + SIGN_CH, zn), (yb, zn - SIGN_CH), (yb, zf + SIGN_CH), (yb + SIGN_CH, zf)]
     edges = []
     for (y0, z0), (y1, z1) in zip(pts[:-1], pts[1:]):
-        d = np.array([0.0, y1 - y0, z1 - z0])
         n_in = np.array([0.0, -(z1 - z0), y1 - y0])
         n_in /= np.linalg.norm(n_in)
         if n_in[1] < 0:
@@ -1396,7 +1395,6 @@ def b_sign_axe(w) -> Built:
         c = beam(b, p0, p1, 0.12, SIGN_EB + 0.08, "edge", up=n_in, extend=0.16, uv=12, tags=("edge",))
         c.bt = (0.0, 0.12)
         edges.append(c)
-        del d
     chips_on(edges, [(-15.2, 0.3, 0.22), (-17.9, 0.22, 0.16), (-20.2, 0.32, 0.26)])
     # 留め金具: 柱の上をまたぐ帯と脚、板と柱を貫くボルト（丸い頭と六角ナット）
     for zc in (-15.4, -19.8):
@@ -1592,7 +1590,7 @@ def b_rebar_spear(w) -> Built:
     blood = spec_blood(w, amount=0.7, grow=0.3) + [
         WC.blood_zone((-0.8, -0.8, -22.4), (0.8, 0.8, -19.5), 0.3, "wet", soft=0.7, drip=1.4),
         WC.blood_zone((-1.0, -3.6, -21.4), (1.0, -0.6, -18.2), 0.25, "dry", soft=1.0)]
-    return Built(wm, book, blood, hold=dict(grip=1.1, scale=0.85))
+    return Built(wm, book, blood, hold=dict(grip=1.3, scale=0.85))
 
 
 @builder("pitchfork")
@@ -1657,7 +1655,7 @@ def b_pitchfork(w) -> Built:
     book.add("meat", "gore_meat")
     blood = spec_blood(w, amount=0.72, grow=0.3) + [
         WC.blood_zone((-1.6, -0.8, -27.2), (0.2, 1.0, -25.3), 0.6, "wet", soft=0.7, drip=1.2)]
-    return Built(wm, book, blood, hold=dict(grip=0.1, scale=0.85, up=(0.0, 1.0, 0.0)), icon_roll=90.0)
+    return Built(wm, book, blood, hold=dict(grip=0.3, scale=0.85, up=(0.0, 1.0, 0.0)), icon_roll=90.0)
 
 
 @builder("kitchen_spear")
@@ -1713,7 +1711,7 @@ def b_kitchen_spear(w) -> Built:
     blood = spec_blood(w, amount=0.66, grow=0.3) + [
         WC.blood_zone((-0.6, -0.6, -27.9), (0.6, 1.6, -24.2), 0.4, "wet", soft=0.8, drip=1.2),
         WC.blood_zone((-1.2, -1.0, -20.4), (1.2, 2.0, -16.0), 0.2, "dry", soft=1.0)]
-    return Built(wm, book, blood, hold=dict(grip=1.1, scale=0.85))
+    return Built(wm, book, blood, hold=dict(grip=1.3, scale=0.85))
 
 
 # ===========================================================================
@@ -1743,10 +1741,12 @@ def preview(results, out_dir=SCRATCH) -> List[str]:
     sheet, held, fp, icons = [], [], [], []
     for w, bt, wm, tex, hold, _dt in results:
         key = w["key"]
-        sheet.append((f"{key} [{wm.stats()}]", WC.render_model(wm, tex, view=(35.0, 16.0), size=(420, 170))))
+        tw, th = wm.model.tex_w, wm.model.tex_h
+        sheet.append((f"{key} {wm.cube_count}c {tw}x{th}", WC.render_model(wm, tex, view=(35.0, 16.0),
+                                                                          size=(420, 170))))
         rep = WC.clip_report(wm, hold)
         repu = WC.clip_report(wm, hold, use=True)
-        tag = f"{key} clip {rep['depth']}/{repu['depth']} gap {rep['gap']}"
+        tag = f"{key[:14]} clip {rep['depth']}/{repu['depth']}" + ("" if rep["gap"] is None else f" gap {rep['gap']}")
         held.append((tag, WC.render_held(wm, tex, hold, view=(35.0, 8.0), size=(230, 270))))
         held.append(("  use", WC.render_held(wm, tex, hold, view=(60.0, 8.0), size=(230, 270), use=True)))
         fp.append((key, WC.render_fp(wm, tex, hold, size=(320, 180))))
@@ -1785,7 +1785,8 @@ def main(argv=None) -> int:
     t0 = time.time()
     for k in keys:
         w, bt, wm, tex, hold, dt = build(k)
-        out = WC.write_weapon(w, wm, tex, hold, frags, icon=WC.bake_icon(wm, tex, flip=bt.icon_flip, yaw=bt.icon_yaw, roll=bt.icon_roll))
+        icon = WC.bake_icon(wm, tex, flip=bt.icon_flip, yaw=bt.icon_yaw, roll=bt.icon_roll)
+        out = WC.write_weapon(w, wm, tex, hold, frags, icon=icon)
         rep = WC.clip_report(wm, hold)
         print(f"[{PRODUCER}] {k:24s} {wm.stats():34s} clip {rep['depth']:.2f}@{rep['part']} "
               f"gap {rep['gap']}  ({dt:.2f}s){'' if 'recipe' in out else '  (レシピなし)'}")

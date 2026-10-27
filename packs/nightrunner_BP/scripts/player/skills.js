@@ -15,7 +15,7 @@
 // ===========================================================================
 import { world, system } from "@minecraft/server";
 import { on, emit, EV } from "../core/bus.js";
-import { valid, now, isPlayer, dist } from "../core/util.js";
+import { valid, isPlayer, dist } from "../core/util.js";
 import { playerSound } from "../core/fx.js";
 import { zombieSpec } from "../core/hp.js";
 import * as SKILLS_D from "../data/skills.js";
@@ -385,5 +385,3 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
 
 /** テスト用: その tick のまとめを待たずに捨てる。 */
 export function _clearPending() { pending.clear(); }
-/** テスト用: 時刻（未使用の import を避ける）。 */
-export function _now() { return now(); }

@@ -47,6 +47,13 @@ gen_nr_data_js などから import できる（下の「公開 API」）。
     nr.p.recoil 撃った反動・ポンプ・ボルト（小さな加算。狙いを止めずに重ねる）
     nr.p.move   パルクールと全身の技（蹴り・回避・受け流し・とどめ・掴まれ）。**再生中は nr.p.hold を止める**
                 （none を流し、終わったら構えを流し直す）— 構えの腕に足されると腕が回り過ぎるため
+* **肘の無い腕の解き方**: 指す点だけの腕は構え（無ければ休み）から一番小さく振って向ける（180° ねじれた解は
+  箱が胴に刺さり肌も裏返る）。持ち物は腕に固く付くので、刃先の向き（rB/rBc/rBg）と腕の向きを Kabsch で
+  合わせる（bw で刃先を優先。槍の突きは体を半身に開いて穂先を前へ固定し、踏み込みで突く）。両手持ちは
+  「腕の向き・刃先・左の拳が柄に届く・腕が胴に刺さらない」の和が最小になるよう右腕を解き直し（ネルダー＝
+  ミード）、左の拳は柄の上で腕の長さちょうどの点（GRIP_RANGE の範囲）を握る。
+* **キーの間**: 統合版はオイラー角を成分ごとに補間するので、骨ごとの並びを同じ回転のまま一番近い表し方へ
+  つなぎ（動的計画法。最初と最後のキーは固定）、それでも遠回りする所は球面補間の中間キーを足す。
 * 一回転して終わるもの（roll）は最後のキーが 360°。blendOutTime 0 で切ること（meta の blend_out が 0）。
 * 続きもの: glide_open → glide、throw_wind → throw_overhand、bow_draw → bow_hold → bow_release は
   前の最後の姿勢 = 次の最初の姿勢（meta の then / from）。前の方は "hold_on_last_frame"。
@@ -64,7 +71,9 @@ gen_nr_data_js などから import できる（下の「公開 API」）。
   （NR_PREVIEW=1 でも描く）。Steve と同じ寸法・ボーン名の模型（bedrock-samples の geometry.humanoid.custom
   があればそれ）を nr_preview で描く。書き出した JSON を nr_preview の Molang 評価器で評価し、バニラの
   三人称のアニメ（歩き・持つ・攻撃の振り・しゃがみ）を足して、頭の relative_to も再現する。
-  --check は描かずに検査だけ（打ち消しが効くか・最初と最後が 0 か・長さ・登録簿の網羅）。
+  --check は描かずに検査だけ（打ち消しが効くか・最初と最後が 0 か・長さ・登録簿の網羅・手足が胴に刺さる深さ・
+  両手の握りが届くか）。--sheet all（move / melee / ranged）で全クリップのキーの姿勢を 3 枚の一覧に、
+  --only と --views --size で細部を描く。
 """
 from __future__ import annotations
 
@@ -1152,9 +1161,10 @@ def anim_meta() -> Dict[str, dict]:
     out = {"none": {"layer": "*", "loop": False, "length": 0.05, "blend_out": 0.0,
                     "stop": "q.any_animation_finished", "stops_hold": False}}
     for n, c in sorted(CLIPS.items()):
-        m = {"layer": c.meta.get("layer", LAYER_OF_KIND[c.kind]), "loop": c.loop if c.kind != "hold" else True,
+        loop = True if c.kind == "hold" else c.loop        # 構えは JSON でもループ（止めるのは none か次の構え）
+        m = {"layer": c.meta.get("layer", LAYER_OF_KIND[c.kind]), "loop": loop,
              "length": round(c.length, 3), "blend_out": c.meta.get("blend_out", 0.1),
-             "stop": c.meta.get("stop", "q.any_animation_finished" if c.loop is False else "0.0"),
+             "stop": c.meta.get("stop", "q.any_animation_finished" if loop is False else "0.0"),
              "stops_hold": c.meta.get("stops_hold", c.kind == "move")}
         if c.base:
             m["base"] = c.base
@@ -1584,11 +1594,15 @@ def qa_render(doc: dict, names=None, out_dir: str = QA_DIR, frames: int = 7, siz
 
 
 # 一覧の組（--sheet）: パルクール・全身 / 近接と構え / 飛び道具・投擲・道具
+def _is_melee(c: Clip) -> bool:
+    return c.kind == "hold" or (c.kind == "act" and c.style in ("one_hand", "two_hand", "spear")
+                                and not c.name.startswith("throw"))
+
+
 SHEET_GROUPS = {
     "move": lambda c: c.kind == "move",
-    "melee": lambda c: c.kind == "hold" or (c.kind == "act" and c.style in ("one_hand", "two_hand", "spear")
-                                            and not c.name.startswith("throw")),
-    "ranged": lambda c: True,
+    "melee": _is_melee,
+    "ranged": lambda c: c.kind != "move" and not _is_melee(c),
 }
 
 

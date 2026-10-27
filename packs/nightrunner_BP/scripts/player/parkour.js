@@ -425,10 +425,10 @@ function trackAir(p, st, c) {
 
 /** ダッシュ中のジャンプ力（PARKOUR_TUNING.jump_boost）。 @param {Player} p @param {PState} st @param {Ctx} c */
 function jumpBoost(p, st, c) {
-  const amp = Math.floor(nv(JB.amp, 0));
-  if (amp <= 0 || !c.sprint || c.t - st.boostT < 10) return;
+  const amp = Math.floor(nv(JB.amp, -1));
+  if (amp < 0 || !c.sprint || c.t - st.boostT < 10) return;
   st.boostT = c.t;
-  try { p.addEffect("jump_boost", 14, { amplifier: amp - 1 < 0 ? 0 : amp - 1, showParticles: false }); } catch { /* 効かない */ }
+  try { p.addEffect("jump_boost", 14, { amplifier: Math.min(amp, 4), showParticles: false }); } catch { /* 効かない */ }
 }
 
 /** 新しい技を始めるか。 @param {Player} p @param {PState} st @param {Ctx} c */

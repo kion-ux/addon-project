@@ -16,26 +16,52 @@
     import nr_weapon_common as WC
     wm = WC.WeaponModel("crossbow", uv=5)            # ボーン hold(binding) → root（握り = 原点）
     b = wm.root                                       # 部品は root の子（wm.bone("limb_l") で子ボーンも）
-    WC.beam(b, (0, 0, 2), (0, 0, -12), 1.2, 1.4, "stock", tags=("ao",))
+    WC.beam(b, (0, 0, 2), (0, 0, -12), 1.2, 1.4, "stock", uv=6)     # uv = texel 密度（単位あたり）
     WC.rod(b, p0, p1, d, "pipe")                      # 八角の丸棒（2 個）
     WC.blade(b, [(z, y_spine, y_edge), ...], "blade", "edge", "spine")   # 刃（峰・本体・研いだ縁）
+    c.fx = {"world": WC.compose(WC.stamp("NR", (z, y), 0.5), WC.pock(seed))}   # 模様（キューブごと）
     book = WC.Stylebook(palette).add("stock", "wood_dark").add("blade", "steel_worn") ...
-    tex = WC.texture(wm, book, seed, blood=[WC.blood_zone(lo, hi, 0.8, "wet")])   # 塗り＋後処理
-    hold = WC.hold_one_hand(wm, fwd=..., up=...) / WC.hold_two_hand(wm, style="two_hand") / 独自
-    out = WC.write_weapon(w, wm, tex, hold, frags)    # geo / テクスチャ / アタッチャブル / アニメ / アイテム / レシピ / アイコン
+    wm.pack()
+    tex = WC.texture(wm, book, WC.seed_of(key), blood=[WC.blood_zone(lo, hi, 0.8, "wet")])   # 塗り＋後処理
+    hold = WC.hold_one_hand(wm, pitch=30) / WC.hold_two_hand(wm, style="two_hand", grip=0.5, scale=0.85) / 独自
+    out = WC.write_weapon(w, wm, tex, hold, frags, icon=WC.bake_icon(wm, tex))
     frags.write()                                     # item_texture・lang の断片（.frag/<種類>/<producer>.json）
 
-■ 公開 API（関数ごとの docstring も参照）
-  形:   box, cbox, oriented, beam, polyline, rod, band, hex_prism, disc, ring_of, fill_tri_yz, blade,
-        curved_blade, arc_points, lerp, frame, euler_of
-  モデル: WeaponModel（.root / .hold / .bone() / .pack() / .cube_count / .length_z() / .bounds()）
-  塗り: Stylebook（spec の SURFACES のキー → nr_paint のスタイル）、surface_style(),
+  キューブの tags: "edge"（研いだ縁: 局所 -Y が刃の線、外の 1 texel を磨いた銀に）/ "ragged"（布の端がほつれて
+  抜ける）/ "noao"（陰を落とさない）/ "soft"（めり込み検査から外す: 垂れた紐など）。
+  大きさの目安: 1 武器 ≤ MAX_CUBES（180）、テクスチャ ≤ 256×512。入らなければ pack() が全体の密度を下げる
+  （stats() の uv x0.8 など）。大きな面は uv 5〜7、刃・小物は 9〜12 にすると細部が潰れない。
+  二つ目の握り（両手・槍）は grip2 = grip − 拳の間隔 / scale（両手 ≈7.15、槍 ≈7.9 単位。hold["fist_gap"]）。
+  spec の grips に合わせて grip と scale を選ぶ。
+
+■ 公開 API（関数ごとの docstring も参照。飛び道具の生成器もこの名前で使う。名前と引数は変えない約束）
+  形（bone に箱を足して Cube / Cube の列を返す。座標はすべて武器空間）:
+        box, cbox, oriented, beam, polyline, rod（八角の丸棒 2 個）, rbeam（角を落とした角柱 2 個）,
+        octo（辺がまっすぐな正八角柱 4 個: ピストン・ハンマーの頭）, disc（正方形 n 枚の円板。star で尖りを抑える）,
+        band, hex_prism（六角: ナット）, ring_of, fill_poly_yz（YZ の多角形を板で埋める）, fill_tri_yz,
+        blade（輪郭 [(z, 峰の y, 刃の y)] から峰・平・研いだ縁）, curved_blade, arc_points, lerp, frame, euler_of
+  部品: wrap（テープ・布・革の巻き）, rivet, nail, bolt, weld（溶接のビード）, rag（ほつれた布切れ）,
+        coil（針金の巻き）, lash（四角い束を縛る針金）, teeth_row, hairs（刃に貼り付いた髪）
+  塊に貼る: inside_cubes(cubes, P), surface_point(cubes, start, dir)（不規則な塊の表面の点）
+  模様（cube.fx["world"] に渡す関数 f(P, N, L, size, col) を作る。compose で重ねる）:
+        stamp（±X 面の打刻）, stamp_on（任意の向きの面の打刻）, groove（樋）, spots, hamon（刃文）,
+        pock（打痕）, paint_band（剥げたペンキの帯）, crack（割れ・ひび）, worley3（3D セルノイズ）, prof_fns,
+        sdf_octagon_half / sdf_circle（cube.fx["sdf"] 用の輪郭）
+        cube.fx のほかのキー: ribs / wrap / knurl / rebar / holes / hazard / line / chips / sdf / border（_fx の説明）
+  モデル: WeaponModel（.root / .hold / .bone() / .cut() 貫通穴 / .idle 待機アニメ / .pack() / .cube_count /
+        .length_z() / .bounds() / .points()）
+  塗り: Stylebook（spec の SURFACES のキー → nr_paint のスタイル。.add / .raw / .pal）、surface_style(),
         texture(wm, book, seed, blood=..., ao=True, edges=True) → PIL RGBA、TexMap（texel → 武器空間）、
-        blood_zone(lo, hi, amount, kind)、blood_zones_from_spec(w)
-  持ち方: HOLD_STYLES（anim_set → 持ち方の型）、HOLD_ARMS（型 → 三人称の腕の絶対角。gen_nr_player_anim との契約）、
-        hold_one_hand(), hold_two_hand(), hold_spear(), fp_place_cam(), hold_for(w, wm)、clip_report()
-  書き出し: write_weapon(w, wm, tex, hold, frags, ...)、attachable_doc(), hold_animation_doc(), item_doc(),
-        recipe_doc(), bake_icon(), Frags（item_texture / lang の断片）
+        blood_zone(lo, hi, amount, kind, soft, drip)、blood_zones_from_spec(w)
+  持ち方: HOLD_STYLES（anim_set → 型）、HOLD_ARMS（型 → 三人称の腕の絶対角。gen_nr_player_anim との契約）、
+        hold_contract(), hold_one_hand(..., charge_fwd=), hold_two_hand(), hold_spear(), hold_for(w, wm, **kw),
+        place_tp(), fp_place_cam(), clip_report()（めり込みの深さ px と左手の届き）
+        戻り値の dict: style / arm_r / arm_l / grip1 / grip2 / tp / tp_use / fp / fp_use
+        （tp〜fp_use は {rotation, position, scale}）
+        飛び道具の型（肩付けの銃・弓など）は自分で HOLD_STYLES に足し、place_tp / fp_place_cam で同じ dict を作る
+  書き出し: write_weapon(w, wm, tex, hold, frags, icon=..., charge=..., item_extra=..., write_recipe=...)、
+        attachable_doc(), hold_animation_doc(), item_doc(), recipe_doc(), vanilla_damage(),
+        bake_icon(wm, tex, flip=, yaw=, roll=), icon_pose(), Frags（item_texture / lang の断片）, seed_of(key)
   確認: render_model(), render_held(), render_fp(), contact_sheet()（nr_preview の薄い包み）
 
 ■ ファイルの置き場所（武器 1 つ = 下のファイル群。ID は DESIGN §2）
@@ -1982,9 +2008,10 @@ def _fp_scale(wm: WeaponModel, target_len: float, lo=0.42, hi=0.95) -> float:
 
 
 def hold_one_hand(wm: WeaponModel, *, grip=0.0, scale=1.0, pitch=38.0, yaw=-4.0, roll=0.0,
-                  fp=None, use=None) -> dict:
+                  fp=None, use=None, charge_fwd=None) -> dict:
     """片手持ち（バニラの持ち姿勢のまま）。刃は前上へ pitch 度、刃（-Y）は前下を向く。
-    fp / use は上書き用の辞書（fp_place_cam の引数）。"""
+    fp / use は上書き用の辞書（fp_place_cam の引数）。charge_fwd は三人称の構え（溜め）で武器の先を向ける
+    体の空間の向き（既定は右・上・少し後ろ。頭の重い武器でも上腕の外を通る）。"""
     arm = HOLD_ARMS["one_hand"]["arm_r"]
     p, y = math.radians(pitch), math.radians(yaw)
     fwd = np.array([math.sin(y) * math.cos(p), math.sin(p), -math.cos(y) * math.cos(p)])
@@ -1997,7 +2024,7 @@ def hold_one_hand(wm: WeaponModel, *, grip=0.0, scale=1.0, pitch=38.0, yaw=-4.0,
     tp = place_tp(arm, frame(fwd, up), anchor, scale)
     # 構え（右クリック長押しで溜める）: 刃を外（-X = 右）・上・後ろへ担ぎ上げる（腕は垂れたままなので、
     # 腕に沿わせず外へ逃がしてめり込ませない）。刃（-Y）は前上を向く
-    fwd_u = np.array([-0.42, 0.82, 0.38])
+    fwd_u = np.array(charge_fwd if charge_fwd is not None else (-0.62, 0.72, 0.3), float)
     up_u = np.array([0.1, -0.45, 0.88])
     tp_use = place_tp(arm, frame(fwd_u, up_u), anchor, scale)
     s_fp = _fp_scale(wm, 17.0, 0.55, 0.95)

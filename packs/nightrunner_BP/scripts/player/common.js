@@ -292,7 +292,6 @@ export function groundBelow(dim, at, reach = 48) {
     const b = blockAt(dim, x, y, z);
     const h = blockHeight(b);
     if (h > 0 && y + h <= at.y + 1e-3) return { y: y + h, typeId: b?.typeId ?? "" };
-    if (h > 0 && y === start) continue;
   }
   return undefined;
 }
