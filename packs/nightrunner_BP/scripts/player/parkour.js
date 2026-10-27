@@ -29,7 +29,7 @@ import { isCorpse } from "../gore/death.js";
 import * as ITEMS_D from "../data/items.js";
 import {
   PEV, PT, nv, playerMap, onPlayerTick, isActive, healthOf, setHealth, push, solidAt, blockAt, blockHeight, columnTop,
-  clearColumn, parkourTags, groundBelow, angleDiff, guard,
+  clearColumn, parkourTags, groundBelow, angleDiff, guard, grabbedIds,
 } from "./common.js";
 import { consumeStamina, canAfford } from "./stamina.js";
 import { hasSkill, skillNum, skillEff } from "./skills.js";
@@ -160,6 +160,7 @@ function enterMode(p, st, mode, m) {
   if (st.mode) endMode(p, st, "replace", true);
   st.mode = mode; st.t0 = now(); st.m = m ?? {};
   st.mJ = st.jumpN; st.mS = st.sneakN;
+  if (mode === "grabbed" && valid(p)) grabbedIds.add(p.id);
 }
 /** モードに入ってから新しくジャンプを押したか（押下の数で数える。同じ tick の前後に左右されない）。 @param {PState} st */
 function jumped(st) { return st.jumpN > st.mJ; }
@@ -172,6 +173,7 @@ function endMode(p, st, why, keepAnim = false) {
   const mode = st.mode;
   if (!mode) return;
   st.mode = ""; st.m = {};
+  if (valid(p)) grabbedIds.delete(p.id);
   const t = now();
   if (!keepAnim && LOOPS.has(mode) && valid(p)) stopMove(p);
   if (mode === "wallrun") st.cd.wallrun = Math.max(st.cd.wallrun ?? 0, t + nv(WR.cooldown_ticks, 10));
@@ -380,7 +382,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
 // ---------------------------------------------------------------------------
 onPlayerTick("parkour", 1, (p, t) => {
   const st = pst(p);
-  if (!isActive(p)) {
+  if (!isActive(p, true)) {
     if (st.mode) endMode(p, st, "inactive");
     st.ground = true; st.lastLoc = undefined; st.guard = false;
     return;

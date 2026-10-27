@@ -347,6 +347,7 @@ test("掴まれた: バス grabbed で動けず（鈍足）もがき、ジャン
   expect(p.getEffect("slowness")?.amplifier).toBe(7);
   for (let i = 0; i < 7; i++) { await tapJump(p); await tick(2); }
   expect(rec.shove.length).toBe(0);
+  expect(staminaOf(p).value).toBe(PT.stamina.max);       // 振りほどく連打はジャンプのスタミナを使わない
   await hit(p, z);
   expect(rec.shove.length).toBe(1);
   expect(rec.shove[0].zombie).toBe(z);

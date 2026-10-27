@@ -79,16 +79,31 @@ export function skyFactor(t) {
   return 1;
 }
 
-/** サバイバル・アドベンチャーで生きているか（クリエイティブ・スペクテイターはパルクール・スタミナ・免疫の外）。 @param {Player} p */
-export function isActive(p) {
+/** @type {Map<string, {t: number, v: boolean}>} */
+const activeCache = new Map();
+/**
+ * サバイバル・アドベンチャーで生きているか（クリエイティブ・スペクテイターはパルクール・スタミナ・免疫の外）。
+ * cached（毎 tick の処理から）なら同じ tick の 2 回目からは控えを返す（4 つのモジュールが毎 tick 聞くので）。
+ * @param {Player} p @param {boolean} [cached]
+ */
+export function isActive(p, cached = false) {
   if (!valid(p)) return false;
+  const t = now();
+  const c = activeCache.get(p.id);
+  if (cached && c && c.t === t) return c.v;
+  let v = false;
   try {
     const m = p.getGameMode();
-    if (m !== GameMode.Survival && m !== GameMode.Adventure) return false;
-    const h = p.getComponent("minecraft:health");
-    return !h || h.currentValue > 0;
-  } catch { return false; }
+    if (m === GameMode.Survival || m === GameMode.Adventure) {
+      const h = p.getComponent("minecraft:health");
+      v = !h || h.currentValue > 0;
+    }
+  } catch { v = false; }
+  activeCache.set(p.id, { t, v });
+  return v;
 }
+/** 掴まれているプレイヤーの ID（parkour.js が書き、stamina.js などが読む。import の輪を作らないためにここに置く）。 */
+export const grabbedIds = new Set();
 
 /** 体力 {cur, max}（読めなければ 20/20）。 @param {Player} p */
 export function healthOf(p) {
@@ -119,7 +134,7 @@ const maps = [];
  * @template T @returns {Map<string, T>}
  */
 export function playerMap() { /** @type {Map<string, T>} */ const m = new Map(); maps.push(m); return m; }
-world.afterEvents.playerLeave.subscribe((ev) => { for (const m of maps) m.delete(ev.playerId); });
+world.afterEvents.playerLeave.subscribe((ev) => { for (const m of maps) m.delete(ev.playerId); activeCache.delete(ev.playerId); grabbedIds.delete(ev.playerId); });
 
 // ---------------------------------------------------------------------------
 //  tick の登録（1 本の runInterval で順に回す。例外は console.error（テストでは失敗になる）で 1 回だけ）

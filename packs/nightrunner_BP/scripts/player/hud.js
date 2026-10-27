@@ -138,7 +138,7 @@ export function popup(p, title, subtitle = "", o = {}) {
 function refresh(p, force = false) {
   const s = hst(p);
   const t = now();
-  if (!hudEnabled() || !isActive(p)) {
+  if (!hudEnabled() || !isActive(p, true)) {
     if (!s.hidden) { s.hidden = true; s.text = ""; try { p.onScreenDisplay.setActionBar(""); } catch { /* 抜けた */ } }
     return;
   }

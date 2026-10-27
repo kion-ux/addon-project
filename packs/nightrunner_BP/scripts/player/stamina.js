@@ -16,7 +16,7 @@ import { on, emit } from "../core/bus.js";
 import { valid, now, clamp } from "../core/util.js";
 import { playerSound } from "../core/fx.js";
 import * as ITEMS_D from "../data/items.js";
-import { PEV, PT, nv, playerMap, onPlayerTick, isActive } from "./common.js";
+import { PEV, PT, nv, playerMap, onPlayerTick, isActive, grabbedIds } from "./common.js";
 import { skillNum } from "./skills.js";
 
 /** @typedef {import("@minecraft/server").Player} Player */
@@ -43,7 +43,7 @@ const ITEM_BY_ID = Object.fromEntries((Array.isArray(ID.ITEMS) ? ID.ITEMS : []).
 
 /**
  * @typedef {{value: number, lastUse: number, exhausted: boolean, buffMult: number, buffUntil: number,
- *   pubV: number, pubEx: boolean, pubMax: number, groundT: number, breathT: number, slowT: number}} SState
+ *   pubV: number, pubEx: boolean, pubMax: number, pubT: number, groundT: number, breathT: number, slowT: number}} SState
  */
 /** @type {Map<string, SState>} */
 const states = playerMap();
@@ -52,7 +52,7 @@ const states = playerMap();
 function sstate(p) {
   let s = states.get(p.id);
   if (!s) {
-    s = { value: maxStamina(p), lastUse: -9999, exhausted: false, buffMult: 1, buffUntil: -1, pubV: -1, pubEx: false, pubMax: -1, groundT: -9999, breathT: -9999, slowT: -9999 };
+    s = { value: maxStamina(p), lastUse: -9999, exhausted: false, buffMult: 1, buffUntil: -1, pubV: -1, pubEx: false, pubMax: -1, pubT: -9999, groundT: -9999, breathT: -9999, slowT: -9999 };
     states.set(p.id, s);
   }
   return s;
@@ -83,11 +83,15 @@ export function canAfford(p, amount) {
   return !s.exhausted && s.value >= amount;
 }
 
-/** @param {Player} p @param {SState} s @param {boolean} [force] */
+/**
+ * バス "stamina" を出す。force（使った・戻した時）はすぐ、回復の途中は 5 tick に 1 回まで（息切れの切り替わり・満タンはすぐ）。
+ * @param {Player} p @param {SState} s @param {boolean} [force]
+ */
 function publish(p, s, force) {
   const max = maxStamina(p);
-  if (!force && Math.abs(s.value - s.pubV) < 0.5 && s.exhausted === s.pubEx && max === s.pubMax && !(s.value >= max && s.pubV < max)) return;
-  s.pubV = s.value; s.pubEx = s.exhausted; s.pubMax = max;
+  const edge = s.exhausted !== s.pubEx || max !== s.pubMax || (s.value >= max && s.pubV < max);
+  if (!force && !edge && (Math.abs(s.value - s.pubV) < 0.5 || now() - s.pubT < 5)) return;
+  s.pubV = s.value; s.pubEx = s.exhausted; s.pubMax = max; s.pubT = now();
   emit(PEV.STAMINA, { player: p, value: Math.round(s.value * 10) / 10, max, exhausted: s.exhausted });
 }
 /** @param {Player} p @param {SState} s */
@@ -116,14 +120,14 @@ export function consumeStamina(p, amount, opts = {}) {
   if (amount < 0) {
     s.value = Math.min(max, s.value - amount);
     updateExhausted(p, s);
-    publish(p, s);
+    publish(p, s, true);
     return true;
   }
   if (!opts.force && (s.exhausted || s.value < amount)) return false;
   s.value = Math.max(0, s.value - amount);
   s.lastUse = now();
   updateExhausted(p, s);
-  publish(p, s);
+  publish(p, s, true);
   return true;
 }
 /** 回復（量は正）。 @param {Player} p @param {number} amount */
@@ -149,7 +153,7 @@ export function boostRegen(p, mult, ticks) {
 // ---------------------------------------------------------------------------
 onPlayerTick("stamina", 1, (p, t) => {
   const s = sstate(p);
-  if (!isActive(p)) {
+  if (!isActive(p, true)) {
     if (s.exhausted || s.value < maxStamina(p)) { s.value = maxStamina(p); s.exhausted = false; publish(p, s); }
     return;
   }
@@ -187,6 +191,7 @@ world.afterEvents.playerButtonInput.subscribe((ev) => {
   const p = ev.player;
   if (!valid(p) || !isActive(p)) return;
   const s = sstate(p);
+  if (grabbedIds.has(p.id)) return;   // 振りほどく連打は数えない
   if (p.isOnGround || now() - s.groundT <= 2) consumeStamina(p, STAMINA.jump, { force: true, reason: "jump" });
 }, { buttons: [InputButton.Jump], state: ButtonState.Pressed });
 

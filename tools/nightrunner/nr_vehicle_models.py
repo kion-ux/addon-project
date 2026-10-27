@@ -1973,6 +1973,1053 @@ def _build_car(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) ->
 
 
 # ===========================================================================
+#  7. トラック・バン（運転室 + 後ろの箱・荷台・幌・収集箱）
+# ===========================================================================
+def side_band(vm, s, x_in, x_out, y_lo, y_hi, z0, z1, arches, style, *, bone="body", chamfer=True, skip=()):
+    """車体の横の帯（|x| = x_in〜x_out、y_lo〜y_hi、z0〜z1）。車輪のアーチ (a0, a1, top) の所は top より上だけ。
+    skip = [(z0, z1, y_top)] の所は y_top より下だけ置く（扉の開口など）。置いた箱を返す。"""
+    out = []
+    cuts = sorted([(a0, a1, top) for a0, a1, top in arches if a1 > z0 and a0 < z1])
+    pts = sorted({z0, z1} | {max(z0, min(z1, a)) for a0, a1, _ in cuts for a in (a0, a1)}
+                 | {max(z0, min(z1, a)) for a0, a1, _ in skip for a in (a0, a1)})
+    for za, zb in zip(pts[:-1], pts[1:]):
+        if zb - za < 0.05:
+            continue
+        zm = (za + zb) / 2
+        lo, hi = y_lo, y_hi
+        for a0, a1, top in cuts:
+            if a0 <= zm <= a1:
+                lo = max(lo, top)
+        for k0, k1, ytop in skip:
+            if k0 <= zm <= k1:
+                hi = min(hi, ytop)
+        if hi - lo > 0.05:
+            out.append(vm.box2((s * x_in, lo, za), (s * x_out, hi, zb), style, bone=bone))
+    if chamfer:
+        for a0, a1, top in cuts:
+            for zc in (a0, a1):
+                if z0 < zc < z1 and top < y_hi:
+                    vm.box((s * (x_out - 0.6), top, zc), (min(1.2, x_out - x_in), 1.9, 1.9), style, bone=bone,
+                           rot=(45, 0, 0))
+    return out
+
+
+def _truck_cab(vm, C: dict, w: dict, o: dict, gst: dict, rng, panels: list, drivable: bool) -> None:
+    """運転室（ボンネット型か、hood が 0 ならキャブオーバー）。C は寸法の辞書（_TRUCKS の値）。"""
+    W = C["W"]
+    hw = W / 2.0
+    sk = hw - 0.1
+    zf, zws, zb = C["zf"], C["zws"], C["zb"]
+    y0, belt, roof = C["y0"], C["belt"], C["roof"]
+    R, af, tx, tw = C["R"], C["af"], C["tx"], C["tw"]
+    P = C.get("paint", "paint")
+    ztop = C["ztop"]                       # 前の窓の上の縁の z
+    hood_f, hood_r = C.get("hood_h", (belt, belt))
+    door0, door1 = C["door"]
+    door_lo = C.get("door_lo", y0 + 1.0)
+    arch = (af - R - 1.2, af + R + 1.2, 2 * R + 0.8)
+    x_in = tx - tw / 2 - 0.4
+    has_hood = zws - zf > 2.0
+    # ---- 前の下回りとボンネットの塊 -------------------------------------------------------------------
+    if has_hood:
+        for s in (-1, 1):
+            side = "east" if s < 0 else "west"
+            for c in side_band(vm, s, x_in, sk, y0, hood_r - 0.9, zf, zws, [arch], P):
+                panels.append((c, side))
+        vm.box2((-x_in, y0, zf), (x_in, hood_r - 0.9, zws), "trim")
+        vm.bone("hood", pivot=(0, hood_r, zws), parent="body")
+        hd = vm.box2((-(hw - 0.5), hood_r - 0.9, zf - 0.3), (hw - 0.5, hood_r, zws), P, bone="hood")
+        panels.append((hd, ["up", "north"]))
+        vm.set_rotation("hood", (math.degrees(math.atan2(hood_r - hood_f, zws - zf)), 0, 0))
+        if C.get("vents"):
+            vm.dec(hd, "up", "nrb_slits", box=(0.15, 0.55, 0.42, 0.9), rows=6)
+            vm.dec(hd, "up", "nrb_slits", box=(0.58, 0.55, 0.85, 0.9), rows=6)
+        if C.get("hood_text"):
+            vm.dec(hd, "up", "nrv_stencil", text=C["hood_text"], colour=(222, 222, 210), box=(0.2, 0.15, 0.8, 0.45),
+                   flip_u=True, flip_v=True)
+        gy0, gy1 = y0 + 2.0, hood_f - 1.2
+    else:
+        gy0, gy1 = y0 + 2.0, belt - 1.0
+    # グリル・前の灯り・バンパー・ナンバー
+    gr = vm.box2((-(hw - 3.0), gy0, zf - 0.6), (hw - 3.0, gy1, zf + 0.2), C.get("grille_style", "trim"))
+    vm.dec(gr, "north", "nrv_grille", kind=C.get("grille", "h"), count=C.get("grille_n", 7), box=(0.04, 0.06, 0.96, 0.94))
+    if C.get("grille_text"):
+        vm.dec(gr, "north", "nrv_text", text=C["grille_text"], colour=(210, 210, 204), box=(0.3, 0.02, 0.7, 0.22))
+    hl = C.get("headlights", "rect")
+    hly = C.get("head_y", gy1 - 2.2)
+    hlx = C.get("head_x", hw - 4.4)
+    lb = set(w["lights_broken"])
+    for s in (-1, 1):
+        nm = "l" if s > 0 else "r"
+        if hl == "round":
+            vm.lamp((s * hlx, hly, zf - 0.6), (3.6, 3.6, 0.8), "w", face="north", kind="round",
+                    lit_bone="lights_head", broken=f"head_{nm}" in lb)
+            if C.get("head_cage"):
+                cg = vm.box((s * hlx, hly, zf - 1.4), (4.4, 4.4, 0.3), "steel_dark")
+                vm.wd(cg, "*", "nrv_mesh", frame="local", axis=2, period=1.1, wire=0.22, diag=False, border=0.4,
+                      lo=list(cg.origin), hi=[cg.origin[i] + cg.size[i] for i in range(3)])
+        else:
+            vm.lamp((s * hlx, hly, zf - 0.6), (6.0, 3.4, 0.8), "w", face="north", kind="twin",
+                    lit_bone="lights_head", broken=f"head_{nm}" in lb)
+        vm.lamp((s * (hw - 1.6), hly - 3.4, zf - 0.4), (2.0, 1.6, 0.6), "a", face="north", lit_bone="lights_hazard",
+                bezel=None)
+    by = C.get("bumper_y", (y0 - 1.0, y0 + 3.6))
+    bst = C.get("bumper_style", "steel_dark")
+    vm.box2((-(hw + 0.6), by[0], zf - 3.2), (hw + 0.6, by[1], zf - 0.4), bst)
+    vm.plate((0, (by[0] + by[1]) / 2, zf - 3.45), "north", o.get("plate", plate_text(_h(vm.key, "plate"), "100")),
+             kind=o.get("plate_kind", "white"))
+    # ---- 運転室の下（側面の帯・床・前後の壁） ------------------------------------------------------
+    cab_arches = [arch] if zws - 0.5 < af < zb + 0.5 else []
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        for c in side_band(vm, s, hw - 1.0, sk, y0, belt, zws, zb, cab_arches, P,
+                           skip=[(door0, door1, door_lo)]):
+            panels.append((c, side))
+        if door_lo > y0 + 3.0 and not cab_arches:
+            # 乗り降りの段（扉の下）
+            vm.box2((s * (hw - 2.2), door_lo - 3.6, door0 + 1.0), (s * (hw + 0.4), door_lo - 3.0, door1 - 1.0),
+                    "diamond")
+    if cab_arches:
+        vm.box2((-x_in, y0, arch[0]), (x_in, arch[2] + 0.6, arch[1]), "trim")
+    vm.box2((-(hw - 1.0), y0, zws), (hw - 1.0, y0 + 1.6, zb), "carpet")
+    if not has_hood:
+        fw = vm.box2((-hw + 0.1, y0, zf), (hw - 0.1, belt, zf + 1.2), P)
+        panels.append((fw, "north"))
+    bw = vm.box2((-hw + 0.1, y0, zb - 1.2), (hw - 0.1, roof - 0.9, zb), P)
+    panels.append((bw, "south"))
+    if C.get("rear_window", True):
+        vm.window((0, (belt + roof) / 2 + 0.4, zb + 0.05), (W * 0.42, (roof - belt) * 0.45, 0.3),
+                  gst.get("cab_rear", "intact"), tint=True, seed=_h(vm.key, "cabrear"))
+    # ---- 窓・屋根・柱 ----------------------------------------------------------------------------------
+    top = roof - 0.6
+    run, rise = ztop - zws, top - belt
+    L = math.hypot(run, rise)
+    ang = math.degrees(math.atan2(rise, run))
+    at = (0.0, (belt + top) / 2, (zws + ztop) / 2)
+    ws, _ = _window_with_frame(vm, at, (W - 3.0, 0.3, L), gst.get("windshield", "intact"), rot=(ang, 0, 0),
+                               seed=_h(vm.key, "ws"), border=0.7, normal=[0, 1, 0])
+    if ws is not None and gst.get("windshield") in ("intact", "cracked"):
+        vm.dec(ws, "up", "nrv_wipe", pivots=(0.3, 0.7))
+    if C.get("split_ws"):
+        vm.box(at, (0.8, 0.5, L), "trim", rot=(ang, 0, 0))
+    for s in (-1, 1):
+        vm.rod((s * (hw - 0.8), belt, zws), (s * (hw - 0.8), top, ztop), 1.4, P, h=1.4)
+    if C.get("soft_top"):
+        ct = vm.box2((-(hw - 0.2), top - 0.6, ztop - 0.4), (hw - 0.2, roof + 0.8, zb + 0.4), "canvas")
+        vm.dec(ct, "up", "nrv_seam", segs=[], width=0.0) if False else None
+    else:
+        rf = vm.box2((-(hw - 0.3), top - 0.4, ztop - 0.4), (hw - 0.3, roof, zb), P)
+        panels.append((rf, "up"))
+    vm.box2((-(hw - 1.2), top - 0.9, ztop + 0.4), (hw - 1.2, top - 0.4, zb - 1.0), "headliner")
+    vm.meta["cab_roof_y"] = roof
+    # ---- 扉 -------------------------------------------------------------------------------------------
+    for name, s in (("fl", 1), ("fr", -1)):
+        st = w["doors"].get(name, "closed")
+        side = "east" if s < 0 else "west"
+        if st == "missing":
+            continue
+        bone = f"door_{name}"
+        vm.bone(bone, pivot=(s * (hw - 0.4), (door_lo + belt) / 2, door0), parent="body")
+        skin = vm.box2((s * (hw - 0.8), door_lo, door0 + 0.12), (s * sk, belt, door1 - 0.12), P, bone=bone)
+        panels.append((skin, side))
+        vm.box2((s * (hw - 1.5), door_lo + 0.5, door0 + 0.5), (s * (hw - 0.8), belt - 0.4, door1 - 0.5), "interior",
+                bone=bone)
+        vm.box((s * (sk + 0.25), belt - 2.2, door1 - 2.6), (0.5, 0.9, 2.6), "chrome", bone=bone)
+        if C.get("door_text"):
+            vm.dec(skin, side, "nrv_lettering", text=C["door_text"], colour=C.get("door_text_rgb", (24, 24, 26)),
+                   box=(0.1, 0.35, 0.9, 0.7))
+        if C.get("door_logo"):
+            vm.dec(skin, side, "logo", text=C["door_logo"], at=(0.5, 0.45), size=0.7,
+                   colour=C.get("door_logo_rgb", (30, 60, 120)))
+        gb, sb = f"glass_{name}", f"smash_{name}"
+        vm.bone(gb, pivot=(s * hw, belt, door0), parent=bone)
+        vm.bone(sb, pivot=(s * hw, belt, door0), parent=bone)
+        h = top - belt - 1.4
+        wz0, wz1 = door0 + 0.8, door1 - 0.8
+        at = (s * (hw - 0.45), belt + 0.1 + h / 2, (wz0 + wz1) / 2)
+        _window_with_frame(vm, at, (0.3, h, wz1 - wz0), gst.get(name, "intact"), glass_bone=gb, smash_bone=sb,
+                           frame_bone=bone, seed=_h(vm.key, "win", name), border=0.7, normal=[s, 0, 0])
+        mw = C.get("mirror", "truck")
+        if mw == "truck":
+            mx = s * (hw + 2.6)
+            vm.rod((s * hw, belt + 1.0, door0 + 1.5), (mx, belt + 1.0, door0 + 1.2), 0.5, "steel_dark", bone=bone)
+            vm.rod((s * hw, top - 1.0, door0 + 1.5), (mx, top - 1.0, door0 + 1.2), 0.5, "steel_dark", bone=bone)
+            if not (f"mirror_{'l' if s > 0 else 'r'}" in w["missing"]):
+                vm.box((mx, (belt + top) / 2, door0 + 1.2), (1.6, top - belt - 1.0, 2.6), "trim", bone=bone)
+                mg = vm.box((mx, (belt + top) / 2, door0 + 2.56), (1.2, top - belt - 1.6, 0.12), "chrome", bone=bone)
+                vm.drop_faces(mg, ["north"])
+        else:
+            vm.mirror((s * sk, belt + 1.4, door0 + 2.0), s, bone=bone, style=P)
+        if st in ("open", "ajar") and not drivable:
+            vm.set_rotation(bone, (0, s * (66.0 if st == "open" else 22.0), 0))
+    # ---- 内装 -----------------------------------------------------------------------------------------
+    dz = zws + 1.0
+    dash = vm.box2((-(hw - 1.2), belt - 4.0, dz - 1.0), (hw - 1.2, belt + 0.8, dz + 4.0), "dash")
+    vm.dec(dash, "south", "nrv_gauges", at=(0.72, 0.4), size=0.2)
+    hub = (-(hw * 0.42), belt + 2.2, dz + 8.4)
+    vm.steering(hub, radius=C.get("wheel_r", 3.6), tilt=C.get("wheel_tilt", 38.0), column=6.0)
+    sy = belt - 4.0
+    seat_style = C.get("seat_style", "seat_vinyl")
+    vm.seat((-(hw * 0.42), sy, zb - 6.5), hw * 0.8, depth=8.0, back=11.0, style=seat_style, torn=True,
+            blood=float(w["blood"]) > 0.3, base=sy - y0 - 4.0 if sy - y0 > 6 else 1.4)
+    vm.seat((hw * 0.36, sy, zb - 6.5), hw * 0.9, depth=8.0, back=11.0, style=seat_style, base=1.4)
+    vm.meta["seats"] = {"driver": [hub[0], sy, zb - 6.5], "passenger": [hw * 0.36, sy, zb - 6.5]}
+    # 前輪
+    for name, s in (("fl", 1), ("fr", -1)):
+        vm.wheel(f"wheel_{name}", (s * tx, R, af), R, tw, side=s, flat=(name in w["flat"]) and not drivable,
+                 rim=C.get("rim", "rim_white"), rim_kind="steel", spokes=6, rim_ratio=C.get("rim_ratio", 0.6))
+
+
+def _rear_axles(vm, C: dict, w: dict, drivable: bool, names=("rl", "rr", "rl2", "rr2")) -> None:
+    R, tx, tw = C["R2"], C["tx2"], C["tw2"]
+    k = 0
+    for ai, az in enumerate(C["axles"]):
+        for s in (1, -1):
+            nm = ("rl" if s > 0 else "rr") + ("" if ai == 0 else str(ai + 1))
+            vm.wheel(f"wheel_{nm}", (s * tx, R, az), R, tw, side=s, dual=C.get("dual", True),
+                     flat=(nm in w["flat"]) and not drivable, rim=C.get("rim", "rim_white"), rim_kind="steel",
+                     spokes=6, rim_ratio=C.get("rim_ratio", 0.6))
+            k += 1
+
+
+def _chassis(vm, C: dict, z0: float, z1: float, y: float) -> None:
+    """梁 2 本と横の燃料タンク・後ろのバンパー・泥よけ。"""
+    for s in (-1, 1):
+        vm.box2((s * 7.0, y, z0), (s * 10.0, y + 2.8, z1), "steel_dark")
+    for az in C["axles"]:
+        vm.box((0, C["R2"], az), (2 * C["tx2"] - C["tw2"], 2.2, 2.2), "under")
+
+
+def _rear_end(vm, C: dict, zr: float, y0: float, hw: float, w: dict, o: dict, lights_y: float) -> None:
+    """後ろのバンパー・灯り・ナンバー・泥よけ。"""
+    vm.box2((-(hw - 1.0), y0 - 1.0, zr - 0.6), (hw - 1.0, y0 + 2.0, zr + 1.6), "steel_dark")
+    vm.box2((-(hw - 6.0), y0 - 3.2, zr - 0.4), (hw - 6.0, y0 - 2.4, zr + 1.0), "diamond")
+    for s in (-1, 1):
+        vm.lamp((s * (hw - 3.4), lights_y, zr + 0.2), (4.2, 2.6, 0.7), "r", face="south", lit_bone="lights_tail",
+                kind="round")
+        vm.lamp((s * (hw - 7.2), lights_y, zr + 0.2), (2.2, 2.0, 0.6), "a", face="south", lit_bone="lights_hazard",
+                kind="round", bezel=None)
+        vm.box2((s * (C["tx2"] - C["tw2"] / 2 - 0.2), 1.2, C["axles"][-1] + C["R2"] + 1.4),
+                (s * (C["tx2"] + C["tw2"] / 2 + 0.2), 7.4, C["axles"][-1] + C["R2"] + 1.8), "rubber")
+    vm.plate((0, y0 + 0.6, zr + 1.8), "south", o.get("plate", plate_text(_h(vm.key, "plate"), "100")),
+             kind=o.get("plate_kind", "white"))
+
+
+def _box_body(vm, C: dict, w: dict, o: dict, gst: dict, rng, panels: list) -> dict:
+    """箱型の荷台（救急車・引越しトラック）。壁 5 枚・角の柱・擦り板・後ろの扉かシャッター・中身。"""
+    hw = C["bw"] / 2.0
+    z0, z1 = C["bz"]
+    y0, y1 = C["by"]
+    st = C.get("box_style", "paint")
+    arches = [(az - C["R2"] - 1.4, az + C["R2"] + 1.4, 2 * C["R2"] + 1.0) for az in C["axles"]]
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        wall = vm.box2((s * (hw - 1.0), y0, z0), (s * hw, y1, z1), st)
+        panels.append((wall, side))
+        C.setdefault("_walls", []).append((wall, side))
+        for zz in np.linspace(z0 + 0.6, z1 - 0.6, C.get("posts", 5)):
+            vm.box((s * (hw + 0.15), (y0 + y1) / 2, float(zz)), (0.4, y1 - y0, 0.9), "alu")
+        vm.box2((s * (hw - 0.2), y0 - 0.2, z0), (s * (hw + 0.5), y0 + 1.2, z1), "alu")
+        vm.box2((s * (hw - 0.2), y1 - 1.0, z0), (s * (hw + 0.4), y1 + 0.2, z1), "alu")
+        # 箱の下の横（車輪の上のフェンダー）
+        side_band(vm, s, hw - 4.0, hw - 0.2, max(y0 - 4.0, 2 * C["R2"] + 1.0), y0, z0 + 2.0, z1, arches, "steel_dark",
+                  chamfer=False)
+    rf = vm.box2((-hw, y1 - 1.0, z0), (hw, y1, z1), C.get("roof_style", st))
+    panels.append((rf, "up"))
+    fl = vm.box2((-(hw - 1.0), y0, z0), (hw - 1.0, y0 + 1.2, z1), C.get("floor_style", "diamond"))
+    fw = vm.box2((-hw, y0, z0), (hw, y1, z0 + 1.0), st)
+    panels.append((fw, "north"))
+    C["_front"] = fw
+    C["_roof"] = rf
+    out = {"walls": (wall, rf), "hw": hw}
+    # 後ろの開口の枠
+    vm.box2((-hw, y1 - 3.0, z1 - 1.2), (hw, y1, z1), st)
+    for s in (-1, 1):
+        vm.box2((s * (hw - 2.0), y0, z1 - 1.2), (s * hw, y1, z1), st)
+    kind = C.get("rear", "doors")
+    ow, oh = hw - 2.0, y1 - 3.0 - y0
+    if kind == "doors":
+        for name, s in (("rear_l", 1), ("rear_r", -1)):
+            bone = f"door_{name}"
+            vm.bone(bone, pivot=(s * ow, (y0 + y1) / 2, z1 + 0.4), parent="body")
+            dk = vm.box2((s * ow, y0 + 1.2, z1 - 0.2), (0.0 if s > 0 else -0.0, y1 - 3.0, z1 + 0.6), st, bone=bone)
+            dw = vm.box2((s * ow * 0.15, y0 + oh * 0.55, z1 + 0.6), (s * ow * 0.85, y0 + oh * 0.85, z1 + 0.62),
+                         "trim", bone=bone, drop=["north"])
+            vm.window((s * ow * 0.5, y0 + oh * 0.7, z1 + 0.66), (ow * 0.66, oh * 0.28, 0.3),
+                      gst.get(name, "intact"), tint=True, glass_bone=f"glass_{name}", smash_bone=f"smash_{name}",
+                      frame_bone=bone, seed=_h(vm.key, name))
+            vm.box((s * 1.4, y0 + oh * 0.45, z1 + 0.9), (0.6, 2.6, 0.6), "chrome", bone=bone)
+            panels.append((dk, "south"))
+            out[name] = dk
+            vm.open_pose[bone] = {"rotation": [0, s * -150.0, 0]}
+            dst = w["doors"].get(name, "closed")
+            if dst in ("open", "ajar"):
+                vm.set_rotation(bone, (0, s * (-110.0 if dst == "open" else -35.0), 0))
+    else:
+        # シャッター（横の筋）。open_pose で上へ
+        vm.bone("shutter", pivot=(0, y1, z1), parent="body")
+        frac = float(C.get("shutter_open", 0.5))
+        sh_h = oh * (1.0 - frac)
+        sh = vm.box2((-ow, y1 - 3.0 - sh_h, z1 - 0.7), (ow, y1 - 3.0, z1 - 0.2), "alu", bone="shutter")
+        vm.dec(sh, "south", "nrb_corrugate", period=1.2, axis="v", depth=1.2)
+        vm.dec(sh, "south", "nrv_grille", kind="h", count=max(2, int(sh_h / 1.2)), box=(0.0, 0.0, 1.0, 1.0),
+               deep=(70, 72, 74))
+        vm.box((0, y1 - 3.4 - sh_h, z1 - 0.1), (6.0, 0.8, 0.6), "steel_dark", bone="shutter")
+        vm.open_pose["shutter"] = {"position": [0, round(sh_h - 0.4, 2), 0]}
+        panels.append((sh, "south"))
+    return out
+
+
+def _bed(vm, C: dict, w: dict, o: dict, rng, panels: list) -> None:
+    """ピックアップの荷台（床・側板・前板・下りたテールゲート）。"""
+    hw = C["bw"] / 2.0
+    z0, z1 = C["bz"]
+    y0, y1 = C["by"]
+    P = "paint"
+    arches = [(az - C["R2"] - 1.2, az + C["R2"] + 1.2, 2 * C["R2"] + 0.8) for az in C["axles"]]
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        for c in side_band(vm, s, hw - 1.0, hw, y0 - 6.0, y1, z0, z1, arches, P):
+            panels.append((c, side))
+        vm.box2((s * (hw - 1.4), y1, z0), (s * (hw + 0.1), y1 + 0.5, z1), "trim")
+        vm.box2((s * (C["tx2"] - C["tw2"] / 2 - 0.4), y0 - 6.0, arches[0][0]),
+                (s * (hw - 1.0), y0 + 0.6, arches[0][1]), "trim")
+    fl = vm.box2((-(hw - 1.0), y0 - 1.0, z0), (hw - 1.0, y0, z1), "steel")
+    vm.dec(fl, "up", "nrb_corrugate", period=2.4, axis="u", depth=1.5)
+    vm.box2((-hw, y0 - 6.0, z0), (hw, y1, z0 + 1.0), P)
+    vm.box2((-(hw - 1.0), y0 - 6.0, z0 + 1.0), (hw - 1.0, y0 - 1.0, z1), "under")
+    vm.bone("tailgate", pivot=(0, y0, z1), parent="body")
+    tg = vm.box2((-(hw - 0.2), y0, z1), (hw - 0.2, y1, z1 + 1.2), P, bone="tailgate")
+    vm.dec(tg, "south", "nrv_lettering", text=C.get("tailgate_text", "NRTRUCK"), colour=(214, 212, 200),
+           box=(0.15, 0.3, 0.85, 0.7))
+    panels.append((tg, ["south", "north"]))
+    vm.set_rotation("tailgate", (float(C.get("tailgate", 88.0)), 0, 0))
+
+
+def _canvas_bed(vm, C: dict, w: dict, o: dict, rng, panels: list) -> dict:
+    """軍用の荷台（木の床・側板・弓形の骨・幌。後ろがめくれて中が見える）。"""
+    hw = C["bw"] / 2.0
+    z0, z1 = C["bz"]
+    y0, y1, yc = C["by"][0], C["by"][1], C["canvas_y"]
+    fl = vm.box2((-hw, y0 - 1.2, z0), (hw, y0, z1), "wood")
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        sb = vm.box2((s * (hw - 1.0), y0, z0), (s * hw, y1, z1), "paint")
+        vm.dec(sb, side, "nrv_grille", kind="v", count=10, box=(0.0, 0.05, 1.0, 0.95), deep=(40, 40, 30))
+        panels.append((sb, side))
+        side_band(vm, s, hw - 3.0, hw - 0.4, 2 * C["R2"] + 1.0, y0 - 1.2, z0, z1,
+                  [(az - C["R2"] - 1.2, az + C["R2"] + 1.2, 2 * C["R2"] + 1.0) for az in C["axles"]],
+                  "paint", chamfer=False)
+    vm.box2((-hw, y0, z0), (hw, y1, z0 + 1.0), "paint")
+    vm.bone("tailgate", pivot=(0, y0, z1), parent="body")
+    tg = vm.box2((-(hw - 0.2), y0, z1 - 0.2), (hw - 0.2, y1, z1 + 0.8), "paint", bone="tailgate")
+    panels.append((tg, "south"))
+    vm.open_pose["tailgate"] = {"rotation": [85.0, 0, 0]}
+    # 弓形の骨と幌
+    nb = C.get("bows", 5)
+    for zz in np.linspace(z0 + 2.0, z1 - 2.0, nb):
+        for s in (-1, 1):
+            vm.box((s * (hw - 0.6), (y1 + yc) / 2, float(zz)), (0.8, yc - y1, 0.8), "steel_dark")
+        vm.box((0, yc - 0.5, float(zz)), (2 * hw - 1.2, 0.8, 0.8), "steel_dark")
+    can = []
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        cv = vm.box2((s * (hw - 0.1), y1 - 0.4, z0 + 0.4), (s * (hw + 0.5), yc - 1.0, z1 - 0.4), "canvas")
+        for k, zz in enumerate(np.linspace(z0 + 2.0, z1 - 2.0, nb)):
+            vm.dec(cv, side, "nrv_seam", segs=[], width=0.0) if False else None
+        can.append(cv)
+    top = vm.box2((-(hw + 0.5), yc - 1.0, z0 + 0.4), (hw + 0.5, yc + 0.4, z1 - 0.4), "canvas")
+    for k in range(3):
+        vm.box2((-(hw + 0.3), yc + 0.4, z0 + 0.4 + k * (z1 - z0) / 3.0 + 0.5),
+                (hw + 0.3, yc + 1.1, z0 + 0.4 + (k + 1) * (z1 - z0) / 3.0 - 0.5), "canvas",
+                rot=(0, 0, 0))
+    fc = vm.box2((-(hw + 0.4), y1 - 0.4, z0 - 0.2), (hw + 0.4, yc + 0.4, z0 + 0.4), "canvas")
+    # 後ろの幌（右半分は下りて、左はめくれて丸めてある）
+    vm.box2((-(hw + 0.4), y1 + 2.0, z1 - 0.6), (-0.5, yc + 0.4, z1), "canvas")
+    vm.cyl((hw * 0.5, yc - 1.4, z1 - 0.6), 2.6, hw - 0.6, "canvas", axis="x", n=2)
+    vm.box2((0.5, yc - 3.0, z1 - 0.8), (hw + 0.4, yc + 0.4, z1 - 0.2), "canvas")
+    for c in can + [top]:
+        vm.dec(c, "*", "grime", amount=0.5)
+    return {"hw": hw}
+
+
+def _compactor(vm, C: dict, w: dict, o: dict, rng, panels: list) -> None:
+    """ゴミ収集車の収集箱（補強のリブ・後ろのホッパーと刃・横のリフターと青いゴミ箱）。"""
+    hw = C["bw"] / 2.0
+    z0, z1 = C["bz"]
+    y0, y1 = C["by"]
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        wl = vm.box2((s * (hw - 1.0), y0, z0), (s * hw, y1, z1), "paint")
+        vm.dec(wl, side, "drips", amount=0.8, start=0.05) if False else None
+        vm.dec(wl, side, "rust_streaks", amount=0.8)
+        panels.append((wl, side))
+        side_band(vm, s, hw - 4.0, hw - 0.4, 2 * C["R2"] + 1.0, y0, z0 + 2, z1,
+                  [(az - C["R2"] - 1.4, az + C["R2"] + 1.4, 2 * C["R2"] + 1.0) for az in C["axles"]],
+                  "steel_dark", chamfer=False)
+    for zz in np.linspace(z0 + 2.0, z1 - 2.0, C.get("ribs", 6)):
+        vm.box((0, (y0 + y1) / 2 + 0.3, float(zz)), (2 * hw + 1.0, y1 - y0 + 0.6, 1.6), "paint")
+    rf = vm.box2((-hw, y1 - 1.0, z0), (hw, y1 + 0.4, z1), "paint")
+    panels.append((rf, "up"))
+    vm.box2((-hw, y0, z0), (hw, y1, z0 + 1.0), "paint")
+    lt = C.get("logo_text")
+    if lt:
+        for c, side in ((vm.bmap["body"].cubes[-1], "north"),):
+            pass
+    # ホッパー（後ろの口が開いていて、黒い汁と布くず）
+    hz0, hz1 = C["hz"]
+    hy0, hy1 = C["hy"]
+    vm.bone("hopper", pivot=(0, hy1, hz0), parent="body")
+    for s in (-1, 1):
+        hs = vm.box2((s * (hw - 1.0), hy0, hz0), (s * hw, hy1, hz1), "paint", bone="hopper")
+        vm.halfplane = None
+        panels.append((hs, "east" if s < 0 else "west"))
+    vm.box2((-hw, hy1 - 1.0, hz0), (hw, hy1, hz1 - 6.0), "paint", bone="hopper")
+    vm.box2((-hw, hy0, hz0), (hw, hy0 + 4.0, hz1), "paint", bone="hopper")
+    inner = vm.box2((-(hw - 1.0), hy0 + 4.0, hz0 + 1.0), (hw - 1.0, hy0 + 4.6, hz1 - 1.0), "trash", bone="hopper")
+    vm.dec(inner, "up", "nrv_puddle", kind="blood") if False else None
+    vm.dec(inner, "up", "grime", amount=1.0)
+    vm.box2((-(hw - 1.0), hy0 + 4.0, hz1 - 2.0), (hw - 1.0, hy0 + 10.0, hz1 - 1.0), "paint", bone="hopper")
+    bl = vm.box((0, hy1 - 6.0, (hz0 + hz1) / 2), (2 * hw - 3.0, 1.2, (hz1 - hz0) * 0.7), "steel_rusty",
+                bone="hopper", rot=(32, 0, 0))
+    vm.box((3.0, hy1 - 7.0, hz0 + 8.0), (6.0, 1.6, 5.0), "cloth", bone="hopper", rot=(20, 30, 0))
+    vm.open_pose["hopper"] = {"rotation": [-38.0, 0, 0]}
+    # リフターとゴミ箱
+    lx = -(hw + 3.0)
+    vm.box2((-(hw + 0.2), y0 + 2.0, hz0 - 10.0), (-(hw + 1.2), y0 + 18.0, hz0 - 8.0), "steel_dark")
+    vm.box((lx, y0 + 12.0, hz0 - 9.0), (5.0, 1.4, 1.4), "steel_dark")
+    bn = vm.box((lx - 4.0, y0 + 9.0, hz0 - 9.0), (8.0, 11.0, 8.0), "plastic_blue", rot=(0, 0, -12))
+    vm.box((lx - 4.0, y0 + 15.2, hz0 - 9.0), (8.8, 1.0, 8.8), "plastic_blue", rot=(0, 0, -12))
+    vm.dec(bn, "*", "grime", amount=0.7)
+    # 後ろのステップと手すり
+    vm.box2((-(hw - 2.0), 6.8, hz1 - 1.0), (hw - 2.0, 7.6, hz1 + 4.0), "diamond")
+    for s in (-1, 1):
+        vm.rod((s * (hw - 3.0), 14.0, hz1 + 0.6), (s * (hw - 3.0), 26.0, hz1 + 0.6), 0.7, "steel")
+        vm.lamp((s * (hw - 2.0), hy0 + 7.0, hz1 + 0.1), (3.6, 2.4, 0.6), "r", face="south", lit_bone="lights_tail",
+                kind="round")
+        vm.lamp((s * (hw - 2.0), hy0 + 4.0, hz1 + 0.1), (2.0, 1.8, 0.6), "a", face="south", lit_bone="lights_hazard",
+                kind="round", bezel=None)
+    vm.plate((0, hy0 + 3.0, hz1 + 0.25), "south", o.get("plate", plate_text(_h(vm.key, "plate"), "800")),
+             kind=o.get("plate_kind", "green"))
+
+
+def _cab_cubes(vm, C) -> list:
+    """運転室の塗装の箱（帯を描く先）。"""
+    out = []
+    for b in vm.model.bones:
+        if b.name in ("body", "hood") or b.name.startswith("door_f"):
+            out += [c for c in b.cubes if c.style == "paint"]
+    return out
+
+
+def _dress_ambulance(vm, C, w, o, rng, panels, drivable):
+    hw = C["bw"] / 2.0
+    walls = [c for c, _ in C.get("_walls", [])]
+    cab = _cab_cubes(vm, C)
+    # 帯: 赤い帯・反射の市松・救急の印・文字
+    vm.wd(walls + cab, "lr", "nrv_band", y=(25.6, 28.2), colour=(176, 24, 22), wear=0.25)
+    vm.wd(walls, "lr", "nrv_band", y=(15.0, 18.6), pattern="checker", cell=1.8, colour=(200, 30, 28),
+          alt=(232, 230, 220), wear=0.25, reflective=True)
+    for c, side in C.get("_walls", []):
+        vm.dec(c, side, "nrv_star_life", at=(0.3 if side == "west" else 0.7, 0.36), size=0.42)
+        vm.dec(c, side, "nrv_lettering", text="AMBULANCE", colour=(176, 24, 22), box=(0.42, 0.18, 0.95, 0.34)
+               if side == "west" else (0.05, 0.18, 0.58, 0.34))
+        vm.dec(c, side, "nrv_text", text="NR CITY EMS", colour=(40, 60, 140), box=(0.5, 0.36, 0.9, 0.44)
+               if side == "west" else (0.1, 0.36, 0.5, 0.44))
+    fw = C.get("_front")
+    if fw is not None:
+        vm.dec(fw, "north", "nrv_lettering", text="AMBULANCE", colour=(176, 24, 22), box=(0.1, 0.12, 0.9, 0.3),
+               flip_u=True)
+    for name in ("door_rear_l", "door_rear_r"):
+        if name in vm.bmap:
+            for c in vm.bmap[name].cubes:
+                if c.style == "paint":
+                    vm.dec(c, "south", "nrv_star_life", at=(0.5, 0.36), size=0.5)
+                    vm.wd(c, "south", "nrv_band", y=(15.0, 18.6), pattern="checker", cell=1.8,
+                          colour=(200, 30, 28), alt=(232, 230, 220))
+    # 回転灯（運転室の屋根）と箱の四隅の赤灯
+    ry = C["roof"]
+    vm.box((0, ry + 1.2, C["zb"] - 9.0), (26.0, 2.4, 4.6), "trim")
+    for k, (x, col, b) in enumerate(((-8.0, "r", "beacon_a"), (0.0, "w", "beacon_b"), (8.0, "r", "beacon_a"))):
+        vm.lamp((x, ry + 2.7, C["zb"] - 9.0), (6.6, 1.8, 4.0), col, face="up", kind="bar", lit_bone=b, bezel=None)
+        lc = vm.box((x, ry + 2.7, C["zb"] - 9.0), (6.7, 1.9, 4.1), f"glow_{col}", bone=b)
+        vm.dec(lc, "*", "nrv_lamp", kind="bar", colour=_LAMP_RGB[col], emit=True)
+    y1 = C["by"][1]
+    for s in (-1, 1):
+        for zz, face, b in ((C["bz"][0] - 0.5, "north", "beacon_b"), (C["bz"][1] + 0.5, "south", "beacon_a")):
+            vm.lamp((s * (hw - 2.6), y1 - 2.0, zz), (3.6, 2.4, 0.8), "r", face=face, lit_bone=b, kind="round")
+    vm.light_bones["beacon_a"] = "beacon_a"
+    vm.light_bones["beacon_b"] = "beacon_b"
+    # 中: 棚・長椅子・酸素ボンベ・ストレッチャー（半分外へ）・血のシーツ
+    z0, z1 = C["bz"]
+    y0 = C["by"][0] + 1.2
+    cab_ = vm.box2((hw - 5.0, y0, z0 + 6.0), (hw - 1.0, y0 + 22.0, z0 + 40.0), "plastic_white")
+    vm.dec(cab_, "east", "nrv_grille", kind="h", count=5, box=(0.05, 0.05, 0.95, 0.95), deep=(150, 150, 146))
+    vm.box2((-(hw - 1.0), y0, z0 + 8.0), (-(hw - 6.0), y0 + 6.0, z0 + 34.0), "seat_vinyl")
+    for c in vm.cyl((-(hw - 3.0), y0 + 13.0, z0 + 4.0), 3.0, 12.0, "plastic_white", axis="y", n=2):
+        vm.dec(c, "*", "grime", amount=0.4)
+    if o.get("stretcher", True):
+        sz = z1 - 6.0
+        vm.bone("stretcher", pivot=(-4.0, y0, sz), parent="body", rotation=(-9, 0, 0))
+        fr = vm.box((-4.0, y0 + 5.0, sz), (8.0, 1.2, 26.0), "alu", bone="stretcher")
+        vm.box((-4.0, y0 + 6.2, sz - 2.0), (8.4, 1.4, 20.0), "plastic_white", bone="stretcher")
+        sh = vm.box((-4.0, y0 + 7.0, sz - 2.0), (8.6, 0.3, 19.0), "blood", bone="stretcher")
+        vm.dec(sh, "up", "nrv_puddle", kind="blood")
+        for zz in (sz - 11.0, sz + 11.0):
+            vm.box((-4.0, y0 + 2.0, zz), (7.0, 5.0, 0.8), "alu", bone="stretcher")
+    vm.dec(vm.bmap["body"].cubes[-1], "up", "grime", amount=0.5)
+
+
+def _dress_box_truck(vm, C, w, o, rng, panels, drivable):
+    z0, z1 = C["bz"]
+    y0, y1 = C["by"]
+    for c, side in C.get("_walls", []):
+        vm.dec(c, side, "nrv_lettering", text=o.get("company", "NR MOVERS"), colour=(30, 70, 140),
+               box=(0.12, 0.2, 0.88, 0.42))
+        vm.dec(c, side, "nrv_text", text=o.get("phone", "0120-55-81"), colour=(30, 70, 140),
+               box=(0.3, 0.46, 0.7, 0.56))
+        vm.dec(c, side, "nrv_band", y=(y0 + 2.0, y0 + 4.0)) if False else None
+        vm.wd(c, side, "nrv_band", y=(y0 + 2.5, y0 + 5.0), colour=(200, 120, 30), wear=0.3)
+    gt = o.get("graffiti")
+    if gt:
+        for c, side in C.get("_walls", []):
+            if side != "west":
+                continue
+            org = (C["bw"] / 2 + 0.05, y1 - 6.0, z0 + 8.0)
+            strokes = NBP.text_strokes(gt, org, (0, 0, 1), (0, -1, 0), 7.0, seed=_h(gt))
+            vm.wd(c, side, "nrb_spray", strokes=strokes, colour=(186, 24, 20), width=0.9, drip=0.9)
+            strokes = NBP.text_strokes("->", (C["bw"] / 2 + 0.05, y1 - 16.0, z0 + 30.0), (0, 0, 1), (0, -1, 0),
+                                       5.0, seed=3)
+            vm.wd(c, side, "nrb_spray", strokes=strokes, colour=(186, 24, 20), width=0.9, drip=0.6)
+    # 荷物（段ボール）とリフト
+    if o.get("cargo", True):
+        for k in range(7):
+            bx = rng.uniform(-14, 14)
+            bz = rng.uniform(z1 - 30, z1 - 6)
+            by = y0 + 1.2 + 4.0 + (k // 3) * 7.0
+            vm.box((bx, by, bz), (rng.uniform(7, 10), 7.6, rng.uniform(7, 10)), "cardboard",
+                   rot=(0, rng.uniform(-20, 20), 0))
+    vm.box2((-(C["bw"] / 2 - 2.0), 6.0, z1 + 1.6), (C["bw"] / 2 - 2.0, 7.2, z1 + 12.0), "diamond")
+    fuel = vm.cyl((-(C["bw"] / 2 - 1.0), 12.0, -20.0), 6.0, 15.0, "alu", axis="z", n=2)
+    vm.locator("fuel", (-(C["bw"] / 2 - 1.0), 12.0, -20.0))
+
+
+def _dress_garbage_truck(vm, C, w, o, rng, panels, drivable):
+    hw = C["bw"] / 2.0
+    for b in vm.model.bones:
+        for c in b.cubes:
+            if c.style == "paint" and abs(c.size[0] - 1.0) < 0.01 and c.size[2] > 60:
+                side = "west" if c.origin[0] > 0 else "east"
+                vm.dec(c, side, "nrv_lettering", text=o.get("company", "CITY CLEAN"), colour=(232, 230, 214),
+                       box=(0.15, 0.25, 0.85, 0.42))
+                vm.dec(c, side, "nrv_text", text="NR-17", colour=(232, 230, 214), box=(0.4, 0.46, 0.6, 0.54))
+    if "hopper" in vm.bmap:
+        for c in vm.bmap["hopper"].cubes:
+            if c.style == "paint":
+                vm.dec(c, "south", "stripe", hazard=True, orient="v", count=2, width=0.12, colour=(230, 190, 30))
+    # 屋根の橙の回転灯
+    ry = C["roof"]
+    vm.box((0, ry + 0.8, C["zf"] + 10.0), (22.0, 1.6, 3.6), "trim")
+    for x, b in ((-6.0, "beacon_a"), (6.0, "beacon_b")):
+        vm.lamp((x, ry + 2.4, C["zf"] + 10.0), (4.0, 2.4, 3.0), "a", face="up", kind="round", lit_bone=b, bezel=None)
+        lc = vm.box((x, ry + 2.4, C["zf"] + 10.0), (4.1, 2.5, 3.1), "glow_a", bone=b)
+        vm.dec(lc, "*", "nrv_lamp", kind="round", colour=_LAMP_RGB["a"], emit=True)
+        vm.light_bones[b] = b
+    if o.get("spill", True):
+        z1 = C["hz"][1]
+        for k in range(9):
+            vm.box((rng.uniform(-16, 16), rng.uniform(1.6, 3.4), z1 + rng.uniform(4, 26)),
+                   (rng.uniform(5, 9), rng.uniform(3.4, 6.0), rng.uniform(5, 9)), "trash",
+                   rot=(rng.uniform(-15, 15), rng.uniform(0, 90), rng.uniform(-15, 15)))
+        sp = vm.box((0, 0.06, z1 + 14.0), (34.0, 0.12, 26.0), "fuel", drop="down")
+        vm.dec(sp, "up", "nrv_puddle", kind="blood")
+        vm.box((6.0, 1.4, z1 + 8.0), (5.0, 2.6, 4.0), "cardboard", rot=(0, 30, 10))
+        vm.box((-9.0, 0.8, z1 + 18.0), (6.0, 1.4, 3.0), "paper", rot=(0, -20, 0))
+
+
+def _dress_army_truck(vm, C, w, o, rng, panels, drivable):
+    hw = C["W"] / 2.0
+    zf = C["zf"]
+    # 格子のガードと牽引フック
+    for x in np.linspace(-hw + 3.0, hw - 3.0, 7):
+        vm.box((float(x), 17.0, zf - 4.0), (1.0, 14.0, 1.0), "steel_dark")
+    for yy in (11.5, 23.0):
+        vm.box((0, yy, zf - 4.0), (2 * hw - 4.0, 1.0, 1.0), "steel_dark")
+    for s in (-1, 1):
+        vm.box((s * 9.0, 9.0, zf - 4.4), (1.6, 2.4, 2.6), "steel_rusty")
+        vm.dec(vm.bmap["body"].cubes[-1], "*", "grime", amount=0.5)
+    # 運転室の後ろのスペアタイヤ
+    vm.wheel("spare", (0.0, 26.0, C["zb"] + 2.0), 8.0, 4.0, parent="body", rim="rim_dark", rim_kind="steel",
+             hubcap=True)
+    vm.set_rotation("spare", (0, 90, 0))
+    vm.meta["wheels"].pop("spare", None)
+    # 燃料缶・荷台の弾薬箱・土嚢
+    for k, zz in enumerate((-6.0, 0.0)):
+        jc = vm.box((-(C["bw"] / 2 + 2.2), C["by"][0] - 3.0, zz), (3.4, 8.6, 5.6), "paint")
+        vm.dec(jc, "east", "nrb_xpress") if False else None
+        vm.dec(jc, "*", "grime", amount=0.6)
+    z0, z1 = C["bz"]
+    y0 = C["by"][0]
+    for k in range(6):
+        cx = (-8.0 if k % 2 == 0 else 8.0)
+        cz = z1 - 10.0 - (k // 2) * 9.0
+        cr = vm.box((cx, y0 + 3.0 + (1 if k % 3 == 0 else 0) * 0.0, cz), (12.0, 6.0, 7.0), "paint",
+                    rot=(0, rng.uniform(-8, 8), 0))
+        vm.dec(cr, "*", "nrv_stencil", text="AMMO", colour=(222, 222, 206), box=(0.2, 0.3, 0.8, 0.7))
+    for k in range(5):
+        vm.box((-14.0 + k * 7.0, y0 + 2.0, z1 - 3.0), (6.6, 3.4, 4.0), "canvas", rot=(0, rng.uniform(-6, 6), 0))
+        vm.box((-10.5 + k * 7.0, y0 + 5.2, z1 - 3.0), (6.6, 3.2, 4.0), "canvas", rot=(0, rng.uniform(-6, 6), 0))
+
+
+def _dress_pickup(vm, C, w, o, rng, panels, drivable):
+    hw = C["bw"] / 2.0
+    z0, z1 = C["bz"]
+    y0, y1 = C["by"]
+    tb = vm.box((0, y1 + 2.6, z0 + 4.0), (2 * hw - 1.0, 5.0, 6.0), "diamond")
+    vm.dec(tb, ["up", "south"], "nrb_diamond_plate")
+    vm.bone("toolbox_lid", pivot=(0, y1 + 5.1, z0 + 1.0), parent="body")
+    vm.box((0, y1 + 5.3, z0 + 4.0), (2 * hw - 1.0, 0.4, 6.0), "diamond", bone="toolbox_lid")
+    vm.open_pose["toolbox_lid"] = {"rotation": [-70.0, 0, 0]}
+    vm.wheel("spare", (4.0, y0 + 2.0, z0 + 22.0), 7.0, 4.0, parent="body", rim="rim_dark", rim_kind="steel")
+    vm.set_rotation("spare", (0, 0, 90))
+    vm.meta["wheels"].pop("spare", None)
+    jc = vm.box((-10.0, y0 + 4.5, z1 - 6.0), (5.0, 9.0, 8.0), "plastic_red")
+    vm.dec(jc, ["east", "west"], "nrb_xpress")
+    # ロールバーと作業灯
+    rz = z0 + 1.0
+    for s in (-1, 1):
+        vm.rod((s * (hw - 1.0), y1, rz), (s * (hw - 2.5), C["roof"] + 1.0, rz), 1.2, "steel_dark")
+    vm.box((0, C["roof"] + 1.0, rz), (2 * hw - 4.0, 1.2, 1.2), "steel_dark")
+    for x in (-8.0, 8.0):
+        vm.box((x, C["roof"] + 2.4, rz), (3.6, 2.6, 2.0), "trim")
+        vm.lamp((x, C["roof"] + 2.4, rz - 1.1), (3.0, 2.0, 0.4), "w", face="north", kind="round",
+                lit_bone="lights_extra", bezel=None)
+    vm.light_bones["lights_extra"] = "extra"
+    # ブルバー
+    zf = C["zf"]
+    for s in (-1, 1):
+        vm.box((s * 8.0, 12.0, zf - 4.6), (1.4, 13.0, 1.4), "steel_dark")
+        vm.rod((s * 8.0, 18.4, zf - 4.6), (s * 15.0, 12.0, zf - 3.2), 1.3, "steel_dark")
+    for yy in (8.0, 18.4):
+        vm.box((0, yy, zf - 4.6), (18.0, 1.3, 1.3), "steel_dark")
+    for c, f in panels:
+        vm.dec(c, f, "grime", amount=0.55)
+
+
+# 種類ごとの寸法（単位）。運転室 C と後ろ（bw / bz / by / axles …）
+_TRUCKS = {
+    "ambulance": dict(W=36.0, zf=-53.0, zws=-42.0, ztop=-35.0, zb=-19.0, y0=6.0, belt=22.0, roof=35.0,
+                      hood_h=(19.0, 21.4), door=(-41.4, -24.0), door_lo=7.0, R=7.0, af=-34.0, tx=14.6, tw=5.0,
+                      grille_n=6, mirror="truck", bumper_style="bumper", bumper_y=(4.6, 9.0), head_y=15.0,
+                      bw=38.0, bz=(-19.0, 46.0), by=(9.0, 46.0), axles=(28.0,), R2=7.0, tx2=14.6, tw2=8.0,
+                      rear="doors", posts=4, box_style="paint", floor_style="diamond"),
+    "box_truck": dict(W=38.0, zf=-65.0, zws=-56.0, ztop=-50.0, zb=-33.0, y0=8.0, belt=27.0, roof=40.0,
+                      hood_h=(24.0, 26.0), door=(-55.4, -35.0), door_lo=17.4, R=8.0, af=-48.0, tx=15.0, tw=6.0,
+                      grille_n=8, grille_style="chrome", mirror="truck", bumper_y=(5.0, 9.6), head_y=19.5,
+                      bw=42.0, bz=(-31.0, 55.0), by=(10.0, 54.0), axles=(34.0,), R2=8.0, tx2=15.0, tw2=10.0,
+                      rear="shutter", shutter_open=0.5, posts=7, box_style="alu", roof_style="alu"),
+    "garbage_truck": dict(W=40.0, zf=-71.0, zws=-70.0, ztop=-68.0, zb=-45.0, y0=7.0, belt=19.0, roof=33.0,
+                          door=(-69.0, -59.0), door_lo=8.0, R=9.0, af=-48.0, tx=16.4, tw=6.0, grille="h",
+                          grille_n=5, mirror="truck", bumper_y=(5.0, 9.4), head_y=12.5, head_x=15.0,
+                          bw=44.0, bz=(-37.0, 45.0), by=(10.0, 56.0), axles=(20.0, 36.0), R2=9.0, tx2=16.0,
+                          tw2=10.0, hz=(44.0, 68.0), hy=(11.0, 41.0), ribs=6),
+    "army_truck": dict(W=38.0, zf=-80.0, zws=-57.0, ztop=-56.0, zb=-32.0, y0=11.0, belt=30.0, roof=38.0,
+                       hood_h=(26.0, 27.0), door=(-55.0, -36.0), door_lo=13.0, R=9.0, af=-66.0, tx=15.6, tw=8.0,
+                       grille="v", grille_n=9, headlights="round", head_cage=True, head_y=22.0, head_x=13.0,
+                       mirror="truck", bumper_y=(8.0, 12.0), vents=True, soft_top=True, split_ws=True,
+                       hood_text="3-27 INF", door_text="NR ARMY", door_text_rgb=(226, 226, 214),
+                       rear_window=False, rim="rim_dark", seat_style="canvas",
+                       bw=40.0, bz=(-19.0, 55.0), by=(18.0, 24.0), canvas_y=48.0, axles=(20.0, 38.0), R2=9.0,
+                       tx2=15.6, tw2=8.0, dual=False, bows=5),
+    "pickup": dict(W=34.0, zf=-46.0, zws=-19.0, ztop=-9.0, zb=5.0, y0=6.0, belt=20.6, roof=31.0,
+                   hood_h=(19.4, 20.6), door=(-18.4, 4.0), door_lo=6.5, R=7.0, af=-28.0, tx=14.0, tw=6.0,
+                   grille_n=4, grille_style="chrome", mirror="car", bumper_y=(5.0, 9.0), head_y=16.5, head_x=12.0,
+                   rim="rim_dark", tyre="tyre_knobby",
+                   bw=34.0, bz=(7.0, 44.0), by=(14.0, 22.0), axles=(28.0,), R2=7.0, tx2=14.0, tw2=6.0, dual=False,
+                   tailgate_text="NR-4X4"),
+}
+
+
+def _build_truck(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) -> None:
+    C = dict(_TRUCKS[kind])
+    C.update(o.get("dims") or {})
+    rng = random.Random(_h(vm.key, "truck", vm.seed))
+    panels: list = []
+    names = ("windshield", "fl", "fr", "cab_rear", "rear_l", "rear_r")
+    gst = _glass_states(w, names, rng)
+    if drivable:
+        gst = {k: ("intact" if v == "cracked" else v) for k, v in gst.items()}
+    vm.meta.update(kind=kind)
+    _truck_cab(vm, C, w, o, gst, rng, panels, drivable)
+    z_end = C["bz"][1]
+    hw_b = C["bw"] / 2.0
+    _chassis(vm, C, C["zf"] + 2.0, z_end - 1.0, C.get("frame_y", C["R2"] + 0.6))
+    if kind in ("ambulance", "box_truck"):
+        C["_walls"] = []
+        out = _box_body(vm, C, w, o, gst, rng, panels)
+        vm.meta["box_walls"] = [id(c) for c in out["walls"]]
+        _rear_end(vm, C, z_end, C["by"][0] - 2.0, hw_b, w, o, C["by"][0] + 3.0)
+        vm.meta["roof_y"] = C["by"][1]
+    elif kind == "pickup":
+        _bed(vm, C, w, o, rng, panels)
+        for s in (-1, 1):
+            vm.lamp((s * (hw_b - 1.2), C["by"][1] - 3.0, z_end - 0.4), (1.4, 4.0, 1.4), "r", face="south",
+                    lit_bone="lights_tail", bezel="trim")
+        vm.box2((-(hw_b - 0.5), 4.6, z_end + 1.2), (hw_b - 0.5, 8.0, z_end + 3.2), "chrome")
+        vm.plate((0, 6.3, z_end + 3.45), "south", o.get("plate", plate_text(_h(vm.key, "plate"), "400")),
+                 kind=o.get("plate_kind", "white"))
+        vm.meta["roof_y"] = C["roof"]
+    elif kind == "army_truck":
+        _canvas_bed(vm, C, w, o, rng, panels)
+        _rear_end(vm, C, z_end + 0.8, C["by"][0] - 4.0, hw_b, w, o, C["by"][0] - 2.0)
+        vm.meta["roof_y"] = C["canvas_y"]
+    elif kind == "garbage_truck":
+        _compactor(vm, C, w, o, rng, panels)
+        vm.meta["roof_y"] = C["by"][1]
+    _rear_axles(vm, dict(C, rim=C.get("rim", "rim_white")), w, drivable)
+    dress = globals().get(f"_dress_{kind}")
+    if dress:
+        dress(vm, C, w, o, rng, panels, drivable)
+    scatter_wear(vm, panels, w, rng)
+    vm.locator("smoke", (0, C.get("hood_h", (C["belt"], C["belt"]))[1], (C["zf"] + C["zws"]) / 2))
+    L = (z_end - C["zf"]) + 6.0
+    vm.meta["size_blocks"] = [round(max(C["W"], C["bw"]) / 16, 2), round(vm.meta["roof_y"] / 16, 2), round(L / 16, 2)]
+
+
+# ===========================================================================
+#  8. 路線バス・バギー（乗れる）・オフロードバイク（乗れる）
+# ===========================================================================
+BUS_DIMS = dict(W=44.0, zf=-102.0, zr=102.0, y0=6.0, floor=8.4, belt=30.0, win_top=42.0, roof=45.0, R=8.0,
+                af=-72.0, ar=56.0, tx=18.4, tw=6.0, tw2=10.0, door_f=(-97.0, -83.0), door_m=(2.0, 18.0))
+
+
+def _build_bus(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) -> None:
+    D = dict(BUS_DIMS)
+    D.update(o.get("dims") or {})
+    rng = random.Random(_h(vm.key, "bus", vm.seed))
+    hw = D["W"] / 2.0
+    sk = hw - 0.1
+    zf, zr, y0, belt, wt, roof, R = D["zf"], D["zr"], D["y0"], D["belt"], D["win_top"], D["roof"], D["R"]
+    P, P2 = "paint", "paint2"
+    panels = []
+    arches = [(D["af"] - R - 1.4, D["af"] + R + 1.4, 2 * R + 1.0), (D["ar"] - R - 1.4, D["ar"] + R + 1.4, 2 * R + 1.0)]
+    doors = [D["door_f"], D["door_m"]]
+    vm.meta.update(kind=kind, roof_y=roof + 5.0)
+    # ---- 下の車体（両側。+X 側は扉の開口） ------------------------------------------------------------
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        skip = [(a, b, y0) for a, b in doors] if s > 0 else []
+        for c in side_band(vm, s, hw - 1.4, sk, y0, belt, zf + 3.0, zr - 3.0, arches, P, skip=skip):
+            panels.append((c, side))
+        # 窓の下の白い帯
+        vm.wd([c for c, _ in panels if c.origin[0] * s > 0], side, "nrv_band", y=(belt - 3.0, belt), colour=(226, 226, 216))
+    vm.box2((-(hw - 1.4), y0, zf + 3.0), (hw - 1.4, D["floor"], zr - 3.0), "carpet")
+    vm.box2((-(hw - 1.6), 2.6, zf + 6.0), (hw - 1.6, y0, zr - 6.0), "under")
+    for a0, a1, top in arches:
+        vm.box2((-(D["tx"] - D["tw2"] / 2 - 0.5), y0, a0), (D["tx"] - D["tw2"] / 2 - 0.5, top + 1.0, a1), "trim")
+    # ---- 窓の帯と柱 ----------------------------------------------------------------------------------
+    zs = list(np.linspace(zf + 8.0, zr - 6.0, 11))
+    gnames = []
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        for k, (za, zb) in enumerate(zip(zs[:-1], zs[1:])):
+            za, zb = float(za), float(zb)
+            in_door = s > 0 and any(a - 1.0 < (za + zb) / 2 < b + 1.0 for a, b in doors)
+            vm.box2((s * (hw - 1.2), belt, za - 0.8), (s * sk, roof - 1.0, za + 0.8), P2)
+            if in_door:
+                continue
+            nm = f"w{'l' if s > 0 else 'r'}{k}"
+            gnames.append(nm)
+        vm.box2((s * (hw - 1.2), belt, zs[-1] - 0.8), (s * sk, roof - 1.0, zr - 3.0), P2)
+        vm.box2((s * (hw - 1.2), belt, zf + 3.0), (s * sk, roof - 1.0, zs[0] + 0.8), P2)
+    gst = _glass_states(w, gnames + ["windshield", "rear", "door_f", "door_m"], rng)
+    for s in (-1, 1):
+        for k, (za, zb) in enumerate(zip(zs[:-1], zs[1:])):
+            nm = f"w{'l' if s > 0 else 'r'}{k}"
+            if nm not in gst:
+                continue
+            za, zb = float(za) + 0.8, float(zb) - 0.8
+            at = (s * (hw - 0.5), (belt + wt) / 2, (za + zb) / 2)
+            c = vm.window(at, (0.3, wt - belt - 0.4, zb - za), gst[nm], tint=True, seed=_h(vm.key, nm))
+            if c is not None and float(w["blood"]) > 0.3 and s > 0 and rng.random() < 0.5:
+                vm.dec(c, "east", "handprint", at=(rng.uniform(0.3, 0.7), rng.uniform(0.4, 0.7)), size=0.4)
+    # ---- 屋根・空調の箱・非常口 ------------------------------------------------------------------------
+    rf = vm.box2((-(hw - 0.4), roof - 3.0, zf + 2.0), (hw - 0.4, roof, zr - 2.0), P2)
+    panels.append((rf, "up"))
+    vm.box2((-(hw - 1.6), roof - 3.6, zf + 4.0), (hw - 1.6, roof - 3.0, zr - 4.0), "headliner")
+    ac = vm.box((0, roof + 2.5, 40.0), (30.0, 5.0, 36.0), "plastic_white")
+    vm.dec(ac, ["east", "west"], "nrb_slits", rows=4, box=(0.08, 0.2, 0.92, 0.8))
+    vm.dec(ac, "up", "nrv_grille", kind="mesh", box=(0.1, 0.1, 0.45, 0.9), period=1.0)
+    vm.bone("hatch", pivot=(0, roof + 0.2, -25.0), parent="body", rotation=(-58, 0, 0))
+    vm.box((0, roof + 0.6, -20.0), (10.0, 0.8, 10.0), "steel", bone="hatch")
+    vm.box2((-5.0, roof - 0.2, -25.0), (5.0, roof + 0.4, -15.0), "trim")
+    vm.locator("roof", (0, roof, 0))
+    # ---- 前（大きな窓・行き先表示・顔・自転車ラック・ミラー） ----------------------------------------------
+    fm = vm.box2((-hw, y0, zf), (hw, 20.0, zf + 3.0), P2)
+    panels.append((fm, "north"))
+    vm.box2((-hw, 20.0, zf), (hw, 21.4, zf + 3.0), P)
+    vm.box2((-hw, wt + 0.4, zf), (hw, roof, zf + 3.0), P2)
+    for s in (-1, 1):
+        vm.box2((s * (hw - 1.6), 21.4, zf), (s * hw, wt + 0.4, zf + 3.0), P2)
+    vm.window((0, (21.4 + wt) / 2, zf + 0.6), (2 * hw - 3.2, wt - 21.4, 0.3), gst["windshield"],
+              seed=_h(vm.key, "ws"))
+    vm.box((0, (21.4 + wt) / 2, zf + 0.4), (0.8, wt - 21.4, 0.5), "trim")
+    vm.bone("lights_sign", parent="body")
+    sgn = vm.box((0, wt + 2.2, zf - 0.1), (30.0, 3.4, 0.4), "trim")
+    vm.dec(sgn, "north", "nrv_text", text=o.get("sign_off", "NOT IN SERVICE"), colour=(90, 60, 20),
+           box=(0.04, 0.15, 0.96, 0.85))
+    lit = vm.box((0, wt + 2.2, zf - 0.36), (30.0, 3.4, 0.12), "glow_a", bone="lights_sign")
+    vm.dec(lit, "north", "nrv_text", text=o.get("sign", "NOT IN SERVICE"), colour=(255, 170, 40), emissive=True,
+           box=(0.04, 0.15, 0.96, 0.85))
+    vm.drop_faces(lit, ["up", "down", "east", "west", "south"])
+    vm.light_bones["lights_sign"] = "sign"
+    for s in (-1, 1):
+        vm.lamp((s * (hw - 5.0), 12.0, zf - 0.3), (6.4, 3.4, 0.8), "w", face="north", kind="twin",
+                lit_bone="lights_head")
+        vm.lamp((s * (hw - 1.8), 8.6, zf - 0.3), (2.2, 2.0, 0.6), "a", face="north", lit_bone="lights_hazard",
+                bezel=None)
+        mx = s * (hw + 3.0)
+        vm.rod((s * (hw - 1.0), roof - 2.0, zf + 2.0), (mx, roof - 6.0, zf - 4.0), 0.7, "steel_dark")
+        vm.box((mx, roof - 10.0, zf - 4.0), (1.4, 8.0, 3.0), "trim")
+    gr = vm.box2((-10.0, 9.0, zf - 0.4), (10.0, 15.0, zf + 0.1), "trim")
+    vm.dec(gr, "north", "nrv_grille", kind="h", count=4)
+    vm.box2((-(hw + 0.4), y0 - 1.0, zf - 2.4), (hw + 0.4, y0 + 3.0, zf + 0.2), "bumper")
+    vm.plate((0, y0 + 1.0, zf - 2.65), "north", o.get("plate", plate_text(_h(vm.key, "plate"), "200")),
+             kind="green")
+    # 曲がった自転車ラック
+    vm.rod((-12.0, y0 + 2.0, zf - 2.6), (-11.0, y0 + 10.0, zf - 6.0), 0.8, "steel_dark")
+    vm.rod((12.0, y0 + 2.0, zf - 2.6), (10.0, y0 + 8.0, zf - 6.6), 0.8, "steel_dark")
+    vm.rod((-11.0, y0 + 10.0, zf - 6.0), (10.0, y0 + 8.0, zf - 6.6), 0.8, "steel_dark")
+    # ---- 後ろ --------------------------------------------------------------------------------------------
+    rw = vm.box2((-hw, y0, zr - 3.0), (hw, roof, zr), P)
+    panels.append((rw, "south"))
+    vm.dec(rw, "south", "nrb_slits", box=(0.15, 0.62, 0.85, 0.86), rows=7)
+    vm.window((0, 36.0, zr + 0.2), (24.0, 8.0, 0.3), gst["rear"], tint=True, seed=_h(vm.key, "rear"))
+    for s in (-1, 1):
+        vm.lamp((s * (hw - 3.0), 14.0, zr + 0.3), (3.2, 7.0, 0.7), "r", face="south", lit_bone="lights_tail")
+        vm.lamp((s * (hw - 3.0), 9.0, zr + 0.3), (3.2, 2.4, 0.6), "a", face="south", lit_bone="lights_hazard",
+                bezel=None)
+    vm.box2((-(hw + 0.4), y0 - 1.0, zr - 0.2), (hw + 0.4, y0 + 3.0, zr + 2.2), "bumper")
+    vm.plate((0, 20.0, zr + 0.25), "south", o.get("plate", plate_text(_h(vm.key, "plate"), "200")), kind="green")
+    # ---- 扉（+X 側。折れ戸 2 枚ずつ、開いている） -----------------------------------------------------------
+    for name, (a, b) in (("door_f", D["door_f"]), ("door_m", D["door_m"])):
+        half = (b - a) / 2
+        for k, (z0, sgn) in enumerate(((a, 1.0), (b, -1.0))):
+            bone = f"{name}{'ab'[k]}"
+            vm.bone(bone, pivot=(hw - 0.4, D["floor"], z0), parent="body")
+            zc = z0 + sgn * half / 2
+            fr = vm.box((hw - 0.6, (D["floor"] + wt) / 2, zc), (0.5, wt - D["floor"], half - 0.2), "trim", bone=bone)
+            vm.wd(fr, "*", "nrv_frame", frame="local", lo=list(fr.origin),
+                  hi=[fr.origin[i] + fr.size[i] for i in range(3)], border=0.8)
+            vm.window((hw - 0.6, (D["floor"] + wt) / 2, zc), (0.3, wt - D["floor"] - 1.6, half - 1.6),
+                      "intact" if gst[name] == "cracked" else gst[name], glass_bone=f"glass_{bone}",
+                      smash_bone=f"smash_{bone}", frame_bone=bone, seed=_h(vm.key, bone))
+            ang = float(o.get("door_angle", 78.0)) if not drivable else 0.0
+            vm.set_rotation(bone, (0, -sgn * ang, 0))
+        vm.box2((hw - 6.0, y0, a), (hw - 1.4, D["floor"] - 2.0, b), "diamond")
+    # ---- 内装（座席の列・手すり・柱・運転席） -----------------------------------------------------------
+    vm.box2((-(hw - 1.6), D["floor"], zf + 3.0), (-(hw - 12.0), 19.0, zf + 12.0), "dash")
+    vm.steering((-(hw - 8.0), 21.0, zf + 15.0), radius=4.0, tilt=58.0, column=6.0)
+    vm.seat((-(hw - 8.0), 17.0, zf + 22.0), 8.0, depth=7.0, back=11.0, style="seat_vinyl", base=5.0)
+    vm.meta["seats"] = {"driver": [-(hw - 8.0), 17.0, zf + 22.0]}
+    k = 0
+    for zz in np.arange(zf + 34.0, zr - 12.0, 13.0):
+        zz = float(zz)
+        for s, wdt in ((-1, 16.0), (1, 8.0)):
+            if s > 0 and any(a - 6.0 < zz < b + 6.0 for a, b in doors):
+                continue
+            x = s * (hw - 2.0 - wdt / 2)
+            vm.box((x, D["floor"] + 6.8, zz), (wdt, 2.0, 7.0), "seat_bus")
+            vm.box((x, D["floor"] + 11.4, zz + 3.6), (wdt, 9.0, 1.6), "seat_bus", rot=(-8, 0, 0))
+            vm.box((x, D["floor"] + 3.2, zz), (wdt * 0.6, 5.4, 1.0), "steel_dark")
+            k += 1
+    for zz in (-60.0, -20.0, 30.0, 70.0):
+        vm.box((6.0, (D["floor"] + roof - 3.6) / 2, zz), (0.7, roof - 3.6 - D["floor"], 0.7), "plastic_yellow")
+    for s in (-1, 1):
+        vm.box((s * 8.0, roof - 6.0, 0.0), (0.7, 0.7, 180.0), "chrome")
+    # 横の広告（架空の飲み物）
+    ad = vm.box((-(hw + 0.15), 22.0, 10.0), (0.3, 10.0, 50.0), "paper")
+    vm.dec(ad, "east", "nrb_label", box=(0.0, 0.0, 1.0, 1.0), fill=(40, 120, 190), ink=(250, 250, 240),
+           text="FROSTY FIZZ|ICE COLD", border=2, border_colour=(250, 220, 60))
+    vm.dec(ad, "east", "grime", amount=0.6)
+    # ---- 車輪 ---------------------------------------------------------------------------------------------
+    for name, (s, az, dual) in {"fl": (1, D["af"], False), "fr": (-1, D["af"], False),
+                                "rl": (1, D["ar"], True), "rr": (-1, D["ar"], True)}.items():
+        vm.wheel(f"wheel_{name}", (s * (D["tx"] - (0.6 if dual else 0.0)), R, az), R, D["tw2"] if dual else D["tw"],
+                 side=s, dual=dual, flat=name in w["flat"] and not drivable, rim="rim", rim_kind="steel", spokes=8)
+    if float(w["blood"]) > 0.2:
+        for c, f in panels[:6]:
+            if f == "west":
+                vm.dec(c, f, "nrv_smear", at=(0.3, 0.2), angle=4, length=0.6, width=0.12)
+    scatter_wear(vm, panels, w, rng, dent_scale=0.6)
+    vm.locator("smoke", (0, 30.0, zr - 10.0))
+    vm.meta["size_blocks"] = [round(D["W"] / 16, 2), round((roof + 5.0) / 16, 2), round((zr - zf + 10.0) / 16, 2)]
+
+
+def _build_buggy(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) -> None:
+    """乗れるバギー: 鉄パイプのロールケージ・むき出しの後ろのエンジン・前の棘付きの鋤（ラム）・大きなタイヤ。"""
+    rng = random.Random(_h(vm.key, "buggy", vm.seed))
+    R, tw, tx, af, ar = 7.4, 6.0, 15.0, -19.0, 19.0
+    P = "paint"
+    panels = []
+    vm.meta.update(kind=kind, roof_y=28.0)
+    # 床・側の梁・座席
+    fl = vm.box2((-9.0, 6.6, -16.0), (9.0, 7.6, 14.0), "diamond")
+    vm.dec(fl, "up", "nrb_diamond_plate")
+    for s in (-1, 1):
+        vm.rod((s * 9.6, 7.6, -22.0), (s * 9.6, 7.6, 16.0), 1.6, "steel_dark")
+        vm.rod((s * 9.6, 7.6, 16.0), (s * 8.0, 10.0, 26.0), 1.4, "steel_dark")
+        vm.rod((s * 9.6, 7.6, -22.0), (s * 6.0, 9.0, -30.0), 1.4, "steel_dark")
+    seat_style = "seat_vinyl"
+    vm.seat((-5.0, 10.6, 1.0), 7.6, depth=7.0, back=11.0, style=seat_style, base=2.0, recline=14.0)
+    vm.seat((5.0, 10.6, 1.0), 7.6, depth=7.0, back=11.0, style=seat_style, base=2.0, recline=14.0)
+    vm.meta["seats"] = {"driver": [-5.0, 10.6, 1.0], "passenger": [5.0, 10.6, 1.0]}
+    # ロールケージ（前の輪・後ろの輪・屋根の棒・筋交い）
+    cage = "paint"
+    for s in (-1, 1):
+        vm.rod((s * 9.6, 8.0, 7.0), (s * 8.4, 27.0, 5.0), 1.2, cage)
+        vm.rod((s * 9.6, 8.0, -14.0), (s * 8.4, 27.0, -5.0), 1.2, cage)
+        vm.rod((s * 8.4, 27.0, -5.0), (s * 8.4, 27.0, 5.0), 1.2, cage)
+        vm.rod((s * 8.4, 27.0, 5.0), (s * 7.6, 12.0, 22.0), 1.1, cage)
+        vm.rod((s * 9.6, 8.0, -14.0), (s * 6.0, 11.0, -26.0), 1.1, cage)
+    vm.rod((-8.4, 27.0, 5.0), (8.4, 27.0, 5.0), 1.2, cage)
+    vm.rod((-8.4, 27.0, -5.0), (8.4, 27.0, -5.0), 1.2, cage)
+    vm.rod((-8.4, 27.0, 5.0), (8.4, 9.0, 7.0), 1.0, cage)
+    vm.rod((-9.0, 17.0, -10.0), (9.0, 17.0, -10.0), 1.0, cage)
+    # 屋根の網と作業灯の列
+    rn = vm.box((0, 27.6, 0.0), (16.0, 0.3, 9.6), "steel")
+    vm.wd(rn, "*", "nrv_mesh", frame="local", axis=1, period=1.6, wire=0.25, diag=True, border=0.4,
+          lo=list(rn.origin), hi=[rn.origin[i] + rn.size[i] for i in range(3)])
+    vm.box((0, 28.6, -5.0), (16.0, 1.4, 1.6), "trim")
+    for x in (-6.0, -2.0, 2.0, 6.0):
+        vm.lamp((x, 28.6, -5.9), (3.0, 1.2, 0.4), "w", face="north", kind="round", lit_bone="lights_extra",
+                bezel=None)
+    vm.light_bones["lights_extra"] = "extra"
+    # 前（鼻・ボンネット・灯り）
+    nose = vm.box2((-7.0, 7.0, -30.0), (7.0, 13.0, -16.0), P)
+    panels.append((nose, ["up", "north", "east", "west"]))
+    vm.box2((-7.4, 12.8, -30.4), (7.4, 13.6, -16.0), P)
+    for s in (-1, 1):
+        vm.lamp((s * 5.0, 11.0, -30.4), (3.2, 3.2, 0.7), "w", face="north", kind="round", lit_bone="lights_head")
+    vm.box2((-10.0, 14.2, -16.0), (10.0, 16.8, -13.0), "dash")
+    vm.steering((-5.0, 16.4, -9.0), radius=2.8, tilt=30.0, column=5.0)
+    # 棘付きの鋤（V 字の板 2 枚と鉄筋の棘）
+    vm.bone("plow", pivot=(0, 10.0, -32.0), parent="body")
+    for s in (-1, 1):
+        pl = vm.box((s * 6.6, 10.0, -36.4), (14.2, 11.0, 1.2), "steel_rusty", bone="plow", rot=(0, s * 28.0, 0))
+        vm.dec(pl, "north", "nrv_seam", segs=[], width=0.0) if False else None
+        vm.rod((s * 4.0, 8.0, -31.0), (s * 8.0, 9.0, -35.0), 1.0, "steel_dark", bone="plow")
+    for k in range(8):
+        x = -11.0 + k * (22.0 / 7)
+        yy = 7.0 + (k % 2) * 5.0
+        z0 = -38.4 + abs(x) * 0.52
+        vm.rod((x, yy, z0), (x * 1.05, yy + 0.4, z0 - 6.0), 0.9, "steel_rusty", bone="plow")
+        vm.box((x * 1.06, yy + 0.4, z0 - 6.4), (0.5, 0.5, 1.0), "steel", bone="plow")
+    # 後ろ（むき出しのエンジン・排気管・タンク・スペアタイヤ・灯り）
+    eng = vm.box2((-6.5, 8.0, 12.0), (6.5, 16.0, 22.0), "engine")
+    vm.dec(eng, ["east", "west"], "nrv_grille", kind="h", count=6, box=(0.1, 0.1, 0.9, 0.6), deep=(40, 40, 42))
+    for c in vm.cyl((0, 18.0, 16.0), 5.0, 3.0, "chrome", axis="y", n=2):
+        pass
+    for s in (-1, 1):
+        vm.rod((s * 4.0, 12.0, 22.0), (s * 5.0, 22.0, 26.0), 1.2, "exhaust")
+    vm.cyl((0, 12.0, 6.6), 5.0, 14.0, "plastic_red", axis="x", n=2)
+    vm.wheel("spare", (0.0, 18.0, 25.6), 6.4, 4.0, parent="body", rim="rim_dark", rim_kind="steel")
+    vm.set_rotation("spare", (0, 90, 0))
+    for s in (-1, 1):
+        vm.lamp((s * 6.0, 12.0, 23.0), (2.4, 1.8, 0.6), "r", face="south", lit_bone="lights_tail", kind="round")
+    # サスペンション（A アームとショック）と車輪
+    for name, (s, az) in {"fl": (1, af), "fr": (-1, af), "rl": (1, ar), "rr": (-1, ar)}.items():
+        vm.rod((s * 8.6, 8.4, az - 2.0), (s * (tx - 2.0), R, az), 1.0, "steel_dark")
+        vm.rod((s * 8.6, 8.4, az + 2.0), (s * (tx - 2.0), R, az), 1.0, "steel_dark")
+        vm.rod((s * 8.4, 16.0, az), (s * (tx - 2.6), R + 1.0, az), 1.3, "chrome")
+        vm.wheel(f"wheel_{name}", (s * tx, R, az), R, tw, side=s, tyre="tyre_knobby", rim="rim_dark",
+                 rim_kind="steel", spokes=6, flat=(name in w["flat"]) and not drivable)
+    scatter_wear(vm, panels, w, rng)
+    vm.locator("smoke", (0, 18.0, 18.0))
+    vm.meta["size_blocks"] = [round(2 * (tx + tw / 2) / 16, 2), round(29.0 / 16, 2), round(70.0 / 16, 2)]
+
+
+def _bike_wheel(vm, name, center, R, tw, parent):
+    """スポークのバイクの車輪（中の抜けたタイヤの輪・スポークの円盤・ハブ）。"""
+    cx, cy, cz = (float(v) for v in center)
+    vm.bone(name, pivot=(cx, cy, cz), parent=parent)
+    vm.meta["wheels"][name] = {"center": [cx, cy, cz], "radius": R, "width": tw}
+    cs = vm.prism((cx, cy, cz), R * 2, tw, "tyre_knobby", axis="x", sides=12, bone=name)
+    vm.wd(cs, "*", "nrv_disc", frame="local", c=[cx, cy, cz], axis=0, ri=R * 0.72, ro=R * 1.2, shade=False)
+    vm.wd(cs, "lr", "nrv_tyreside", frame="local", c=[cx, cy, cz], r=R, ri=R * 0.72)
+    sp = vm.box((cx, cy, cz), (0.5, R * 1.46, R * 1.46), "rim", bone=name)
+    vm.wd(sp, "*", "nrv_disc", frame="local", c=[cx, cy, cz], axis=0, ri=R * 0.62, ro=R * 0.73, spokes=12,
+          spoke_w=0.22, hub=0.9)
+    vm.box((cx, cy, cz), (tw + 0.6, 1.4, 1.4), "hub", bone=name, rot=(45, 0, 0))
+
+
+def _build_dirt_bike(vm: VehicleModel, kind: str, w: dict, o: dict, drivable: bool) -> None:
+    """乗れるオフロードバイク。fork（ハンドル・前輪）は steer_head（キャスター角）の子で、fork の Y 回転で切る。"""
+    R, tw = 7.0, 2.4
+    zf_ax, zr_ax = -15.5, 14.5
+    rake = 26.0
+    hy, hz = 19.0, -9.5                     # ステアリングヘッド
+    P = "paint"
+    panels = []
+    vm.meta.update(kind=kind, roof_y=22.0)
+    # フレームとエンジン
+    vm.rod((0, hy, hz), (0, 9.0, -2.0), 1.3, "steel_dark")
+    vm.rod((0, hy, hz), (0, 16.0, 5.0), 1.2, "steel_dark")
+    vm.rod((0, 16.0, 5.0), (0, 15.6, 16.0), 0.9, "steel_dark")
+    vm.rod((0, 9.0, 4.0), (0, 15.6, 12.0), 0.9, "steel_dark")
+    eng = vm.box((0, 8.6, 0.0), (5.0, 6.4, 8.0), "engine")
+    vm.dec(eng, ["east", "west"], "nrv_grille", kind="h", count=5, box=(0.1, 0.05, 0.6, 0.5), deep=(36, 36, 38))
+    vm.box((0, 13.0, -2.2), (4.2, 3.4, 4.0), "engine")
+    vm.rod((-1.6, 12.0, -4.6), (-2.6, 6.0, -6.0), 1.0, "exhaust")
+    vm.rod((-2.6, 6.0, -6.0), (-3.4, 10.0, 6.0), 1.0, "exhaust")
+    vm.rod((-3.4, 10.0, 6.0), (-3.4, 14.0, 14.0), 1.0, "exhaust")
+    vm.cyl((-3.4, 14.2, 14.0), 2.6, 7.0, "alu", axis="z", n=2)
+    # タンク・座席・カウル・後ろのフェンダー・ゼッケン
+    tk = vm.box((0, 17.2, -3.0), (6.0, 3.8, 8.6), P)
+    panels.append((tk, ["up", "east", "west"]))
+    vm.box((0, 17.0, 6.0), (4.8, 1.6, 15.0), "seat_vinyl")
+    for s in (-1, 1):
+        side = "east" if s < 0 else "west"
+        sp = vm.box((s * 2.8, 13.0, 8.0), (0.5, 4.8, 7.0), "plastic_white")
+        vm.dec(sp, side, "nrv_text", text=o.get("number", "27"), colour=(24, 24, 26), box=(0.2, 0.2, 0.8, 0.8))
+        vm.box((s * 3.2, 15.8, -4.0), (0.5, 4.0, 6.0), P)
+    fen = vm.box((0, 16.6, 16.0), (4.2, 0.6, 10.0), "plastic_white", rot=(-14, 0, 0))
+    vm.lamp((0, 16.4, 20.8), (2.0, 1.2, 0.5), "r", face="south", lit_bone="lights_tail", bezel=None)
+    vm.plate((0, 14.2, 21.0), "south", o.get("plate", "NRC 125|7-21"), kind="white", size=(4.0, 2.4, 0.3))
+    for s in (-1, 1):
+        vm.box((s * 2.6, 8.0, 3.0), (2.4, 0.6, 1.0), "steel_dark")
+        vm.rod((s * 1.6, 8.6, 2.0), (s * 1.6, R, zr_ax), 0.9, "steel_dark")
+    vm.rod((0, 15.6, 8.0), (0, 9.0, 10.0), 1.0, "chrome")
+    vm.box((1.4, R + 0.6, (2.0 + zr_ax) / 2), (0.4, 1.2, zr_ax - 2.0), "chain")
+    vm.meta["seats"] = {"rider": [0.0, 17.8, 5.0]}
+    # 前（キャスター角の付いた steer_head → fork → wheel_f）
+    vm.bone("steer_head", pivot=(0, hy, hz), parent="body", rotation=(-rake, 0, 0))
+    vm.bone("fork", pivot=(0, hy, hz), parent="steer_head")
+    L = (hy - R) / math.cos(math.radians(rake))
+    ay = hy - L
+    for s in (-1, 1):
+        vm.box((s * 1.7, hy - L / 2, hz), (0.9, L, 0.9), "chrome", bone="fork")
+        vm.box((s * 1.7, hy - L * 0.75, hz), (1.3, L * 0.5, 1.3), "steel_dark", bone="fork")
+    vm.box((0, hy - 0.5, hz), (4.6, 1.0, 1.6), "steel_dark", bone="fork")
+    vm.box((0, hy - 4.0, hz), (4.6, 1.0, 1.6), "steel_dark", bone="fork")
+    vm.box((0, hy + 1.6, hz + 0.6), (13.0, 0.7, 0.7), "steel_dark", bone="fork")
+    for s in (-1, 1):
+        vm.box((s * 5.6, hy + 1.6, hz + 0.6), (2.0, 1.0, 1.0), "rubber", bone="fork")
+    vm.box((0, ay + R + 1.4, hz - 0.6), (3.6, 0.5, 9.0), "plastic_white", bone="fork", rot=(8, 0, 0))
+    cw = vm.box((0, hy - 2.6, hz - 1.6), (5.0, 5.6, 0.5), "plastic_white", bone="fork")
+    vm.dec(cw, "north", "nrv_text", text=o.get("number", "27"), colour=(24, 24, 26), box=(0.2, 0.5, 0.8, 0.9))
+    vm.lamp((0, hy - 1.6, hz - 2.0), (2.6, 1.8, 0.5), "w", face="north", kind="round", lit_bone="lights_head",
+            bone="fork", bezel=None)
+    if "lights_head" in vm.bmap:
+        vm.bmap["lights_head"].parent = "fork"
+    _bike_wheel(vm, "wheel_f", (0, ay, hz), R, tw, "fork")
+    _bike_wheel(vm, "wheel_r", (0, R, zr_ax), R, tw + 0.6, "body")
+    vm.meta["steer"] = {"bone": "fork", "axis": "y", "head": [0, hy, hz], "rake": rake}
+    scatter_wear(vm, panels, w, random.Random(_h(vm.key, "bike")))
+    vm.meta["size_blocks"] = [round(14.0 / 16, 2), round(22.0 / 16, 2), round(40.0 / 16, 2)]
+
+
+# ===========================================================================
 #  9. 入口
 # ===========================================================================
 # 種類 → (組み立て関数の名前, 既定の塗装 (paint, paint2, paint3), 既定のアトラス, 既定の密度の上限)
@@ -1980,6 +3027,15 @@ KINDS: Dict[str, dict] = {
     "sedan": dict(fn="_build_car", paint=("paint_red", "paint_white", "paint_black"), atlas=(512, 512)),
     "taxi": dict(fn="_build_car", paint=("paint_yellow", "paint_white", "paint_black"), atlas=(512, 512)),
     "police": dict(fn="_build_car", paint=("paint_black", "paint_white", "paint_black"), atlas=(512, 512)),
+    "ambulance": dict(fn="_build_truck", paint=("paint_white", "paint_white", "paint_black"), atlas=(512, 512)),
+    "box_truck": dict(fn="_build_truck", paint=("paint_white", "paint_white", "paint_black"), atlas=(1024, 1024)),
+    "garbage_truck": dict(fn="_build_truck", paint=("paint_green", "paint_white", "paint_black"),
+                          atlas=(1024, 1024)),
+    "army_truck": dict(fn="_build_truck", paint=("paint_olive", "paint_olive", "paint_black"), atlas=(512, 512)),
+    "pickup": dict(fn="_build_truck", paint=("paint_green", "paint_white", "paint_black"), atlas=(512, 512)),
+    "bus": dict(fn="_build_bus", paint=("paint_blue", "paint_white", "paint_black"), atlas=(1024, 1024)),
+    "buggy": dict(fn="_build_buggy", paint=("paint_orange", "paint_white", "paint_black"), atlas=(512, 512)),
+    "dirt_bike": dict(fn="_build_dirt_bike", paint=("paint_red", "paint_white", "paint_black"), atlas=(256, 256)),
 }
 KIND_OPTIONS = {
     "*": "dims（寸法の上書き）、plate（ナンバーの文字 'ABC 500|12-34'）、plate_kind（white/yellow/green）",

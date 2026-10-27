@@ -164,7 +164,7 @@ function scanLights(dim, at) {
 // ---------------------------------------------------------------------------
 //  UV ランプ（nr:uv_lamp の onTick で場所を覚える）と UV の範囲（バス）
 // ---------------------------------------------------------------------------
-/** @typedef {{dim: string, pos: Vector3, radius: number, regen: number, powered: boolean, seen: number}} Lamp */
+/** @typedef {{dim: string, pos: Vector3, radius: number, regen: number, powered: boolean, seen: number, state: string}} Lamp */
 /** @type {Map<string, Lamp>} */
 const lamps = new Map();
 /** @type {{dim: string, pos: Vector3, radius: number, until: number, regen: number}[]} */
@@ -175,13 +175,10 @@ onBlockComponent("nr:uv_lamp", {
     const b = e.block;
     /** @type {any} */
     const prm = params ?? {};
-    let powered = true;
-    try {
-      const st = b.permutation.getState(/** @type {any} */ (String(prm.state ?? "nr:powered")));
-      powered = st === undefined ? true : st === 1 || st === true || st === "1";
-    } catch { powered = true; }
+    const state = String(prm.state ?? "nr:powered");
     const key = `${e.dimension.id}:${b.x},${b.y},${b.z}`;
-    lamps.set(key, { dim: e.dimension.id, pos: { x: b.x + 0.5, y: b.y + 0.5, z: b.z + 0.5 }, radius: nv(prm.radius, 10), regen: nv(prm.immunity_regen_per_s, IMMUNITY.uvRegen), powered, seen: now() });
+    lamps.set(key, { dim: e.dimension.id, pos: { x: b.x + 0.5, y: b.y + 0.5, z: b.z + 0.5 }, radius: nv(prm.radius, 10),
+      regen: nv(prm.immunity_regen_per_s, IMMUNITY.uvRegen), powered: lampPowered(b, state), seen: now(), state });
   },
 });
 on(PEV.UV_ZONE, (d) => {
@@ -193,13 +190,34 @@ onWorldTick("immunity.lamps", 40, (t) => {
   for (const [k, l] of lamps) if (t - l.seen > 70) lamps.delete(k);
   for (let i = zones.length - 1; i >= 0; i--) if (t > zones[i].until) zones.splice(i, 1);
 });
-/** その位置の UV の回復（秒あたり。範囲外は 0）。 @param {Dimension} dim @param {Vector3} at */
+/**
+ * その位置の UV の回復（秒あたり。範囲外は 0）。範囲内のランプはブロックを読み直す（壊された・消された
+ * ランプはすぐ効かなくなる。onTick を待たない）。
+ * @param {Dimension} dim @param {Vector3} at
+ */
 export function uvAt(dim, at) {
   let best = 0;
   const id = dim.id;
-  for (const l of lamps.values()) if (l.powered && l.dim === id && dist(l.pos, at) <= l.radius) best = Math.max(best, l.regen);
-  for (const z of zones) if (z.dim === id && dist(z.pos, at) <= z.radius) best = Math.max(best, z.regen);
+  for (const [k, l] of lamps) {
+    if (l.dim !== id || dist(l.pos, at) > l.radius) continue;
+    /** @type {import("@minecraft/server").Block | undefined} */
+    let b;
+    try { b = dim.getBlock({ x: Math.floor(l.pos.x), y: Math.floor(l.pos.y), z: Math.floor(l.pos.z) }); } catch { b = undefined; }
+    if (!b) continue;
+    if (b.typeId !== "nr:uv_lamp") { lamps.delete(k); continue; }
+    l.powered = lampPowered(b, l.state);
+    if (l.powered) best = Math.max(best, l.regen);
+  }
+  const t = now();
+  for (const z of zones) if (z.until >= t && z.dim === id && dist(z.pos, at) <= z.radius) best = Math.max(best, z.regen);
   return best;
+}
+/** ランプの状態（nr:powered が 1 / true / 無い）。 @param {import("@minecraft/server").Block} b @param {string} state */
+function lampPowered(b, state) {
+  try {
+    const st = b.permutation.getState(/** @type {any} */ (state));
+    return st === undefined ? true : st === 1 || st === true || st === "1";
+  } catch { return true; }
 }
 /** 覚えている UV ランプの数（テスト・デバッグ）。 */
 export function lampCount() { return [...lamps.values()].filter((l) => l.powered).length; }
@@ -210,7 +228,7 @@ export function lampCount() { return [...lamps.values()].filter((l) => l.powered
 onPlayerTick("immunity", STEP, (p, t) => {
   const s = istate(p);
   const dt = STEP / 20;
-  if (!isActive(p) || !immunityEnabled()) {
+  if (!isActive(p, true) || !immunityEnabled()) {
     s.dark = false; s.uv = false;
     if (!immunityEnabled() && s.value < IMMUNITY.max) { s.value = IMMUNITY.max; s.warned = 0; }
     return;
@@ -247,7 +265,7 @@ onPlayerTick("immunity", STEP, (p, t) => {
 // 心音・0 のダメージ（毎 tick 見て、間隔は自前で数える）
 onPlayerTick("immunity.heart", 2, (p, t) => {
   const s = states.get(p.id);
-  if (!s || !isActive(p) || !immunityEnabled()) return;
+  if (!s || !isActive(p, true) || !immunityEnabled()) return;
   if (s.value <= 0 && !s.uv) {
     if (s.zeroT < 0) {
       s.zeroT = t;
