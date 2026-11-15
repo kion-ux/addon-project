@@ -5,3 +5,8 @@ build_preview/
 
 # 生成の途中結果（超次元: 解いた姿勢のキャッシュ）
 tools/hyperdim/.cache/
+
+# 影渡り（ブラウザゲーム）
+games/kagewatari/node_modules/
+games/kagewatari/tests/out/
+games/kagewatari/dist-artifact/
