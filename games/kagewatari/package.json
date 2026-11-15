@@ -1,0 +1,15 @@
+{
+  "name": "kagewatari",
+  "version": "0.1.0",
+  "private": true,
+  "description": "影渡り — スマホのブラウザで遊べるパルクール暗殺アクション（オープンワールド）",
+  "type": "module",
+  "scripts": {
+    "serve": "node tests/lib/server.mjs",
+    "test": "node tests/run.mjs",
+    "build:artifact": "node tools/build-artifact.mjs"
+  },
+  "devDependencies": {
+    "three": "0.170.0"
+  }
+}
